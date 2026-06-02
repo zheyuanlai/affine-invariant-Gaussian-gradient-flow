@@ -1,0 +1,29 @@
+# Configuration for affine-invariant Gaussian gradient flow experiments.
+# Target distribution: N(0, I_n).
+
+defaults:
+  dt: 0.02          # discrete time step
+  T: 20.0           # total simulation time  => num_steps = int(T / dt) = 1000
+  save_every: 5     # record metrics every this many steps
+
+# Spatial dimensions to run
+dimensions: [2, 5, 10]
+
+# omega grid — positive values controlling covariance update rate
+omega_grid: [0.125, 0.25, 0.5, 1.0, 2.0]
+
+# tau is derived per (omega, n):
+#   tau_negative = -omega / (2 * n)    => omega + n*tau = omega/2   > 0  ✓
+#   tau_zero     =  0                  => omega + n*tau = omega      > 0  ✓
+#   tau_positive = +omega / (2 * n)    => omega + n*tau = 3*omega/2  > 0  ✓
+
+# Initialization names (see src/initializations.py)
+initializations:
+  - mean_only
+  - volume_high
+  - volume_low
+  - shape_only
+  - mixed
+
+# Output directory (relative to project root)
+output_dir: outputs/gaussian_grid
