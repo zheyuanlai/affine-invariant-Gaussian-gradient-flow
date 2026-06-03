@@ -4,7 +4,7 @@ This repository studies a two-parameter family of affine-invariant Gaussian
 gradient flows for the variational problem
 
 $$
-\min_{m,C}\; F(m,C),\qquad
+\min_{m,C} F(m,C),\qquad
 F(m,C)=\mathrm{KL}\big(\mathcal N(m,C)\Vert\pi\big),
 $$
 
@@ -117,7 +117,7 @@ so that
 
 $$
 -B+\alpha I=\Big(-1-\varepsilon+1+\tfrac{n\tau}{\omega+n\tau}\varepsilon\Big)I
-=-\frac{\omega}{\omega+n\tau}\varepsilonI.
+=-\frac{\omega}{\omega+n\tau}\varepsilon I.
 $$
 
 Substituting into the covariance equation and evaluating near $C=I$ gives a
@@ -210,11 +210,11 @@ $r$ a magnitude, and $\mathrm{diag}(\cdot)$ a diagonal covariance:
 
 | Mode | $m_0$ | $C_0$ |
 |---|---|---|
-| mean-only | $\dfrac{r}{\sqrt n}\mathbf 1,\;r=3$ | $I$ |
+| mean-only | $\dfrac{r}{\sqrt n}\mathbf 1,r=3$ | $I$ |
 | volume-high | $0$ | $4I$ |
 | volume-low | $0$ | $0.25I$ |
-| shape-only | $0$ | $\mathrm{diag}(e^{r},e^{-r},1,\dots,1),\;r=2$ |
-| mixed | $\dfrac{2}{\sqrt n}\mathbf 1$ | $2\mathrm{diag}(e^{r},e^{-r},1,\dots,1),\;r=1.5$ |
+| shape-only | $0$ | $\mathrm{diag}(e^{r},e^{-r},1,\dots,1),r=2$ |
+| mixed | $\dfrac{2}{\sqrt n}\mathbf 1$ | $2\mathrm{diag}(e^{r},e^{-r},1,\dots,1),r=1.5$ |
 
 The shape-only covariance has $\det C_0=1$, so its residual is purely traceless;
 the volume initializations are purely isotropic ($\chi=1$); the mixed
