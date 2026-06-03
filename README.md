@@ -1,824 +1,540 @@
-# Affine-Invariant Gaussian Gradient Flow
+# Affine-Invariant Gaussian Gradient Flows: Discretization and Numerical Mode Decomposition
 
-A clean, reproducible Python experiment repo for studying the parameter effects
-of (ω, τ) in the Riemannian-distance discretization of affine-invariant Gaussian
-gradient flows.  The first version implements the **Gaussian target N(0, Iₙ)**,
-where all expectations are exact — no Monte Carlo or quadrature needed.
+This repository studies a two-parameter family of affine-invariant Gaussian
+gradient flows for the variational problem
 
----
+$$
+\min_{m,\,C}\; F(m,C),\qquad
+F(m,C)=\operatorname{KL}\!\big(\mathcal N(m,C)\,\Vert\,\pi\big),
+$$
 
-## Scientific background
+which, for a target $\pi(\theta)\propto e^{-V(\theta)}$ and up to additive
+constants, equals
 
-### Variational inference as gradient flow
+$$
+F(m,C)=\mathbb E_{\theta\sim\mathcal N(m,C)}[V(\theta)]-\tfrac12\log\det C .
+$$
 
-We study variational inference as gradient flow of the KL divergence
-KL(q ‖ π) over the manifold of Gaussians q = N(m, C), equipped with the
-affine-invariant (Fisher–Rao-like) Riemannian metric parameterized by (ω, τ).
-
-The resulting **Riemannian-distance discretization** gives the following update
-at each step (derived in §2 of the associated paper):
-
-**Mean update:**
-```
-m_{k+1} = m_k − Δt · C_k m_k
-```
-
-**Covariance update (matrix exponential form):**
-```
-C_{k+1} = C_k^{1/2}
-             exp( Δt/(2ω) · [ −C_k + α I ] )
-           C_k^{1/2}
-
-where  α = (ω + τ Tr(C_k)) / (ω + n τ)
-```
-
-The matrix exponential is essential: without it the update is not the
-Riemannian exponential-map step and does not preserve positive definiteness.
-
-**Why the eigenvectors are preserved.**
-Because both C_k and the exponent matrix are functions of the same eigenbasis,
-they commute.  The update reduces to a scalar rescaling of each eigenvalue:
-
-```
-λᵢ_{k+1} = λᵢ · exp( Δt/(2ω) · (−λᵢ + α) )
-```
-
-with the eigenvectors Q of C_k unchanged.  This makes the implementation
-exact and free of any matrix-exponential routine.
+The flows are parameterized by $(\omega,\tau)$. The experiments isolate four
+convergence modes — mean, covariance-volume, covariance-shape, and mixed — and
+quantify the effect of $\omega$ and $\tau$ on each. Two targets are studied: the
+exact Gaussian target $\mathcal N(0,I)$, and a strongly log-concave non-Gaussian
+target with Monte Carlo / quasi-Monte Carlo expectations and a numerically
+computed reference Gaussian optimum. 
 
 ---
 
-### Parameters ω and τ
+## 1. Variational problem
 
-| Symbol | Role | Constraint |
-|--------|------|-----------|
-| `ω > 0` | Overall covariance update rate — scales how fast all eigenvalues relax toward their equilibrium | `ω > 0` |
-| `τ` | Trace-weighting — shifts the equilibrium target `α` up or down depending on whether Tr(C) is too large or too small | `ω + n τ > 0` |
+Let the variational family be the non-degenerate Gaussians
 
-**Intuition for ω.**
-The mean update rate is fixed by Δt and C, independently of ω.
-The covariance update rate scales as 1/(2ω).
-Smaller ω → faster covariance convergence; larger ω → slower.
-The choice ω = 1/2 with τ = 0 corresponds to the balanced Fisher–Rao flow.
+$$
+q_{m,C}=\mathcal N(m,C),\qquad m\in\mathbb R^n,\quad C\in\mathbb S_{++}^n,
+$$
 
-**Intuition for τ.**
-When τ = 0, the target eigenvalue is α = 1 for all i, independent of Tr(C).
-Each eigenvalue independently drifts toward 1 — this is the standard Fisher–Rao flow.
+and let the target be $\pi(\theta)\propto\exp(-V(\theta))$ with $V$ smooth. Define
+the expected gradient and Hessian under the variational distribution,
 
-When τ ≠ 0, the scalar α depends on Tr(C):
-- If Tr(C) > n (covariance volume too large) and τ < 0,
-  then α < 1, which *increases* the drift rate pushing eigenvalues down.
-  This accelerates volume shrinkage.
-- Conversely, τ > 0 reduces the drift rate and *slows* volume correction.
+$$
+g(m,C)=\mathbb E_{q_{m,C}}[\nabla V(\theta)],\qquad
+S(m,C)=\mathbb E_{q_{m,C}}[\nabla^2 V(\theta)].
+$$
 
-The specific choice τ = −ω/(2n) makes ω + nτ = ω/2, halving the denominator
-and effectively doubling the volume correction speed in the local Gaussian theory.
+The first-order stationarity conditions of $F$ are
 
-**Key implication:** τ acts only on the *trace/volume* part of the covariance
-error.  It does not accelerate traceless shape modes or mean convergence.
+$$
+g(m_\star,C_\star)=0,\qquad C_\star^{-1}=S(m_\star,C_\star).
+$$
 
 ---
 
-### Gaussian target: exact expectations
+## 2. The $(\omega,\tau)$ family of flows
 
-For target π = N(0, Iₙ):
-```
-∇_θ log π(θ) = −θ          ⟹  𝔼_{N(m,C)}[∇ log π] = −m
-∇²_θ log π(θ) = −I          ⟹  𝔼_{N(m,C)}[∇² log π] = −I
-```
+In the notation used by the code, the continuous-time affine-invariant Gaussian
+flow is
 
-Substituting into the general discrete scheme gives the closed-form updates
-implemented in `src/dynamics.py`.
+$$
+\dot m_t=-\,C_t\,g(m_t,C_t),
+$$
 
----
+$$
+B_t=C_t^{1/2}\,S(m_t,C_t)\,C_t^{1/2},\qquad
+\alpha_t=\frac{\omega+\tau\operatorname{Tr}(B_t)}{\omega+n\tau},
+$$
 
-## Initializations
+$$
+\dot C_t=\frac{1}{2\omega}\,C_t^{1/2}\big(-B_t+\alpha_t I\big)C_t^{1/2}.
+$$
 
-Five initial conditions are designed to **isolate distinct convergence modes**,
-so that the roles of ω and τ can be disentangled.
+The matrix $B_t$ is the Hessian expectation in the natural (whitened) coordinates
+of $C_t$, and $\alpha_t$ is a scalar trace-weighting term. The admissibility
+condition is
 
-### `mean_only` — pure mean error
+$$
+\omega>0,\qquad \omega+n\tau>0,
+$$
 
-```
-m₀ = r · 1/√n,   C₀ = I,   r = 3
-```
-
-The covariance is already at the target; only the mean is displaced.
-
-**What it tests:** whether ω and τ affect mean-dominated convergence.
-
-**Expected finding:** all three τ values (τ₋, τ₀, τ₊) behave nearly identically,
-because τ acts only on the covariance-volume dynamics and C₀ = I is already fixed.
+which keeps $\alpha_t$ finite and the covariance equation well-posed.
 
 ---
 
-### `volume_high` — pure volume expansion error
+## 3. Exponential-map discretization
 
-```
-m₀ = 0,   C₀ = 4I
-```
+With step $\Delta t$, the implemented update is
 
-All eigenvalues are 4 (too large), so the entire covariance error is volume
-(scalar scale).  There is no shape anisotropy and no mean error.
+$$
+m_{k+1}=m_k-\Delta t\,C_k\,g(m_k,C_k),
+$$
 
-**What it tests:** the τ < 0 acceleration hypothesis.
+$$
+C_{k+1}=C_k^{1/2}\exp\!\Big(\frac{\Delta t}{2\omega}\big(-B_k+\alpha_k I\big)\Big)C_k^{1/2}.
+$$
 
-**Expected finding:** τ₋ converges significantly faster than τ₀, and τ₊ is
-slower.  This is the regime where τ < 0 provides the clearest benefit.
-
----
-
-### `volume_low` — pure volume compression error
-
-```
-m₀ = 0,   C₀ = 0.25 · I
-```
-
-All eigenvalues are 0.25 (too small); same structure as `volume_high` but
-the covariance must expand rather than contract.
-
-**What it tests:** τ effect on volume expansion (not just contraction).
-
-**Expected finding:** same qualitative pattern as `volume_high` — τ₋ is faster,
-τ₊ is slower — confirming the τ acceleration is symmetric in direction.
+Because $-B_k+\alpha_k I$ is symmetric, its matrix exponential is symmetric
+positive definite, and $C_{k+1}$ is a congruence transform
+$C_k^{1/2}(\,\cdot\,)C_k^{1/2}$ of an SPD matrix; hence $C_{k+1}\in\mathbb S_{++}^n$
+for every step. This is the discrete exponential map on the SPD manifold and
+removes the positivity constraint without projection.
 
 ---
 
-### `shape_only` — pure shape (anisotropy) error
+## 4. Trace-mode linearization: role of $\omega$ and $\tau$
 
-```
-m₀ = 0,   C₀ = diag(e^r, e^{−r}, 1, …, 1),   r = 2
-```
+The parameter $\omega$ rescales the covariance equation uniformly. The parameter
+$\tau$ acts only through the scalar $\alpha_t$, i.e. only on the trace (volume)
+component of the covariance residual. This can be made precise by linearizing
+near stationarity.
 
-By construction det(C₀) = e^r · e^{−r} · 1 · … · 1 = 1, so the **volume is
-exactly correct**.  All of the covariance error is anisotropy: the first axis
-is too large, the second is too small, the rest are at target.
+Consider an isotropic perturbation of the whitened Hessian,
+$B=(1+\varepsilon)I$. Then $\operatorname{Tr}(B)=n(1+\varepsilon)$ and
 
-**What it tests:** whether τ helps when the error is purely in the traceless
-(shape) part of the covariance.
+$$
+\alpha=\frac{\omega+\tau n(1+\varepsilon)}{\omega+n\tau}
+=1+\frac{n\tau}{\omega+n\tau}\,\varepsilon,
+$$
 
-**Expected finding:** τ₋ ≈ τ₀ ≈ τ₊.  Since there is no net volume error, the
-trace shift introduced by τ buys nothing.  The relevant parameter here is ω,
-which controls how fast each eigenvalue relaxes.
+so that
 
----
+$$
+-B+\alpha I=\Big(-1-\varepsilon+1+\tfrac{n\tau}{\omega+n\tau}\varepsilon\Big)I
+=-\frac{\omega}{\omega+n\tau}\,\varepsilon\,I.
+$$
 
-### `mixed` — simultaneous mean + volume + shape error
+Substituting into the covariance equation and evaluating near $C=I$ gives a
+linear decay $\dot\varepsilon=-\kappa\,\varepsilon$ for the trace mode with rate
 
-```
-m₀ = 2 · 1/√n,   C₀ = s · diag(e^r, e^{−r}, 1, …, 1),   s = 2,   r = 1.5
-```
+$$
+\kappa=\frac{1}{2(\omega+n\tau)} .
+$$
 
-This is the closest to a realistic scenario: nonzero mean, inflated volume
-(det = s^n · 1 > 1), and anisotropic shape.
+Consequences for the trace/volume mode:
 
-**What it tests:** whether τ < 0 gives a net benefit in the most common practical case.
+- $\tau=0$: rate $\kappa=\dfrac{1}{2\omega}$.
+- $\tau=-\dfrac{\omega}{2n}$: $\omega+n\tau=\dfrac{\omega}{2}$, so $\kappa=\dfrac{1}{\omega}$ — the rate doubles, i.e. the convergence time halves.
+- $\tau=+\dfrac{\omega}{2n}$: $\omega+n\tau=\dfrac{3\omega}{2}$, so $\kappa=\dfrac{1}{3\omega}$ — the time scale increases by a factor $3/2$.
 
-**Expected finding:** τ₋ may help during the early volume-dominated transient,
-but the final convergence rate is limited by mean and shape modes (which τ
-does not accelerate).  Benefits are smaller and less guaranteed than in
-`volume_high` / `volume_low`.
-
----
-
-## Metrics
-
-All metrics are computed against the target N(0, Iₙ) at each saved step.
-
-### 1. KL energy  (`kl_energy`)
-
-```
-E = KL(N(m, C) ‖ N(0, I))
-  = ½ ( ‖m‖² + Tr(C) − log det C − n )
-```
-
-The primary scalar convergence measure.  Equals zero iff m = 0 and C = I;
-always ≥ 0 by the Gibbs inequality.
-
-This corresponds to the energy gap E(aₙ) − E(a★) in the paper.
+This linearization applies to trace/volume modes only. The mean equation does not
+contain $\tau$, and traceless (shape) covariance modes have
+$\operatorname{Tr}(R_{\mathrm{cov}})=0$, on which $\alpha$ has no leading-order
+effect. The numerical results in §7 and §10 are consistent with these factors.
 
 ---
 
-### 2. Normalised energy  (`norm_energy`)
+## 5. Covariance-error diagnostics
 
-```
-Ê = E / E₀
-```
+Let $R_{\mathrm{cov}}$ denote the covariance residual: for the Gaussian target it
+is taken as $I-C$ (equivalently the eigenvalue residuals $1-\lambda_i$), and for
+the general target as
 
-Divides by the initial energy so all runs start at 1 and are comparable across
-initializations with very different scales.  The time-to-tolerance thresholds
-(1e-2, 1e-4, 1e-6) are defined on this quantity.
+$$
+R_{\mathrm{cov}}=I-B,\qquad B=C^{1/2}S(m,C)\,C^{1/2}.
+$$
 
----
+Decompose it into trace and traceless parts:
 
-### 3. Mean error  (`mean_error`)
+$$
+r_{\mathrm{tr}}=\frac{|\operatorname{Tr}(R_{\mathrm{cov}})|}{\sqrt n},
+\qquad
+r_{\mathrm{tf}}=\Big\|\,R_{\mathrm{cov}}-\tfrac{\operatorname{Tr}(R_{\mathrm{cov}})}{n}I\,\Big\|_F .
+$$
 
-```
-eₘ = ‖m‖₂
-```
+The trace-dominance ratio is
 
-The Euclidean distance of the current mean from the target mean 0.
-Corresponds to the first summary statistic in Figure 5 of the paper.
+$$
+\chi=\frac{\big(\operatorname{Tr}R_{\mathrm{cov}}\big)^2}{n\,\|R_{\mathrm{cov}}\|_F^2},
+\qquad 0\le\chi\le 1 .
+$$
 
----
+$\chi\approx 1$ indicates a residual that is almost purely trace/volume;
+$\chi\approx 0$ indicates an almost purely traceless/shape residual. By the
+linearization of §4, $\tau$ can only accelerate the trace component, so $\chi$ is
+the diagnostic used to interpret which initializations admit a $\tau$-speedup.
 
-### 4. Relative covariance error  (`cov_error`)
-
-```
-e_C = ‖C − I‖_F / √n
-```
-
-Total covariance mismatch, normalized by √n so it is comparable across
-dimensions.  Corresponds to the second summary statistic in Figure 5.
-
----
-
-### 5. Volume error  (`volume_error`)
-
-```
-e_vol = |log det C / n|
-      = |(1/n) Σᵢ log λᵢ|
-```
-
-Measures the per-dimension log-volume mismatch.  Zero iff det(C) = 1.
-
-This diagnostic directly reveals whether τ is accelerating the trace/volume mode:
-if τ < 0 helps, it should show up here first and most clearly.
+Other recorded scalars (per saved step) include the objective gap, the whitened
+mean error $\|C_\star^{-1/2}(m-m_\star)\|$, the relative covariance error
+$\|C_\star^{-1/2}CC_\star^{-1/2}-I\|_F/\sqrt n$, the volume error
+$|\log\det(C_\star^{-1/2}CC_\star^{-1/2})/n|$, the traceless shape error, the
+covariance residual $\|I-B\|_F$, and the eigenvalue extremes of $C$. Column names
+are documented in §13.
 
 ---
 
-### 6. Shape error  (`shape_error`)
+## 6. Gaussian target
 
-```
-log C = Q diag(log λᵢ) Qᵀ
+For
 
-e_shape = ‖log C − (Tr(log C)/n) I‖_F
-```
+$$
+V(\theta)=\tfrac12\|\theta\|^2,\qquad \pi=\mathcal N(0,I),
+$$
 
-This removes the scalar (volume) part of log C and retains only the
-traceless anisotropy.  Zero iff C = s·I for any scalar s > 0.
+the expectations are exact:
 
-If τ < 0 only accelerates volume modes, this metric should not benefit from τ.
+$$
+g(m,C)=m,\qquad S(m,C)=I.
+$$
 
-Together, `volume_error` and `shape_error` decompose the full `cov_error` into
-its two orthogonal components:  **volume** (scalar part of log C)
-and **shape** (traceless part of log C).
+Hence $B=C$, and the covariance update is diagonal in the eigenbasis of $C$;
+writing $C=Q\operatorname{diag}(\lambda_i)Q^\top$,
 
----
+$$
+\lambda_{i,k+1}=\lambda_{i,k}\exp\!\Big(\frac{\Delta t}{2\omega}\big(-\lambda_{i,k}+\alpha_k\big)\Big),
+\qquad
+\alpha_k=\frac{\omega+\tau\sum_j\lambda_{j,k}}{\omega+n\tau}.
+$$
 
-### 7. Cosine test-function error  (`cosine_error`)
+The stationary point is $m_\star=0$, $C_\star=I$, and the objective reduces to the
+exact KL energy $F=\tfrac12(\|m\|^2+\operatorname{Tr}C-\log\det C-n)$.
 
-For θ ~ N(m, C), the exact identity is:
-```
-𝔼[cos(qᵀθ + b)] = exp(−½ qᵀCq) · cos(qᵀm + b)
-```
+**Initializations (mode decomposition).** With $\mathbf 1$ the all-ones vector,
+$r$ a magnitude, and $\operatorname{diag}(\cdot)$ a diagonal covariance:
 
-The true value under N(0, I) is:
-```
-exp(−½ ‖q‖²) · cos(b)
-```
+| Mode | $m_0$ | $C_0$ |
+|---|---|---|
+| mean-only | $\dfrac{r}{\sqrt n}\mathbf 1,\;r=3$ | $I$ |
+| volume-high | $0$ | $4I$ |
+| volume-low | $0$ | $0.25\,I$ |
+| shape-only | $0$ | $\operatorname{diag}(e^{r},e^{-r},1,\dots,1),\;r=2$ |
+| mixed | $\dfrac{2}{\sqrt n}\mathbf 1$ | $2\,\operatorname{diag}(e^{r},e^{-r},1,\dots,1),\;r=1.5$ |
 
-The error is the absolute difference between these two quantities.
+The shape-only covariance has $\det C_0=1$, so its residual is purely traceless;
+the volume initializations are purely isotropic ($\chi=1$); the mixed
+initialization perturbs mean, volume, and shape simultaneously.
 
-This is the third summary statistic from Figure 5.  The test vector is fixed as
-q = (1, 2, …, n)ᵀ / ‖(1, 2, …, n)‖₂  and  b = 0.5.
-
----
-
-### 8. Eigenvalue extremes  (`eig_min`, `eig_max`)
-
-The smallest and largest eigenvalues of C over time.  Useful for spotting
-near-singularity (eig_min → 0) or blow-up (eig_max → ∞), which can occur
-with aggressive step sizes or extreme parameters.
-
----
-
-### 9. Trace dominance ratio  (`chi`)
-
-```
-residuals rᵢ = 1 − λᵢ
-
-χ = (Σᵢ rᵢ)² / (n · Σᵢ rᵢ²)
-```
-
-χ ∈ [1/n, 1]:
-- χ = 1: all residuals are equal — the error is **pure volume** (maximally
-  trace-dominated).  This is where τ < 0 helps most.
-- χ = 1/n: only one residual is nonzero — the error is **pure shape**
-  (maximally anisotropy-dominated).  τ gives no benefit here.
-
-χ tracks whether the covariance error is "isotropic" (χ near 1, τ may help)
-or "anisotropic" (χ near 1/n, only ω matters).
+The grid is $n\in\{2,5,10\}$, $\omega\in\{0.125,0.25,0.5,1,2\}$, and for each
+$\omega$ the three values $\tau\in\{-\omega/2n,\,0,\,+\omega/2n\}$, with
+$\Delta t=0.02$, $T=20$.
 
 ---
 
-## Expected qualitative findings
+## 7. Gaussian numerical results
 
-### Effect of τ
+Results below are for $n=5$, extracted from `outputs/gaussian_grid/summary.csv`.
+Time-to-tolerance is the first time the normalized energy $F/F_0$ falls below the
+threshold; `>20` denotes not reached within the horizon $T=20$.
 
-| Initialization | τ < 0 vs τ = 0 | Explanation |
-|---------------|----------------|-------------|
-| `mean_only`   | No difference | τ only acts on covariance volume; C₀ = I is already the target |
-| `volume_high` | τ < 0 faster (~2×) | Pure volume error; τ < 0 doubles the trace-mode convergence rate |
-| `volume_low`  | τ < 0 faster (~2×) | Same as above; error is pure volume in the other direction |
-| `shape_only`  | No difference | det(C₀) = 1; no volume error for τ to accelerate |
-| `mixed`       | τ < 0 helps early | Speeds up volume phase; final rate still limited by mean / shape modes |
+**Time to $F/F_0\le 10^{-4}$, $\tau=0$.**
 
-**τ > 0** is generally worse than τ = 0 for volume-dominated initializations,
-and no better elsewhere.
+| Initialization | $\omega=0.125$ | $\omega=0.25$ | $\omega=0.5$ | $\omega=1$ | $\omega=2$ |
+|---|---|---|---|---|---|
+| mean-only | 4.6 | 4.6 | 4.6 | 4.6 | 4.6 |
+| volume-high | 0.9 | 1.9 | 3.7 | 7.5 | 15.0 |
+| volume-low | 1.4 | 2.8 | 5.6 | 11.2 | >20 |
+| shape-only | 1.3 | 2.6 | 5.3 | 10.5 | >20 |
+| mixed | 4.0 | 4.0 | 4.3 | 7.3 | 14.5 |
 
-**τ = 0** is the robust, parameter-free default choice.
+**$\tau$-speedup ratio $T(\tau)/T(0)$ at $\omega=0.5$** (tolerance $10^{-4}$):
 
-### Effect of ω
+| Initialization | $T(\tau{=}0)$ | $T(\tau_-)/T_0$ | $T(\tau_+)/T_0$ |
+|---|---|---|---|
+| mean-only | 4.6 | 1.00 | 1.00 |
+| volume-high | 3.7 | 0.51 | 1.51 |
+| volume-low | 5.6 | 0.50 | 1.50 |
+| shape-only | 5.3 | 0.98 | 1.06 |
+| mixed | 4.3 | 1.09 | 1.07 |
 
-- Smaller ω → faster covariance convergence (eigenvalues relax faster).
-- Larger ω → slower covariance, mean convergence is unaffected.
-- ω = 1/2 with τ = 0 is the balanced Fisher–Rao choice: it equates the mean
-  and covariance natural gradient steps in a specific sense.
-- For covariance-dominated initializations, ω < 1/2 can be faster.
-- For mean-dominated initialization, varying ω makes no visible difference.
+**$\tau$-speedup ratio across $\omega\in\{0.25,0.5,1\}$** (tolerance $10^{-4}$):
 
-### Overall conclusion
+| Initialization | $\tau_-,\,\omega{=}0.25$ | $\tau_+,\,\omega{=}0.25$ | $\tau_-,\,\omega{=}0.5$ | $\tau_+,\,\omega{=}0.5$ | $\tau_-,\,\omega{=}1$ | $\tau_+,\,\omega{=}1$ |
+|---|---|---|---|---|---|---|
+| mean-only | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+| volume-high | 0.47 | 1.47 | 0.51 | 1.51 | 0.49 | 1.49 |
+| volume-low | 0.50 | 1.50 | 0.50 | 1.50 | 0.50 | 1.49 |
+| shape-only | 1.00 | 1.08 | 0.98 | 1.06 | 0.99 | 1.07 |
+| mixed | 1.05 | 0.95 | 1.09 | 1.07 | 1.07 | 1.22 |
 
-> Smaller ω can accelerate covariance-dominated transients; τ < 0 can
-> additionally accelerate *trace-dominated* covariance transients.  However,
-> neither provides uniform improvement across mean, shape, and mixed modes.
-> The choice (ω, τ) = (1/2, 0) remains the most robust parameter-free choice
-> because it balances mean, covariance-shape, and covariance-volume dynamics.
+**Observed numerical behavior.**
+
+- The mean-only time-to-tolerance is $4.6$ for every $\omega$ and every $\tau$:
+  the mean equation is independent of $\omega$ and $\tau$.
+- The two volume initializations accelerate by a factor close to $2$ under
+  $\tau_-$ (ratios $0.47$–$0.51$) and slow by a factor close to $3/2$ under
+  $\tau_+$ (ratios $1.47$–$1.51$), uniformly in $\omega$. This matches the
+  trace-mode rates $\kappa$ of §4.
+- The shape-only ratios stay within $0.98$–$1.08$: $\tau$ does not substantially
+  affect a purely traceless residual.
+- The mixed ratios lie in $0.95$–$1.22$ with no consistent sign, since the
+  limiting error combines mean and shape components that $\tau$ does not
+  accelerate.
+- Under $\tau=0$, covariance-dominated modes slow monotonically with $\omega$
+  (e.g. volume-high from $0.9$ at $\omega=0.125$ to $15.0$ at $\omega=2$), while
+  mean-only is flat, consistent with $\kappa\propto 1/\omega$.
 
 ---
 
-## Installation
+## 8. Strongly log-concave non-Gaussian target
+
+Define, with $m=4n$ fixed unit vectors $a_\ell\in\mathbb R^n$,
+
+$$
+V_\rho(x)=\tfrac12\|x\|^2+\frac{\rho}{m}\sum_{\ell=1}^{m}\log\cosh(a_\ell^\top x).
+$$
+
+Its gradient and Hessian are
+
+$$
+\nabla V_\rho(x)=x+\frac{\rho}{m}\sum_{\ell=1}^{m}\tanh(a_\ell^\top x)\,a_\ell,
+$$
+
+$$
+\nabla^2 V_\rho(x)=I+\frac{\rho}{m}\sum_{\ell=1}^{m}\operatorname{sech}^2(a_\ell^\top x)\,a_\ell a_\ell^\top.
+$$
+
+Since $0\le\operatorname{sech}^2(\cdot)\le1$ and the $a_\ell$ are unit vectors,
+
+$$
+I\preceq\nabla^2 V_\rho(x)\preceq(1+\rho)I,
+$$
+
+so $V_\rho$ is $1$-strongly convex and $(1+\rho)$-smooth, giving a strongly
+log-concave non-Gaussian target.
+
+**Reference Gaussian optimum.** Expectations are not available in closed form. A
+reference optimum $a_\star=(m_\star,C_\star)$ is computed by minimizing a
+fixed-sample estimate of $F$ over a Cholesky factor $C=LL^\top$,
+
+$$
+F(m,L)=\frac1K\sum_{j=1}^{K}V_\rho(m+Lz_j)-\sum_{i=1}^{n}\log L_{ii},
+\qquad z_j\sim\mathcal N(0,I),
+$$
+
+with analytic gradients
+
+$$
+\nabla_m F=\frac1K\sum_{j=1}^{K}\nabla V_\rho(m+Lz_j),\qquad
+\nabla_L F=\frac1K\sum_{j=1}^{K}\nabla V_\rho(m+Lz_j)\,z_j^\top-L^{-\top},
+$$
+
+minimized by L-BFGS-B with common random numbers $\{z_j\}$. The same fixed sample
+set is reused across all $(\omega,\tau,\text{init})$ runs so that comparisons share
+identical Monte Carlo noise.
+
+---
+
+## 9. Log-concave numerical setup
+
+The values below are read from `outputs/logconcave_grid/target_metadata.json` and
+`outputs/logconcave_grid/reference_optimum_meta.json`.
+
+| Quantity | Value |
+|---|---|
+| dimension $n$ | $5$ |
+| coupling $\rho$ | $5.0$ |
+| features $m=4n$ | $20$ |
+| dynamics samples $K$ | $4096$ |
+| reference samples $K_{\mathrm{ref}}$ | $8192$ |
+| step $\Delta t$ | $0.005$ |
+| horizon $T$ | $40$ |
+| reference objective $F_\star$ | $3.980868$ |
+| reference mean norm $\|m_\star\|$ | $2.92\times10^{-5}$ |
+| reference gradient norm $\|\nabla_m F\|$ | $8.24\times10^{-10}$ |
+| reference covariance residual $\|C_\star S_\star-I\|_F$ | $1.85\times10^{-3}$ |
+
+For the production run reported here, the reference optimizer converged with
+$F_\star=3.980868$, $\|\nabla_m F\|=8.24\times10^{-10}$, and covariance residual
+$1.85\times10^{-3}$. Because $V_\rho$ is even, $m_\star$ is numerically zero
+($\|m_\star\|=2.92\times10^{-5}$); it is optimized rather than assumed.
+
+The grid is $\omega\in\{0.25,0.5,1\}$ with $\tau\in\{-\omega/2n,\,0,\,+\omega/2n\}$
+over the same five initializations, now defined relative to $a_\star$ (e.g.
+volume-high uses $C_0=4C_\star$, shape-only uses
+$C_0=C_\star^{1/2}\operatorname{diag}(e^2,e^{-2},1,1,1)C_\star^{1/2}$).
+
+---
+
+## 10. Log-concave numerical results
+
+Results are for $n=5,\ \rho=5$, extracted from
+`outputs/logconcave_grid/summary.csv`. Time-to-tolerance uses the normalized
+objective gap $(F-F_\star)/(F_0-F_\star)$.
+
+**Objective-floor note.** The finite-sample objective gap has a numerical floor
+near $10^{-4}$ for this run: the smallest observed final gap is
+$\approx1.5\times10^{-4}$ (normalized $\approx1.0\times10^{-4}$). The $10^{-4}$
+threshold therefore sits on the floor, and entries marked `>40` at that tolerance
+(notably volume-low, whose normalized gap plateaus at $1.01\times10^{-4}$) should
+not be read as divergence. The $10^{-2}$ tolerance is unaffected and is used for
+the speedup ratios.
+
+**Time to normalized gap $\le 10^{-2}$, $\tau=0$.**
+
+| Initialization | $\omega=0.25$ | $\omega=0.5$ | $\omega=1$ |
+|---|---|---|---|
+| mean-only | 2.2 | 2.3 | 2.4 |
+| volume-high | 0.9 | 1.9 | 3.6 |
+| volume-low | 1.8 | 3.5 | 6.9 |
+| shape-only | 1.4 | 2.9 | 5.7 |
+| mixed | 1.8 | 2.0 | 3.1 |
+
+**Time to normalized gap $\le 10^{-4}$, $\tau=0$** (at the objective floor):
+
+| Initialization | $\omega=0.25$ | $\omega=0.5$ | $\omega=1$ |
+|---|---|---|---|
+| mean-only | 4.8 | 4.8 | 4.9 |
+| volume-high | 2.4 | 4.7 | 9.3 |
+| volume-low | >40 | >40 | >40 |
+| shape-only | 3.0 | 5.9 | 11.7 |
+| mixed | 4.2 | 4.6 | 8.1 |
+
+**$\tau$-speedup ratio $T(\tau)/T(0)$ at $\omega=0.5$** (tolerance $10^{-2}$):
+
+| Initialization | $T(\tau{=}0)$ | $T(\tau_-)/T_0$ | $T(\tau_+)/T_0$ |
+|---|---|---|---|
+| mean-only | 2.3 | 1.00 | 1.00 |
+| volume-high | 1.9 | 0.51 | 1.49 |
+| volume-low | 3.5 | 0.51 | 1.49 |
+| shape-only | 2.9 | 1.00 | 0.98 |
+| mixed | 2.0 | 1.10 | 1.02 |
+
+**Initial trace dominance $\chi_0$ at $\omega=0.5$:**
+
+| Initialization | $\chi_0$ |
+|---|---|
+| mean-only | 0.705 |
+| volume-high | 0.998 |
+| volume-low | 1.000 |
+| shape-only | 0.133 |
+| mixed | 0.295 |
+
+**Observed numerical behavior.**
+
+- Under $\tau=0$, the $\omega$-sweep slows covariance-dominated modes as $\omega$
+  increases (volume-low $1.8\to6.9$, shape-only $1.4\to5.7$ as $\omega$ goes
+  $0.25\to1$), while mean-only stays near $2.2$–$2.4$.
+- The two volume initializations, which have $\chi_0\approx1$, accelerate by a
+  factor close to $2$ under $\tau_-$ ($T(\tau_-)/T_0=0.51$) and slow by a factor
+  close to $3/2$ under $\tau_+$ ($1.49$), matching the Gaussian case and the
+  §4 rates.
+- shape-only ($\chi_0=0.133$) is essentially unchanged under $\tau$
+  (ratios $0.97$–$1.00$); mean-only ($\chi_0=0.705$, but mean-limited) is exactly
+  $1.00$.
+- mixed ($\chi_0=0.295$) shows ratios $1.06$–$1.10$ under $\tau_-$, i.e. no net
+  speedup, because the limiting error is not trace dominated.
+- Across the grid, the magnitude of the $\tau_-$ speedup tracks $\chi_0$: only
+  the trace-dominated initializations realize the near-$2\times$ acceleration.
+
+---
+
+## 11. Figures
+
+Figures are written by `scripts/plot_gaussian_results.py` and
+`scripts/plot_logconcave_results.py` as paired PNG/PDF. Gaussian figures live in
+`outputs/gaussian_grid/figures/n{n}/`; log-concave figures in
+`outputs/logconcave_grid/figures/`.
+
+**Main figures.**
+
+- `fig_gaussian_tau_speedup_n{n}` / `fig_logconcave_tau_speedup_n{n}_rho{r}`:
+  heatmaps of the observed ratio $T(\tau)/T(0)$, diverging colormap centered at
+  $1$. Demonstrates the near-$2\times$ acceleration for volume modes under
+  $\tau_-$ and the $\approx3/2$ slowdown under $\tau_+$.
+- `fig_gaussian_omega_sweep_n{n}` / `fig_logconcave_omega_sweep_n{n}_rho{r}`:
+  normalized objective gap versus time for $\tau=0$ across $\omega$, one panel per
+  initialization. Demonstrates the covariance time-scale dependence on $\omega$.
+- `fig_gaussian_tau_effect_n{n}` / `fig_logconcave_tau_effect_n{n}_rho{r}`:
+  selected diagnostics for the informative modes, separating trace residual
+  $r_{\mathrm{tr}}$ and traceless residual $r_{\mathrm{tf}}$ across the three
+  $\tau$ values.
+- `fig_logconcave_speedup_vs_chi_n{n}_rho{r}`: observed $\tau_-$ speedup against
+  the initial trace dominance $\chi_0$, demonstrating that the speedup is realized
+  only when $\chi_0\approx1$.
+
+**Appendix / diagnostic figures.**
+
+- `fig_gaussian_tau_effect_full_n{n}` / `fig_logconcave_tau_effect_full_n{n}_rho{r}`:
+  the full diagnostic grid (all initializations $\times$ all recorded metrics).
+- `fig_gaussian_time_to_tol_n{n}` / `fig_logconcave_time_to_tol_n{n}_rho{r}`:
+  time-to-tolerance heatmaps; not-reached cells are masked and labeled `>T`.
+
+---
+
+## 12. Installation and reproducibility
+
+Python 3.9+ with NumPy/SciPy (CPU, float64); no GPU or PyTorch. Determinism is
+provided by fixed seeds for the target $a_\ell$ and for the QMC sample set.
 
 ```bash
-git clone <repo-url>
-cd AffineInvariantGaussianGradientFlow
 pip install -r requirements.txt
-```
+pytest                                   # unit tests (127 tests)
 
-Python 3.9+ required.  All dynamics use NumPy/SciPy (CPU, float64).
-No PyTorch or GPU dependencies.
-
----
-
-## Running experiments
-
-### Run tests first
-
-```bash
-pytest                 # all 93 tests
-pytest -v tests/       # verbose output
-```
-
-### Smoke run (fast: n=2, T=2)
-
-```bash
-python scripts/run_gaussian_grid.py --n 2 --T 2 --dt 0.1 --outdir outputs/smoke
-```
-
-### Full default experiment (n ∈ {2, 5, 10}, T=20, dt=0.02)
-
-```bash
-python scripts/run_gaussian_grid.py
-```
-
-Writes:
-- `outputs/gaussian_grid/results_long.csv` — ~45k rows, one per saved step
-- `outputs/gaussian_grid/summary.csv` — 225 rows, one per run
-
-Override any default:
-
-```bash
-python scripts/run_gaussian_grid.py --dt 0.01 --T 30 --n 5 10 --outdir outputs/fine
-```
-
-### Recompute summary from existing long CSV
-
-```bash
-python scripts/make_summary_tables.py
-```
-
-### Generate figures
-
-```bash
+python scripts/run_gaussian_grid.py      # Gaussian grid  -> outputs/gaussian_grid/
 python scripts/plot_gaussian_results.py
-```
 
-Figures for each dimension are written to `outputs/gaussian_grid/figures/n{N}/`:
-
-```
-outputs/gaussian_grid/figures/
-├── n2/
-│   ├── fig_tau_effect_omega_half_n2.{png,pdf}
-│   ├── fig_omega_sweep_tau_zero_n2.{png,pdf}
-│   ├── fig_time_to_tol_heatmap_n2.{png,pdf}
-│   └── fig_tau_speedup_heatmap_n2.{png,pdf}
-├── n5/
-│   └── ...
-└── n10/
-    └── ...
-```
-
-To plot only specific dimensions:
-
-```bash
-python scripts/plot_gaussian_results.py --n 5 10
-```
-
----
-
-## Figure descriptions
-
-| Figure | Description |
-|--------|-------------|
-| `fig_tau_effect_omega_half_n{N}` | 5 rows (inits) × 6 cols (metrics), comparing τ₋/τ₀/τ₊ for ω=0.5 |
-| `fig_omega_sweep_tau_zero_n{N}`  | Normalised energy vs time for all ω values (τ=0), one panel per init |
-| `fig_time_to_tol_heatmap_n{N}`  | Heatmap of time-to-1e-4 (rows=init, cols=ω, τ=0) |
-| `fig_tau_speedup_heatmap_n{N}`  | Speedup ratio T(τ)/T(τ=0) for τ₋ and τ₊ (ω ∈ {1/4, 1/2, 1}) |
-
----
-
-## Repository structure
-
-```
-├── configs/
-│   └── gaussian_target.yaml    default experiment configuration
-├── src/
-│   ├── __init__.py
-│   ├── dynamics.py             gaussian_step() — one closed-form update step
-│   ├── metrics.py              compute_all_metrics(), kl_energy()
-│   ├── initializations.py      get_initialization()
-│   ├── plotting.py             figure generation (per-n subdirectories)
-│   └── utils.py                SPD utilities, parameter validation
-├── scripts/
-│   ├── run_gaussian_grid.py    main grid runner → results_long.csv + summary.csv
-│   ├── plot_gaussian_results.py  figure generation script
-│   └── make_summary_tables.py  recompute summary.csv from results_long.csv
-├── tests/
-│   ├── test_gaussian_update.py
-│   └── test_metrics.py
-└── outputs/
-    └── gaussian_grid/
-        ├── results_long.csv
-        ├── summary.csv
-        └── figures/
-            ├── n2/
-            ├── n5/
-            └── n10/
-```
-
----
-
-## Summary CSV columns (Gaussian target)
-
-| Column | Description |
-|--------|-------------|
-| `n`, `omega`, `tau_type`, `tau_value`, `init_name` | Run identity |
-| `dt`, `T` | Integration parameters |
-| `final_energy` | KL energy at t = T |
-| `final_normalized_energy` | E(T) / E(0) |
-| `time_to_1e_minus_2/4/6` | First time normalised energy ≤ threshold (inf if not reached) |
-| `monotone_energy_bool` | True if normalised energy is non-increasing throughout |
-| `min_eig_min_over_time` | Minimum eigenvalue of C seen across all saved steps |
-| `max_eig_max_over_time` | Maximum eigenvalue of C seen across all saved steps |
-
----
-
----
-
-# Strongly log-concave non-Gaussian target
-
-## Target definition
-
-```
-V_rho(x) = 0.5 ||x||² + (rho / m) * sum_{ell=1}^m  log cosh(a_ell^T x)
-```
-
-where:
-- `a_ell` are **m = 4n** fixed random unit vectors in Rⁿ, drawn once per `target_seed`
-- `rho >= 0` controls the coupling strength; rho = 0 recovers the Gaussian case
-
-The posterior is `pi(x) ∝ exp(-V_rho(x))`.
-
-**Gradient:**
-```
-grad V(x) = x + (rho/m) * sum_ell  tanh(a_ell^T x) * a_ell
-```
-
-**Hessian:**
-```
-Hess V(x) = I + (rho/m) * sum_ell  sech²(a_ell^T x) * a_ell a_ell^T
-```
-
-**Strong log-concavity:**
-Since `sech²(z) >= 0` and `a_ell a_ell^T` is PSD, we have `Hess V(x) >= I` for all x.
-The minimum eigenvalue of Hess V is ≥ 1 everywhere.
-
-**Smoothness:**
-Since `sech²(z) <= 1` and the rows of A have unit norm, `Hess V(x) <= (1 + rho) I`.
-
-**Numerical note:**
-`sech²(z) = 1 − tanh²(z)` is used throughout to avoid overflow for large |z|.
-
----
-
-## Sign convention
-
-The algorithm is written in terms of:
-```
-g(m, C) = E_{N(m,C)}[ grad V(theta) ]    (= -E[grad log pi])
-S(m, C) = E_{N(m,C)}[ Hess V(theta) ]    (= -E[Hess log pi])
-```
-
-For the Gaussian target `N(0, I)`, `V(x) = 0.5||x||²`, so `g = m` and `S = I`,
-recovering the closed-form Gaussian update exactly.
-
----
-
-## Discrete update for general target
-
-**Mean:**
-```
-m_{k+1} = m_k − dt * C_k * g(m_k, C_k)
-```
-
-**Covariance:**
-```
-B   = C_k^{1/2} S(m_k, C_k) C_k^{1/2}        (whitened Hessian)
-alpha = (omega + tau * Tr(B)) / (omega + n * tau)
-M   = dt/(2*omega) * (−B + alpha * I)
-C_{k+1} = C_k^{1/2} expm(M) C_k^{1/2}
-```
-
-`scipy.linalg.expm` is used because M is not generally a function of C's eigenvectors —
-the commutation shortcut that makes the Gaussian case exact does not apply here.
-
----
-
-## Monte Carlo / QMC expectations
-
-Expectations `g` and `S` are estimated using **K fixed samples** shared across all
-(omega, tau, init) comparisons (common random numbers):
-
-```
-z_j ~ N(0, I_n),  j = 1,...,K
-theta_j = m + L z_j,   where C = L L^T (Cholesky)
-
-g ≈ (1/K) sum_j  grad V(theta_j)
-S ≈ (1/K) sum_j  Hess V(theta_j)
-```
-
-Samples are generated via **Sobol quasi-Monte Carlo** (scipy.stats.qmc.Sobol),
-transformed with the inverse normal CDF, clipped to [1e-12, 1-1e-12] before
-the transform to avoid ±inf. For K not a power of two, or n > 21201, falls
-back to a seeded NumPy generator.
-
-Default `K = 4096` for dynamics, `K_ref = 8192` for the reference optimum.
-Both seeds are fixed per experiment so all runs are reproducible.
-
----
-
-## Reference Gaussian VI optimum
-
-For the non-Gaussian target, there is no closed-form optimum. We compute the
-**best Gaussian approximation** a★ = (m★, C★) by minimising:
-
-```
-F(m, C) = E_{N(m,C)}[V(theta)] − 0.5 log det C
-```
-
-This is the VI objective (negative ELBO up to an additive constant).
-
-**Parameterisation:**
-`C = L Lᵀ` with L lower-triangular, diagonal entries `L_ii = exp(η_i) > 0`.
-The parameter vector is `[m | off-diagonal L entries | log-diagonal η]`,
-entirely unconstrained.
-
-**Fixed-sample objective:**
-```
-F(m, L) = mean_j V(m + L z_j) − sum_i log L_ii
-```
-
-**Gradients (analytic):**
-```
-grad_m F = mean_j grad V(theta_j)
-grad_L F = mean_j grad V(theta_j) z_j^T  −  L^{-T}
-```
-Packed as: off-diagonal → direct; diagonal entry η_i → `(grad_L)_ii * L_ii`.
-
-Optimised via `scipy.optimize.minimize(method="L-BFGS-B")` with up to 2000
-iterations, starting from `m=0, L=I`.
-
-The result is saved to `reference_optimum.npz` and reused on subsequent runs
-unless `--force-optimize` is passed. Because V_rho is even, `||m★||` should be
-very small (verified: ~ 1e-4 or less).
-
----
-
-## Initializations relative to a★
-
-All five initializations are defined in the **coordinate frame of the reference
-optimum**, not relative to the identity. Let `C★_sqrt = C★^{1/2}`.
-
-### `mean_only` — pure mean offset from a★
-```
-m0 = m★ + 3 * C★_sqrt @ (1/√n),    C0 = C★
-```
-Covariance is already optimal; only the mean is displaced.
-**Expected:** τ has no effect (C0 = C★ is already fixed).
-
-### `volume_high` — inflated covariance
-```
-m0 = m★,    C0 = 4 * C★
-```
-Volume is 4ⁿ times the optimal. In whitened coordinates R = 4I.
-**Expected:** τ < 0 gives ~2× acceleration over τ = 0; τ > 0 is slower.
-
-### `volume_low` — deflated covariance
-```
-m0 = m★,    C0 = 0.25 * C★
-```
-Volume is (1/4)ⁿ times the optimal. In whitened coordinates R = 0.25I.
-**Expected:** same pattern as `volume_high`.
-
-### `shape_only` — correct volume, wrong shape
-```
-m0 = m★,    C0 = C★_sqrt @ diag(e^r, e^{-r}, 1,...,1) @ C★_sqrt,    r = 2
-```
-In whitened coordinates `R = diag(e^2, e^{-2}, 1,...,1)`, so `det(R) = 1`.
-Volume matches C★; error is purely in the eigenvector spread.
-**Expected:** τ ≈ 0 independent of sign (no trace/volume error to accelerate).
-
-### `mixed` — mean + volume + shape
-```
-m0 = m★ + 2 * C★_sqrt @ (1/√n)
-C0 = C★_sqrt @ [2 * diag(e^1.5, e^{-1.5}, 1,...,1)] @ C★_sqrt
-```
-All three error modes present simultaneously.
-**Expected:** τ < 0 may help the early volume phase; final convergence limited
-by mean and shape modes. Benefit is smaller and less certain than `volume_high`.
-
----
-
-## Metrics (log-concave target)
-
-All metrics are expressed relative to the reference optimum a★ = (m★, C★).
-Let `R = C★^{-1/2} C C★^{-1/2}` be the covariance in whitened coordinates.
-
-| Metric | Formula | Interpretation |
-|--------|---------|---------------|
-| `objective` | `F(m,C) ≈ mean V(θⱼ) − 0.5 log det C` | VI objective |
-| `objective_gap` | `F − F★` | Excess objective (raw; may be slightly negative from MC noise) |
-| `normalized_objective_gap` | `(F − F★) / gap₀` | Primary convergence metric, starts at 1 |
-| `whitened_mean_error` | `‖C★^{-1/2}(m − m★)‖₂` | Mean error in natural units |
-| `cov_error` | `‖R − I‖_F / √n` | Total covariance mismatch in whitened coords |
-| `volume_error` | `\|log det R / n\|` | Per-dim volume (scale) error |
-| `shape_error` | `‖log R − (Tr log R / n) I‖_F` | Anisotropy error, independent of scale |
-| `mean_residual` | `‖g‖₂` | Stationarity: mean equation residual |
-| `cov_residual` | `‖I − B‖_F`,  B = C^{1/2} S C^{1/2} | Stationarity: covariance equation residual |
-| `trace_residual` | `\|Tr(I − B)\| / √n` | Trace/volume part of covariance residual |
-| `traceless_residual` | `‖(I−B) − (Tr(I−B)/n) I‖_F` | Shape part of covariance residual |
-| `chi` | `(Tr(I−B))² / (n ‖I−B‖_F²)` | Trace dominance ratio ∈ [1/n, 1]; χ≈1 means τ<0 may help |
-| `eig_min`, `eig_max` | eigenvalue extremes of C | Numerical health check |
-| `cosine_error_to_star` | `\|E[cos(q^T θ+b)]_{m,C} − E[...]_{m★,C★}\|` | Test-function gap to reference |
-
----
-
-## Expected qualitative findings (log-concave)
-
-| Initialization | τ < 0 effect | Explanation |
-|---------------|-------------|-------------|
-| `mean_only` | None | C0 = C★; τ acts only on covariance volume |
-| `volume_high` | ~2× speedup | Pure volume error; τ<0 doubles trace-mode rate |
-| `volume_low` | ~2× speedup | Same, for volume expansion direction |
-| `shape_only` | None | det(R0) = 1; no volume error for τ to exploit |
-| `mixed` | Moderate, early only | Helps initial volume phase; shape and mean phases unaffected |
-
-**χ as a predictor:**
-The initial trace-dominance ratio χ = (Tr residual)² / (n ‖residual‖_F²) predicts
-whether τ < 0 helps. When χ ≈ 1 (covariance residual is isotropic / volume-dominated),
-τ < 0 accelerates convergence. When χ ≈ 1/n (shape-dominated), τ < 0 gives no benefit.
-Figure 5 (`speedup_vs_chi`) tests this directly.
-
-**Overall conclusion:**
-> Smaller ω can accelerate covariance-dominated transients; τ < 0 can additionally
-> accelerate *trace-dominated* covariance transients. Neither provides uniform
-> improvement across all modes. (ω, τ) = (1/2, 0) remains the most robust choice.
-
----
-
-## Running the log-concave experiment
-
-### Smoke run (fast: n=3, rho=2, K=512, T=2)
-
-```bash
-python scripts/run_logconcave_grid.py \
-  --n 3 --rho 2 --K 512 --K-ref 1024 --T 2 --dt 0.01 \
-  --outdir outputs/logconcave_smoke
-```
-
-### Full default experiment (n=5, rho=5, K=4096, T=40)
-
-```bash
-python scripts/run_logconcave_grid.py
-```
-
-Writes to `outputs/logconcave_grid/`:
-- `results_long.csv` — one row per saved step per run (45 runs × ~400 steps)
-- `summary.csv` — one row per run
-- `reference_optimum.npz` + `reference_optimum_meta.json` — cached Gaussian VI optimum
-- `target_metadata.json` — target + sample parameters
-
-Re-run with a fresh reference optimum:
-```bash
-python scripts/run_logconcave_grid.py --force-optimize
-```
-
-### Generate figures
-
-```bash
+python scripts/run_logconcave_grid.py    # log-concave grid -> outputs/logconcave_grid/
 python scripts/plot_logconcave_results.py
+
+python scripts/extract_readme_results.py # regenerate the tables in this file
 ```
 
-Figures are saved to `outputs/logconcave_grid/figures/`:
-
-| File | Description |
-|------|-------------|
-| `fig_logconcave_tau_effect_omega_half_n{N}_rho{R}` | τ comparison (5 inits × 6 metrics) |
-| `fig_logconcave_omega_sweep_tau_zero_n{N}_rho{R}` | ω sweep, normalised gap |
-| `fig_logconcave_time_to_tol_heatmap_n{N}_rho{R}` | Time-to-1e-4 heatmap, 3 τ panels |
-| `fig_logconcave_tau_speedup_heatmap_n{N}_rho{R}` | Speedup ratio T(τ)/T(τ=0) |
-| `fig_logconcave_speedup_vs_chi_n{N}_rho{R}` | Scatter: initial χ vs τ speedup |
-
-To plot for a specific (n, rho):
-```bash
-python scripts/plot_logconcave_results.py --n 5 --rho 5
-```
-
-### Validate reference optimum
-
-```bash
-python scripts/check_logconcave_reference.py
-```
+The result tables in §7 and §10 are produced by
+`scripts/extract_readme_results.py`, which only reads existing summary files and
+prints Markdown; it does not run the dynamics. The grid runners accept
+`--n`, `--dt`, `--T`, `--omega`, `--outdir`, and (log-concave) `--rho`, `--K`,
+`--K-ref`, `--target-seed`, `--sample-seed`, `--force-optimize`.
 
 ---
 
-## Extended repository structure
+## 13. Repository structure
 
 ```
-├── configs/
-│   ├── gaussian_target.yaml
-│   └── logconcave_target.yaml        ← new
-├── src/
-│   ├── __init__.py
-│   ├── dynamics.py                   (Gaussian, closed-form)
-│   ├── lc_dynamics.py                ← new: general target, scipy.linalg.expm
-│   ├── targets.py                    ← new: LogCoshTarget
-│   ├── qmc_samples.py                ← new: Sobol QMC + push-forward
-│   ├── reference_optimum.py          ← new: L-BFGS-B VI optimiser
-│   ├── lc_initializations.py         ← new: initializations relative to a★
-│   ├── lc_metrics.py                 ← new: metrics relative to a★
-│   ├── lc_plotting.py                ← new: 5 log-concave figures
-│   ├── initializations.py            (Gaussian, relative to N(0,I))
-│   ├── metrics.py                    (Gaussian, KL divergence)
-│   ├── plotting.py                   (Gaussian, 4 figures)
-│   └── utils.py                      (shared SPD utilities)
-├── scripts/
-│   ├── run_gaussian_grid.py
-│   ├── run_logconcave_grid.py        ← new
-│   ├── plot_gaussian_results.py
-│   ├── plot_logconcave_results.py    ← new
-│   ├── make_summary_tables.py
-│   └── check_logconcave_reference.py ← new
-├── tests/
-│   ├── test_gaussian_update.py
-│   ├── test_metrics.py
-│   └── test_logconcave.py            ← new (34 tests)
-└── outputs/
-    ├── gaussian_grid/
-    └── logconcave_grid/
-        ├── results_long.csv
-        ├── summary.csv
-        ├── reference_optimum.npz
-        ├── reference_optimum_meta.json
-        ├── target_metadata.json
-        └── figures/
+configs/
+  gaussian_target.yaml          Gaussian grid configuration
+  logconcave_target.yaml        log-concave grid configuration
+src/
+  dynamics.py                   Gaussian eigenvalue update (exact)
+  lc_dynamics.py                general update via scipy.linalg.expm
+  targets.py                    LogCoshTarget (batched grad/Hess)
+  qmc_samples.py                Sobol QMC sample generation
+  reference_optimum.py          L-BFGS-B reference Gaussian optimum
+  initializations.py            Gaussian initializations
+  lc_initializations.py         log-concave initializations (relative to a_star)
+  metrics.py                    Gaussian metrics (KL energy, residuals)
+  lc_metrics.py                 log-concave metrics (objective gap, residuals, chi)
+  plotting.py / lc_plotting.py  figure generation
+  utils.py                      SPD utilities, parameter validation
+scripts/
+  run_gaussian_grid.py          run Gaussian grid -> CSV
+  run_logconcave_grid.py        run log-concave grid -> CSV + reference optimum
+  plot_gaussian_results.py      Gaussian figures
+  plot_logconcave_results.py    log-concave figures
+  make_summary_tables.py        recompute summary.csv from results_long.csv
+  check_logconcave_reference.py inspect the cached reference optimum
+  extract_readme_results.py     print the Markdown result tables in this README
+tests/
+  test_gaussian_update.py, test_metrics.py, test_logconcave.py
+outputs/
+  gaussian_grid/, logconcave_grid/   results_long.csv, summary.csv, figures/
 ```
 
----
+### Recorded summary columns
 
-## Log-concave summary CSV columns
+Gaussian (`outputs/gaussian_grid/summary.csv`): `n, omega, tau_type, tau_value,
+init_name, dt, T, final_energy, final_normalized_energy, time_to_1e_minus_2,
+time_to_1e_minus_4, time_to_1e_minus_6, monotone_energy_bool,
+min_eig_min_over_time, max_eig_max_over_time`.
 
-| Column | Description |
-|--------|-------------|
-| `n`, `rho`, `m_features`, `target_seed`, `sample_seed`, `K` | Target + sample identity |
-| `omega`, `tau_type`, `tau_value`, `init_name`, `dt`, `T` | Run parameters |
-| `final_objective_gap` | F(T) − F★ (raw) |
-| `final_normalized_objective_gap` | (F(T)−F★) / gap₀ |
-| `time_to_1e_minus_2/4/6` | First time normalised gap ≤ threshold (inf if not reached) |
-| `monotone_objective_bool` | True if normalised gap is non-increasing |
-| `min_eig_min_over_time` | Minimum eigenvalue of C across all saved steps |
-| `max_eig_max_over_time` | Maximum eigenvalue of C across all saved steps |
-| `initial_chi`, `final_chi` | Trace-dominance ratio at t=0 and t=T |
-| `initial/final_volume_error` | Volume error at start and end |
-| `initial/final_shape_error` | Shape error at start and end |
+Log-concave (`outputs/logconcave_grid/summary.csv`): the same run identifiers plus
+`rho, m_features, target_seed, sample_seed, K`, the objective-gap fields
+`final_objective_gap, final_normalized_objective_gap`, the tolerance times,
+`monotone_objective_bool`, the eigenvalue extremes, and the diagnostic fields
+`initial_chi, final_chi, initial_volume_error, initial_shape_error,
+final_volume_error, final_shape_error`.
