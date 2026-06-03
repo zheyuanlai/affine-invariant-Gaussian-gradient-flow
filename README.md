@@ -4,8 +4,8 @@ This repository studies a two-parameter family of affine-invariant Gaussian
 gradient flows for the variational problem
 
 $$
-\min_{m,\,C}\; F(m,C),\qquad
-F(m,C)=\operatorname{KL}\!\big(\mathcal N(m,C)\,\Vert\,\pi\big),
+\min_{m,C}\; F(m,C),\qquad
+F(m,C)=\mathrm{KL}\big(\mathcal N(m,C)\Vert\pi\big),
 $$
 
 which, for a target $\pi(\theta)\propto e^{-V(\theta)}$ and up to additive
@@ -54,16 +54,16 @@ In the notation used by the code, the continuous-time affine-invariant Gaussian
 flow is
 
 $$
-\dot m_t=-\,C_t\,g(m_t,C_t),
+\dot m_t=-C_tg(m_t,C_t),
 $$
 
 $$
-B_t=C_t^{1/2}\,S(m_t,C_t)\,C_t^{1/2},\qquad
-\alpha_t=\frac{\omega+\tau\operatorname{Tr}(B_t)}{\omega+n\tau},
+B_t=C_t^{1/2}S(m_t,C_t)C_t^{1/2},\qquad
+\alpha_t=\frac{\omega+\tau\mathrm{Tr}(B_t)}{\omega+n\tau},
 $$
 
 $$
-\dot C_t=\frac{1}{2\omega}\,C_t^{1/2}\big(-B_t+\alpha_t I\big)C_t^{1/2}.
+\dot C_t=\frac{1}{2\omega}C_t^{1/2}\big(-B_t+\alpha_t I\big)C_t^{1/2}.
 $$
 
 The matrix $B_t$ is the Hessian expectation in the natural (whitened) coordinates
@@ -83,16 +83,16 @@ which keeps $\alpha_t$ finite and the covariance equation well-posed.
 With step $\Delta t$, the implemented update is
 
 $$
-m_{k+1}=m_k-\Delta t\,C_k\,g(m_k,C_k),
+m_{k+1}=m_k-\Delta tC_kg(m_k,C_k),
 $$
 
 $$
-C_{k+1}=C_k^{1/2}\exp\!\Big(\frac{\Delta t}{2\omega}\big(-B_k+\alpha_k I\big)\Big)C_k^{1/2}.
+C_{k+1}=C_k^{1/2}\exp\Big(\frac{\Delta t}{2\omega}\big(-B_k+\alpha_k I\big)\Big)C_k^{1/2}.
 $$
 
 Because $-B_k+\alpha_k I$ is symmetric, its matrix exponential is symmetric
 positive definite, and $C_{k+1}$ is a congruence transform
-$C_k^{1/2}(\,\cdot\,)C_k^{1/2}$ of an SPD matrix; hence $C_{k+1}\in\mathbb S_{++}^n$
+$C_k^{1/2}(\cdot)C_k^{1/2}$ of an SPD matrix; hence $C_{k+1}\in\mathbb S_{++}^n$
 for every step. This is the discrete exponential map on the SPD manifold and
 removes the positivity constraint without projection.
 
@@ -106,22 +106,22 @@ component of the covariance residual. This can be made precise by linearizing
 near stationarity.
 
 Consider an isotropic perturbation of the whitened Hessian,
-$B=(1+\varepsilon)I$. Then $\operatorname{Tr}(B)=n(1+\varepsilon)$ and
+$B=(1+\varepsilon)I$. Then $\mathrm{Tr}(B)=n(1+\varepsilon)$ and
 
 $$
 \alpha=\frac{\omega+\tau n(1+\varepsilon)}{\omega+n\tau}
-=1+\frac{n\tau}{\omega+n\tau}\,\varepsilon,
+=1+\frac{n\tau}{\omega+n\tau}\varepsilon,
 $$
 
 so that
 
 $$
 -B+\alpha I=\Big(-1-\varepsilon+1+\tfrac{n\tau}{\omega+n\tau}\varepsilon\Big)I
-=-\frac{\omega}{\omega+n\tau}\,\varepsilon\,I.
+=-\frac{\omega}{\omega+n\tau}\varepsilonI.
 $$
 
 Substituting into the covariance equation and evaluating near $C=I$ gives a
-linear decay $\dot\varepsilon=-\kappa\,\varepsilon$ for the trace mode with rate
+linear decay $\dot\varepsilon=-\kappa\varepsilon$ for the trace mode with rate
 
 $$
 \kappa=\frac{1}{2(\omega+n\tau)} .
@@ -135,7 +135,7 @@ Consequences for the trace/volume mode:
 
 This linearization applies to trace/volume modes only. The mean equation does not
 contain $\tau$, and traceless (shape) covariance modes have
-$\operatorname{Tr}(R_{\mathrm{cov}})=0$, on which $\alpha$ has no leading-order
+$\mathrm{Tr}(R_{\mathrm{cov}})=0$, on which $\alpha$ has no leading-order
 effect. The numerical results in §7 and §10 are consistent with these factors.
 
 ---
@@ -147,21 +147,21 @@ is taken as $I-C$ (equivalently the eigenvalue residuals $1-\lambda_i$), and for
 the general target as
 
 $$
-R_{\mathrm{cov}}=I-B,\qquad B=C^{1/2}S(m,C)\,C^{1/2}.
+R_{\mathrm{cov}}=I-B,\qquad B=C^{1/2}S(m,C)C^{1/2}.
 $$
 
 Decompose it into trace and traceless parts:
 
 $$
-r_{\mathrm{tr}}=\frac{|\operatorname{Tr}(R_{\mathrm{cov}})|}{\sqrt n},
+r_{\mathrm{tr}}=\frac{|\mathrm{Tr}(R_{\mathrm{cov}})|}{\sqrt n},
 \qquad
-r_{\mathrm{tf}}=\Big\|\,R_{\mathrm{cov}}-\tfrac{\operatorname{Tr}(R_{\mathrm{cov}})}{n}I\,\Big\|_F .
+r_{\mathrm{tf}}=\Big\|R_{\mathrm{cov}}-\tfrac{\mathrm{Tr}(R_{\mathrm{cov}})}{n}I\Big\|_F .
 $$
 
 The trace-dominance ratio is
 
 $$
-\chi=\frac{\big(\operatorname{Tr}R_{\mathrm{cov}}\big)^2}{n\,\|R_{\mathrm{cov}}\|_F^2},
+\chi=\frac{\big(\mathrm{Tr}R_{\mathrm{cov}}\big)^2}{n\|R_{\mathrm{cov}}\|_F^2},
 \qquad 0\le\chi\le 1 .
 $$
 
@@ -194,34 +194,34 @@ g(m,C)=m,\qquad S(m,C)=I.
 $$
 
 Hence $B=C$, and the covariance update is diagonal in the eigenbasis of $C$;
-writing $C=Q\operatorname{diag}(\lambda_i)Q^\top$,
+writing $C=Q\mathrm{diag}(\lambda_i)Q^\top$,
 
 $$
-\lambda_{i,k+1}=\lambda_{i,k}\exp\!\Big(\frac{\Delta t}{2\omega}\big(-\lambda_{i,k}+\alpha_k\big)\Big),
+\lambda_{i,k+1}=\lambda_{i,k}\exp\Big(\frac{\Delta t}{2\omega}\big(-\lambda_{i,k}+\alpha_k\big)\Big),
 \qquad
 \alpha_k=\frac{\omega+\tau\sum_j\lambda_{j,k}}{\omega+n\tau}.
 $$
 
 The stationary point is $m_\star=0$, $C_\star=I$, and the objective reduces to the
-exact KL energy $F=\tfrac12(\|m\|^2+\operatorname{Tr}C-\log\det C-n)$.
+exact KL energy $F=\tfrac12(\|m\|^2+\mathrm{Tr}C-\log\det C-n)$.
 
 **Initializations (mode decomposition).** With $\mathbf 1$ the all-ones vector,
-$r$ a magnitude, and $\operatorname{diag}(\cdot)$ a diagonal covariance:
+$r$ a magnitude, and $\mathrm{diag}(\cdot)$ a diagonal covariance:
 
 | Mode | $m_0$ | $C_0$ |
 |---|---|---|
 | mean-only | $\dfrac{r}{\sqrt n}\mathbf 1,\;r=3$ | $I$ |
 | volume-high | $0$ | $4I$ |
-| volume-low | $0$ | $0.25\,I$ |
-| shape-only | $0$ | $\operatorname{diag}(e^{r},e^{-r},1,\dots,1),\;r=2$ |
-| mixed | $\dfrac{2}{\sqrt n}\mathbf 1$ | $2\,\operatorname{diag}(e^{r},e^{-r},1,\dots,1),\;r=1.5$ |
+| volume-low | $0$ | $0.25I$ |
+| shape-only | $0$ | $\mathrm{diag}(e^{r},e^{-r},1,\dots,1),\;r=2$ |
+| mixed | $\dfrac{2}{\sqrt n}\mathbf 1$ | $2\mathrm{diag}(e^{r},e^{-r},1,\dots,1),\;r=1.5$ |
 
 The shape-only covariance has $\det C_0=1$, so its residual is purely traceless;
 the volume initializations are purely isotropic ($\chi=1$); the mixed
 initialization perturbs mean, volume, and shape simultaneously.
 
 The grid is $n\in\{2,5,10\}$, $\omega\in\{0.125,0.25,0.5,1,2\}$, and for each
-$\omega$ the three values $\tau\in\{-\omega/2n,\,0,\,+\omega/2n\}$, with
+$\omega$ the three values $\tau\in\{-\omega/2n,0,+\omega/2n\}$, with
 $\Delta t=0.02$, $T=20$.
 
 ---
@@ -254,7 +254,7 @@ threshold; `>20` denotes not reached within the horizon $T=20$.
 
 **$\tau$-speedup ratio across $\omega\in\{0.25,0.5,1\}$** (tolerance $10^{-4}$):
 
-| Initialization | $\tau_-,\,\omega{=}0.25$ | $\tau_+,\,\omega{=}0.25$ | $\tau_-,\,\omega{=}0.5$ | $\tau_+,\,\omega{=}0.5$ | $\tau_-,\,\omega{=}1$ | $\tau_+,\,\omega{=}1$ |
+| Initialization | $\tau_-,\omega{=}0.25$ | $\tau_+,\omega{=}0.25$ | $\tau_-,\omega{=}0.5$ | $\tau_+,\omega{=}0.5$ | $\tau_-,\omega{=}1$ | $\tau_+,\omega{=}1$ |
 |---|---|---|---|---|---|---|
 | mean-only | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
 | volume-high | 0.47 | 1.47 | 0.51 | 1.51 | 0.49 | 1.49 |
@@ -292,14 +292,14 @@ $$
 Its gradient and Hessian are
 
 $$
-\nabla V_\rho(x)=x+\frac{\rho}{m}\sum_{\ell=1}^{m}\tanh(a_\ell^\top x)\,a_\ell,
+\nabla V_\rho(x)=x+\frac{\rho}{m}\sum_{\ell=1}^{m}\tanh(a_\ell^\top x)a_\ell,
 $$
 
 $$
-\nabla^2 V_\rho(x)=I+\frac{\rho}{m}\sum_{\ell=1}^{m}\operatorname{sech}^2(a_\ell^\top x)\,a_\ell a_\ell^\top.
+\nabla^2 V_\rho(x)=I+\frac{\rho}{m}\sum_{\ell=1}^{m}\mathrm{sech}^2(a_\ell^\top x)a_\ell a_\ell^\top.
 $$
 
-Since $0\le\operatorname{sech}^2(\cdot)\le1$ and the $a_\ell$ are unit vectors,
+Since $0\le\mathrm{sech}^2(\cdot)\le1$ and the $a_\ell$ are unit vectors,
 
 $$
 I\preceq\nabla^2 V_\rho(x)\preceq(1+\rho)I,
@@ -321,7 +321,7 @@ with analytic gradients
 
 $$
 \nabla_m F=\frac1K\sum_{j=1}^{K}\nabla V_\rho(m+Lz_j),\qquad
-\nabla_L F=\frac1K\sum_{j=1}^{K}\nabla V_\rho(m+Lz_j)\,z_j^\top-L^{-\top},
+\nabla_L F=\frac1K\sum_{j=1}^{K}\nabla V_\rho(m+Lz_j)z_j^\top-L^{-\top},
 $$
 
 minimized by L-BFGS-B with common random numbers $\{z_j\}$. The same fixed sample
@@ -354,10 +354,10 @@ $F_\star=3.980868$, $\|\nabla_m F\|=8.24\times10^{-10}$, and covariance residual
 $1.85\times10^{-3}$. Because $V_\rho$ is even, $m_\star$ is numerically zero
 ($\|m_\star\|=2.92\times10^{-5}$); it is optimized rather than assumed.
 
-The grid is $\omega\in\{0.25,0.5,1\}$ with $\tau\in\{-\omega/2n,\,0,\,+\omega/2n\}$
+The grid is $\omega\in\{0.25,0.5,1\}$ with $\tau\in\{-\omega/2n,0,+\omega/2n\}$
 over the same five initializations, now defined relative to $a_\star$ (e.g.
 volume-high uses $C_0=4C_\star$, shape-only uses
-$C_0=C_\star^{1/2}\operatorname{diag}(e^2,e^{-2},1,1,1)C_\star^{1/2}$).
+$C_0=C_\star^{1/2}\mathrm{diag}(e^2,e^{-2},1,1,1)C_\star^{1/2}$).
 
 ---
 
