@@ -61,3 +61,34 @@ def make_q_vector(n):
     """Return the normalised test direction q = (1, 2, ..., n) / ||.||_2."""
     q = np.arange(1, n + 1, dtype=np.float64)
     return q / np.linalg.norm(q)
+
+
+# ---------------------------------------------------------------------------
+# Additional SPD matrix operations (used by log-concave extension)
+# ---------------------------------------------------------------------------
+
+def spd_sqrt(C):
+    """Symmetric positive-definite square root C^{1/2}.
+
+    Returns Q diag(sqrt(lambda_i)) Q^T via eigendecomposition.
+    """
+    eigvals, eigvecs = spd_eigh(C)
+    return eigvecs @ np.diag(np.sqrt(eigvals)) @ eigvecs.T
+
+
+def spd_invsqrt(C):
+    """Symmetric positive-definite inverse square root C^{-1/2}.
+
+    Returns Q diag(1/sqrt(lambda_i)) Q^T via eigendecomposition.
+    """
+    eigvals, eigvecs = spd_eigh(C)
+    return eigvecs @ np.diag(1.0 / np.sqrt(eigvals)) @ eigvecs.T
+
+
+def spd_log(C):
+    """Matrix logarithm of an SPD matrix.
+
+    Returns Q diag(log(lambda_i)) Q^T via eigendecomposition.
+    """
+    eigvals, eigvecs = spd_eigh(C)
+    return eigvecs @ np.diag(np.log(eigvals)) @ eigvecs.T
