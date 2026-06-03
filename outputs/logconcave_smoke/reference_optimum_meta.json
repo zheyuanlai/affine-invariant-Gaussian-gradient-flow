@@ -1,0 +1,12 @@
+{
+  "F_star": 2.134235139531617,
+  "grad_m_norm": 2.0302953714771163e-08,
+  "cov_residual_norm": 0.003952654874199415,
+  "n": 3,
+  "rho": 2.0,
+  "m_features": 12,
+  "target_seed": 123,
+  "K_ref": 1024,
+  "converged": true,
+  "optim_message": "CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL"
+}
