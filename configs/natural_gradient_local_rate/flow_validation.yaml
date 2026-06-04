@@ -1,0 +1,39 @@
+# Riemannian flow validation grid (smaller; the flow is the expensive part).
+experiment:
+  name: natural_gradient_local_rate_flow_validation
+
+grid:
+  N_theta: [4, 8, 16]
+  kappa_target: [5, 20]
+  potential_family: ["separable", "random_feature"]
+  seeds: [0, 1, 2]
+
+monte_carlo:
+  # Must match linearized_rate_grid.yaml so the cached slow eigenvectors
+  # (reused by this stage) were computed on the identical sample bank.
+  M_mc: 32768
+  antithetic: true
+  chunk_size: 4096
+
+eigsh:
+  tol: 1.0e-7
+  maxiter: 2000
+
+potential:
+  feature_multiplier: 4
+  phi: "log_cosh"
+  empirical_LA_safety_factor: 2.0
+
+linearized_rate:
+  compute_lambda_hat: true
+  save_eigenvectors: true
+
+flow_validation:
+  Delta_t: [0.003, 0.01]
+  epsilon: [1.0e-4, 1.0e-3]
+  n_steps: 800
+  fit_start_fraction: 0.05
+  fit_end_fraction: 0.5
+
+outputs:
+  base_dir: outputs/natural_gradient_local_rate

@@ -1,0 +1,48 @@
+# Local-rate (gamma_loc) grid, also computing Lambda_hat. Run explicitly.
+experiment:
+  name: natural_gradient_local_rate_linearized_rate_grid
+
+grid:
+  N_theta: [4, 8, 16, 32, 64]
+  kappa_target: [2, 5, 10, 20, 50]
+  potential_family: ["separable", "additive_index", "random_feature", "radial_tail"]
+  seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+monte_carlo:
+  M_mc: 32768
+  antithetic: true
+  chunk_size: 4096
+
+eigsh:
+  tol: 1.0e-6
+  maxiter: 2000
+
+operator:
+  estimator: "symmetrized"        # raw_forward, symmetrized
+  diagonal_benchmark: true
+  separable_exact_benchmark: true
+  compute_gamma_loc: true
+  backend: "numpy"
+  chunk_size: 4096
+  eigsh_tol: 1.0e-6
+  eigsh_maxiter: 2000
+  quadrature_nodes: 120
+
+potential:
+  feature_multiplier: 4
+  phi: "log_cosh"
+  empirical_LA_safety_factor: 2.0
+
+linearized_rate:
+  compute_lambda_hat: true
+  save_eigenvectors: true
+
+flow_validation:
+  Delta_t: [0.003, 0.01]
+  epsilon: [1.0e-4, 1.0e-3]
+  n_steps: 400
+  fit_start_fraction: 0.05
+  fit_end_fraction: 0.5
+
+outputs:
+  base_dir: outputs/natural_gradient_local_rate

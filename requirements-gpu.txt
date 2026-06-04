@@ -1,0 +1,13 @@
+# Optional GPU backend dependency for natural_gradient_local_rate.
+#
+# torch is intentionally NOT in the base requirements.txt: the repository runs
+# (and all non-GPU tests pass) without it. Install a CUDA build matching your
+# runtime, e.g. on Colab:
+#
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+#
+# A CPU-only torch build also works for exercising the torch path
+# (backend=torch, device=cpu); install plain `torch` in that case.
+#
+# See reports/gpu_colab_notes.md for setup and recommended commands.
+torch>=2.0

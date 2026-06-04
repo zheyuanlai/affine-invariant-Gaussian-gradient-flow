@@ -1,0 +1,45 @@
+# Fast smoke config for the natural-gradient local-rate experiment.
+# Exercises every code path quickly; NOT production evidence.
+experiment:
+  name: natural_gradient_local_rate_smoke
+
+grid:
+  N_theta: [3, 5, 8]
+  kappa_target: [2, 5]
+  potential_family: ["separable", "random_feature"]
+  seeds: [0, 1]
+
+monte_carlo:
+  M_mc: 2048
+  antithetic: true
+  chunk_size: 512
+
+eigsh:
+  tol: 1.0e-5
+  maxiter: 500
+
+operator:
+  estimator: "symmetrized"        # raw_forward, symmetrized
+  diagonal_benchmark: true
+  separable_exact_benchmark: true
+  compute_gamma_loc: true
+  backend: "numpy"
+  chunk_size: 512
+  eigsh_tol: 1.0e-5
+  eigsh_maxiter: 500
+  quadrature_nodes: 80
+
+potential:
+  feature_multiplier: 4
+  phi: "log_cosh"
+  empirical_LA_safety_factor: 2.0
+
+flow_validation:
+  Delta_t: [0.003, 0.01]
+  epsilon: [1.0e-4, 1.0e-3]
+  n_steps: 200
+  fit_start_fraction: 0.05
+  fit_end_fraction: 0.5
+
+outputs:
+  base_dir: outputs/natural_gradient_local_rate

@@ -1,0 +1,36 @@
+# GPU sample-size scaling (production diagnostic). Run explicitly on an A100.
+# Sweeps M_mc at fixed dimension/kappa/family/seed using the torch dense
+# eigensolver. The separable exact benchmark stays the dimension-free anchor.
+experiment:
+  name: natural_gradient_local_rate_gpu_sample_size_scaling
+
+grid:
+  N_theta: [16, 32, 64]
+  kappa_target: [5]
+  potential_family: ["separable", "random_feature"]
+  seeds: [0, 1]
+
+monte_carlo:
+  # M_mc is a *list* here: every base grid point is run once per value.
+  M_mc: [8192, 16384, 32768, 65536, 131072, 262144]
+  antithetic: true
+  chunk_size: 2048
+
+operator:
+  estimator: "symmetrized"        # raw_forward, symmetrized
+  diagonal_benchmark: true
+  separable_exact_benchmark: true
+  compute_gamma_loc: true
+  backend: "torch"
+  device: "auto"                  # auto -> cuda if available, else cpu
+  dtype: "float64"
+  eigensolver: "torch_dense_eigh" # torch_dense_eigh, torch_subspace, auto
+  explicit_dense_max_N_theta: 64
+  basis_block_size: 32
+  chunk_size: 2048
+  eigsh_tol: 1.0e-6
+  eigsh_maxiter: 1000
+  quadrature_nodes: 120
+
+outputs:
+  base_dir: outputs/natural_gradient_local_rate

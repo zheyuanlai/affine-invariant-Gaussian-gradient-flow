@@ -1,0 +1,51 @@
+# FULL production grid. Expensive — never run automatically.
+# Run a single stage explicitly, e.g.:
+#   python scripts/natural_gradient_local_rate/run_operator_grid.py \
+#       --config configs/natural_gradient_local_rate/production_all.yaml
+experiment:
+  name: natural_gradient_local_rate_production
+
+grid:
+  N_theta: [4, 8, 16, 32, 64, 128]
+  kappa_target: [2, 5, 10, 20, 50, 100]
+  potential_family: ["separable", "additive_index", "random_feature", "radial_tail"]
+  seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+monte_carlo:
+  M_mc: 65536
+  antithetic: true
+  chunk_size: 8192
+
+eigsh:
+  tol: 1.0e-7
+  maxiter: 5000
+
+operator:
+  estimator: "symmetrized"        # raw_forward, symmetrized
+  diagonal_benchmark: true
+  separable_exact_benchmark: true
+  compute_gamma_loc: true
+  backend: "numpy"
+  chunk_size: 8192
+  eigsh_tol: 1.0e-7
+  eigsh_maxiter: 5000
+  quadrature_nodes: 120
+
+potential:
+  feature_multiplier: 4
+  phi: "log_cosh"
+  empirical_LA_safety_factor: 2.0
+
+linearized_rate:
+  compute_lambda_hat: true
+  save_eigenvectors: true
+
+flow_validation:
+  Delta_t: [0.003, 0.01]
+  epsilon: [1.0e-4, 1.0e-3]
+  n_steps: 1000
+  fit_start_fraction: 0.05
+  fit_end_fraction: 0.5
+
+outputs:
+  base_dir: outputs/natural_gradient_local_rate

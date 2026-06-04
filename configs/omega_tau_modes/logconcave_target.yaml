@@ -1,0 +1,45 @@
+# Configuration for affine-invariant gradient flow on the log-concave target.
+#
+# Target: pi(x) ∝ exp(-V_rho(x))
+#   V_rho(x) = 0.5||x||^2 + (rho/m) sum_{ell=1}^m log cosh(a_ell^T x)
+#   m = 4*n measurement vectors, each unit-normalised.
+
+defaults:
+  n:           5         # spatial dimension
+  rho:         5.0       # coupling strength
+  m_features:  null      # null => 4*n
+  dt:          0.005     # time step
+  T:           40.0      # total simulation time
+  save_every:  10        # record metrics every K steps
+  K:           4096      # QMC sample count for dynamics (power-of-2 for Sobol)
+  K_ref:       8192      # QMC sample count for reference optimum
+  target_seed: 123       # seed for A matrix
+  sample_seed: 2026      # seed for QMC samples
+  maxiter_opt: 2000      # L-BFGS-B iteration budget for reference optimum
+
+# omega grid; tau derived per (omega, n): {-omega/(2n), 0, +omega/(2n)}.
+omega_grid: [0.25, 0.5, 1.0]
+
+initializations:
+  - mean_only
+  - volume_high
+  - volume_low
+  - shape_only
+  - mixed
+
+# Output directory (relative to project root)
+output_dir: outputs/omega_tau_modes/logconcave_grid
+
+# Fast subset used when the runner is invoked with --smoke (overrides above).
+smoke:
+  omega_grid: [0.5]
+  defaults:
+    n:           3
+    rho:         2.0
+    dt:          0.02
+    T:           5.0
+    save_every:  5
+    K:           256
+    K_ref:       512
+    maxiter_opt: 200
+  output_dir: outputs/omega_tau_modes/logconcave_grid_smoke

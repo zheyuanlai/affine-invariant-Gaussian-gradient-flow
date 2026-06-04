@@ -1,10 +1,11 @@
+"""Source package for the Gaussian gradient flow experiments.
+
+Subpackages
+-----------
+common                       : shared numerical infrastructure
+omega_tau_modes              : the (omega, tau) affine-invariant flow experiments
+natural_gradient_local_rate  : the natural-gradient local convergence-rate study
+
+This top-level package intentionally performs no eager imports so that importing
+one experiment group never pulls in another (or matplotlib) as a side effect.
 """
-AffineInvariantGaussianGradientFlow
-====================================
-Study of parameter effects (omega, tau) in affine-invariant Gaussian gradient
-flows with Gaussian target N(0, I_n), where all expectations are exact.
-"""
-from src.dynamics import gaussian_step
-from src.metrics import compute_all_metrics, kl_energy
-from src.initializations import get_initialization, INIT_NAMES
-from src.utils import validate_params, make_q_vector

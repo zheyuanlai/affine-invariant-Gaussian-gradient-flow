@@ -9,6 +9,12 @@ dist/
 build/
 *.so
 .eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
 
 # Virtual environments
 .venv/
@@ -16,20 +22,36 @@ venv/
 env/
 ENV/
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-
-# Editor
+# OS and editors
+.DS_Store
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# macOS
-.DS_Store
+# Local manuscript references (PDFs are local-only; keep the directory)
+#docs/references/*.pdf
+#!docs/references/.gitkeep
 
-# Jupyter (not used, but in case)
-.ipynb_checkpoints/
+# TeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+
+# Temporary files
+*.tmp
+*.bak
+
+docs/
+
+*.npz
+*.json

@@ -1,0 +1,35 @@
+# Configuration for affine-invariant Gaussian gradient flow experiments.
+# Target distribution: N(0, I_n). All expectations are exact (closed form).
+
+defaults:
+  dt: 0.02          # discrete time step
+  T: 20.0           # total simulation time  => num_steps = int(T / dt)
+  save_every: 5     # record metrics every this many steps
+
+# Spatial dimensions to run
+dimensions: [2, 5, 10]
+
+# omega grid — positive values controlling covariance update rate.
+# tau is derived per (omega, n): {-omega/(2n), 0, +omega/(2n)}.
+omega_grid: [0.125, 0.25, 0.5, 1.0, 2.0]
+
+# Initialization names (see src/omega_tau_modes/initializations.py)
+initializations:
+  - mean_only
+  - volume_high
+  - volume_low
+  - shape_only
+  - mixed
+
+# Output directory (relative to project root)
+output_dir: outputs/omega_tau_modes/gaussian_grid
+
+# Fast subset used when the runner is invoked with --smoke (overrides above).
+smoke:
+  dimensions: [2]
+  omega_grid: [0.5]
+  defaults:
+    dt: 0.05
+    T: 5.0
+    save_every: 5
+  output_dir: outputs/omega_tau_modes/gaussian_grid_smoke
