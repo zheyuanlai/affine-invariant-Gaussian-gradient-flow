@@ -1,7 +1,6 @@
-# GPU smoke (fast). Exercises the torch dense path end-to-end; NOT evidence.
-# Runs on torch CPU (device: auto -> cpu without CUDA) or CUDA when available.
+# Small torch smoke including the Gaussian baseline. NOT production evidence.
 experiment:
-  name: natural_gradient_local_rate_gpu_smoke
+  name: natural_gradient_local_rate_gpu_smoke_gaussian
 
 grid:
   N_theta: [4, 8, 16]

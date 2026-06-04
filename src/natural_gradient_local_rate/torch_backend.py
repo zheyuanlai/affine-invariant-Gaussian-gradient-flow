@@ -47,7 +47,10 @@ from src.natural_gradient_local_rate.separable_exact import separable_exact_lamb
 _SQRT2 = math.sqrt(2.0)
 
 # Potential families the torch backend can reconstruct analytically.
-TORCH_SUPPORTED_FAMILIES = ("gaussian", "separable", "additive_index", "random_feature")
+TORCH_SUPPORTED_FAMILIES = (
+    "gaussian", "separable", "additive_index", "ridge_sum",
+    "random_feature", "radial_tail",
+)
 # Raw-forward eigenvalue (non-symmetric) is a CPU-style diagnostic; on GPU we
 # only compute it for small operators to keep production sweeps fast.
 TORCH_RAW_EIG_MAX_N = 32
@@ -90,6 +93,15 @@ def torch_gaussian_samples(N_theta, M, seed, antithetic=True, device="cpu",
 # ---------------------------------------------------------------------------
 # Torch potentials (analytic Hess V), reconstructed from a CPU potential
 # ---------------------------------------------------------------------------
+
+def _phi_first_derivative(name):
+    """Return ``phi'`` for the named nonlinearity (only ``log_cosh`` supported)."""
+    torch = get_torch()
+    if name == "log_cosh":
+        return lambda s: torch.tanh(s)              # d/ds log cosh(s)
+    raise NotImplementedError(
+        f"torch backend only supports the 'log_cosh' nonlinearity, got {name!r}")
+
 
 def _phi_second_derivative(name):
     """Return ``phi''`` for the named nonlinearity (only ``log_cosh`` supported)."""
@@ -171,6 +183,48 @@ class TorchRidgeSumPotential(_TorchPotential):
         return 0.5 * (H + H.transpose(-1, -2))
 
 
+class TorchRadialTailPotential(_TorchPotential):
+    """Centered radial-tail feature ``Phi(theta) = h(||theta||^2)`` (log-cosh ``h``).
+
+    With ``R = ||theta||^2`` and ``u = scale * (R / N - shift)``::
+
+        h'(R)    = (scale / N) * phi'(u)
+        h''(R)   = (scale / N)^2 * phi''(u)
+        Hess Phi = 2 h'(R) I + 4 h''(R) theta theta^T
+
+    and the centered Hessian is ``Hess V = I + rho (Hess Phi - M)`` (matching the
+    NumPy :class:`RadialTailPotential` / :class:`CenteredPotential` algebra). The
+    full mean Hessian ``M`` is copied from the CPU potential so the GPU and CPU
+    operators agree to floating point on the same bank.
+    """
+
+    def __init__(self, N_theta, rho, M, scale, shift, phi_name, device, dtype):
+        torch = get_torch()
+        self.N_theta = int(N_theta)
+        self.device = device
+        self.dtype = dtype
+        self.rho = float(rho)
+        self.scale = float(scale)
+        self.shift = float(shift)
+        self.M = _to_t(M, device, dtype)                  # (N, N)
+        self._fp = _phi_first_derivative(phi_name)        # phi'  = tanh
+        self._fpp = _phi_second_derivative(phi_name)      # phi'' = sech^2
+        self._I = torch.eye(self.N_theta, device=device, dtype=dtype)
+
+    def batch_hess(self, theta_batch):
+        torch = get_torch()
+        T = theta_batch                                     # (B, N)
+        R = torch.sum(T * T, dim=1)                         # (B,)
+        u = self.scale * (R / self.N_theta - self.shift)    # (B,)
+        hp = (self.scale / self.N_theta) * self._fp(u)            # (B,) h'(R)
+        hpp = (self.scale / self.N_theta) ** 2 * self._fpp(u)    # (B,) h''(R)
+        outer = torch.einsum("bi,bj->bij", T, T)                 # (B, N, N)
+        hphi = (2.0 * hp[:, None, None] * self._I
+                + 4.0 * hpp[:, None, None] * outer)              # (B, N, N)
+        H = self._I + self.rho * (hphi - self.M)
+        return 0.5 * (H + H.transpose(-1, -2))
+
+
 def torch_potential_from_cpu(cpu_pot, device, dtype):
     """Build a torch potential by copying parameters from a CPU potential object."""
     # Imported here to avoid any import-time coupling; these are NumPy-only.
@@ -178,6 +232,7 @@ def torch_potential_from_cpu(cpu_pot, device, dtype):
         GaussianPotential, CenteredPotential, SeparablePotential,
     )
     from src.natural_gradient_local_rate.potentials.additive_index import RidgeSumFeature
+    from src.natural_gradient_local_rate.potentials.radial_tail import RadialTailPotential
 
     if isinstance(cpu_pot, GaussianPotential):
         return TorchGaussianPotential(cpu_pot.N_theta, device, dtype)
@@ -191,9 +246,14 @@ def torch_potential_from_cpu(cpu_pot, device, dtype):
             return TorchRidgeSumPotential(
                 cpu_pot.N_theta, cpu_pot.rho, cpu_pot.M, raw.W, raw.c, raw.coeff,
                 raw.phi_name, device, dtype)
+        if isinstance(raw, RadialTailPotential):
+            return TorchRadialTailPotential(
+                cpu_pot.N_theta, cpu_pot.rho, cpu_pot.M, raw.scale, raw.shift,
+                raw.phi_name, device, dtype)
         raise NotImplementedError(
             f"torch backend does not support raw feature {type(raw).__name__!r} "
-            "(supported: SeparablePotential, RidgeSumFeature). Use backend='numpy'.")
+            "(supported: SeparablePotential, RidgeSumFeature, RadialTailPotential). "
+            "Use backend='numpy'.")
     raise NotImplementedError(
         f"torch backend does not support potential {type(cpu_pot).__name__!r}.")
 
@@ -622,6 +682,7 @@ def compute_row_torch(cpu_potential, Z, point, opts, *, run_id="",
         "status": "ok",
         "error_message": "",
     }
+    row.update(diagnostics.true_benchmark_columns(point["family"]))
 
     dense_max = int(opts.get("explicit_dense_max_N_theta", 64))
     t0 = time.time()
@@ -657,6 +718,8 @@ def compute_row_torch(cpu_potential, Z, point, opts, *, run_id="",
                 cpu_potential, n_nodes=int(opts.get("quadrature_nodes", 80)))
             row["Lambda_hat_separable_exact"] = lam_exact
             row["separable_exact_status"] = exact_status
+            if row["baseline_type"] == "" and exact_status == "ok":
+                row["baseline_type"] = "separable_exact"
 
         row["full_over_diag"] = _safe_ratio(row["Lambda_hat_full_sym"], row["Lambda_hat_diag"])
         row["full_minus_diag"] = _safe_diff(row["Lambda_hat_full_sym"], row["Lambda_hat_diag"])

@@ -63,3 +63,23 @@ def reference_columns(N_theta, kappa, beta_target, Lambda_hat=None, gamma_loc=No
         out["inverse_gamma_loc"] = 1.0 / float(gamma_loc)
         out["inverse_gamma_over_logkappa"] = (1.0 / float(gamma_loc)) / lk
     return out
+
+
+def true_benchmark_columns(family):
+    """Analytic true benchmark columns for first-class baseline families.
+
+    Only the Gaussian target has an exact full-operator benchmark in this
+    experiment: ``Lambda_true = 0`` and ``gamma_true = 1``. Other families use
+    diagnostics such as separable quadrature and matched baselines instead.
+    """
+    if str(family) == "gaussian":
+        return {
+            "Lambda_true": 0.0,
+            "gamma_true": 1.0,
+            "baseline_type": "gaussian",
+        }
+    return {
+        "Lambda_true": float("nan"),
+        "gamma_true": float("nan"),
+        "baseline_type": "",
+    }

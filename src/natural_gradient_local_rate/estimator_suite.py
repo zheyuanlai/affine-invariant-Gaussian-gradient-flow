@@ -163,6 +163,7 @@ def compute_row(potential, Z, point, opts=None, *, run_id="",
         "status": "ok",
         "error_message": "",
     }
+    row.update(diagnostics.true_benchmark_columns(point["family"]))
 
     t0 = time.time()
     try:
@@ -203,6 +204,8 @@ def compute_row(potential, Z, point, opts=None, *, run_id="",
                 potential, n_nodes=o["quadrature_nodes"])
             row["Lambda_hat_separable_exact"] = lam_exact
             row["separable_exact_status"] = exact_status
+            if row["baseline_type"] == "" and exact_status == "ok":
+                row["baseline_type"] = "separable_exact"
 
         # --- derived comparisons ---
         row["full_over_diag"] = _safe_ratio(row["Lambda_hat_full_sym"], row["Lambda_hat_diag"])

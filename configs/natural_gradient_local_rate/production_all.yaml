@@ -8,7 +8,7 @@ experiment:
 grid:
   N_theta: [4, 8, 16, 32, 64, 128]
   kappa_target: [2, 5, 10, 20, 50, 100]
-  potential_family: ["separable", "additive_index", "random_feature", "radial_tail"]
+  potential_family: ["gaussian", "separable", "additive_index", "random_feature", "radial_tail"]
   seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 
 monte_carlo:
@@ -25,11 +25,20 @@ operator:
   diagonal_benchmark: true
   separable_exact_benchmark: true
   compute_gamma_loc: true
-  backend: "numpy"
+  backend: "numpy"                # CPU default; override with --backend torch
   chunk_size: 8192
   eigsh_tol: 1.0e-7
   eigsh_maxiter: 5000
   quadrature_nodes: 120
+  # --- torch / GPU backend (used when run with --backend torch [--device cuda]) ---
+  device: "auto"                  # auto -> cuda if available, else cpu
+  dtype: "float64"
+  eigensolver: "torch_dense_eigh"
+  # The N_theta grid goes up to 128; the dense L_star is D = N + N(N+1)/2 = 8384,
+  # ~0.56 GB in float64 (plus the eigh workspace) — feasible on an A100. Lower
+  # chunk_size if the per-chunk Hessian batch is memory-tight at N_theta=128.
+  explicit_dense_max_N_theta: 128
+  basis_block_size: 32
 
 potential:
   feature_multiplier: 4

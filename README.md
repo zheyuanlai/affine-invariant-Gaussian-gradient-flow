@@ -147,10 +147,14 @@ python scripts/natural_gradient_local_rate/run_sample_size_scaling.py \
     --config configs/natural_gradient_local_rate/gpu_smoke.yaml --backend torch --device cuda
 ```
 
-The separable exact benchmark and sample-size scaling remain the required sanity
-checks: run the scaling sweep and confirm it has plateaued before interpreting
-any dimension dependence — the GPU backend changes only the speed, not the
-meaning, of the estimates.
+For production diagnostics, prefer
+`configs/natural_gradient_local_rate/gpu_baseline_scaling.yaml`, which runs
+Gaussian, separable, and random-feature families side by side. Always include
+Gaussian and separable baselines, run
+`scripts/natural_gradient_local_rate/postprocess_baselines.py` before
+interpreting plots, and do not interpret raw full-operator growth with
+`N_theta` without baseline correction and sample-size convergence checks. The GPU
+backend changes only the speed, not the meaning, of the estimates.
 
 ## Outputs
 

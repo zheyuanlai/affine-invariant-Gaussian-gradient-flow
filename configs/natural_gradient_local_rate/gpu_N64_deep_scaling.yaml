@@ -1,18 +1,18 @@
-# GPU smoke (fast). Exercises the torch dense path end-to-end; NOT evidence.
-# Runs on torch CPU (device: auto -> cpu without CUDA) or CUDA when available.
+# Deep GPU sample-size scaling at N_theta=64. Run explicitly on an A100.
+# This is expensive and should not be used as a local smoke.
 experiment:
-  name: natural_gradient_local_rate_gpu_smoke
+  name: natural_gradient_local_rate_gpu_N64_deep_scaling
 
 grid:
-  N_theta: [4, 8, 16]
+  N_theta: [64]
   kappa_target: [5]
   potential_family: ["gaussian", "separable", "random_feature"]
-  seeds: [0]
+  seeds: [0, 1]
 
 monte_carlo:
-  M_mc: [2048, 4096]
+  M_mc: [262144, 524288, 1048576, 2097152]
   antithetic: true
-  chunk_size: 1024
+  chunk_size: 4096
 
 operator:
   estimator: "symmetrized"
@@ -25,10 +25,10 @@ operator:
   eigensolver: "torch_dense_eigh"
   explicit_dense_max_N_theta: 64
   basis_block_size: 32
-  chunk_size: 1024
-  eigsh_tol: 1.0e-5
-  eigsh_maxiter: 500
-  quadrature_nodes: 80
+  chunk_size: 4096
+  eigsh_tol: 1.0e-6
+  eigsh_maxiter: 1000
+  quadrature_nodes: 120
 
 outputs:
   base_dir: outputs/natural_gradient_local_rate

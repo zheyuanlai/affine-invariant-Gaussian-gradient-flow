@@ -13,7 +13,9 @@ Usage:
         --config configs/natural_gradient_local_rate/sample_size_scaling.yaml \
         [--outdir DIR] [--overwrite]
 
-Output: <base_dir>/sample_size_scaling/{results_long.csv, summary.csv, config.json}
+Output: <base_dir>/sample_size_scaling/{results_long.csv,
+        results_long_with_baselines.csv, summary.csv, summary_convergence.csv,
+        config.json}
 """
 import argparse
 import os
@@ -28,7 +30,13 @@ sys.path.insert(0, _HERE)
 
 import _common  # noqa: E402
 from src.common.io_utils import save_dataframe, save_json  # noqa: E402
+from src.natural_gradient_local_rate.baseline_postprocessing import (  # noqa: E402
+    add_baseline_corrections, aggregate_seed_summary,
+)
 from src.natural_gradient_local_rate.estimator_suite import compute_row  # noqa: E402
+from src.natural_gradient_local_rate.scaling_diagnostics import (  # noqa: E402
+    add_noise_scale_columns, fit_scaling_diagnostics,
+)
 
 DEFAULT_CONFIG = os.path.join(_HERE, "..", "..", "configs",
                               "natural_gradient_local_rate", "sample_size_scaling.yaml")
@@ -72,29 +80,25 @@ def main():
               f"diag={row['Lambda_hat_diag']:.4f} exact={row['Lambda_hat_separable_exact']:.4f} "
               f"gamma={row['gamma_loc']:.4f} [{row['status']}]  ({time.time()-t0:.1f}s)")
 
-    df = _common.order_columns(pd.DataFrame(rows))
+    df = _common.order_columns(add_noise_scale_columns(pd.DataFrame(rows)))
     save_dataframe(long_path, df)
 
-    # summary: mean over seeds per (family, N_theta, kappa, M_mc)
-    keys = ["potential_family", "N_theta", "kappa_target", "M_mc"]
-    agg = df.groupby(keys).agg(
-        Lambda_hat_full_sym_mean=("Lambda_hat_full_sym", "mean"),
-        Lambda_hat_raw_forward_mean=("Lambda_hat_raw_forward", "mean"),
-        Lambda_hat_diag_mean=("Lambda_hat_diag", "mean"),
-        Lambda_hat_separable_exact_mean=("Lambda_hat_separable_exact", "mean"),
-        gamma_loc_mean=("gamma_loc", "mean"),
-        full_sym_minus_exact_mean=("full_sym_minus_exact", "mean"),
-        self_adjoint_error_H_sym_max=("self_adjoint_error_H_sym", "max"),
-        self_adjoint_error_L_star_max=("self_adjoint_error_L_star", "max"),
-        n_seeds=("seed", "count"),
-    ).reset_index()
+    df_baseline = _common.order_columns(add_baseline_corrections(df))
+    baseline_path = os.path.join(outdir, "results_long_with_baselines.csv")
+    save_dataframe(baseline_path, df_baseline)
+
+    agg = aggregate_seed_summary(df_baseline)
     save_dataframe(os.path.join(outdir, "summary.csv"), agg)
+    conv = fit_scaling_diagnostics(df_baseline)
+    save_dataframe(os.path.join(outdir, "summary_convergence.csv"), conv)
     save_json(os.path.join(outdir, "config.json"),
               {"config_path": os.path.abspath(args.config), "config": cfg,
                "run_id": run_id})
 
     print(f"\nLong CSV -> {long_path}")
+    print(f"Baselines -> {baseline_path}")
     print(f"Summary  -> {os.path.join(outdir, 'summary.csv')}")
+    print(f"Convergence -> {os.path.join(outdir, 'summary_convergence.csv')}")
 
 
 if __name__ == "__main__":

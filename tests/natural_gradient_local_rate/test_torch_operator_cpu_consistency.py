@@ -20,6 +20,8 @@ from src.natural_gradient_local_rate import torch_backend as tb
 from src.natural_gradient_local_rate.estimator_suite import compute_row
 
 _CPU = "cpu"
+PRODUCTION_FAMILIES = ["separable", "additive_index", "random_feature", "radial_tail"]
+TORCH_FAMILIES = ["gaussian"] + PRODUCTION_FAMILIES
 
 
 def _pair(fam, N=4, M=4096, seed=0):
@@ -31,15 +33,18 @@ def _pair(fam, N=4, M=4096, seed=0):
     return cpu, Z, pot_t, Zt
 
 
-@pytest.mark.parametrize("fam", ["gaussian", "separable", "random_feature"])
-def test_batch_hess_matches_numpy(fam):
+@pytest.mark.parametrize("fam", TORCH_FAMILIES)
+@pytest.mark.parametrize("dtype,atol", [(torch.float64, 1e-10), (torch.float32, 1e-5)])
+def test_batch_hess_matches_numpy(fam, dtype, atol):
     cpu, Z, pot_t, Zt = _pair(fam)
+    pot_t = tb.torch_potential_from_cpu(cpu, torch.device(_CPU), dtype)
+    Zt = torch.as_tensor(Z, dtype=dtype)
     H_np = cpu.batch_hess(Z[:7])
     H_t = pot_t.batch_hess(Zt[:7]).numpy()
-    assert H_t == pytest.approx(H_np, abs=1e-10)
+    assert H_t == pytest.approx(H_np, abs=atol)
 
 
-@pytest.mark.parametrize("fam", ["separable", "random_feature"])
+@pytest.mark.parametrize("fam", PRODUCTION_FAMILIES)
 def test_H_sym_apply_matches_numpy(fam):
     cpu, Z, pot_t, Zt = _pair(fam)
     rng = np.random.default_rng(0)
@@ -49,7 +54,7 @@ def test_H_sym_apply_matches_numpy(fam):
     assert H_t == pytest.approx(H_np, abs=1e-9)
 
 
-@pytest.mark.parametrize("fam", ["gaussian", "separable", "random_feature"])
+@pytest.mark.parametrize("fam", TORCH_FAMILIES)
 def test_lambda_gamma_diag_match_numpy(fam):
     cpu, Z, pot_t, Zt = _pair(fam)
     lam_np = estimate_lambda_hat(cpu, Z)
@@ -64,7 +69,7 @@ def test_lambda_gamma_diag_match_numpy(fam):
     assert resH < 1e-8 and resL < 1e-8
 
 
-@pytest.mark.parametrize("fam", ["separable", "random_feature"])
+@pytest.mark.parametrize("fam", PRODUCTION_FAMILIES)
 def test_compute_row_torch_matches_numpy_row(fam):
     """End-to-end: the torch row equals the numpy row on the same potential/bank."""
     cpu, Z, _, _ = _pair(fam, N=4, M=8192)
@@ -86,9 +91,20 @@ def test_compute_row_torch_matches_numpy_row(fam):
     assert r_t["self_adjoint_error_L_star"] < 1e-9
 
 
+def test_explicit_torch_cuda_request_errors_when_cuda_unavailable():
+    """backend=torch with device=cuda must fail clearly, never fall back to CPU."""
+    if torch.cuda.is_available():
+        pytest.skip("CUDA available; the unavailable-CUDA error path is not exercised here")
+    cpu, Z, _, _ = _pair("radial_tail", N=3, M=128)
+    point = {"family": "radial_tail", "N_theta": 3, "kappa_target": 8.0, "seed": 0,
+             "M_mc": Z.shape[0]}
+    with pytest.raises(RuntimeError, match="CUDA is not available"):
+        compute_row(cpu, Z, point, {"backend": "torch", "device": "cuda"})
+
+
 @pytest.mark.gpu
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
-@pytest.mark.parametrize("fam", ["separable", "random_feature"])
+@pytest.mark.parametrize("fam", PRODUCTION_FAMILIES)
 def test_cuda_matches_cpu(fam):
     """torch CUDA dense estimates match torch CPU within float64 tolerance."""
     cpu, Z, _, _ = _pair(fam, N=4, M=8192)

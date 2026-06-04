@@ -174,3 +174,33 @@ _To be filled in after production runs._ Smoke runs only exercise the code paths
 they are **not** production evidence, and (per the diagnostics above) no
 dimension-dependence conclusion should be drawn until the sample-size scaling has
 plateaued and the separable diagonal/exact benchmarks agree.
+
+## A100 sample-size scaling interpretation
+
+Recent A100 diagnostics use the torch dense eigensolver on an
+`NVIDIA A100-SXM4-40GB` with `backend=torch`, `device=cuda`, and `dtype=float64`.
+Those runs support the following experimental interpretation:
+
+1. The GPU backend runs the corrected estimator suite on A100 with the torch
+   dense eigensolver.
+2. The self-adjointness errors for `H_sym` and `L_star` are near machine
+   precision, so the algebraic estimator corrections are behaving as intended.
+3. In separable controls, the diagonal estimates track the Gauss-Hermite exact
+   quadrature benchmark as `M_mc` grows.
+4. The full operator estimates decrease systematically as `M_mc` increases,
+   which is the signature of finite-sample spectral inflation in the full
+   symmetric-matrix operator.
+5. The same full-operator inflation appears in separable controls, where the
+   underlying benchmark is dimension-free; raw full-operator growth with
+   `N_theta` therefore should not be read directly as true local-rate dimension
+   dependence.
+6. Matched random-feature results currently do not show a clear excess beyond
+   the separable full-operator baseline at the same `N_theta` and `M_mc`.
+7. `N_theta = 64` is not fully converged at `M_mc = 262144`; larger sample-size
+   sweeps are needed before interpreting the full operator at that dimension.
+8. Future interpretation should use the Gaussian and separable
+   baseline-corrected metrics from `results_long_with_baselines.csv` and the
+   convergence diagnostics in `summary_convergence.csv`.
+
+These are diagnostic observations about the numerical estimators, not a final
+dimension-dependence conclusion.

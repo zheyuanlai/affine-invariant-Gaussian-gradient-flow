@@ -7,7 +7,7 @@ experiment:
 grid:
   N_theta: [16, 32, 64]
   kappa_target: [5]
-  potential_family: ["separable", "random_feature"]
+  potential_family: ["gaussian", "separable", "random_feature"]
   seeds: [0, 1]
 
 monte_carlo:
