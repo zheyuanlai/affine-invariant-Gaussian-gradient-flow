@@ -9,7 +9,7 @@ grid:
   N_theta: [4, 8, 16, 32, 64, 128]
   kappa_target: [2, 5, 10, 20, 50, 100]
   potential_family: ["gaussian", "separable", "additive_index", "random_feature", "radial_tail"]
-  seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+  seeds: [0,1,2]
 
 monte_carlo:
   M_mc: 65536
