@@ -237,7 +237,7 @@ class CenteredPotential(BasePotential):
 
     def __init__(self, raw, kappa_target, *, centering_samples=8192,
                  centering_seed=None, safety_factor=2.0, la_mode="auto",
-                 centering_chunk=2048, Z_ref=None):
+                 centering_chunk=2048, Z_ref=None, precomputed_stats=None):
         self.raw = raw
         self.N_theta = int(raw.N_theta)
         self.kappa_target = float(kappa_target)
@@ -246,28 +246,49 @@ class CenteredPotential(BasePotential):
         self.la_mode = la_mode
         self.centering_chunk = int(centering_chunk)
 
-        if Z_ref is not None:
-            # Share the operator/flow bank so that (0, I) is the *exact* discrete
-            # fixed point (E[grad V] = 0, E[Hess V] = I hold on this bank).
-            Z_ref = np.ascontiguousarray(Z_ref, dtype=np.float64)
-            self.centering_samples = int(Z_ref.shape[0])
-            self.centering_seed = None
+        if precomputed_stats is not None:
+            # Fast path: the three heavy bank reductions (b = E[grad Phi],
+            # M = E[Hess Phi], and the (emin, emax) eigenvalue extremes of
+            # Hess Phi - M over the bank) were already computed elsewhere (e.g. on
+            # the GPU, see torch_backend.centering_stats_on_device). The reductions
+            # are the *only* thing that touches the full bank; every line below is
+            # the identical cheap centering algebra, so the resulting potential is
+            # byte-for-byte the CPU potential it stands in for. ``Z_ref`` is not
+            # stored (it is never read after construction) to avoid holding the 4M
+            # bank twice.
+            self.centering_samples = int(precomputed_stats["centering_samples"])
+            self.centering_seed = precomputed_stats.get("centering_seed")
+            self._Z_ref = None
+            self.b = np.asarray(precomputed_stats["b"], dtype=np.float64).reshape(-1)
+            self.M = np.asarray(precomputed_stats["M"], dtype=np.float64)
+            self.M = 0.5 * (self.M + self.M.T)
+            emin_dev = float(precomputed_stats["emin_dev"])
+            emax_dev = float(precomputed_stats["emax_dev"])
+            mean_Z = np.asarray(precomputed_stats["mean_Z"], dtype=np.float64).reshape(-1)
         else:
-            if centering_seed is None:
-                centering_seed = (self.seed + 1) * 100003 + 7
-            self.centering_seed = int(centering_seed)
-            self.centering_samples = int(centering_samples)
-            Z_ref = gaussian_samples(self.N_theta, self.centering_samples,
-                                     seed=self.centering_seed, antithetic=True)
-        self._Z_ref = Z_ref
+            if Z_ref is not None:
+                # Share the operator/flow bank so that (0, I) is the *exact* discrete
+                # fixed point (E[grad V] = 0, E[Hess V] = I hold on this bank).
+                Z_ref = np.ascontiguousarray(Z_ref, dtype=np.float64)
+                self.centering_samples = int(Z_ref.shape[0])
+                self.centering_seed = None
+            else:
+                if centering_seed is None:
+                    centering_seed = (self.seed + 1) * 100003 + 7
+                self.centering_seed = int(centering_seed)
+                self.centering_samples = int(centering_samples)
+                Z_ref = gaussian_samples(self.N_theta, self.centering_samples,
+                                         seed=self.centering_seed, antithetic=True)
+            self._Z_ref = Z_ref
 
-        # b = E[grad Phi] (cheap, full); M = E[Hess Phi] (chunked accumulation).
-        grad_phi = raw.phi_grad(Z_ref)            # (M, N)
-        self.b = np.mean(grad_phi, axis=0)
-        self.M = _mean_hess_phi(raw, Z_ref, self.centering_chunk)
+            # b = E[grad Phi] (cheap, full); M = E[Hess Phi] (chunked accumulation).
+            grad_phi = raw.phi_grad(Z_ref)            # (M, N)
+            self.b = np.mean(grad_phi, axis=0)
+            self.M = _mean_hess_phi(raw, Z_ref, self.centering_chunk)
 
-        # Single chunked pass: eigenvalue extremes of (Hess Phi - M).
-        emin_dev, emax_dev = _hess_dev_eig_extremes(raw, Z_ref, self.M, self.centering_chunk)
+            # Single chunked pass: eigenvalue extremes of (Hess Phi - M).
+            emin_dev, emax_dev = _hess_dev_eig_extremes(raw, Z_ref, self.M, self.centering_chunk)
+            mean_Z = np.mean(Z_ref, axis=0)
 
         # --- choose L_A ---
         det_LA = None
@@ -298,7 +319,7 @@ class CenteredPotential(BasePotential):
         # --- centering diagnostics ---
         # mean grad Phi == b exactly, so the residual reduces to the (anti-thetic)
         # sample-mean term; mean Hess V == I exactly because M == mean Hess Phi.
-        mean_Z = np.mean(Z_ref, axis=0)
+        # ``mean_Z`` was set above (from the bank, or supplied in precomputed_stats).
         mean_gradV = mean_Z - self.rho * (mean_Z @ self.M)
         self.norm_mean_grad = float(np.linalg.norm(mean_gradV))
         self.norm_mean_hess_minus_I = 0.0  # exact by construction

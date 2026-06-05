@@ -51,6 +51,8 @@ ENV/
 *.tmp
 *.bak
 
-docs/
+#docs/
 
 *.json
+*.npz
+*.log

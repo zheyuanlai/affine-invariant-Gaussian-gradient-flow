@@ -39,7 +39,7 @@ from src.common.torch_utils import (
 )
 from src.common.torch_symspace import (
     torch_sym_dim, torch_sym_to_vec, torch_sym_to_vec_batch, torch_vec_to_sym,
-    torch_unpack_tangent_fr,
+    torch_unpack_tangent_fr, torch_outer_minus_I_symvec, _triu,
 )
 from src.natural_gradient_local_rate import diagnostics
 from src.natural_gradient_local_rate.separable_exact import separable_exact_lambda
@@ -151,10 +151,12 @@ class TorchSeparablePotential(_TorchPotential):
 
     def batch_hess(self, theta_batch):
         torch = get_torch()
-        T = theta_batch
-        d = self._fpp(T + self.c)                      # (B, N) phi''(theta_i + c_i)
-        diagV = 1.0 + self.rho * (d - self.M_diag)     # (B, N)
-        return torch.diag_embed(diagV)                 # (B, N, N)
+        return torch.diag_embed(self.batch_hess_diag(theta_batch))     # (B, N, N)
+
+    def batch_hess_diag(self, theta_batch):
+        """Diagonal entries of ``Hess V`` only, shape ``(B, N)`` (no dense matrix)."""
+        d = self._fpp(theta_batch + self.c)            # (B, N) phi''(theta_i + c_i)
+        return 1.0 + self.rho * (d - self.M_diag)      # (B, N)
 
 
 class TorchRidgeSumPotential(_TorchPotential):
@@ -259,14 +261,242 @@ def torch_potential_from_cpu(cpu_pot, device, dtype):
 
 
 # ---------------------------------------------------------------------------
+# GPU-side centering statistics (the expensive bank reductions, on device)
+# ---------------------------------------------------------------------------
+#
+# Profiling the low-dimensional high-M H200 path showed >90% of wall time is the
+# *CPU* CenteredPotential construction: ``phi_grad``/``phi_hess`` are evaluated
+# over the full multi-million-sample bank (twice -- once for E[Hess Phi], once
+# for the eigenvalue extremes of Hess Phi - M), entirely on CPU, before the GPU
+# operator pass even starts. These helpers move exactly those three reductions
+#
+#     b      = E[grad Phi(Z)]                              (N,)
+#     M      = E[Hess Phi(Z)]            (symmetrized)     (N, N)
+#     emin,  = min/max eigenvalue of Hess Phi(Z_j) - M over the bank
+#     emax
+#
+# onto the device, reproducing the NumPy raw-feature math to float64. The cheap
+# centering *algebra* (L_A, rho, alpha/beta_target, diagnostics) is unchanged and
+# stays in CenteredPotential via its ``precomputed_stats`` path, so the resulting
+# potential is byte-for-byte the CPU one. The numpy bank itself is reused as-is
+# (its RNG stream is the experiment design; see notes in run_operator_*).
+
+# cusolver's batched ``syevj`` (eigvalsh) overflows internal workspace above
+# ~32k matrices in one call, so the per-chunk eigenvalue pass is sub-batched.
+_EIG_SUBBATCH = 32768
+
+
+def _batched_eig_extremes(Hb, emin, emax):
+    """Update running (emin, emax) with eigenvalue extremes of a batch ``(B,N,N)``.
+
+    ``eigvalsh`` is called in sub-batches of ``_EIG_SUBBATCH`` to stay within the
+    cusolver batched-solver workspace limit.
+    """
+    torch = get_torch()
+    Hs = 0.5 * (Hb + Hb.transpose(-1, -2))
+    B = Hs.shape[0]
+    for s in range(0, B, _EIG_SUBBATCH):
+        w = torch.linalg.eigvalsh(Hs[s:s + _EIG_SUBBATCH])
+        emin = min(emin, float(w[:, 0].min().item()))
+        emax = max(emax, float(w[:, -1].max().item()))
+    return emin, emax
+
+
+class _TorchRawFeature:
+    """On-device evaluators for a raw feature's ``mean grad Phi`` / ``Hess Phi``.
+
+    Subclasses provide ``grad_phi_sum(Zc)`` (-> running-summable ``(N,)``) and
+    ``hess_phi_batch(Zc)`` (-> ``(B, N, N)`` raw Hessians), matching the NumPy
+    :class:`RawFeaturePotential` math exactly. The generic
+    :func:`_centering_stats` driver does the chunked accumulation and eig pass.
+    """
+
+    N_theta: int
+
+    def grad_phi_sum(self, Zc):  # pragma: no cover - abstract
+        raise NotImplementedError
+
+    def hess_phi_batch(self, Zc):  # pragma: no cover - abstract
+        raise NotImplementedError
+
+
+class _TorchRidgeRaw(_TorchRawFeature):
+    """Raw ridge-sum feature: ``Hess Phi = W^T diag(coeff phi''(W theta + c)) W``."""
+
+    def __init__(self, N_theta, W, c, coeff, phi_name, device, dtype):
+        self.N_theta = int(N_theta)
+        self.W = _to_t(W, device, dtype)                    # (r, N)
+        self.c = _to_t(c, device, dtype).reshape(-1)        # (r,)
+        self.coeff = _to_t(coeff, device, dtype).reshape(-1)  # (r,)
+        self._fp = _phi_first_derivative(phi_name)
+        self._fpp = _phi_second_derivative(phi_name)
+
+    def grad_phi_sum(self, Zc):
+        # grad Phi = (phi'(s) * coeff) @ W ; sum over the chunk's rows.
+        s = Zc @ self.W.T + self.c                          # (B, r)
+        g = (self._fp(s) * self.coeff) @ self.W             # (B, N)
+        return g.sum(dim=0)
+
+    def hess_phi_batch(self, Zc):
+        torch = get_torch()
+        s = Zc @ self.W.T + self.c                          # (B, r)
+        d = self._fpp(s) * self.coeff                       # (B, r)
+        return torch.einsum("br,ri,rj->bij", d, self.W, self.W)  # (B, N, N)
+
+
+class _TorchSeparableRaw(_TorchRawFeature):
+    """Raw separable feature: ``Hess Phi`` diagonal, ``grad Phi = phi'(theta + c)``."""
+
+    def __init__(self, N_theta, c, phi_name, device, dtype):
+        self.N_theta = int(N_theta)
+        self.c = _to_t(c, device, dtype).reshape(-1)        # (N,)
+        self._fp = _phi_first_derivative(phi_name)
+        self._fpp = _phi_second_derivative(phi_name)
+
+    def grad_phi_sum(self, Zc):
+        return self._fp(Zc + self.c).sum(dim=0)             # (N,)
+
+    def hess_phi_batch(self, Zc):
+        torch = get_torch()
+        d = self._fpp(Zc + self.c)                          # (B, N)
+        return torch.diag_embed(d)                          # (B, N, N)
+
+
+class _TorchRadialRaw(_TorchRawFeature):
+    """Raw radial-tail feature: ``Hess Phi = 2 h'(R) I + 4 h''(R) theta theta^T``."""
+
+    def __init__(self, N_theta, scale, shift, phi_name, device, dtype):
+        self.N_theta = int(N_theta)
+        self.scale = float(scale)
+        self.shift = float(shift)
+        self._fp = _phi_first_derivative(phi_name)
+        self._fpp = _phi_second_derivative(phi_name)
+        self._I = get_torch().eye(self.N_theta, device=device, dtype=dtype)
+
+    def _hp_hpp(self, Zc):
+        torch = get_torch()
+        R = torch.sum(Zc * Zc, dim=1)                       # (B,)
+        u = self.scale * (R / self.N_theta - self.shift)    # (B,)
+        hp = (self.scale / self.N_theta) * self._fp(u)      # h'(R), (B,)
+        hpp = (self.scale / self.N_theta) ** 2 * self._fpp(u)  # h''(R), (B,)
+        return hp, hpp
+
+    def grad_phi_sum(self, Zc):
+        hp, _ = self._hp_hpp(Zc)
+        return (2.0 * hp[:, None] * Zc).sum(dim=0)          # (N,)
+
+    def hess_phi_batch(self, Zc):
+        torch = get_torch()
+        hp, hpp = self._hp_hpp(Zc)
+        outer = torch.einsum("bi,bj->bij", Zc, Zc)          # (B, N, N)
+        return (2.0 * hp[:, None, None] * self._I
+                + 4.0 * hpp[:, None, None] * outer)         # (B, N, N)
+
+
+def _torch_raw_feature_from_cpu(raw, device, dtype):
+    """Build the on-device raw-feature evaluator from a NumPy raw feature."""
+    from src.natural_gradient_local_rate.potentials import SeparablePotential
+    from src.natural_gradient_local_rate.potentials.additive_index import RidgeSumFeature
+    from src.natural_gradient_local_rate.potentials.radial_tail import RadialTailPotential
+    if isinstance(raw, SeparablePotential):
+        return _TorchSeparableRaw(raw.N_theta, raw.c, raw.phi_name, device, dtype)
+    if isinstance(raw, RidgeSumFeature):
+        return _TorchRidgeRaw(raw.N_theta, raw.W, raw.c, raw.coeff, raw.phi_name,
+                              device, dtype)
+    if isinstance(raw, RadialTailPotential):
+        return _TorchRadialRaw(raw.N_theta, raw.scale, raw.shift, raw.phi_name,
+                               device, dtype)
+    raise NotImplementedError(
+        f"GPU centering does not support raw feature {type(raw).__name__!r}.")
+
+
+def centering_stats_on_device(raw, Z, device, dtype, chunk_size=None):
+    """Compute ``(b, M, emin_dev, emax_dev, mean_Z)`` for a raw feature on device.
+
+    ``Z`` is the NumPy sample bank (moved to ``device`` in chunks). Reproduces the
+    NumPy :class:`CenteredPotential` reductions exactly:
+
+    * ``b      = mean_j grad Phi(Z_j)``               (N,)
+    * ``M      = sym(mean_j Hess Phi(Z_j))``          (N, N)
+    * ``emin/emax`` = global min/max eigenvalue of ``Hess Phi(Z_j) - M``
+    * ``mean_Z = mean_j Z_j``                         (N,)
+
+    Two chunked passes (mean first, then eig-extremes against the finished ``M``)
+    mirror the CPU code's two passes. Returns NumPy arrays / floats ready for
+    :class:`CenteredPotential`'s ``precomputed_stats``.
+    """
+    torch = get_torch()
+    rawt = _torch_raw_feature_from_cpu(raw, device, dtype)
+    N, M_tot = Z.shape[1], Z.shape[0]
+    b_acc = torch.zeros(N, device=device, dtype=dtype)
+    M_acc = torch.zeros((N, N), device=device, dtype=dtype)
+    z_acc = torch.zeros(N, device=device, dtype=dtype)
+    for s, e in _chunk_bounds(M_tot, chunk_size):
+        Zc = _as_device_tensor(Z[s:e], device, dtype)
+        b_acc += rawt.grad_phi_sum(Zc)
+        M_acc += rawt.hess_phi_batch(Zc).sum(dim=0)
+        z_acc += Zc.sum(dim=0)
+    b = b_acc / M_tot
+    Mmat = M_acc / M_tot
+    Mmat = 0.5 * (Mmat + Mmat.T)
+    mean_Z = z_acc / M_tot
+
+    emin, emax = float("inf"), float("-inf")
+    for s, e in _chunk_bounds(M_tot, chunk_size):
+        Zc = _as_device_tensor(Z[s:e], device, dtype)
+        Hdev = rawt.hess_phi_batch(Zc) - Mmat
+        emin, emax = _batched_eig_extremes(Hdev, emin, emax)
+
+    return (b.detach().cpu().numpy(), Mmat.detach().cpu().numpy(),
+            float(emin), float(emax), mean_Z.detach().cpu().numpy())
+
+
+def build_centered_potential_gpu(family, point, cfg_potential, Z, device, dtype,
+                                 *, chunk_size=None, safety_factor=2.0,
+                                 phi="log_cosh", feature_multiplier=4):
+    """Build a CPU :class:`CenteredPotential` whose bank reductions ran on device.
+
+    Constructs the raw feature (single source of truth, shared with the CPU
+    builder), computes the heavy ``(b, M, eig-extremes)`` reductions on ``device``
+    via :func:`centering_stats_on_device`, then hands them to
+    :class:`CenteredPotential` through ``precomputed_stats``. The returned object
+    is the *NumPy* potential -- identical to ``build_potential(...)`` on the same
+    bank -- so all downstream code (torch potential copy, separable-exact
+    quadrature) is unchanged.
+    """
+    from src.natural_gradient_local_rate.potentials import (
+        build_raw_feature, CenteredPotential,
+    )
+    raw = build_raw_feature(
+        family, int(point["N_theta"]), int(point["seed"]),
+        feature_multiplier=feature_multiplier, phi=phi)
+    b, Mmat, emin_dev, emax_dev, mean_Z = centering_stats_on_device(
+        raw, Z, device, dtype, chunk_size=chunk_size)
+    stats = {
+        "b": b, "M": Mmat, "emin_dev": emin_dev, "emax_dev": emax_dev,
+        "mean_Z": mean_Z, "centering_samples": int(Z.shape[0]),
+        "centering_seed": None,
+    }
+    return CenteredPotential(
+        raw, float(point["kappa_target"]), safety_factor=safety_factor,
+        precomputed_stats=stats)
+
+
+# ---------------------------------------------------------------------------
 # Chunking
 # ---------------------------------------------------------------------------
 
 def _to_t(x, device, dtype):
-    """``torch.as_tensor`` on a writable contiguous copy (avoids read-only views)."""
+    """``torch.as_tensor`` on a writable contiguous float64 copy.
+
+    ``np.array(..., copy=True)`` guarantees a writable, C-contiguous buffer even
+    when ``x`` is a read-only view (e.g. a broadcast array or a slice of a
+    memory-mapped bank), so ``torch.as_tensor`` never emits the "given NumPy
+    array is not writable" UserWarning and never aliases a read-only buffer.
+    """
     torch = get_torch()
-    return torch.as_tensor(np.ascontiguousarray(np.asarray(x, dtype=np.float64)),
-                           device=device, dtype=dtype)
+    arr = np.array(x, dtype=np.float64, copy=True, order="C")
+    return torch.as_tensor(arr, device=device, dtype=dtype)
 
 
 def _chunk_bounds(M, chunk_size):
@@ -358,16 +588,19 @@ def torch_apply_T_star(pot_t, Z, u, chunk_size=None):
 # Dense operator construction (chunked matmuls)
 # ---------------------------------------------------------------------------
 
-def _accumulate_dense(pot_t, Z, chunk_size=None):
+def _accumulate_dense_generic(pot_t, Z, chunk_size=None):
     """Single chunked pass returning ``(G, T_mat, A)`` on device.
 
     ``G = (1/M) Vw^T Vq`` (p x p forward H_lin matrix), ``T_mat = (1/M) Z^T Vw``
     (N x p), ``A = (1/M) diag(W)^T (Z^2 - 1)`` (N x N diagonal benchmark).
+
+    ``Vq[j] = sym_to_vec(Z_j Z_j^T - I)`` is built directly via
+    :func:`torch_outer_minus_I_symvec` (no ``(B, N, N)`` outer-product tensor),
+    and the upper-triangle indices are cached per ``(N, device)``.
     """
     torch = get_torch()
     N, M = Z.shape[1], Z.shape[0]
     p = torch_sym_dim(N)
-    I = torch.eye(N, device=Z.device, dtype=Z.dtype)
     G = torch.zeros((p, p), device=Z.device, dtype=Z.dtype)
     T_mat = torch.zeros((N, p), device=Z.device, dtype=Z.dtype)
     A = torch.zeros((N, N), device=Z.device, dtype=Z.dtype)
@@ -375,13 +608,121 @@ def _accumulate_dense(pot_t, Z, chunk_size=None):
         Zc = Z[s:e]
         W = pot_t.batch_hess(Zc)                          # (B, N, N)
         Vw = torch_sym_to_vec_batch(W)                    # (B, p)
-        ZZ = torch.einsum("bi,bj->bij", Zc, Zc) - I       # (B, N, N)
-        Vq = torch_sym_to_vec_batch(ZZ)                   # (B, p)
+        Vq = torch_outer_minus_I_symvec(Zc, N)            # (B, p)  == vec(ZcZc^T - I)
         G += Vw.T @ Vq
         T_mat += Zc.T @ Vw
         diagH = torch.diagonal(W, dim1=-2, dim2=-1)       # (B, N)
         A += diagH.T @ (Zc * Zc - 1.0)
     return G / M, T_mat / M, A / M
+
+
+def _accumulate_dense_gaussian(pot_t, Z, chunk_size=None):
+    """Analytic ``(G, T_mat, A)`` for the Gaussian potential (``W = I``).
+
+    With ``W_j = I`` for every sample, ``Vw[j] = vec(I)`` is constant, so the
+    Monte-Carlo accumulation collapses to two cheap reductions -- no per-sample
+    Hessian batches and no ``(B, p)`` ``Vw``::
+
+        S = (1/M) Z^T Z,    E = S - I,    m = mean_j Z_j
+        G      = vec(I) vec(E)^T                       (p x p)
+        H_sym  = 0.5 (vec(I) vec(E)^T + vec(E) vec(I)^T)
+        T_mat  = m vec(I)^T   (column b is m * Tr(basis_b))
+        A_{ik} = E_{kk}       (every row equals diag(E))
+
+    These are exactly the limits of the generic accumulator for ``W = I``, so the
+    Gaussian row matches the generic torch/CPU result to float64 round-off.
+    """
+    torch = get_torch()
+    N, M = Z.shape[1], Z.shape[0]
+    I = torch.eye(N, device=Z.device, dtype=Z.dtype)
+    S = torch.zeros((N, N), device=Z.device, dtype=Z.dtype)
+    zsum = torch.zeros(N, device=Z.device, dtype=Z.dtype)
+    for s, e in _chunk_bounds(M, chunk_size):
+        Zc = Z[s:e]
+        S += Zc.T @ Zc
+        zsum += Zc.sum(dim=0)
+    S /= M
+    mean_Z = zsum / M
+    E = S - I
+    vI = torch_sym_to_vec(I)                              # (p,)
+    vE = torch_sym_to_vec(E)                              # (p,)
+    G = torch.outer(vI, vE)                               # (p, p)
+    T_mat = torch.outer(mean_Z, vI)                       # (N, p)
+    diagE = torch.diagonal(E).contiguous()                # (N,)
+    A = diagE.unsqueeze(0).repeat(N, 1)                   # (N, N), row i = diag(E)
+    return G, T_mat, A
+
+
+def _accumulate_dense_separable(pot_t, Z, chunk_size=None):
+    """Fast ``(G, T_mat, A)`` for a separable potential (diagonal ``W``).
+
+    ``W_j = diag(Wdiag_j)`` is diagonal, so ``Vw[j] = sym_to_vec(W_j)`` is nonzero
+    only on the diagonal coordinates. This lets us skip materializing the full
+    ``(B, N, N)`` Hessian and the ``(B, p)`` ``Vw``; we accumulate only the
+    diagonal rows of ``G`` and diagonal columns of ``T_mat``::
+
+        Wdiag      = diag(Hess V)                          (B, N)   (no dense W)
+        G[diag, :] = (1/M) Wdiag^T Vq                      (N, p)
+        T[:, diag] = (1/M) Z^T Wdiag                       (N, N)
+        A          = (1/M) Wdiag^T (Z^2 - 1)               (N, N)
+
+    where ``diag`` are the p-space indices of the diagonal matrix positions. The
+    off-diagonal rows/columns of ``G`` / ``T_mat`` are exactly zero (a diagonal
+    ``W`` has no off-diagonal vectorized component), so this reproduces the
+    generic accumulator bit-for-bit.
+    """
+    torch = get_torch()
+    N, M = Z.shape[1], Z.shape[0]
+    p = torch_sym_dim(N)
+    _, _, offdiag = _triu(N, Z.device)
+    diag_idx = (~offdiag).nonzero(as_tuple=True)[0]       # (N,) p-space diag coords
+    G_diagrows = torch.zeros((N, p), device=Z.device, dtype=Z.dtype)
+    T_diagcols = torch.zeros((N, N), device=Z.device, dtype=Z.dtype)
+    A = torch.zeros((N, N), device=Z.device, dtype=Z.dtype)
+    for s, e in _chunk_bounds(M, chunk_size):
+        Zc = Z[s:e]
+        Wdiag = pot_t.batch_hess_diag(Zc)                 # (B, N)
+        Vq = torch_outer_minus_I_symvec(Zc, N)            # (B, p)
+        G_diagrows += Wdiag.T @ Vq                        # (N, p)
+        T_diagcols += Zc.T @ Wdiag                        # (N, N)
+        A += Wdiag.T @ (Zc * Zc - 1.0)                    # (N, N)
+    G = torch.zeros((p, p), device=Z.device, dtype=Z.dtype)
+    T_mat = torch.zeros((N, p), device=Z.device, dtype=Z.dtype)
+    G[diag_idx, :] = G_diagrows / M
+    T_mat[:, diag_idx] = T_diagcols / M
+    return G, T_mat, A / M
+
+
+def _resolve_accumulation_mode(pot_t):
+    """Pick the accumulation fast path for a torch potential.
+
+    ``gaussian_analytic`` for ``W = I``, ``separable_diagonal_fast`` for a
+    diagonal-``W`` separable potential, else ``generic_dense``.
+    """
+    if isinstance(pot_t, TorchGaussianPotential):
+        return "gaussian_analytic"
+    if isinstance(pot_t, TorchSeparablePotential):
+        return "separable_diagonal_fast"
+    return "generic_dense"
+
+
+_ACCUMULATORS = {
+    "gaussian_analytic": _accumulate_dense_gaussian,
+    "separable_diagonal_fast": _accumulate_dense_separable,
+    "generic_dense": _accumulate_dense_generic,
+}
+
+
+def _accumulate_dense(pot_t, Z, chunk_size=None, mode=None):
+    """Dispatch to the generic / Gaussian / separable accumulator.
+
+    ``mode=None`` auto-selects via :func:`_resolve_accumulation_mode`; an explicit
+    mode string (e.g. ``"generic_dense"``) forces a path -- used by tests that
+    compare the fast paths against the generic one on the same bank.
+    """
+    if mode is None:
+        mode = _resolve_accumulation_mode(pot_t)
+    return _ACCUMULATORS[mode](pot_t, Z, chunk_size)
 
 
 def torch_dense_H_sym_matrix(pot_t, Z, chunk_size=None, basis_block_size=None):
@@ -534,7 +875,9 @@ def torch_operator_estimates(pot_t, Z, *, chunk_size=None, basis_block_size=None
     }
 
     t_build = time.time()
-    G, T_mat, A = _accumulate_dense(pot_t, Z, chunk_size)
+    mode = _resolve_accumulation_mode(pot_t)
+    out["torch_accumulation_mode"] = mode
+    G, T_mat, A = _accumulate_dense(pot_t, Z, chunk_size, mode=mode)
     H_sym = 0.5 * (G + G.T)
     L = torch.zeros((D, D), device=Z.device, dtype=Z.dtype)
     L[:N, :N] = torch.eye(N, device=Z.device, dtype=Z.dtype)
@@ -678,6 +1021,7 @@ def compute_row_torch(cpu_potential, Z, point, opts, *, run_id="",
         "matrix_construction_runtime_seconds": float("nan"),
         "eigh_runtime_seconds": float("nan"),
         "gpu_peak_memory_mb": float("nan"),
+        "torch_accumulation_mode": "",
         "separable_exact_status": "",
         "status": "ok",
         "error_message": "",

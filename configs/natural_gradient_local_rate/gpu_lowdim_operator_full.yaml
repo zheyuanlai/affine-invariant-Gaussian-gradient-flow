@@ -11,9 +11,14 @@
 #   only after comparing against matched Gaussian and separable baselines.
 #
 # H200/A100 note:
-#   N_theta <= 16 makes dense eigensolves tiny; runtime is dominated by chunked
-#   Monte Carlo accumulation. The 131,072 chunk is intended for H200-class GPUs.
-#   If memory pressure appears on a smaller GPU, override with --chunk-size 65536.
+#   N_theta <= 16 makes dense eigensolves tiny; runtime is dominated by the bank
+#   reductions. The torch/CUDA path now (a) runs potential *centering* on the GPU
+#   (E[grad Phi], E[Hess Phi], eig-extremes) instead of on the CPU -- this was
+#   ~93% of wall time before -- and (b) uses analytic Gaussian / separable-diagonal
+#   fast accumulation paths. A chunk-size sweep on H200 (N=16, M=4,194,304) showed
+#   GPU work bottoms out near chunk 1,048,576 (~25 GB peak, well under 143 GB);
+#   larger chunks (2M/4M) cost much more memory for no wall-time gain. On a smaller
+#   GPU, override with --chunk-size 131072 (peak ~3.7 GB) or 65536.
 experiment:
   name: natural_gradient_local_rate_gpu_lowdim_operator_full
 

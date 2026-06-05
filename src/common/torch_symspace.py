@@ -27,14 +27,31 @@ def torch_sym_dim(N_theta):
     return N_theta * (N_theta + 1) // 2
 
 
+# Cache of (rows, cols, offdiag) upper-triangle index tensors, keyed by
+# ``(N_theta, device_str, dtype-irrelevant)``. Rebuilding ``np.triu_indices`` and
+# moving three small tensors to the device every chunk is pure overhead in the
+# tight Monte-Carlo accumulation loop, so the indices are memoized per device.
+_TRIU_CACHE = {}
+
+
 def _triu(N_theta, device):
-    """Row-major upper-triangle indices + off-diagonal mask as torch tensors."""
+    """Row-major upper-triangle indices + off-diagonal mask as torch tensors.
+
+    Memoized per ``(N_theta, device)`` so the tight accumulation loop reuses the
+    same index tensors instead of rebuilding/transferring them every chunk.
+    """
     torch = get_torch()
-    rows, cols = np.triu_indices(N_theta)
-    offdiag = rows != cols
-    return (torch.as_tensor(rows, dtype=torch.long, device=device),
-            torch.as_tensor(cols, dtype=torch.long, device=device),
-            torch.as_tensor(offdiag, dtype=torch.bool, device=device))
+    key = (int(N_theta), str(device))
+    cached = _TRIU_CACHE.get(key)
+    if cached is not None:
+        return cached
+    rows_np, cols_np = np.triu_indices(N_theta)
+    offdiag_np = rows_np != cols_np
+    out = (torch.as_tensor(rows_np, dtype=torch.long, device=device),
+           torch.as_tensor(cols_np, dtype=torch.long, device=device),
+           torch.as_tensor(offdiag_np, dtype=torch.bool, device=device))
+    _TRIU_CACHE[key] = out
+    return out
 
 
 def _symmetrize(X):
@@ -58,6 +75,27 @@ def torch_sym_to_vec_batch(Xb):
     rows, cols, offdiag = _triu(N, Xs.device)
     v = Xs[:, rows, cols].clone()
     v[:, offdiag] = v[:, offdiag] * _SQRT2
+    return v
+
+
+def torch_outer_minus_I_symvec(Zc, N_theta):
+    """Direct ``sym_to_vec(z z^T - I)`` for a batch of vectors, ``(B, N) -> (B, p)``.
+
+    Equivalent to ``torch_sym_to_vec_batch(einsum('bi,bj->bij', Zc, Zc) - I)`` but
+    avoids ever materializing the ``(B, N, N)`` outer-product tensor: for the
+    upper-triangle index pairs ``(i, j)`` the vectorized entry is
+
+    * diagonal (``i == j``):    ``z_i^2 - 1``
+    * off-diagonal (``i < j``): ``sqrt(2) * z_i * z_j``
+
+    matching the Frobenius-isometric convention of :func:`torch_sym_to_vec_batch`
+    (``z z^T - I`` is already symmetric, so no explicit symmetrization is needed).
+    """
+    rows, cols, offdiag = _triu(N_theta, Zc.device)
+    # Zc[:, rows] and Zc[:, cols] are (B, p); their product gives z_i z_j per pair.
+    v = Zc[:, rows] * Zc[:, cols]                 # (B, p)
+    v[:, offdiag] = v[:, offdiag] * _SQRT2        # sqrt(2) on off-diagonals
+    v[:, ~offdiag] = v[:, ~offdiag] - 1.0         # subtract Tr(I) part on diagonal
     return v
 
 

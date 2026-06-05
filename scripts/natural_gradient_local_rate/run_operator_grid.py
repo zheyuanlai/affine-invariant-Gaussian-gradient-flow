@@ -70,7 +70,7 @@ def main():
     for i, point in enumerate(points, 1):
         point["M_mc"] = _common.grid_M_mc(cfg, point)
         Z = _common.make_bank(cfg, point)
-        pot = _common.make_potential(cfg, point, Z)
+        pot = _common.make_potential_for_opts(cfg, point, Z, opts)
         row = compute_row(pot, Z, point, opts, run_id=run_id, experiment_group=group)
         rows.append(row)
         print(f"  [{i:3d}/{len(points)}] {_common.point_key(point):32s} "

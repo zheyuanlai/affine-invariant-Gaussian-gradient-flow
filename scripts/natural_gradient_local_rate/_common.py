@@ -195,6 +195,44 @@ def make_potential(cfg, point, Z):
     )
 
 
+def make_potential_for_opts(cfg, point, Z, opts):
+    """Build the potential, running centering on the GPU when the torch/CUDA path is active.
+
+    For ``backend="torch"`` (or ``auto`` resolving to CUDA) the expensive bank
+    reductions (``E[grad Phi]``, ``E[Hess Phi]``, eigenvalue extremes) run on the
+    device via :func:`torch_backend.build_centered_potential_gpu`, which returns
+    the *identical* NumPy :class:`CenteredPotential` (byte-for-byte the CPU build
+    on the same bank). The numpy/CPU path and the Gaussian family always use the
+    plain CPU :func:`make_potential`. Any failure falls back to the CPU builder so
+    a row is never lost to a centering hiccup.
+    """
+    backend = str(opts.get("backend", "numpy")).lower()
+    family = point["family"]
+    if backend == "numpy" or family == "gaussian":
+        return make_potential(cfg, point, Z)
+    try:
+        from src.common.torch_utils import resolve_backend, resolve_device, resolve_dtype
+        if resolve_backend(backend, opts.get("device", "auto")) != "torch":
+            return make_potential(cfg, point, Z)
+        from src.natural_gradient_local_rate import torch_backend as tb
+        if not tb.torch_supports_family(family):
+            return make_potential(cfg, point, Z)
+        device = resolve_device(opts.get("device", "auto"))
+        if device.type != "cuda":  # torch-on-CPU centering is no faster than numpy
+            return make_potential(cfg, point, Z)
+        dtype = resolve_dtype(opts.get("dtype", "float64"))
+        pot = cfg.get("potential", {})
+        return tb.build_centered_potential_gpu(
+            family, point, pot, Z, device, dtype,
+            chunk_size=opts.get("chunk_size"),
+            safety_factor=float(pot.get("empirical_LA_safety_factor", 2.0)),
+            phi=str(pot.get("phi", "log_cosh")),
+            feature_multiplier=int(pot.get("feature_multiplier", 4)))
+    except Exception:
+        # Never lose a row to a centering fast-path issue: fall back to CPU.
+        return make_potential(cfg, point, Z)
+
+
 def chunk_size(cfg):
     return cfg["monte_carlo"].get("chunk_size", None)
 

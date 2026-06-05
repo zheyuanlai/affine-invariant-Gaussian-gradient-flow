@@ -49,6 +49,31 @@ def test_batched_matches_loop(N):
     assert v_batch == pytest.approx(v_loop, abs=1e-12)
 
 
+@pytest.mark.parametrize("N", [1, 2, 3, 4, 8])
+def test_outer_minus_I_symvec_matches_materialized(N):
+    """Direct ``sym_to_vec(z z^T - I)`` equals the materialized einsum path."""
+    rng = np.random.default_rng(123 + N)
+    Zc_np = rng.standard_normal((11, N))
+    Zc = torch.as_tensor(Zc_np, dtype=torch.float64)
+    I = torch.eye(N, dtype=torch.float64)
+    ZZ = torch.einsum("bi,bj->bij", Zc, Zc) - I
+    v_ref = ts.torch_sym_to_vec_batch(ZZ)
+    v_direct = ts.torch_outer_minus_I_symvec(Zc, N)
+    assert v_direct.numpy() == pytest.approx(v_ref.numpy(), abs=1e-12)
+    # the direct path must not mutate its input bank
+    assert Zc.numpy() == pytest.approx(Zc_np, abs=0.0)
+
+
+def test_triu_cache_returns_consistent_indices():
+    """Cached triu indices are reused and remain correct across calls."""
+    a = ts._triu(5, torch.device("cpu"))
+    b = ts._triu(5, torch.device("cpu"))
+    assert a[0] is b[0] and a[1] is b[1] and a[2] is b[2]  # same cached tensors
+    rows, cols = np.triu_indices(5)
+    assert a[0].numpy().tolist() == rows.tolist()
+    assert a[1].numpy().tolist() == cols.tolist()
+
+
 @pytest.mark.parametrize("N", [2, 4])
 def test_fisher_rao_packing_matches_numpy(N):
     rng = np.random.default_rng(N)
