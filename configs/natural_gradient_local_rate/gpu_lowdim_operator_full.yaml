@@ -1,0 +1,57 @@
+# Low-dimensional fixed-high-M full-operator/local-rate production scan.
+#
+# Purpose:
+#   After Stage 1 established that M_mc=4,194,304 makes Gaussian and separable
+#   baselines small for N_theta <= 16, this config scans every N_theta from 1 to
+#   16 across kappa and potential families at one fixed high sample size.
+#
+# Interpretation:
+#   Use the joint runner so Lambda_hat_full_sym and gamma_loc are computed from
+#   the same dense torch pass. Interpret random_feature/additive_index/radial_tail
+#   only after comparing against matched Gaussian and separable baselines.
+#
+# H200/A100 note:
+#   N_theta <= 16 makes dense eigensolves tiny; runtime is dominated by chunked
+#   Monte Carlo accumulation. The 131,072 chunk is intended for H200-class GPUs.
+#   If memory pressure appears on a smaller GPU, override with --chunk-size 65536.
+experiment:
+  name: natural_gradient_local_rate_gpu_lowdim_operator_full
+
+grid:
+  N_theta: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+  kappa_target: [2, 5, 10, 20, 50, 100]
+  potential_family: ["gaussian", "separable", "additive_index", "random_feature", "radial_tail"]
+  seeds: [0, 1, 2]
+
+monte_carlo:
+  M_mc: 4194304
+  antithetic: true
+  chunk_size: 131072
+
+operator:
+  estimator: "symmetrized"
+  diagonal_benchmark: true
+  separable_exact_benchmark: true
+  compute_gamma_loc: true
+  backend: "torch"
+  device: "auto"
+  dtype: "float64"
+  eigensolver: "torch_dense_eigh"
+  explicit_dense_max_N_theta: 16
+  basis_block_size: 32
+  chunk_size: 131072
+  eigsh_tol: 1.0e-6
+  eigsh_maxiter: 1000
+  quadrature_nodes: 160
+
+potential:
+  feature_multiplier: 4
+  phi: "log_cosh"
+  empirical_LA_safety_factor: 2.0
+
+linearized_rate:
+  compute_lambda_hat: true
+  save_eigenvectors: true
+
+outputs:
+  base_dir: outputs/natural_gradient_local_rate

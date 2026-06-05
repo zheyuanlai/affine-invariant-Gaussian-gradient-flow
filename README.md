@@ -157,16 +157,30 @@ interpreting plots, and do not interpret raw full-operator growth with
 backend changes only the speed, not the meaning, of the estimates.
 
 Stage 1 low-dimensional high-M calibration uses
-`configs/natural_gradient_local_rate/gpu_lowdim_highM_scaling.yaml`. It keeps
-`N_theta <= 32`, sweeps large `M_mc`, and includes Gaussian, separable,
-random-feature, and radial-tail families so finite-sample baseline noise can be
-calibrated before any denser low-dimensional production scan.
+`configs/natural_gradient_local_rate/gpu_lowdim_highM_scaling.yaml`. It checks
+representative `N_theta <= 16`, sweeps large `M_mc`, and includes Gaussian,
+separable, random-feature, and radial-tail families so finite-sample baseline
+noise can be calibrated before any denser low-dimensional production scan.
 
 ```bash
 python scripts/natural_gradient_local_rate/run_sample_size_scaling.py \
     --config configs/natural_gradient_local_rate/gpu_lowdim_highM_scaling.yaml \
     --backend torch --device cuda \
     --outdir outputs/natural_gradient_local_rate/gpu_lowdim_highM_scaling \
+    --overwrite
+```
+
+The fixed high-M low-dimensional full-operator/local-rate scan uses
+`configs/natural_gradient_local_rate/gpu_lowdim_operator_full.yaml` with
+`N_theta = 1..16`, all production kappa values, all production families, and
+`M_mc = 4,194,304`. The default chunk size is `131072` for H200-class GPUs; use
+`--chunk-size 65536` on smaller GPUs if memory pressure appears.
+
+```bash
+python scripts/natural_gradient_local_rate/run_operator_linearized_grid.py \
+    --config configs/natural_gradient_local_rate/gpu_lowdim_operator_full.yaml \
+    --backend torch --device cuda --dtype float64 \
+    --outdir outputs/natural_gradient_local_rate/gpu_lowdim_operator_full \
     --overwrite
 ```
 
