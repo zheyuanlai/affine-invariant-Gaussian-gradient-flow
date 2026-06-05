@@ -43,11 +43,8 @@ scripts/
   natural_gradient_local_rate/    operator/rate/flow runners, run_all, plotting
 tests/
   common/  omega_tau_modes/  natural_gradient_local_rate/
-docs/
-  references/                     local-only manuscript PDFs (git-ignored)
-  specs/                          implementation specs (tracked)
 reports/                          detailed mathematical write-ups
-outputs/                          experiment outputs (git-ignored)
+outputs/                          experiment outputs
 ```
 
 ## Installation
@@ -158,6 +155,20 @@ Gaussian and separable baselines, run
 interpreting plots, and do not interpret raw full-operator growth with
 `N_theta` without baseline correction and sample-size convergence checks. The GPU
 backend changes only the speed, not the meaning, of the estimates.
+
+Stage 1 low-dimensional high-M calibration uses
+`configs/natural_gradient_local_rate/gpu_lowdim_highM_scaling.yaml`. It keeps
+`N_theta <= 32`, sweeps large `M_mc`, and includes Gaussian, separable,
+random-feature, and radial-tail families so finite-sample baseline noise can be
+calibrated before any denser low-dimensional production scan.
+
+```bash
+python scripts/natural_gradient_local_rate/run_sample_size_scaling.py \
+    --config configs/natural_gradient_local_rate/gpu_lowdim_highM_scaling.yaml \
+    --backend torch --device cuda \
+    --outdir outputs/natural_gradient_local_rate/gpu_lowdim_highM_scaling \
+    --overwrite
+```
 
 When running `production_all.yaml` on GPU, use
 `scripts/natural_gradient_local_rate/run_operator_linearized_grid.py` if you need
