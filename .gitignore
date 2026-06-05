@@ -53,5 +53,4 @@ ENV/
 
 docs/
 
-*.npz
 *.json
