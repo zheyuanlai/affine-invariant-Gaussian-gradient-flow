@@ -95,6 +95,9 @@ python scripts/natural_gradient_local_rate/run_all.py --smoke
 # sample-size scaling (sweeps M_mc to separate real trends from MC noise)
 python scripts/natural_gradient_local_rate/run_sample_size_scaling.py --config configs/natural_gradient_local_rate/sample_size_scaling.yaml
 
+# one-pass operator + linearized-rate grid (recommended when both are needed)
+python scripts/natural_gradient_local_rate/run_operator_linearized_grid.py --config configs/natural_gradient_local_rate/production_all.yaml
+
 # figures
 python scripts/natural_gradient_local_rate/plot_results.py              --input outputs/natural_gradient_local_rate   --outdir outputs/natural_gradient_local_rate/figures
 python scripts/natural_gradient_local_rate/plot_estimator_diagnostics.py --input outputs/natural_gradient_local_rate   --outdir outputs/natural_gradient_local_rate/figures/estimator_diagnostics
@@ -155,6 +158,12 @@ Gaussian and separable baselines, run
 interpreting plots, and do not interpret raw full-operator growth with
 `N_theta` without baseline correction and sample-size convergence checks. The GPU
 backend changes only the speed, not the meaning, of the estimates.
+
+When running `production_all.yaml` on GPU, use
+`scripts/natural_gradient_local_rate/run_operator_linearized_grid.py` if you need
+both `operator_grid` and `linearized_rate_grid` outputs. It computes the shared
+torch dense accumulation once per grid point, writes both stage CSVs/summaries,
+and saves the linearized slow eigenvectors.
 
 ## Outputs
 

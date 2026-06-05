@@ -1,4 +1,5 @@
 """Tiny torch-CPU smoke tests for the production runner entry points."""
+import importlib.util
 import os
 import subprocess
 import sys
@@ -6,7 +7,10 @@ import sys
 import pandas as pd
 import pytest
 
-torch = pytest.importorskip("torch")
+pytestmark = pytest.mark.skipif(
+    importlib.util.find_spec("torch") is None,
+    reason="torch not installed",
+)
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.abspath(os.path.join(_HERE, "..", ".."))
@@ -14,6 +18,7 @@ _SCRIPTS = os.path.join(_ROOT, "scripts", "natural_gradient_local_rate")
 
 RUN_OPERATOR_GRID = os.path.join(_SCRIPTS, "run_operator_grid.py")
 RUN_LINEARIZED_RATE_GRID = os.path.join(_SCRIPTS, "run_linearized_rate_grid.py")
+RUN_OPERATOR_LINEARIZED_GRID = os.path.join(_SCRIPTS, "run_operator_linearized_grid.py")
 RUN_SAMPLE_SIZE_SCALING = os.path.join(_SCRIPTS, "run_sample_size_scaling.py")
 
 
@@ -99,7 +104,13 @@ def _run(script, cfg_path):
         "--explicit-dense-max-N-theta", "4",
         "--overwrite",
     ]
-    return subprocess.run(cmd, cwd=_ROOT, capture_output=True, text=True, timeout=600)
+    env = os.environ.copy()
+    env.setdefault("OMP_NUM_THREADS", "1")
+    env.setdefault("MKL_NUM_THREADS", "1")
+    env.setdefault("OPENBLAS_NUM_THREADS", "1")
+    env.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+    return subprocess.run(cmd, cwd=_ROOT, capture_output=True, text=True,
+                          timeout=600, env=env)
 
 
 def _assert_torch_cpu_csv(csv_path, expected_rows):
@@ -137,6 +148,21 @@ def test_run_linearized_rate_grid_torch_cpu_smoke(tmp_path):
     _assert_torch_cpu_csv(base_dir / "linearized_rate_grid" / "results_long.csv", 1)
     eig = base_dir / "linearized_rate_grid" / "eigenvectors"
     assert any(eig.glob("*.npz")), "linearized-rate smoke did not write an eigenvector"
+
+
+def test_run_operator_linearized_grid_torch_cpu_smoke(tmp_path):
+    base_dir = tmp_path / "out"
+    cfg_path = _write_config(tmp_path, TINY_GRID_CONFIG, base_dir)
+    res = _run(RUN_OPERATOR_LINEARIZED_GRID, cfg_path)
+    assert res.returncode == 0, f"script failed:\nSTDOUT\n{res.stdout}\nSTDERR\n{res.stderr}"
+    op = _assert_torch_cpu_csv(base_dir / "operator_grid" / "results_long.csv", 1)
+    lr = _assert_torch_cpu_csv(base_dir / "linearized_rate_grid" / "results_long.csv", 1)
+    assert op["gamma_loc"].iloc[0] == pytest.approx(lr["gamma_loc"].iloc[0])
+    assert op["Lambda_hat_full_sym"].iloc[0] == pytest.approx(lr["Lambda_hat_full_sym"].iloc[0])
+    assert (base_dir / "operator_grid" / "summary.csv").exists()
+    assert (base_dir / "linearized_rate_grid" / "summary.csv").exists()
+    eig = base_dir / "linearized_rate_grid" / "eigenvectors"
+    assert any(eig.glob("*.npz")), "joint smoke did not write an eigenvector"
 
 
 def test_run_sample_size_scaling_torch_cpu_smoke(tmp_path):

@@ -1,6 +1,7 @@
 # FULL production grid. Expensive — never run automatically.
-# Run a single stage explicitly, e.g.:
-#   python scripts/natural_gradient_local_rate/run_operator_grid.py \
+# For production GPU runs that need both Lambda_hat and gamma_loc, prefer the
+# joint runner so the torch dense accumulation is done once per grid point:
+#   python scripts/natural_gradient_local_rate/run_operator_linearized_grid.py \
 #       --config configs/natural_gradient_local_rate/production_all.yaml
 experiment:
   name: natural_gradient_local_rate_production
