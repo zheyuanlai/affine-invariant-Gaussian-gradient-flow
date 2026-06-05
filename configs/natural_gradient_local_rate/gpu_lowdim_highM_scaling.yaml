@@ -16,7 +16,7 @@ experiment:
   name: natural_gradient_local_rate_gpu_lowdim_highM_scaling
 
 grid:
-  N_theta: [8, 16, 24, 32]
+  N_theta: [2, 4, 8, 12, 16]
   kappa_target: [5]
   potential_family: ["gaussian", "separable", "random_feature", "radial_tail"]
   seeds: [0, 1, 2]
