@@ -11,5 +11,5 @@ natural-gradient manuscript:
 * equilibrium ``a_star = (0, I)`` in equilibrium-whitened coordinates.
 
 See ``docs/specs/natural_gradient_local_rate_spec.md`` (source of truth) and
-``reports/natural_gradient_local_rate_notes.md``.
+``reports/natural_gradient_local_rate_report.tex``.
 """

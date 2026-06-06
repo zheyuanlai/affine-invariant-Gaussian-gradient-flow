@@ -14,8 +14,9 @@ run separately.
 
 Usage:
     python scripts/natural_gradient_local_rate/run_operator_linearized_grid.py \
-        --config configs/natural_gradient_local_rate/production_all.yaml \
-        --backend torch --device cuda --overwrite
+        --config configs/natural_gradient_local_rate/gpu_lowdim_operator_full.yaml \
+        --backend torch --device cuda --dtype float64 \
+        --chunk-size 1048576 --overwrite
 """
 import argparse
 import os

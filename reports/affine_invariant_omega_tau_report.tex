@@ -1,0 +1,271 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+
+\title{Affine-Invariant Gaussian Gradient Flows:\\
+Mode Decomposition and the Role of $(\omega,\tau)$}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study a two-parameter family of affine-invariant Gaussian gradient flows for
+the variational problem $\min_{m,C}\KL(\N(m,C)\,\|\,\pi)$. The family is
+parameterized by $(\omega,\tau)$: the scalar $\omega>0$ rescales the covariance
+dynamics uniformly, while $\tau>-\omega/n$ enters only through a trace-weighting
+term and therefore acts solely on the volume (trace) mode of the covariance. A
+linearization near stationarity predicts that the trace-mode rate is
+$\kappa_{\mathrm{tr}}=1/[2(\omega+n\tau)]$, so a negative $\tau$ accelerates
+volume-dominated transients while leaving the mean and the traceless
+shape modes unchanged. We verify these predictions on two targets---an exact
+Gaussian and a strongly log-concave non-Gaussian target---using an
+exponential-map discretization that preserves positive-definiteness. The
+measured time-to-tolerance ratios match the predicted factors ($\approx 2\times$
+acceleration under $\tau_-=-\omega/2n$, $\approx 3/2$ slowdown under
+$\tau_+=+\omega/2n$) for volume-dominated initializations, and the realized
+speedup tracks the initial trace-dominance of the perturbation.
+\end{abstract}
+
+\section{Setup}
+
+Let the variational family be the non-degenerate Gaussians $q_{m,C}=\N(m,C)$ with
+$m\in\R^{n}$ and $C\in\SPD(n)$, and let the target be
+$\pi(\theta)\propto\exp(-V(\theta))$ with $V$ smooth. The objective is the
+reverse Kullback--Leibler divergence
+\begin{equation}
+F(m,C)=\KL\big(\N(m,C)\,\|\,\pi\big)
+      =\E_{\theta\sim\N(m,C)}[V(\theta)]-\tfrac12\log\det C + \text{const}.
+\end{equation}
+Writing $g(m,C)=\E_{q_{m,C}}[\grad V]$ and $S(m,C)=\E_{q_{m,C}}[\grad^2 V]$, the
+first-order stationarity conditions are $g(m_\star,C_\star)=0$ and
+$C_\star^{-1}=S(m_\star,C_\star)$.
+
+\subsection{Classification of affine-invariant metrics}
+
+A Riemannian metric on the Gaussian manifold
+$\Aspace=\R^{n}\times\SPD(n)$ is \emph{affine-invariant} if it is preserved by the
+pushforward of every invertible affine map $\theta\mapsto A\theta+b$.
+
+\begin{theorem}[Classification]\label{thm:metric}
+Every affine-invariant Riemannian metric on $\Aspace$ has the form
+\begin{equation}
+g_a\big((u,X),(v,Y)\big)
+  = u^\top C^{-1} v
+  + \omega\,\Tr(C^{-1}XC^{-1}Y)
+  + \tau\,\Tr(C^{-1}X)\,\Tr(C^{-1}Y),
+\end{equation}
+with $a=(m,C)$, $\omega>0$, and $\tau>-\omega/n$. There is no mean--covariance
+coupling.
+\end{theorem}
+
+The admissibility condition $\omega+n\tau>0$ is what keeps the induced flow
+well-posed; it follows from positive-definiteness of the metric on the trace
+mode.
+
+\subsection{The $(\omega,\tau)$ family of flows}
+
+Taking $F$ as the energy and the metric of Theorem~\ref{thm:metric} as the
+geometry, the gradient flow is
+\begin{equation}\label{eq:flow}
+\dot m_t=-C_t\,g(m_t,C_t),\qquad
+\dot C_t=\frac{1}{2\omega}\,C_t^{1/2}\big(-B_t+\alpha_t I\big)C_t^{1/2},
+\end{equation}
+where $B_t=C_t^{1/2}S(m_t,C_t)C_t^{1/2}$ is the Hessian expectation in the
+whitened coordinates of $C_t$ and
+\begin{equation}
+\alpha_t=\frac{\omega+\tau\,\Tr(B_t)}{\omega+n\tau}
+\end{equation}
+is a scalar trace-weighting term. The parameter $\omega$ rescales the entire
+covariance equation; $\tau$ enters \emph{only} through the scalar $\alpha_t$, and
+$\alpha_t$ multiplies the identity, so $\tau$ acts only on the trace of the
+covariance residual.
+
+\subsection{Exponential-map discretization}
+
+With step $\Delta t$ the implemented update is
+\begin{equation}\label{eq:expmap}
+m_{k+1}=m_k-\Delta t\,C_k\,g(m_k,C_k),\qquad
+C_{k+1}=C_k^{1/2}\exp\!\Big(\tfrac{\Delta t}{2\omega}\big(-B_k+\alpha_k I\big)\Big)C_k^{1/2}.
+\end{equation}
+Because $-B_k+\alpha_k I$ is symmetric, its matrix exponential is symmetric
+positive definite, and $C_{k+1}$ is a congruence transform of an SPD matrix;
+hence $C_{k+1}\in\SPD(n)$ at every step, with no projection. This is the discrete
+exponential map on the SPD manifold.
+
+\section{Trace-mode linearization}\label{sec:linearization}
+
+The effect of $\tau$ is made precise by linearizing near stationarity. Consider
+an isotropic perturbation of the whitened Hessian, $B=(1+\varepsilon)I$, so that
+$\Tr(B)=n(1+\varepsilon)$ and
+\begin{equation}
+\alpha=\frac{\omega+\tau n(1+\varepsilon)}{\omega+n\tau}
+       =1+\frac{n\tau}{\omega+n\tau}\,\varepsilon,
+\qquad\Longrightarrow\qquad
+-B+\alpha I=-\frac{\omega}{\omega+n\tau}\,\varepsilon\,I.
+\end{equation}
+Substituting into \eqref{eq:flow} near $C=I$ gives a linear decay
+$\dot\varepsilon=-\kappa_{\mathrm{tr}}\,\varepsilon$ for the trace mode with rate
+\begin{equation}\label{eq:kappatr}
+\kappa_{\mathrm{tr}}=\frac{1}{2(\omega+n\tau)}.
+\end{equation}
+Three consequences follow for the volume/trace mode, all independent of the
+mean and shape modes:
+\begin{itemize}\itemsep2pt
+  \item $\tau=0$: rate $\kappa_{\mathrm{tr}}=1/(2\omega)$;
+  \item $\tau_-=-\omega/2n$: $\omega+n\tau=\omega/2$, so $\kappa_{\mathrm{tr}}=1/\omega$ --- the rate doubles, the convergence time halves;
+  \item $\tau_+=+\omega/2n$: $\omega+n\tau=3\omega/2$, so $\kappa_{\mathrm{tr}}=1/(3\omega)$ --- the time scale grows by $3/2$.
+\end{itemize}
+The mean equation in \eqref{eq:flow} does not contain $\tau$, and a traceless
+(shape) residual has $\Tr=0$, on which $\alpha$ has no leading-order effect. Thus
+$\tau$ can accelerate \emph{only} a trace-dominated transient.
+
+To quantify how trace-dominated a residual is, decompose the covariance residual
+$R_{\mathrm{cov}}$ into trace and traceless parts and define the
+\emph{trace-dominance ratio}
+\begin{equation}\label{eq:chi}
+\chi=\frac{\big(\Tr R_{\mathrm{cov}}\big)^2}{n\,\|R_{\mathrm{cov}}\|_F^2}\in[0,1],
+\end{equation}
+with $\chi\approx1$ a purely volume residual and $\chi\approx0$ a purely shape
+residual. By \eqref{eq:kappatr} the realized $\tau$-speedup should be largest
+when $\chi_0\approx1$.
+
+\section{Experiments}
+
+Two targets are used. The \textbf{Gaussian} target $V(\theta)=\tfrac12\|\theta\|^2$,
+$\pi=\N(0,I)$, has exact expectations $g(m,C)=m$, $S(m,C)=I$, equilibrium
+$(m_\star,C_\star)=(0,I)$, and admits an exact diagonal covariance update in the
+eigenbasis of $C$. The \textbf{log-concave} target
+\begin{equation}
+V_\rho(x)=\tfrac12\|x\|^2+\frac{\rho}{m}\sum_{\ell=1}^{m}\log\cosh(a_\ell^\top x),
+\qquad
+I\preceq\grad^2 V_\rho\preceq(1+\rho)I,
+\end{equation}
+with $m=4n$ fixed unit directions $a_\ell$, is $1$-strongly convex and
+$(1+\rho)$-smooth. Its expectations are estimated with a fixed Monte Carlo sample
+set (common random numbers across all $(\omega,\tau,\text{init})$ runs), and the
+reference optimum $a_\star=(m_\star,C_\star)$ is computed by L-BFGS-B on a
+fixed-sample estimate of $F$ over a Cholesky factor.
+
+Five initializations isolate the convergence modes: \emph{mean} (mean
+displaced, $C_0=C_\star$), \emph{vol-high}/\emph{vol-low} (isotropic
+$C_0=4C_\star$ / $0.25\,C_\star$, $\chi_0\approx1$), \emph{shape} (traceless,
+$\det C_0=\det C_\star$, $\chi_0\approx0$), and \emph{mixed} (all modes). For
+each $\omega$ the three values $\tau\in\{-\omega/2n,0,+\omega/2n\}$ are run. The
+grid metadata is given in Table~\ref{tab:ot-meta}.
+
+\begin{table}[t]
+\centering
+\caption{Configuration of the two $(\omega,\tau)$ grids. The Gaussian target uses
+exact expectations; the log-concave target uses a fixed Monte Carlo sample set
+with a numerically computed reference optimum $F_\star$.}
+\label{tab:ot-meta}
+\inputtable{tab_ot_metadata.tex}
+\end{table}
+
+\section{Results}
+
+\paragraph{Time scale set by $\omega$.}
+Figure~\ref{fig:ot-ttt} shows the time-to-tolerance at $\tau=0$ as a function of
+$\omega$ and initialization, for both targets. The mean mode is essentially flat
+in $\omega$ (its equation does not involve $\omega$ or $\tau$), whereas the
+covariance-dominated modes slow monotonically as $\omega$ grows, consistent with
+the $\kappa_{\mathrm{tr}}\propto1/\omega$ scaling of \eqref{eq:kappatr}.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.48\textwidth}\centering
+  \includegraphics[width=\linewidth]{fig_ot_gaussian_time_to_tol.pdf}
+  \caption{Gaussian target.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}\centering
+  \includegraphics[width=\linewidth]{fig_ot_logconcave_time_to_tol.pdf}
+  \caption{log-concave target.}
+\end{subfigure}
+\caption{Time to reach the convergence tolerance at $\tau=0$, by initialization
+(rows) and $\omega$ (columns). The mean mode is independent of $\omega$; the
+volume and shape modes slow as $\omega$ increases. Cells that do not reach the
+tolerance within the horizon are masked and labeled $>T$.}
+\label{fig:ot-ttt}
+\end{figure}
+
+\paragraph{$\tau$ accelerates only the volume mode.}
+Figure~\ref{fig:ot-speedup} reports the time-to-tolerance ratio $T(\tau)/T(0)$.
+For both targets and uniformly in $\omega$, the two volume initializations
+accelerate by a factor close to $2$ under $\tau_-$ (ratios $0.47$--$0.51$) and
+slow by a factor close to $3/2$ under $\tau_+$ (ratios $1.47$--$1.51$), matching
+the predicted trace-mode rates of Section~\ref{sec:linearization}. The mean and
+shape modes stay within a few percent of $1$, confirming that $\tau$ leaves them
+unaffected. Table~\ref{tab:ot-speedup} lists the ratios at $\omega=0.5$.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.49\textwidth}\centering
+  \includegraphics[width=\linewidth]{fig_ot_gaussian_tau_speedup.pdf}
+  \caption{Gaussian target.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\textwidth}\centering
+  \includegraphics[width=\linewidth]{fig_ot_logconcave_tau_speedup.pdf}
+  \caption{log-concave target.}
+\end{subfigure}
+\caption{Speedup ratio $T(\tau)/T(0)$ (diverging scale centered at $1$). Blue
+$<1$ is faster than $\tau=0$, red $>1$ is slower. Only the volume modes move:
+$\approx0.5$ under $\tau_-$ and $\approx1.5$ under $\tau_+$, across all $\omega$.}
+\label{fig:ot-speedup}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Time-to-tolerance and $\tau$-speedup ratios at $\omega=0.5$ (Gaussian
+tolerance $10^{-4}$, log-concave $10^{-2}$). $T(0)$ is in flow-time units.}
+\label{tab:ot-speedup}
+\inputtable{tab_ot_speedup.tex}
+\end{table}
+
+\paragraph{The speedup tracks trace dominance.}
+Figure~\ref{fig:ot-chi} plots the realized $\tau_-$ speedup against the initial
+trace-dominance $\chi_0$ of \eqref{eq:chi} for the log-concave target. The
+near-$2\times$ acceleration ($T(\tau_-)/T(0)\approx0.5$) is realized only for
+$\chi_0\approx1$; as $\chi_0\to0$ the ratio returns to $1$. This is the
+mechanism behind the mode selectivity: $\tau$ rescales the trace channel, so its
+benefit is proportional to how much of the limiting error lives in that channel.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{fig_ot_speedup_vs_chi.pdf}
+\caption{Realized $\tau_-$ speedup versus initial trace-dominance $\chi_0$
+(log-concave target, all $\omega$). The acceleration is realized only for
+trace-dominated initializations ($\chi_0\approx1$); shape- and mean-dominated
+initializations ($\chi_0$ small) show no net speedup.}
+\label{fig:ot-chi}
+\end{figure}
+
+\section{Discussion}
+
+Within the affine-invariant family, no single $(\omega,\tau)$ is uniformly
+optimal; the parameters trade off cleanly separated channels.
+\begin{itemize}\itemsep2pt
+  \item $\omega$ sets the covariance time scale uniformly. Smaller $\omega$
+  accelerates every covariance mode but does not affect the mean; the mean
+  channel is governed by its own (parameter-free) equation.
+  \item $\tau$ acts only on the volume mode, with rate
+  $\kappa_{\mathrm{tr}}=1/[2(\omega+n\tau)]$. A negative $\tau$ (subject to
+  $\omega+n\tau>0$) accelerates volume-dominated transients---up to the
+  $2\times$ realized here at $\tau_-=-\omega/2n$---and is otherwise neutral.
+\end{itemize}
+The practical recommendation is therefore conditional on the dominant error
+mode: when the limiting error is volume/trace dominated ($\chi_0$ near $1$),
+choosing $\tau<0$ as negative as admissibility allows shortens the convergence
+time; when the limiting error is shape- or mean-dominated, $\tau$ should be left
+at $0$ and only $\omega$ tuned.
+
+\paragraph{Limitations.}
+The experiments cover $n\le 10$ (Gaussian) and $n=5$ (log-concave) with the
+grids of Table~\ref{tab:ot-meta}. The log-concave expectations are Monte Carlo
+estimates with a fixed sample set; the normalized objective gap has a numerical
+floor near $10^{-4}$ for that run, so the speedup ratios are read at the
+$10^{-2}$ tolerance, which is well above the floor. The reported factors are
+empirical time-to-tolerance ratios consistent with the linearized rates; they
+are not a global convergence proof.
+
+\end{document}

@@ -26,8 +26,8 @@ def get_torch():
     except Exception as exc:  # pragma: no cover - exercised only without torch
         raise ImportError(
             "PyTorch is required for the torch/GPU backend but is not importable. "
-            "Install it (see reports/gpu_colab_notes.md), e.g. "
-            "`pip install torch`, or use backend='numpy'."
+            "Install it (see requirements-gpu.txt and the README 'GPU backend' "
+            "section), e.g. `pip install torch`, or use backend='numpy'."
         ) from exc
 
 

@@ -9,7 +9,7 @@ summaries. The good rows are left untouched (same run_id preserved).
 Usage:
     CUDA_VISIBLE_DEVICES=2 python scripts/natural_gradient_local_rate/_patch_failed_rows.py \
         --config configs/natural_gradient_local_rate/gpu_lowdim_operator_full.yaml \
-        --outdir outputs/natural_gradient_local_rate/gpu_lowdim_operator_full \
+        --outdir outputs/natural_gradient_local_rate \
         --device cuda --dtype float64 --chunk-size 1048576
 """
 import argparse

@@ -1,0 +1,311 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+
+\title{The Local Convergence Rate of Gaussian Natural Gradient Flow\\
+is Empirically Dimension-Free}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The Gaussian natural gradient flow contracts toward its equilibrium at a local
+rate $\gloc$ equal to the smallest eigenvalue of the linearized positive
+generator $L_\star$ in the Fisher--Rao metric. The current analysis bounds
+$\gloc$ from below by $1/(4+\Gamma)$ with
+$\Gamma=\min\{\beta-1,\,n(3+\tfrac{4}{\sqrt\pi}(1+\log\kappa))\}$, whose second
+branch carries an explicit dimension factor $n=N_\theta$. We estimate $\gloc$
+directly from the linearized operator over a controlled grid
+($N_\theta=1,\dots,16$; $\kappa\in\{2,5,10,20,50,100\}$; five potential families;
+three seeds; $M=2^{22}$ Monte Carlo samples per point, float64, GPU). Across
+every family the measured $\gloc$ is essentially flat in $N_\theta$ and varies
+only with the conditioning $\kappa$. This indicates that the genuine local rate
+is governed by $\kappa$ rather than $N_\theta$, and that the $N_\theta$ factor in
+the present bound is an artifact of the proof rather than a property of the flow.
+We are careful to separate this conclusion, which rests on the well-conditioned
+estimator $\gloc$, from the full-operator norm estimate $\Lhat$, whose apparent
+growth with $N_\theta$ we show to be finite-sample spectral noise.
+\end{abstract}
+
+\section{Setup}
+
+Work in equilibrium-whitened coordinates, where the target satisfies
+$\E_{\N(0,I)}[\grad V(Z)]=0$ and $\E_{\N(0,I)}[\grad^2 V(Z)]=I$, so the
+equilibrium of the Gaussian natural gradient flow is $a_\star=(0,I)$.
+Parameterize a perturbation as $m=u$ and $C=I+X$ with $X\in\Sym(N_\theta)$.
+
+\begin{definition}[Linearized operators]\label{def:ops}
+For $u\in\R^{N_\theta}$ and $X\in\Sym(N_\theta)$, with $Z\sim\N(0,I)$ and
+$W(Z)=\grad^2 V(Z)$, define
+\begin{align*}
+T[X]&=\E\big[\Tr(X\,W(Z))\,Z\big], &
+T^\ast[u]&=\E\big[W(Z)\,(Z^\top u)\big], \\
+H[X]&=\E\big[W(Z)\,(Z^\top X Z-\Tr X)\big], &
+H_{\mathrm{sym}}[X]&=\tfrac12\big(H[X]+H^\ast[X]\big).
+\end{align*}
+\end{definition}
+
+\begin{proposition}[Linearized generator]\label{prop:Lstar}
+The linearized positive generator $L_\star=-J_\star$ of the flow is
+\begin{equation}
+L_\star(u,X)=\Big(u+\tfrac12 T[X],\;\; X+T^\ast[u]+\tfrac12 H_{\mathrm{sym}}[X]\Big),
+\end{equation}
+and it is self-adjoint with respect to the local Fisher--Rao inner product at
+equilibrium,
+\begin{equation*}
+\langle(u_1,X_1),(u_2,X_2)\rangle_\star=u_1^\top u_2+\tfrac12\Tr(X_1X_2).
+\end{equation*}
+The local convergence rate is the smallest eigenvalue
+$\gloc=\lambda_{\min}(L_\star)$.
+\end{proposition}
+
+The analysis of the manuscript establishes the lower bound
+\begin{equation}\label{eq:bound}
+\gloc\;\ge\;\frac{1}{4+\Gamma},
+\qquad
+\Gamma=\min\Big\{\beta-1,\;N_\theta\big(3+\tfrac{4}{\sqrt\pi}(1+\log\kappa)\big)\Big\},
+\end{equation}
+where $\alpha\le 1\le\beta$ are the strong-convexity and smoothness constants and
+$\kappa=\beta/\alpha$. The dimension-free conjecture replaces $\Gamma$ by
+$D_\kappa=(4+\tfrac{4}{\sqrt\pi})(1+\log\kappa)$, i.e. a rate that depends on the
+conditioning $\kappa$ but not on $N_\theta$. The experiments below test which
+behavior the measured $\gloc$ actually follows.
+
+\section{Estimator and experimental design}
+
+\paragraph{Estimator.}
+The operators of Definition~\ref{def:ops} are estimated on a fixed Monte Carlo
+bank $\{Z_j\}_{j=1}^{M}$, $Z_j\sim\N(0,I)$. Two corrections are essential for the
+spectrum to be meaningful on a finite bank.
+\begin{itemize}\itemsep2pt
+  \item \emph{Symmetrization.} In exact expectation $H$ is self-adjoint, but the
+  plain forward Monte Carlo estimator is not; its Frobenius adjoint is a
+  different operator. We estimate the explicitly symmetrized
+  $H_{\mathrm{sym}}=\tfrac12(H_{\mathrm{fwd}}+H_{\mathrm{adj}})$ on the same bank
+  and use it for every eigenvalue. The residual self-adjointness error is at the
+  level of $10^{-15}$.
+  \item \emph{Fisher--Rao packing.} $L_\star$ is self-adjoint in the Fisher--Rao
+  metric, not the Euclidean one. Packing tangents as
+  $y=(u,\ \mathrm{sym\_to\_vec}(X)/\sqrt2)$, with $\mathrm{sym\_to\_vec}$ a
+  Frobenius isometry, makes the packed matrix genuinely symmetric, and $\gloc$ is
+  obtained from a dense symmetric eigensolve.
+\end{itemize}
+For separable control potentials a Gauss--Hermite quadrature provides an exact,
+sample-free benchmark $\Lambda_{\mathrm{exact}}=\max_i\E[V_i''(Z)(Z^2-1)]$ that is
+dimension-free by construction; it is used below to expose finite-sample noise in
+the full-operator estimate.
+
+\paragraph{Potential families.}
+All non-Gaussian targets are built by the same construction: a raw feature
+$\Phi$ is centered so that $\E_{\N(0,I)}[\grad V]=0$ and
+$\E_{\N(0,I)}[\grad^2 V]=I$, giving $V=\tfrac12\|\theta\|^2+\rho(\Phi-b^\top\theta-\tfrac12\theta^\top M\theta)$
+with $\grad^2 V=I+\rho(\grad^2\Phi-M)$. The coupling $\rho$ is set from the target
+conditioning $\kappa$ through $\rho=\tfrac{\kappa-1}{\kappa+1}/L_A$, so that
+$\alpha=\tfrac{2}{\kappa+1}$, $\beta=\tfrac{2\kappa}{\kappa+1}$, and
+$\beta/\alpha=\kappa$. The five families are chosen to vary one structural
+property of $\grad^2 V$ at a time, so that any genuine dimension dependence would
+have to survive across qualitatively different Hessian geometries:
+\begin{itemize}\itemsep3pt
+  \item \textbf{Gaussian} ($V=\tfrac12\|\theta\|^2$, $\grad^2 V=I$). The exact
+  control: the equilibrium is reached identically, the true operators vanish, and
+  $\gloc=1$ analytically. It calibrates the estimator and the finite-sample floor,
+  since any departure from $\Lambda=0$, $\gloc=1$ is pure Monte Carlo noise.
+  \item \textbf{Separable}, $\Phi(\theta)=\sum_i\phi(\theta_i+c_i)$ with
+  $\phi=\log\cosh$. The Hessian is \emph{diagonal}, so the linearized operator
+  decouples coordinate-wise and the rate is governed by the one-dimensional
+  curvature law $\E[V_i''(Z)(Z^2-1)]$. This is the only family with a
+  closed-form, dimension-free benchmark (Gauss--Hermite), making it the reference
+  case: if the rate were to acquire an $N_\theta$ factor, the diagonal family
+  would expose it most cleanly. It is also the most strongly conditioned in
+  practice (smallest realized $\gloc$).
+  \item \textbf{Additive-index}, $\Phi(\theta)=\tfrac{1}{\sqrt r}\sum_{\ell=1}^{r}a_\ell\,\phi(w_\ell^\top\theta+c_\ell)$
+  with $r=4N_\theta$ random unit directions $w_\ell$. The Hessian
+  $\grad^2\Phi=\sum_\ell\text{(scalar)}\,w_\ell w_\ell^\top$ is a sum of rank-one
+  terms along fixed directions; it carries genuine off-diagonal curvature, so the
+  linearized operator no longer decouples. This is the first test of whether
+  coupling between coordinates introduces dimension dependence.
+  \item \textbf{Random-feature}: the same ridge-sum form with a dense bank of
+  random directions and width growing as $r=4N_\theta$. It is the general
+  coupled potential and the primary stress test---the Hessian is full and its
+  spectrum is determined by the random-feature geometry rather than a small set
+  of indices.
+  \item \textbf{Radial-tail}, $\Phi(\theta)=h(\|\theta\|^2)$ with
+  $h=\log\cosh$. The Hessian $2h'I+4h''\theta\theta^\top$ is isotropic in
+  distribution, so the perturbation lives almost entirely in the trace/volume
+  mode. It probes the heavy-tailed, rotationally symmetric regime; because the
+  isotropic mode is exactly the channel $L_\star$ contracts fastest, it serves as
+  a second (non-separable) near-ideal control.
+\end{itemize}
+These families span the relevant axes---no coupling (Gaussian, separable),
+sparse directional coupling (additive-index), dense coupling (random-feature),
+and isotropic heavy-tail (radial-tail)---so that a dimension-dependent rate would
+have to appear in at least one of them if it were real.
+
+\paragraph{Final production grid.}
+All results in this report come from a single production run; smoke, baseline,
+and high-dimensional pilot runs are explicitly excluded. The grid spans five
+potential families (the analytic Gaussian; separable; additive-index;
+random-feature; radial-tail), $N_\theta=1,\dots,16$, six conditioning values
+$\kappa$, and three seeds, with $M=2^{22}$ Monte Carlo samples per grid point in
+float64 on a single GPU. Every one of the $1440$ rows completed successfully.
+Metadata is summarized in Table~\ref{tab:lr-meta}.
+
+\begin{table}[t]
+\centering
+\caption{Metadata of the final natural-gradient local-rate production run. This
+is the only run interpreted as evidence; exploratory smoke/baseline/pilot runs
+are excluded.}
+\label{tab:lr-meta}
+\inputtable{tab_lr_metadata.tex}
+\end{table}
+
+\section{Results}
+
+\paragraph{$\gloc$ is flat in $N_\theta$.}
+Figure~\ref{fig:gamma-N} shows $\gloc$ as a function of $N_\theta$ at the hardest
+conditioning $\kappa=100$, for each family (mean over seeds, shaded
+$\pm$ standard deviation). For every family the curve is essentially horizontal
+across $N_\theta=1,\dots,16$: the Gaussian and radial-tail controls sit at
+$\gloc\approx1$, the coupled additive-index and random-feature families hold near
+$0.91$, and the separable family near $0.73$, with no downward drift in
+$N_\theta$. This is the central observation: the measured rate does not decay
+with dimension, in contrast to the $1/(4+\Gamma)$ branch of \eqref{eq:bound},
+whose $N_\theta$ factor would force $\gloc\to0$ as $N_\theta$ grows.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{fig_lr_gamma_vs_Ntheta_k100.pdf}
+\caption{Local rate $\gloc$ versus dimension $N_\theta$ at $\kappa=100$, by
+potential family (mean over three seeds; shaded band $\pm1$ s.d.). Every family
+is flat in $N_\theta$, contradicting a genuine $1/N_\theta$-type dimension
+dependence of the rate.}
+\label{fig:gamma-N}
+\end{figure}
+
+\paragraph{$\gloc$ varies with $\kappa$.}
+Figure~\ref{fig:gamma-kappa} fixes $N_\theta=16$ and varies $\kappa$. Here the
+coupled families do move: the separable rate decreases from $\approx0.91$ at
+$\kappa=2$ to $\approx0.73$ at $\kappa=100$, and the additive-index/random-feature
+families from $\approx0.97$ to $\approx0.91$, while the Gaussian and radial-tail
+controls remain at $\approx1$. The dependence is mild and monotone in $\log\kappa$,
+consistent with the conditioning-driven $D_\kappa$ form rather than a dimensional
+one. Table~\ref{tab:lr-ranges} gives the per-family ranges over the whole grid.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{fig_lr_gamma_vs_kappa_N16.pdf}
+\caption{Local rate $\gloc$ versus conditioning $\kappa$ at $N_\theta=16$
+(log-scaled $\kappa$). The rate decreases mildly with $\kappa$ for the coupled
+families and is flat for the controls---the opposite of the $N_\theta$
+behavior in Figure~\ref{fig:gamma-N}.}
+\label{fig:gamma-kappa}
+\end{figure}
+
+\paragraph{Per-family reading.}
+The ordering of the families by $\gloc$ follows directly from their Hessian
+geometry, which is the consistency check that the numbers are measuring the
+intended effect.
+\begin{itemize}\itemsep3pt
+  \item The \emph{Gaussian} and \emph{radial-tail} families sit at
+  $\gloc\approx1$ throughout. For the Gaussian this is exact; for radial-tail the
+  perturbation is isotropic and therefore lives in the trace/volume mode, which
+  is precisely the channel $L_\star$ contracts at unit rate. Their flatness in
+  both $N_\theta$ and $\kappa$ confirms the estimator is unbiased where the answer
+  is known.
+  \item The \emph{separable} family has the smallest rate (down to
+  $\gloc\approx0.65$) and the strongest $\kappa$-dependence. This is expected: it
+  is the most strongly conditioned realization (at $\kappa=100$, $N_\theta=8$ the
+  centering gives $\rho\approx1.55$, $\alpha\approx0.02$, $\beta\approx1.98$), and
+  its diagonal Hessian concentrates the curvature deficit in the shape modes that
+  $L_\star$ contracts slowest. Even so $\gloc$ is flat in $N_\theta$.
+  \item The \emph{additive-index} and \emph{random-feature} families track each
+  other closely ($\gloc\approx0.91$ at $\kappa=100$) and lie between the controls
+  and the separable case. The off-diagonal curvature they introduce lowers the
+  rate relative to the isotropic controls but---crucially---adds no $N_\theta$
+  dependence, even as the feature width grows with dimension ($r=4N_\theta$).
+\end{itemize}
+In every family the dependence is on $\kappa$, through how aggressively the
+target is conditioned, and not on $N_\theta$.
+
+\paragraph{Relation to the bound.}
+Two remarks place these measurements against \eqref{eq:bound}. First, $\gloc$
+stays well above the lower bound $1/(4+\Gamma)$ everywhere (the smallest measured
+$\gloc\approx0.63$ versus a bound $\le0.25$), as it must. Second, in this
+construction the smoothness satisfies $\beta=2\kappa/(\kappa+1)<2$, so the
+$\beta-1$ branch of $\Gamma$ is the active one for $N_\theta\ge2$; the
+experiments therefore do not drive the $N_\theta(3+\tfrac{4}{\sqrt\pi}(1+\log\kappa))$
+branch through $\beta$. What they test is the complementary and more basic
+question---whether the \emph{realized} rate carries any $N_\theta$ dependence at
+all---and the answer over the tested range is that it does not.
+
+\begin{table}[t]
+\centering
+\caption{Range of the seed-averaged $\gloc$ over the full grid, by family, and
+the largest inverse rate $1/\gloc$. The rate stays well away from $0$ in every
+family; the spread within a family is driven by $\kappa$, not $N_\theta$.}
+\label{tab:lr-ranges}
+\inputtable{tab_lr_family_ranges.tex}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{fig_lr_gamma_vs_Ntheta_grid.pdf}
+\caption{Local rate $\gloc$ versus $N_\theta$, one panel per conditioning
+$\kappa$, all families. The flatness in $N_\theta$ holds at every $\kappa$; the
+only systematic motion is the downward shift of the coupled families as $\kappa$
+increases.}
+\label{fig:gamma-grid}
+\end{figure}
+
+\paragraph{The full-operator norm is a noisy diagnostic, not the rate.}
+A natural temptation is to read dimension dependence off the largest eigenvalue
+$\Lhat$ of the symmetric-matrix operator $H_{\mathrm{sym}}$. This is misleading.
+$H_{\mathrm{sym}}$ acts on the $N_\theta(N_\theta+1)/2$-dimensional space of
+symmetric matrices, so its top eigenvalue is biased upward by finite-sample
+spectral noise that grows with that dimension. Figure~\ref{fig:lambda-artifact}
+makes this explicit for the separable family, where the Gauss--Hermite benchmark
+$\Lambda_{\mathrm{exact}}$ is exact and dimension-free: the Monte Carlo estimate
+$\Lhat_{\mathrm{full\;sym}}$ rises with $N_\theta$ while $\Lambda_{\mathrm{exact}}$
+is flat. The gap is estimator noise, not a property of the flow, which is why the
+dimension-independence conclusion is drawn from the well-conditioned $\gloc$
+(a smallest-eigenvalue problem on the metric-correct operator) and not from
+$\Lhat$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{fig_lr_lambda_artifact.pdf}
+\caption{Separable family: the Monte Carlo full-operator norm
+$\Lhat_{\mathrm{full\;sym}}$ (red) inflates with $N_\theta$, whereas the exact
+Gauss--Hermite benchmark $\Lambda_{\mathrm{exact}}$ (blue), which is dimension-free
+by construction, is flat. The inflation is finite-sample spectral noise on the
+$O(N_\theta^2)$-dimensional operator and must not be read as a dimensional
+property of the rate.}
+\label{fig:lambda-artifact}
+\end{figure}
+
+\section{Discussion}
+
+The measured local rate $\gloc$ is flat in $N_\theta$ at every conditioning and
+moves only with $\kappa$ (Figures~\ref{fig:gamma-N}--\ref{fig:gamma-grid}). This
+is the behavior of the dimension-free form $1/(4+D_\kappa)$ and not of the
+$1/(4+n(\cdots))$ branch of the present bound \eqref{eq:bound}. The numerical
+evidence therefore indicates that the genuine local convergence rate of Gaussian
+natural gradient flow is governed by the conditioning $\kappa$, and that the
+explicit $N_\theta$ factor in the current proof is an artifact of the bounding
+argument---most plausibly the step that controls $\lambda_{\max}(G-\mathbf{1}\mathbf{1}^\top)$
+by $N_\theta(3+\tfrac{4}{\sqrt\pi}(1+\log\kappa))$ via a sum over all
+coordinates, rather than a property of $L_\star$ itself.
+
+\paragraph{Limitations.}
+This is numerical evidence, not a theorem. The grid covers $N_\theta\le16$ at a
+single sample size $M=2^{22}$; while the separable diagonal and Gauss--Hermite
+benchmarks confirm that $\gloc$ is well-converged at this $M$ (unlike $\Lhat$),
+the experiments do not establish behavior for $N_\theta\gg16$. The conclusion is
+that the data are inconsistent with a genuine $1/N_\theta$-type decay over the
+tested range and consistent with a $\kappa$-only rate; turning this into a
+dimension-free guarantee requires a revised proof. The full-operator norm $\Lhat$
+is reported only as a diagnostic and is explicitly not used as evidence about the
+rate.
+
+\end{document}

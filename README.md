@@ -1,218 +1,182 @@
-# Gaussian Gradient Flow Experiments
+# Affine-Invariant Gaussian Gradient Flow Experiments
 
-Numerical experiments for Gaussian gradient flows in variational inference. The
-variational family is the non-degenerate Gaussians `N(m, C)` and the goal is to
-minimize `KL(N(m, C) || target)`. The repository is organized into two
-self-contained experiment groups, each with its own configs, source modules,
-scripts, tests, and outputs.
+Numerical experiments for Gaussian variational inference, where the variational
+family is the non-degenerate Gaussians `N(m, C)` and the objective is
+`KL(N(m, C) || target)`. The repository contains two self-contained experiment
+groups, each with its own configs, source modules, scripts, tests, and outputs.
+
+The polished write-ups for both groups are the LaTeX reports in
+[`reports/`](reports/); this file documents the code, the final outputs, and the
+exact commands to reproduce them.
 
 ## Experiment groups
 
-### `omega_tau_modes`
-The two-parameter affine-invariant Gaussian gradient flow family with parameters
-`omega` and `tau`. Studies how `omega` and `tau` affect the mean,
-covariance-volume, covariance-shape, and mixed convergence modes, for both an
-exact Gaussian target and a strongly log-concave non-Gaussian target.
+### 1. `omega_tau_modes` — affine-invariant `(omega, tau)` flows
 
-### `natural_gradient_local_rate`
-The Gaussian natural gradient flow. Asks whether its **local** convergence rate
-near equilibrium is essentially dimension-free — i.e. whether the rate depends on
-the dimension `N_theta`, or only weakly on the conditioning `kappa` through
-`log(kappa)`. Working in equilibrium-whitened coordinates with `a_star = (0, I)`,
-it estimates the local rate `gamma_loc` (smallest eigenvalue of the linearized
-positive generator `L_star`) and the operator norm `Lambda_hat` (largest
-eigenvalue of the symmetric-matrix operator `H_lin`), and validates them against a
-Riemannian-exponential-map flow simulation.
+A two-parameter family of affine-invariant Gaussian gradient flows. The scalar
+`omega > 0` rescales the covariance dynamics uniformly; `tau > -omega/n` enters
+only through a trace-weighting term and therefore acts solely on the
+covariance-volume (trace) mode. The experiments isolate four convergence modes
+(mean, covariance-volume, covariance-shape, mixed) and quantify the effect of
+`omega` and `tau` on each, for an exact Gaussian target and a strongly
+log-concave non-Gaussian target.
 
-Notation used throughout this group: `N_theta` (dimension),
-`rho_post(theta) ∝ exp(-V(theta))` (target), `rho_a = N(m, C)`, `a = (m, C)`,
-`E(a) = KL(rho_a || rho_post)`, equilibrium `a_star = (0, I)`.
+**Finding.** A negative `tau` accelerates volume-dominated transients (about a
+2x speedup at `tau = -omega/2n`) and slows them by ~3/2 at `tau = +omega/2n`,
+while the mean and shape modes are unaffected; the realized speedup tracks the
+initial trace-dominance of the perturbation. See
+[`reports/affine_invariant_omega_tau_report.tex`](reports/affine_invariant_omega_tau_report.tex).
 
-## Repository structure
+### 2. `natural_gradient_local_rate` — local convergence rate
+
+The Gaussian natural gradient flow near equilibrium. In equilibrium-whitened
+coordinates with `a_star = (0, I)`, the local rate `gamma_loc` is the smallest
+eigenvalue of the linearized positive generator `L_star` in the Fisher–Rao
+metric. The question is whether `gamma_loc` genuinely depends on the dimension
+`N_theta`, or only on the conditioning `kappa` through `log(kappa)`.
+
+**Finding.** Over the final production grid the measured `gamma_loc` is
+essentially flat in `N_theta` at every `kappa` and varies only with `kappa`,
+indicating that the `N_theta` factor in the current proof bound is a proof
+artifact rather than a property of the flow. See
+[`reports/natural_gradient_local_rate_report.tex`](reports/natural_gradient_local_rate_report.tex).
+
+## Which outputs are final
+
+Only these directories are interpreted as evidence in the reports:
+
+```
+outputs/gaussian_grid/                              omega/tau, Gaussian target
+outputs/logconcave_grid/                            omega/tau, log-concave target
+outputs/natural_gradient_local_rate/operator_grid/        local rate: Lambda_hat + gamma_loc
+outputs/natural_gradient_local_rate/linearized_rate_grid/ local rate: gamma_loc + eigenvectors
+```
+
+The local-rate final run is a single GPU production grid (`N_theta = 1..16`,
+`kappa in {2,5,10,20,50,100}`, five potential families, three seeds,
+`M_mc = 2^22 = 4,194,304`, torch/CUDA/float64, 1440 rows, all `status == ok`).
+Exploratory smoke, baseline, and high-dimensional pilot runs are **not** evidence
+and have been removed. `outputs/` is git-ignored except for the committed final
+CSVs/summaries.
+
+## Installation
+
+```bash
+pip install -r requirements.txt        # CPU, float64; NumPy/SciPy/matplotlib/pandas
+```
+
+The optional PyTorch GPU backend (used only for the local-rate production grid)
+is not in the base requirements; see [`requirements-gpu.txt`](requirements-gpu.txt).
+A CUDA build is needed for the production command below; a CPU torch build also
+exercises the same code path (`--backend torch --device cpu`).
+
+## Tests
+
+```bash
+pytest
+```
+
+## Reproducing the omega/tau experiments
+
+The final outputs live at `outputs/gaussian_grid/` and
+`outputs/logconcave_grid/`. Pass `--outdir` explicitly to write there (the config
+default base directory is `outputs/omega_tau_modes/...`):
+
+```bash
+python scripts/omega_tau_modes/run_gaussian_grid.py \
+    --config configs/omega_tau_modes/gaussian_target.yaml \
+    --outdir outputs/gaussian_grid
+
+python scripts/omega_tau_modes/run_logconcave_grid.py \
+    --config configs/omega_tau_modes/logconcave_target.yaml \
+    --outdir outputs/logconcave_grid
+```
+
+Add `--smoke` for fast reduced grids. Per-group figures (not required by the
+reports) can be produced with
+`scripts/omega_tau_modes/plot_gaussian_results.py` and
+`plot_logconcave_results.py`.
+
+## Reproducing the natural-gradient local-rate production run
+
+The production grid runs on a CUDA GPU (developed on an NVIDIA H200). The joint
+runner computes the shared dense accumulation once per grid point and writes both
+the `operator_grid` and `linearized_rate_grid` stages plus the slow eigenvectors.
+With `--outdir outputs/natural_gradient_local_rate` the two stages land directly
+under that directory (the layout the reports read):
+
+```bash
+python scripts/natural_gradient_local_rate/run_operator_linearized_grid.py \
+    --config configs/natural_gradient_local_rate/gpu_lowdim_operator_full.yaml \
+    --backend torch --device cuda --dtype float64 \
+    --chunk-size 1048576 \
+    --outdir outputs/natural_gradient_local_rate \
+    --overwrite
+```
+
+Notes:
+- `--chunk-size 1048576` is the recommended value for H200-class GPUs (peak
+  ~25 GB). Use `131072` (peak ~3.7 GB) or `65536` on smaller GPUs.
+- `--device cuda` raises a clear error if CUDA is unavailable; it never silently
+  falls back to CPU. A CPU torch build runs with `--device cpu`.
+- If a few rows fail on a contended GPU (out-of-memory), re-run only the failed
+  rows on a free device with
+  `scripts/natural_gradient_local_rate/_patch_failed_rows.py` (re-runs every
+  `status != ok` row in place and preserves the run id).
+
+### GPU backend
+
+Select the GPU path with `operator.backend: torch` / `--backend torch` and
+`operator.device: cuda` / `--device cuda` (`backend: auto` uses torch only when a
+CUDA device is available). The torch path uses a dense `torch.linalg.eigh`
+eigensolver for `N_theta <= explicit_dense_max_N_theta` and is numerically
+identical to the NumPy/SciPy CPU path on the same sample bank; it changes only
+the speed, not the meaning, of the estimates. Potential centering and the
+`H_sym` accumulation run on-device for the production grid.
+
+## Reports
+
+```bash
+# 1. regenerate every report figure (PDF + PNG) and LaTeX table fragment
+python reports/make_report_assets.py
+#    -> reports/assets/figs/*.pdf, *.png  and  reports/assets/tab_*.tex
+
+# 2. compile the two reports (tectonic resolves preamble.tex and assets/)
+cd reports
+tectonic affine_invariant_omega_tau_report.tex
+tectonic natural_gradient_local_rate_report.tex
+```
+
+`make_report_assets.py` only reads the final CSVs and writes figures/tables; it
+does not re-run any dynamics. The reports `\input` a shared
+[`reports/preamble.tex`](reports/preamble.tex).
+
+## Repository layout
 
 ```
 configs/
   omega_tau_modes/                gaussian_target / logconcave_target configs
   natural_gradient_local_rate/    smoke + grid + production configs
 src/
-  common/                         spd, symspace, monte_carlo, io, plotting style
-  omega_tau_modes/                omega/tau dynamics, targets, metrics, plotting
-  natural_gradient_local_rate/    potentials, operators, linearized rate, flow
+  common/                         spd, symspace, monte_carlo, io, plotting style,
+                                  torch backend helpers
+  omega_tau_modes/                (omega, tau) dynamics, targets, metrics, plotting
+  natural_gradient_local_rate/    potentials, operators, linearized rate, torch backend
 scripts/
-  omega_tau_modes/                grid runners + plotting (+ back-compat shims in scripts/)
-  natural_gradient_local_rate/    operator/rate/flow runners, run_all, plotting
+  omega_tau_modes/                grid runners + plotting
+  natural_gradient_local_rate/    operator/rate/flow runners, plotting, patch tool
 tests/
   common/  omega_tau_modes/  natural_gradient_local_rate/
-reports/                          detailed mathematical write-ups
-outputs/                          experiment outputs
+reports/                          LaTeX reports, shared preamble, asset generator, assets/
+docs/specs/                       tracked implementation specs (source of truth)
+outputs/                          experiment outputs (final CSVs committed)
 ```
 
-## Installation
+## Specs
 
-```bash
-pip install -r requirements.txt
-```
-
-CPU only, float64, no GPU/PyTorch. Python 3.9+.
-
-## Running tests
-
-```bash
-pytest
-```
-
-## Running the omega/tau experiments
-
-```bash
-# fast smoke runs
-python scripts/omega_tau_modes/run_gaussian_grid.py   --config configs/omega_tau_modes/gaussian_target.yaml   --smoke
-python scripts/omega_tau_modes/run_logconcave_grid.py --config configs/omega_tau_modes/logconcave_target.yaml --smoke
-
-# full grids (drop --smoke), then figures
-python scripts/omega_tau_modes/run_gaussian_grid.py   --config configs/omega_tau_modes/gaussian_target.yaml
-python scripts/omega_tau_modes/plot_gaussian_results.py   --indir outputs/omega_tau_modes/gaussian_grid
-python scripts/omega_tau_modes/run_logconcave_grid.py --config configs/omega_tau_modes/logconcave_target.yaml
-python scripts/omega_tau_modes/plot_logconcave_results.py --indir outputs/omega_tau_modes/logconcave_grid
-```
-
-The old entry points (`python scripts/run_gaussian_grid.py`, etc.) still work as
-thin back-compat shims that delegate to the `scripts/omega_tau_modes/` versions.
-
-## Running the natural-gradient local-rate experiments
-
-```bash
-# smoke (fast) — operator norm, linearized rate, flow validation
-python scripts/natural_gradient_local_rate/run_operator_grid.py        --config configs/natural_gradient_local_rate/smoke.yaml
-python scripts/natural_gradient_local_rate/run_linearized_rate_grid.py --config configs/natural_gradient_local_rate/smoke.yaml
-python scripts/natural_gradient_local_rate/run_flow_validation.py      --config configs/natural_gradient_local_rate/smoke.yaml
-
-# or all three in sequence
-python scripts/natural_gradient_local_rate/run_all.py --smoke
-
-# sample-size scaling (sweeps M_mc to separate real trends from MC noise)
-python scripts/natural_gradient_local_rate/run_sample_size_scaling.py --config configs/natural_gradient_local_rate/sample_size_scaling.yaml
-
-# one-pass operator + linearized-rate grid (recommended when both are needed)
-python scripts/natural_gradient_local_rate/run_operator_linearized_grid.py --config configs/natural_gradient_local_rate/production_all.yaml
-
-# figures
-python scripts/natural_gradient_local_rate/plot_results.py              --input outputs/natural_gradient_local_rate   --outdir outputs/natural_gradient_local_rate/figures
-python scripts/natural_gradient_local_rate/plot_estimator_diagnostics.py --input outputs/natural_gradient_local_rate   --outdir outputs/natural_gradient_local_rate/figures/estimator_diagnostics
-```
-
-The larger `operator_grid.yaml`, `linearized_rate_grid.yaml`,
-`flow_validation.yaml`, and `production_all.yaml` configs are provided but are
-**not** run automatically — they are expensive.
-
-#### Operator estimator: modes and diagnostics
-
-The operator norm has two estimator modes, selected by the `operator.estimator`
-config key:
-
-- **`symmetrized`** (default) — the self-adjoint `H_sym = ½(H_lin + H_lin*)`.
-  **Use this for all eigenvalue computations**, including the `L_star`
-  covariance block (`gamma_loc`), which is solved in Fisher–Rao-whitened
-  coordinates so the matrix `eigsh` sees is genuinely symmetric.
-- **`raw_forward`** — the uncorrected forward `H_lin`, kept only for diagnostics
-  and backward comparison; it is *not* self-adjoint on a finite sample bank.
-
-Before interpreting any dimension dependence, run the **separable sanity
-checks**: the diagonal-restricted estimator and the Gauss–Hermite
-`separable_exact` benchmark are dimension-free ground truths for separable
-controls, and the **sample-size scaling** sweep shows whether a high-dimensional
-trend shrinks as `M_mc` grows (finite-sample spectral noise) or persists (a real
-effect). See [`reports/natural_gradient_local_rate_notes.md`](reports/natural_gradient_local_rate_notes.md).
-
-#### GPU backend (optional PyTorch)
-
-An optional PyTorch backend runs the same corrected estimators on a CUDA device
-(for Colab Pro / A100); the NumPy/SciPy CPU path remains the default and the repo
-works without torch installed.
-
-- Select it with `operator.backend: torch` (or `--backend torch`) and
-  `operator.device: cuda` (or `--device cuda`); `backend: auto` uses torch only
-  when a CUDA device is available, else NumPy.
-- The GPU path uses a dense `torch.linalg.eigh` eigensolver for
-  `N_theta <= explicit_dense_max_N_theta` (default 64) and is numerically
-  identical to the CPU path on the same bank.
-- `device=cuda` raises a clear error if CUDA is unavailable (no silent CPU
-  fallback); use `device=cpu` to exercise the torch path on a CPU-only machine.
-- Install torch separately (it is not in base `requirements.txt`); see
-  [`requirements-gpu.txt`](requirements-gpu.txt) and
-  [`reports/gpu_colab_notes.md`](reports/gpu_colab_notes.md).
-
-```bash
-# GPU smoke (torch dense path) — runs on cuda, or cpu without a GPU
-python scripts/natural_gradient_local_rate/run_sample_size_scaling.py \
-    --config configs/natural_gradient_local_rate/gpu_smoke.yaml --backend torch --device cuda
-```
-
-For production diagnostics, prefer
-`configs/natural_gradient_local_rate/gpu_baseline_scaling.yaml`, which runs
-Gaussian, separable, and random-feature families side by side. Always include
-Gaussian and separable baselines, run
-`scripts/natural_gradient_local_rate/postprocess_baselines.py` before
-interpreting plots, and do not interpret raw full-operator growth with
-`N_theta` without baseline correction and sample-size convergence checks. The GPU
-backend changes only the speed, not the meaning, of the estimates.
-
-Stage 1 low-dimensional high-M calibration uses
-`configs/natural_gradient_local_rate/gpu_lowdim_highM_scaling.yaml`. It checks
-representative `N_theta <= 16`, sweeps large `M_mc`, and includes Gaussian,
-separable, random-feature, and radial-tail families so finite-sample baseline
-noise can be calibrated before any denser low-dimensional production scan.
-
-```bash
-python scripts/natural_gradient_local_rate/run_sample_size_scaling.py \
-    --config configs/natural_gradient_local_rate/gpu_lowdim_highM_scaling.yaml \
-    --backend torch --device cuda \
-    --outdir outputs/natural_gradient_local_rate/gpu_lowdim_highM_scaling \
-    --overwrite
-```
-
-The fixed high-M low-dimensional full-operator/local-rate scan uses
-`configs/natural_gradient_local_rate/gpu_lowdim_operator_full.yaml` with
-`N_theta = 1..16`, all production kappa values, all production families, and
-`M_mc = 4,194,304`. The default chunk size is `131072` for H200-class GPUs; use
-`--chunk-size 65536` on smaller GPUs if memory pressure appears.
-
-```bash
-python scripts/natural_gradient_local_rate/run_operator_linearized_grid.py \
-    --config configs/natural_gradient_local_rate/gpu_lowdim_operator_full.yaml \
-    --backend torch --device cuda --dtype float64 \
-    --outdir outputs/natural_gradient_local_rate/gpu_lowdim_operator_full \
-    --overwrite
-```
-
-When running `production_all.yaml` on GPU, use
-`scripts/natural_gradient_local_rate/run_operator_linearized_grid.py` if you need
-both `operator_grid` and `linearized_rate_grid` outputs. It computes the shared
-torch dense accumulation once per grid point, writes both stage CSVs/summaries,
-and saves the linearized slow eigenvectors.
-
-## Outputs
-
-```
-outputs/omega_tau_modes/gaussian_grid/        results_long.csv, summary.csv, figures/
-outputs/omega_tau_modes/logconcave_grid/      results_long.csv, summary.csv, reference optimum, figures/
-outputs/natural_gradient_local_rate/operator_grid/       results_long.csv, summary.csv
-outputs/natural_gradient_local_rate/linearized_rate_grid/ results_long.csv, summary.csv, eigenvectors
-outputs/natural_gradient_local_rate/flow_validation/     trajectories + summaries
-outputs/natural_gradient_local_rate/figures/             PNG + PDF figures
-```
-
-The legacy directories `outputs/gaussian_grid/` and `outputs/logconcave_grid/`
-from earlier runs are left in place for reference. `outputs/` is git-ignored.
-
-## Reports and local references
-
-Detailed mathematical write-ups live in [`reports/`](reports/):
-
-- [`reports/omega_tau_modes_notes.md`](reports/omega_tau_modes_notes.md) — the
-  full derivation, diagnostics, and result tables for the omega/tau experiments
-  (the former root README).
-- [`reports/natural_gradient_local_rate_notes.md`](reports/natural_gradient_local_rate_notes.md)
-  — notes for the natural-gradient local-rate experiment.
-
-Local manuscript PDFs in `docs/references/` are **not** committed (git-ignored);
-the implementation spec in `docs/specs/` is the tracked source of truth.
+The tracked implementation source of truth lives in
+[`docs/specs/`](docs/specs/):
+[`affine_invariant_gradient_flow.md`](docs/specs/affine_invariant_gradient_flow.md)
+(the `(omega, tau)` flow family) and
+[`natural_gradient_local_rate_spec.md`](docs/specs/natural_gradient_local_rate_spec.md)
+(the local-rate operators and bounds). The code is kept consistent with these.

@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 #
-# Run the FULL natural-gradient local-rate study ("feasible full" grid) end to end:
+# Run the natural-gradient local-rate split pipeline end to end (CPU):
 #
-#   1. operator grid        -> Lambda_hat   (configs/.../operator_grid.yaml)
+#   1. operator grid        -> Lambda_hat   (configs/.../smoke.yaml)
 #   2. linearized-rate grid -> gamma_loc + Lambda_hat, saves slow eigenvectors
-#                              (configs/.../linearized_rate_grid.yaml)
+#                              (configs/.../smoke.yaml)
 #   3. flow validation      -> reuses the eigenvectors from stage 2
 #                              (configs/.../flow_validation.yaml)
 #   4. figures              -> fig1..fig6 (PNG + PDF)
 #
-# Expected runtime: roughly 1-3 hours on CPU (float64), modest memory
-# (~1 GB transient at N_theta=64). This is NOT the maximal production grid.
+# This drives the CPU split-stage runners on the smoke grid as a quick, fully
+# local end-to-end check. The FINAL production evidence is produced separately by
+# the joint GPU runner on configs/.../gpu_lowdim_operator_full.yaml (see README).
 #
 # Usage:
 #   ./run_local_rate_full.sh              # fresh run (overwrites existing results)
@@ -82,15 +83,15 @@ START=$SECONDS
 
 run_stage "1/4  operator grid (Lambda_hat)" \
   "$PYTHON" "$SCRIPT_DIR/run_operator_grid.py" \
-  --config "$CFG_DIR/operator_grid.yaml" $OVERWRITE_FLAG
+  --config "$CFG_DIR/smoke.yaml" $OVERWRITE_FLAG
 
 run_stage "2/4  linearized-rate grid (gamma_loc + eigenvectors)" \
   "$PYTHON" "$SCRIPT_DIR/run_linearized_rate_grid.py" \
-  --config "$CFG_DIR/linearized_rate_grid.yaml" $OVERWRITE_FLAG
+  --config "$CFG_DIR/smoke.yaml" $OVERWRITE_FLAG
 
 run_stage "3/4  flow validation" \
   "$PYTHON" "$SCRIPT_DIR/run_flow_validation.py" \
-  --config "$CFG_DIR/flow_validation.yaml" $OVERWRITE_FLAG
+  --config "$CFG_DIR/smoke.yaml" $OVERWRITE_FLAG
 
 run_stage "4/4  figures" \
   "$PYTHON" "$SCRIPT_DIR/plot_results.py" \

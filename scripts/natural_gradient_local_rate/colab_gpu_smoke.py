@@ -38,7 +38,8 @@ def main():
     for k, v in info.items():
         print(f"  {k}: {v}")
     if not info["torch_available"]:
-        print("\nPyTorch is not installed. See reports/gpu_colab_notes.md for setup.")
+        print("\nPyTorch is not installed. See requirements-gpu.txt and the "
+              "README 'GPU backend' section for setup.")
         sys.exit(1)
     print()
 

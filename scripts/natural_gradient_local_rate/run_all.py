@@ -1,13 +1,13 @@
 """Run the operator-grid, linearized-rate-grid and flow-validation stages.
 
-By default (or with --smoke) this uses the fast smoke config. Production is only
-run if you explicitly pass --config <production_all.yaml>; nothing expensive runs
+By default (or with --smoke) this uses the fast smoke config. A larger grid is
+run only if you explicitly pass --config <your.yaml>; nothing expensive runs
 automatically.
 
 Usage:
     python scripts/natural_gradient_local_rate/run_all.py --smoke
     python scripts/natural_gradient_local_rate/run_all.py \
-        --config configs/natural_gradient_local_rate/operator_grid.yaml
+        --config configs/natural_gradient_local_rate/smoke.yaml
 """
 import argparse
 import os

@@ -1,0 +1,15 @@
+\begin{tabular}{lll}
+\toprule
+quantity & Gaussian target & log-concave target \\
+\midrule
+dimension $n$ & $\{2,5,10\}$ & $5$ \\
+$\omega$ grid & $\{0.125,0.25,0.5,1,2\}$ & $\{0.25,0.5,1\}$ \\
+$\tau$ per $\omega$ & $\{-\omega/2n,\,0,\,+\omega/2n\}$ & $\{-\omega/2n,\,0,\,+\omega/2n\}$ \\
+step $\Delta t$ & $0.02$ & $0.005$ \\
+horizon $T$ & $20$ & $40$ \\
+coupling $\rho$ & -- & $5$ \\
+features $m=4n$ & -- & $20$ \\
+dynamics samples $K$ & exact & $4096$ \\
+reference objective $F_\star$ & $0$ (exact) & $3.9809$ \\
+\bottomrule
+\end{tabular}

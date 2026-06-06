@@ -1,0 +1,43 @@
+% Shared preamble for the manuscript-ready experiment reports.
+% Compiled with tectonic; figures live in assets/figs, tables in assets/.
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{subcaption}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}
+
+\graphicspath{{assets/figs/}}
+
+% --- theorem environments ---
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+
+% --- math macros used by the implementation specs ---
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\Aspace}{\mathcal{A}}
+\newcommand{\SPD}{\mathrm{SPD}}
+\newcommand{\post}{\mathrm{post}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\grad}{\nabla}
+\newcommand{\Exp}{\operatorname{Exp}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Sym}{\mathrm{Sym}}
+\newcommand{\gloc}{\gamma_{\mathrm{loc}}}
+\newcommand{\Lhat}{\widehat{\Lambda}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% table fragment include helper
+\newcommand{\inputtable}[1]{\input{assets/#1}}

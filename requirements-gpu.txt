@@ -9,5 +9,5 @@
 # A CPU-only torch build also works for exercising the torch path
 # (backend=torch, device=cpu); install plain `torch` in that case.
 #
-# See reports/gpu_colab_notes.md for setup and recommended commands.
+# See the README ("GPU backend") for setup and recommended commands.
 torch>=2.0

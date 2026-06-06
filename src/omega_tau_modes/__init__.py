@@ -2,8 +2,8 @@
 
 Study of parameter effects (omega, tau) in affine-invariant Gaussian gradient
 flows, for both an exact Gaussian target N(0, I_n) and a strongly log-concave
-non-Gaussian target. See ``reports/omega_tau_modes_notes.md`` for the detailed
-write-up.
+non-Gaussian target. See ``reports/affine_invariant_omega_tau_report.tex`` for
+the detailed write-up.
 
 A few convenience re-exports are provided for interactive use; plotting modules
 are intentionally *not* imported here to avoid importing matplotlib eagerly.

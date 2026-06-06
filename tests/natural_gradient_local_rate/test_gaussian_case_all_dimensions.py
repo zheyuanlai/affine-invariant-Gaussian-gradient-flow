@@ -9,7 +9,7 @@ regimes are tested, reflecting an honest reading of the estimator:
   and gamma_loc ~ 1 therefore hold only when M_mc is large *relative to that
   dimension* -- demonstrated here for N <= 16 at M = 65536. (At fixed M and large
   N the inflation is real and is exactly what the sample-size-scaling diagnostic
-  exists to expose; see reports/natural_gradient_local_rate_notes.md.)
+  exists to expose; see reports/natural_gradient_local_rate_report.tex.)
 
 * The *clean*, dimension-robust quantities -- the diagonal-restricted estimator,
   the H_sym/L_star self-adjointness errors and the eigen-residuals -- stay at
