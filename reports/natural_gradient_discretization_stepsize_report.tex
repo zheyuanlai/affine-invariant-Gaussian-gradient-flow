@@ -1,0 +1,648 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+
+\title{Riemannian versus KL Discretization of the Gaussian\\
+Natural Gradient Flow: Convergence, Cost, and Stepsize Stability}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The Gaussian natural gradient flow for variational inference,
+$\dot m=Cg$, $\dot C=C+CHC$, can be time-discretized in (at least) two ways that
+share the same explicit mean update but differ in the covariance update: a
+\emph{Riemannian-distance} (geodesic / exponential-map) step and a
+\emph{KL/Bregman} (rational inverse-covariance) step. The current analysis of the
+KL scheme carries a sufficient stepsize condition that is markedly smaller than
+that of the Riemannian scheme, by a factor
+$\max\{1,\lambda_{\max}^3/(2\lambda_{\min}^3)\}$ that can be enormous for
+ill-conditioned covariances. We test whether this smaller KL stepsize bound is a
+genuine restriction or an artifact of the proof. On three deterministic
+two-dimensional targets---an exact Gaussian posterior, a non-separable quartic
+log-concave posterior, and a smooth strongly log-concave posterior---and a scalar
+diagnostic, we classify every $(\text{target},\lambda,\text{method},\Delta t)$
+run as SPD-feasible, stable, monotone, or accurate, and compare the empirical
+maximum stepsizes against the theoretical bounds. The empirical KL stability
+limit exceeds its theoretical bound by four to six orders of magnitude, far more
+than the Riemannian scheme's one-to-two orders, indicating the KL stepsize
+condition is conservative. A scalar diagnostic isolates the cause: the KL
+covariance update is unconditionally well posed for log-concave targets, and the
+large-stepsize failures of \emph{both} schemes are driven by the shared explicit
+mean update, not by the covariance step. Beyond stability, we conduct a
+comprehensive convergence-speed study across all three targets, three
+conditionings $\lambda$, and every convergent stepsize (Sec.~\ref{app:speed}):
+at fine stepsizes the two schemes converge at essentially the same rate in
+elapsed time $n\Delta t$ and the iteration count to a fixed tolerance scales as $1/\Delta t$,
+while at the coarsest convergent stepsizes the Riemannian (geodesic) update
+converges faster per step than the KL update, retaining higher fidelity to the
+continuous flow.
+\end{abstract}
+
+\section{Introduction}
+
+We study the Gaussian variational inference problem
+$\min_{m,C}\mathcal{E}(a)$ with $\mathcal{E}(a)=\KL(\rho_a\,\|\,\rho_\post)$, $\rho_a=\N(m,C)$,
+$a=(m,C)$, $C\in\SPD(d)$, and the natural gradient flow that minimizes it in the
+Fisher--Rao geometry. Writing
+\begin{equation}
+g_n=\E_{\rho_{a_n}}\!\big[\grad_\theta\log\rho_\post(\theta)\big],
+\qquad
+H_n=\E_{\rho_{a_n}}\!\big[\grad^2_\theta\log\rho_\post(\theta)\big],
+\end{equation}
+the continuous flow is
+\begin{equation}\label{eq:flow}
+\dot m_t = C_t g_t,
+\qquad
+\dot C_t = C_t + C_t H_t C_t .
+\end{equation}
+Two natural discretizations of \eqref{eq:flow} share the same explicit mean
+update and differ only in how the covariance is advanced. The Riemannian-distance
+discretization takes a true geodesic step of the affine-invariant geometry; the
+KL/Bregman discretization takes a proximal/mirror step in the dually flat
+(Bregman) geometry of the exponential family. The two are equally faithful to the
+continuous flow to first order, but their finite-stepsize behavior, and in
+particular the sufficient stepsize conditions under which the current analysis
+proves descent, differ substantially.
+
+The central question is sharp. The Riemannian proof admits stepsizes up to
+$\Delta t_{\mathrm{Riem,theory}}=1/(\beta\lambda_{\max})$, whereas the KL proof
+admits only
+$\Delta t_{\mathrm{KL,theory}}=1/\big(\beta\lambda_{\max}\max\{1,\lambda_{\max}^3/(2\lambda_{\min}^3)\}\big)$.
+The extra factor is $1$ only when the relevant covariance eigenvalues are
+comparable; for the ill-conditioned states that arise from a poorly scaled
+initialization it is astronomically large, and the KL bound becomes vanishingly
+small. We ask whether the KL scheme actually \emph{needs} such tiny stepsizes, or
+whether the restriction is an artifact of the bounding argument---mirroring the
+dimension-artifact question studied for the local rate in the companion report.
+
+All experiments here are one- or two-dimensional, fully deterministic (closed-form
+or Gauss--Hermite expectations, no Monte Carlo), and CPU-only, so that the
+stepsize and stability conclusions are not confounded by sampling error.
+
+\section{Algorithms}\label{sec:algos}
+
+Both schemes evaluate $g_n$ and $H_n$ once at the current state $a_n=(m_n,C_n)$
+and share the explicit mean update
+\begin{equation}\label{eq:mean}
+m_{n+1}=m_n+\Delta t\,C_n g_n .
+\end{equation}
+They differ only in the covariance update.
+
+\paragraph{Riemannian-distance discretization.}
+A geodesic step of the affine-invariant geometry,
+\begin{equation}\label{eq:riem}
+C_{n+1}=e^{\Delta t}\,C_n^{1/2}\,
+\exp\!\big(\Delta t\,C_n^{1/2}H_nC_n^{1/2}\big)\,C_n^{1/2}.
+\end{equation}
+This is geometrically faithful---it is exactly the exponential map of the
+metric along the natural-gradient direction---and it preserves positive
+definiteness automatically, since it conjugates a matrix exponential (always SPD)
+by $C_n^{1/2}$. Its cost is a symmetric eigendecomposition (for $C_n^{1/2}$ and
+the matrix exponential) per step; in the $d\le2$ regime studied here this is
+negligible, but in general it is the more expensive update.
+
+\paragraph{KL/Bregman discretization.}
+A proximal step in the dually flat geometry of the Gaussian exponential family,
+\begin{equation}\label{eq:kl}
+C_{n+1}=(1+\Delta t)\big(C_n^{-1}-\Delta t\,H_n\big)^{-1}.
+\end{equation}
+This is computationally simpler---a single symmetric solve of the precision
+matrix $P_n=C_n^{-1}-\Delta t\,H_n$---and exposes a structural fact we will use
+repeatedly: when the target is log-concave, $H_n=-\E[\grad^2 V]\preceq0$, so
+$P_n=C_n^{-1}-\Delta t\,H_n\succ0$ for \emph{every} $\Delta t>0$ and the KL
+covariance update is unconditionally well posed and SPD. Any KL failure must
+therefore come from elsewhere in the iteration.
+
+\paragraph{Implementation.}
+Both covariance updates symmetrize the result, $C\leftarrow(C+C^\top)/2$, after
+every step. The Riemannian step uses the eigendecomposition of the symmetric
+argument for $C^{1/2}$ and $\exp$; the KL step forms $C_n^{-1}$ by a Cholesky
+solve, builds $P_n$, and inverts it through its Cholesky factor. We record the
+extreme eigenvalues of $C_n$ at every step and treat any NaN/Inf, loss of
+positive definiteness ($\lambda_{\min}(C_n)\le10^{-12}$), or energy explosion as
+a failure.
+
+\paragraph{Consistency.}
+Linearizing \eqref{eq:riem} and \eqref{eq:kl} in $\Delta t$ gives, for both,
+$C_{n+1}=C_n+\Delta t\,(C_n+C_nH_nC_n)+O(\Delta t^2)$, matching $\dot C$ in
+\eqref{eq:flow}; together with \eqref{eq:mean} both schemes are first-order
+consistent with the continuous flow. (The test suite verifies this numerically by
+finite differences.)
+
+\section{Targets}\label{sec:targets}
+
+We use three two-dimensional targets and one scalar diagnostic. Throughout,
+$V=-\log\rho_\post$ up to a constant, $g=-\E[\grad V]$, $H=-\E[\grad^2 V]$, and
+the energy minimized (the KL up to an $a$-independent constant) is
+\begin{equation}\label{eq:F}
+\mathcal{E}(a)=\mathcal{E}(m,C)=-\tfrac12\log\det C+\E_{\N(m,C)}[V(\theta)],
+\end{equation}
+whose gap $\mathcal{E}(a_n)-\mathcal{E}(a_\star)$ is the convergence diagnostic
+plotted throughout.
+The two-dimensional targets all use $\lambda\in\{0.01,0.1,1\}$ and the
+ill-conditioning is intentional: the proof factor
+$\lambda_{\max}^3/(2\lambda_{\min}^3)$ is largest exactly when the initial
+covariance and the target curvature span a wide range of scales.
+
+\paragraph{Gaussian posterior (target A).}
+$\Phi_R(\theta)=\tfrac12\theta^\top Q\theta$ with $Q=\mathrm{diag}(1,\lambda)$, so
+$\rho_\post=\N(0,Q^{-1})$ and
+\begin{equation}
+g_n=-Qm_n,\qquad H_n=-Q
+\end{equation}
+are exact and state-independent. The optimum is exact, $m_\star=0$,
+$C_\star=Q^{-1}$, and the energy gap is analytic,
+\begin{equation}\label{eq:gauss-gap}
+\mathcal{E}(a_n)-\mathcal{E}(a_\star)=\tfrac12\big[m_n^\top Qm_n+\Tr(QC_n)-\log\det(QC_n)-2\big].
+\end{equation}
+Initialization $m_0=(10,10)^\top$, $C_0=\mathrm{diag}(\tfrac12,2)$. With
+$\grad^2 V\equiv Q$ the global constants are $\alpha=\min(1,\lambda)$,
+$\beta=\max(1,\lambda)$. This is the cleanest stepsize test: there is no
+quadrature or sampling error anywhere.
+
+\paragraph{Non-separable quartic log-concave posterior (target B).}
+$\Phi_R(x,y)=\tfrac{(\sqrt\lambda x-y)^2}{20}+\tfrac{y^4}{20}$. This is convex but
+\emph{not} globally smooth: $\grad^2 V$ grows without bound through the quartic
+term, so no theorem-based global $(\alpha,\beta)$ exists and we set
+\texttt{theory\_bound\_available=false}; only empirical stepsize thresholds are
+reported. All required expectations close in the Gaussian moments of $Y$,
+$\E[Y^2]=m_y^2+C_{22}$, $\E[Y^3]=m_y^3+3m_yC_{22}$,
+$\E[Y^4]=m_y^4+6m_y^2C_{22}+3C_{22}^2$, so $g$, $H$ and $\E[V]$ are exact.
+Initialization $m_0=(10,10)^\top$, $C_0=4I$. The optimum $a_\star$ is found
+numerically (below).
+
+\paragraph{Smooth strongly log-concave posterior (target C).}
+$\Phi_R^{\mathrm{smooth}}(x,y)=\tfrac{(\sqrt\lambda x-y)^2}{20}
++\tfrac{\delta}{2}(x^2+y^2)+\gamma\log\cosh(y)$ with $\delta=0.05$, $\gamma=1$.
+This shares the non-separable coupled term of target B but is globally strongly
+log-concave and smooth, with
+\begin{equation}
+\alpha=\delta,\qquad \beta=\delta+\tfrac{1+\lambda}{10}+\gamma,
+\end{equation}
+from the rank-one coupled quadratic (top eigenvalue $(1+\lambda)/10$), the
+$\delta I$ ridge, and $0\le\gamma\,\mathrm{sech}^2(y)\le\gamma$. Expectations of
+$\tanh(Y)$, $\mathrm{sech}^2(Y)$ and $\log\cosh(Y)$ under $Y\sim\N(m_y,C_{22})$
+are computed by $80$-node Gauss--Hermite quadrature (deterministic, no Monte
+Carlo). Initialization $m_0=(10,10)^\top$, $C_0=4I$.
+
+\paragraph{Scalar Gaussian diagnostic (target D).}
+$\rho_\post=\N(0,1)$, so $g=-m$, $H=-1$, and the covariance recursions reduce to
+the closed forms
+\begin{equation}\label{eq:scalar}
+\text{KL: }C_{n+1}=\frac{(1+\Delta t)C_n}{1+\Delta t\,C_n},
+\qquad
+\text{Riem: }C_{n+1}=C_n\exp\!\big(\Delta t(1-C_n)\big),
+\end{equation}
+with the shared mean step $m_{n+1}=(1-\Delta t\,C_n)m_n$. The KL form gives
+$C_{n+1}-1=(C_n-1)/(1+\Delta t\,C_n)$, a strict contraction toward $C=1$ for any
+$\Delta t>0$. We sweep $C_0\in\{0.01,0.1,10,100\}$ and
+$\Delta t\in\{0.5,1,2,5\}$, plus a mean-overshoot probe $m_0=1$, $C_0=100$.
+
+\paragraph{Reference optimum.}
+For the non-Gaussian targets B and C we minimize \eqref{eq:F} over the Cholesky
+parameterization $C=LL^\top$, $L_{11}=e^{s_1}$, $L_{22}=e^{s_2}$, $L_{21}$ free,
+with L-BFGS-B and analytic gradients (via the Bonnet/Price identities
+$\partial_m\E[V]=\E[\grad V]$, $\partial_C\E[V]=\tfrac12\E[\grad^2 V]$) from several
+deterministic restarts. The fitted optima are stationary to
+$\|\,C_\star^{-1}+H_\star\|_F<10^{-9}$; optimizer diagnostics are saved to
+\texttt{target\_metadata.json}.
+
+\paragraph{Continuous-time reference.}
+For each target/$\lambda$ we also integrate \eqref{eq:flow} from the same initial
+condition with \texttt{solve\_ivp} (Radau, $\mathrm{rtol}=10^{-10}$,
+$\mathrm{atol}=10^{-12}$), flattening the symmetric $C$ state and symmetrizing the
+vector field. This continuous reference is used only for the discretization
+\emph{accuracy} metric and the overlaid reference curves; the stability
+conclusions do not depend on it.
+
+\section{Stepsize criteria}\label{sec:criteria}
+
+We sweep
+$\Delta t\in\{0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10\}$
+to a fixed terminal time $T=15$, taking $N=\lceil T/\Delta t\rceil$ steps per run
+so that $N\Delta t=T$ (up to the final partial step): every run integrates to the
+same elapsed time $T$, and the elapsed time after step $n$ is $n\Delta t$. The
+coarsest stepsizes ($\Delta t=5,10$) are deliberate very-coarse
+stability probes. Each run is classified from its \emph{full} trajectory (the
+long-format CSV may be decimated for size, but classification always uses every
+step).
+
+\begin{definition}[Feasibility classes]\label{def:classes}
+With $\mathcal{E}_n=\mathcal{E}(a_n)$ and $\mathcal{E}_\star=\mathcal{E}(a_\star)$, a run is
+\begin{itemize}\itemsep2pt
+  \item \textbf{SPD-feasible} if it has no NaN/Inf and $\lambda_{\min}(C_n)>10^{-12}$
+  for all $n$;
+  \item \textbf{stable} if SPD-feasible, $\mathcal{E}_N<\mathcal{E}_0$, and there is no explosion,
+  $\mathcal{E}_n-\mathcal{E}_\star\le10^3(\mathcal{E}_0-\mathcal{E}_\star)$ for all $n$;
+  \item \textbf{monotone} if SPD-feasible and $\mathcal{E}_{n+1}\le \mathcal{E}_n+10^{-10}$ for all $n$;
+  \item \textbf{accurate} if SPD-feasible and the terminal discretization error
+  against the continuous reference satisfies
+  $\|m_N-m(T)\|_2+\|C_N-C(T)\|_F/\|C(T)\|_F\le10^{-2}$.
+\end{itemize}
+\end{definition}
+For each $(\text{target},\lambda,\text{method})$ we report the largest feasible
+stepsize in each class,
+$\Delta t_{\max}^{\mathrm{SPD}}$, $\Delta t_{\max}^{\mathrm{stable}}$,
+$\Delta t_{\max}^{\mathrm{monotone}}$, $\Delta t_{\max}^{\mathrm{accurate}}$
+(a plain maximum over passing stepsizes, so a non-monotone feasibility boundary
+is captured faithfully).
+
+\begin{definition}[Theoretical stepsizes]\label{def:theory}
+For the globally smooth targets (A, C), set
+$\lambda_{\min}=\min\{\lambda_{0,\min},1/\beta\}$ and
+$\lambda_{\max}=\max\{\lambda_{0,\max},1/\alpha\}$ from the extreme eigenvalues of
+$C_0$. The proof Lipschitz constants and sufficient stepsizes are
+\begin{equation}
+\Delta t_{\mathrm{Riem,theory}}=\frac1{\beta\lambda_{\max}},
+\qquad
+\Delta t_{\mathrm{KL,theory}}=\frac1{\beta\lambda_{\max}\,
+\max\{1,\ \lambda_{\max}^3/(2\lambda_{\min}^3)\}} .
+\end{equation}
+For the quartic target B (not globally smooth) no such bound is reported.
+\end{definition}
+The diagnostic quantities are the ratios
+$\Delta t_{\max}^{\mathrm{stable}}/\Delta t_{\mathrm{theory}}$ and
+$\Delta t_{\max}^{\mathrm{monotone}}/\Delta t_{\mathrm{theory}}$: a ratio close to
+$1$ means the proof bound is tight; a ratio of many orders of magnitude means the
+bound is conservative. Because the KL theoretical stepsize carries the extra
+$\lambda_{\max}^3/(2\lambda_{\min}^3)$ factor, its ratio is the focus of the
+proof-artifact discussion.
+
+\section{Results}\label{sec:results}
+
+\paragraph{Metadata.}
+Table~\ref{tab:disc-meta} lists the reference optimum $\mathcal{E}_\star$ and the global
+constants $(\alpha,\beta)$ for each target/$\lambda$. The Gaussian and smooth
+targets are globally smooth (theory bounds available); the quartic target is not.
+
+\begin{table}[t]
+\centering
+\caption{Per-target reference optimum $\mathcal{E}_\star$ and global strong-convexity /
+smoothness constants $(\alpha,\beta)$. The quartic target is convex but not
+globally smooth, so no theorem-based $(\alpha,\beta)$ is reported.}
+\label{tab:disc-meta}
+\inputtable{tab_disc_metadata.tex}
+\end{table}
+
+\paragraph{Convergence.}
+Figures~\ref{fig:gap-gauss}--\ref{fig:gap-smooth} show the energy gap
+$\mathcal{E}(a_n)-\mathcal{E}(a_\star)$ against elapsed time $n\Delta t$ for
+representative stepsizes
+$\Delta t\in\{0.1,0.5,1\}$. On the two globally smooth targets both schemes
+converge cleanly at these stepsizes; the curves of the two methods are
+visually close at matched $\Delta t$, since they agree to first order and the
+shared mean update dominates the transient. The Gaussian target reaches the
+analytic optimum to machine precision; the smooth target converges to the
+numerically optimized $a_\star$. On the quartic target, both schemes require much
+smaller stepsizes (Fig.~\ref{fig:gap-lit}), consistent with its unbounded
+curvature: the representative stepsizes shown there are the largest that
+converge for that target ($\Delta t\in\{0.005,0.01,0.02\}$), an order of
+magnitude below those of the smooth targets.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_gap_gaussian_posterior.pdf}
+\caption{Gaussian posterior: energy gap vs elapsed time $n\Delta t$,
+$\lambda\in\{0.01,0.1,1\}$,
+Riemannian (blue) vs KL (red) at $\Delta t\in\{0.1,0.5,1\}$ (darker = larger
+$\Delta t$). The analytic gap \eqref{eq:gauss-gap} reaches machine precision.}
+\label{fig:gap-gauss}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_gap_smooth_logconcave.pdf}
+\caption{Smooth strongly log-concave posterior: energy gap vs elapsed time
+$n\Delta t$. Both schemes
+converge at the representative stepsizes; the gap is measured against the
+numerically optimized $a_\star$.}
+\label{fig:gap-smooth}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_gap_literature_logconcave.pdf}
+\caption{Quartic (non-globally-smooth) log-concave posterior: energy gap vs
+elapsed time $n\Delta t$
+at its convergent representative stepsizes $\Delta t\in\{0.005,0.01,0.02\}$. Both
+schemes converge cleanly here; the stepsizes are an order of magnitude smaller
+than for the smooth targets, reflecting the unbounded curvature of the quartic
+tail. (Larger stepsizes diverge for both methods and are excluded; see the
+stability heatmap, Fig.~\ref{fig:heat-lit}.)}
+\label{fig:gap-lit}
+\end{figure}
+
+\paragraph{Stepsize stability.}
+Figures~\ref{fig:heat-gauss}--\ref{fig:heat-lit} are the stability heatmaps:
+for each $(\lambda,\Delta t)$ a cell is green (stable and monotone), amber (stable
+but non-monotone), or red (unstable). For the two smooth targets the dotted line
+marks the theoretical stepsize $\Delta t_{\mathrm{theory}}$ for that method. Two
+features are immediate. First, for the KL scheme the green/amber region extends
+\emph{orders of magnitude} to the right of the dotted theoretical line---the
+empirical stability boundary sits near $\Delta t\approx1$--$2$ while the proof
+admits only $\Delta t\approx10^{-5}$--$10^{-6}$. Second, the Riemannian theoretical
+line sits much closer to its empirical boundary. The same picture holds across all
+three $\lambda$ and both smooth targets.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_heatmap_gaussian_posterior.pdf}
+\caption{Gaussian posterior stability classification. Green: stable \& monotone;
+amber: stable, non-monotone; red: unstable/diverged. Dotted line: theoretical
+$\Delta t$ for the method. The KL stable region extends far past its (tiny)
+theoretical stepsize.}
+\label{fig:heat-gauss}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_heatmap_smooth_logconcave.pdf}
+\caption{Smooth log-concave stability classification (same legend). The KL
+theoretical line ($\sim10^{-6}$) is far to the left of the empirical boundary
+($\sim1$).}
+\label{fig:heat-smooth}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_heatmap_literature_logconcave.pdf}
+\caption{Quartic log-concave stability classification (no theory line, since the
+target is not globally smooth). Both schemes are stable only for small
+$\Delta t$.}
+\label{fig:heat-lit}
+\end{figure}
+
+\paragraph{Theory vs empirical (the proof-artifact figure).}
+Figure~\ref{fig:theory-vs-emp} and Table~\ref{tab:disc-step} compare, for the two
+smooth targets, the theoretical stepsize against the empirical stable, monotone,
+and accurate maxima. We emphasize the \emph{monotone} and \emph{accurate} classes
+over bare stability: monotonicity certifies genuine descent at every step, and
+accuracy certifies that the discrete trajectory still tracks the continuous flow
+to $10^{-2}$, so both are stronger evidence than non-divergence alone. The
+empirical KL monotone stepsize exceeds its theoretical bound by ratios from
+$6.4\times10^{1}$ (Gaussian, $\lambda=1$) up to $8\times10^{8}$ (Gaussian,
+$\lambda=0.01$), with the smooth target consistently around $1.4$--$2.0\times10^{5}$;
+the \emph{accurate} maximum is one to two grid steps smaller but still exceeds the
+KL bound by four to eight orders of magnitude, so the proof-artifact gap is not an
+artifact of the permissive stability criterion---it persists under the strict
+accuracy criterion. The Riemannian ratios, by contrast, range only from $2$ to
+$200$ (monotone) and are of the same order under accuracy. The KL bound is
+thus conservative by four to six extra orders of magnitude relative to the
+Riemannian bound---precisely the size of the
+$\lambda_{\max}^3/(2\lambda_{\min}^3)$ factor that separates the two theoretical
+stepsizes.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_theory_vs_empirical.pdf}
+\caption{Theoretical (shaded bars) vs empirical maximum stepsize (markers:
+$\circ$ monotone, $\triangle$ stable) for the Gaussian and smooth targets,
+Riemannian (blue) vs KL (red), log scale. The gap between the KL theoretical bar
+and its empirical markers is enormous; the Riemannian gap is small. This is the
+central proof-artifact figure.}
+\label{fig:theory-vs-emp}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Empirical vs theoretical maximum stepsize by target/$\lambda$/method,
+reporting the largest stable, monotone, and accurate stepsizes and the
+monotone/theory and accurate/theory ratios. Both ratios are $10^{4}$--$10^{8}$ for
+KL but only $2$--$10^{2}$ for the Riemannian scheme; the gap survives the strict
+accuracy criterion, not just bare stability.}
+\label{tab:disc-step}
+\inputtable{tab_disc_stepsize.tex}
+\end{table}
+
+\paragraph{Scalar diagnostic.}
+Figure~\ref{fig:scalar} traces the scalar covariance recursions \eqref{eq:scalar}
+from $C_0\in\{0.01,0.1,10,100\}$ at $\Delta t\in\{0.5,1,2,5\}$. The KL covariance
+update contracts to $C=1$ for every $C_0$ and every stepsize shown---as the closed
+form $C_{n+1}-1=(C_n-1)/(1+\Delta t\,C_n)$ guarantees---never leaving the SPD cone.
+The Riemannian scalar update $C_{n+1}=C_n\exp(\Delta t(1-C_n))$ can overshoot for
+large $C_0\Delta t$. The mean-overshoot probe ($m_0=1$, $C_0=100$) confirms the
+companion fact: the shared explicit mean step $m_{n+1}=(1-\Delta t\,C_n)m_n$
+amplifies the mean for both schemes once $\Delta t\,C_n>2$ (e.g.\ $|m|$ grows past
+$10^4$ at $\Delta t=5$ even though the KL covariance remains perfectly stable).
+This locates the large-stepsize instability in the mean update shared by both
+schemes, not in the KL covariance step.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_scalar_covariance.pdf}
+\caption{Scalar $\N(0,1)$ covariance diagnostic. Solid: Riemannian; dashed: KL;
+color shade encodes $\Delta t$; dotted grey: target $C=1$. The KL covariance
+contracts to $1$ for all $(C_0,\Delta t)$ shown.}
+\label{fig:scalar}
+\end{figure}
+
+\paragraph{Cost.}
+Since the dimension is $d\le2$, wall-clock differences between the schemes are
+small and noisy and we do not draw strong cost conclusions from them.
+Figure~\ref{fig:cost} reports iterations-to-tolerance (gap $\le10^{-4}$) for stable
+runs as the meaningful efficiency axis: at matched $\Delta t$ the two schemes need
+a comparable iteration count, and the practical advantage of a scheme is governed
+by how large a stable $\Delta t$ it admits rather than by per-step cost. The KL
+covariance step (one symmetric solve) is the cheaper update per step; the
+Riemannian step (eigendecomposition for $C^{1/2}$ and $\exp$) is more expensive in
+higher dimension, though that difference is immaterial here.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{fig_time_to_tolerance.pdf}
+\caption{Iterations to reach gap $\le10^{-4}$ for stable runs, vs $\Delta t$
+(log--log). At matched $\Delta t$ the two schemes are comparable; the meaningful
+difference is the range of stable $\Delta t$, not per-step cost.}
+\label{fig:cost}
+\end{figure}
+
+\section{Convergence speed: Riemannian versus KL at matched stepsize}\label{app:speed}
+
+The preceding sections concern \emph{stability}: how large a stepsize each
+scheme tolerates and whether the KL proof bound is conservative. We now address
+the complementary and practically decisive question of \emph{convergence speed}:
+given a stepsize that converges for both schemes, which scheme reaches the
+optimum faster, and how does that depend on the target, the conditioning
+$\lambda$, and the stepsize? This is the question a practitioner choosing between
+the two updates actually faces. Throughout we restrict to the convergent (stable)
+stepsizes for each $(\text{target},\lambda,\text{method})$; divergent stepsizes
+are excluded by construction, since a diverging run has no meaningful convergence
+speed.
+
+\paragraph{Summary: Riemannian usually wins at a matched stepsize.}
+Table~\ref{tab:disc-conv} summarizes the head-to-head comparison. For each target
+and stepsize it reports the terminal energy gap of each scheme (geometric mean
+over the three $\lambda$), the faster scheme, and the factor separating them. The
+pattern is clear and is the main practical message of this section. On the two
+\emph{globally smooth} targets the Riemannian scheme wins at every stepsize, and
+its advantage \emph{grows with the stepsize}: from a modest $1.3$--$7\times$ at the
+finest stepsizes to $10^{4}$--$10^{8}\times$ smaller terminal gap at the coarsest
+convergent stepsizes. Only on the non-smooth quartic target---whose unbounded
+curvature drives the Riemannian exponential map near its stability edge at the
+coarsest stable stepsize---does KL win, and there only by a modest factor. So in
+the regime where one routinely operates (a globally smooth target, a stepsize
+chosen as large as stability allows), the geodesic Riemannian update is the
+faster of the two, often by many orders of magnitude.
+
+\begin{table}[t]
+\centering
+\caption{Head-to-head convergence speed at matched stepsize: terminal energy gap
+$\mathcal{E}(a_N)-\mathcal{E}(a_\star)$ (geometric mean over $\lambda\in\{0.01,0.1,1\}$)
+for each scheme, the faster scheme, and the factor by which its terminal gap is
+smaller. Riemannian wins on both smooth targets, with the margin growing as
+$\Delta t$ coarsens; KL wins only on the non-smooth quartic, and only modestly.}
+\label{tab:disc-conv}
+\inputtable{tab_disc_convergence.tex}
+\end{table}
+
+\paragraph{Energy gap at matched stepsizes.}
+Figures~\ref{fig:speed-gauss}--\ref{fig:speed-lit} show the comparison
+panel by panel: one figure per target, with rows indexing the conditioning
+$\lambda$ and columns indexing a representative convergent stepsize, so that
+each panel contains exactly two curves---Riemannian (solid) and KL
+(dashed)---at one $(\lambda,\Delta t)$ cell. The stepsizes shown are the curated
+convergent set for each target (stable for both schemes at every $\lambda$);
+the quartic target uses stepsizes an order of magnitude smaller, reflecting its
+unbounded curvature. The comparison splits cleanly by stepsize regime. At the
+\emph{fine} stepsizes (left columns) the Riemannian and KL curves are nearly
+indistinguishable: the two schemes agree to first order, so when $\Delta t$ is
+small they descend along essentially the same gap-versus-$n\Delta t$ curve, and
+that curve is the same across columns---the discrete trajectories track the
+common continuous flow. At the \emph{coarse} stepsizes (right columns), however,
+the schemes separate visibly: the Riemannian update converges markedly faster
+per unit elapsed time $n\Delta t$, reaching machine precision while KL plateaus
+several
+orders of magnitude higher (at the Gaussian target, $\lambda=0.01$, $\Delta t=1$,
+the terminal gaps are $\sim\!10^{-14}$ for Riemannian against $\sim\!10^{-7}$ for
+KL). The geodesic covariance update therefore retains higher-order fidelity to
+the flow as the stepsize coarsens, whereas the rational KL update accumulates a
+larger discretization error---a genuine per-step convergence-rate advantage for
+the Riemannian scheme at large stepsizes, distinct from the stability question of
+the preceding sections. Both schemes remain monotone and convergent throughout; the
+difference is the rate, not whether they converge.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_convergence_speed_gaussian_posterior.pdf}
+\caption{Gaussian posterior: energy gap vs elapsed time $n\Delta t$, Riemannian (solid) vs
+KL (dashed). Rows: $\lambda$; columns: convergent stepsize $\Delta t$. The two
+schemes coincide at the fine stepsizes (left) but separate at the coarse
+stepsizes (right), where the Riemannian update reaches machine precision while KL
+plateaus higher.}
+\label{fig:speed-gauss}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_convergence_speed_smooth_logconcave.pdf}
+\caption{Smooth strongly log-concave posterior: energy gap vs elapsed time
+$n\Delta t$
+(same layout and legend as Fig.~\ref{fig:speed-gauss}). The same regime split
+holds: matched-stepsize agreement at fine $\Delta t$, and a growing Riemannian
+advantage as $\Delta t$ coarsens.}
+\label{fig:speed-smooth}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_convergence_speed_literature_logconcave.pdf}
+\caption{Quartic log-concave posterior: energy gap vs elapsed time $n\Delta t$ (same layout).
+The convergent stepsizes are an order of magnitude smaller than for the smooth
+targets; the schemes agree closely at the finer stepsizes, with the Riemannian
+scheme pulling slightly ahead at the coarsest convergent $\Delta t=0.02$.}
+\label{fig:speed-lit}
+\end{figure}
+
+\paragraph{The cost of a stepsize.}
+Figure~\ref{fig:speed-cost} quantifies the efficiency consequence. For the stable
+runs we measure the iterations and the elapsed time $n\Delta t$ required to reach a fixed
+energy-gap tolerance ($10^{-6}$), averaged over $\lambda$, as a function of
+$\Delta t$. The iteration count (top row) falls as $1/\Delta t$ on the log--log
+axes---a larger convergent stepsize reaches the same tolerance in proportionally
+fewer steps---while the elapsed time $n\Delta t$ to that tolerance (bottom row) is nearly
+flat in $\Delta t$ until the largest convergent stepsizes, where the discrete
+trajectory begins to lag the continuous flow. Consistent with the matched-stepsize
+panels, the Riemannian and KL curves coincide at the fine and intermediate
+stepsizes but separate at the coarsest convergent stepsizes, where the Riemannian
+scheme reaches the tolerance in fewer iterations (and KL may not reach $10^{-6}$
+at all within the horizon, terminating at a larger plateau). The practical reading
+is twofold: the dominant efficiency lever remains how large a stable stepsize a
+scheme admits (the conclusion of the stability sections), but among the stepsizes both
+schemes can take, the Riemannian update additionally converges faster per step in
+the coarse-stepsize regime, while the two are interchangeable when $\Delta t$ is
+small.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_iterations_vs_stepsize.pdf}
+\caption{Cost to reach gap $\le10^{-6}$ for stable runs, averaged over $\lambda$,
+vs $\Delta t$. Top: iterations (log--log), with the $\propto1/\Delta t$ reference
+slope; bottom: elapsed time $n\Delta t$ (semi-log $x$), nearly flat in $\Delta t$. Riemannian
+(blue) and KL (red) coincide at fine $\Delta t$ and separate at the coarsest
+convergent stepsizes, where Riemannian reaches the tolerance in fewer iterations.}
+\label{fig:speed-cost}
+\end{figure}
+
+\section{Conclusion}\label{sec:conclusion}
+
+The evidence supports a balanced reading, not a simple ranking.
+\begin{itemize}\itemsep4pt
+  \item \textbf{The Riemannian discretization is the geometrically faithful one.}
+  Its update \eqref{eq:riem} is exactly a geodesic step of the affine-invariant
+  geometry, with the cleanest interpretation as geodesic gradient descent, and its
+  theoretical stepsize bound is comparatively tight (empirical/theory ratio
+  $2$--$200$). Its cost is the matrix exponential, immaterial here but the more
+  expensive update in general.
+  \item \textbf{The KL discretization is computationally simpler and empirically
+  stable far beyond its proof bound.} The update \eqref{eq:kl} is a single
+  symmetric solve, and on the globally smooth targets it is stable and monotone for
+  stepsizes $10^{4}$--$10^{8}$ times larger than the current sufficient condition
+  permits (Table~\ref{tab:disc-step}, Fig.~\ref{fig:theory-vs-emp}).
+  \item \textbf{The KL stepsize restriction is conservative.} The large and
+  systematic gap between the empirical and theoretical KL limits---of the same
+  order as the $\lambda_{\max}^3/(2\lambda_{\min}^3)$ factor that distinguishes the
+  two proofs---indicates that this factor is an artifact of the bounding argument
+  rather than a genuine restriction on the scheme. It persists under the strict
+  accuracy criterion, not just bare stability (Table~\ref{tab:disc-step}).
+  \item \textbf{The KL covariance update is not the instability source.} For a
+  log-concave target the KL precision $C^{-1}-\Delta t\,H$ is SPD for every
+  $\Delta t>0$, so the covariance step never leaves the SPD cone; the scalar
+  diagnostic (Fig.~\ref{fig:scalar}) confirms unconditional contraction of the
+  covariance to its fixed point.
+  \item \textbf{Large-stepsize failures come from the shared mean update.} Both
+  schemes diverge at large $\Delta t$ through the explicit mean step
+  $m_{n+1}=(1-\Delta t\,C_n)m_n$, which overshoots once $\Delta t\,C_n>2$
+  regardless of how the covariance is advanced. This is why the two schemes' SPD
+  and stability boundaries coincide on the quartic target and why the absolute
+  stepsize ceiling is set by the mean, not the covariance.
+  \item \textbf{At a matched stepsize the Riemannian scheme usually converges
+  faster.} On both globally smooth targets the geodesic update reaches a smaller
+  terminal energy gap than KL at every convergent stepsize, with the margin growing
+  from a small factor at fine $\Delta t$ to $10^{4}$--$10^{8}$ at the coarsest
+  convergent stepsizes (Sec.~\ref{app:speed}, Table~\ref{tab:disc-conv}); KL leads
+  only on the non-smooth quartic and only modestly. So when one operates at a
+  stepsize chosen as large as stability allows---the practical regime---the
+  Riemannian update is typically the faster choice.
+\end{itemize}
+We are careful not to overclaim. At well-conditioned settings the absolute stable
+stepsize of the two schemes is comparable (indeed at $\lambda=1$ the Riemannian
+scheme tolerates a slightly larger stable $\Delta t$ than KL), and on the
+non-smooth quartic target both are restricted to small stepsizes, where KL holds a
+slight convergence-speed edge. The conclusions are specifically about the
+\emph{gap between the KL proof bound and KL practice} (large and systematic) and
+the \emph{matched-stepsize convergence-speed advantage of the Riemannian update on
+smooth targets}, not a blanket statement that one scheme dominates the other in
+every respect.
+
+\paragraph{Limitations.}
+This is numerical evidence on $d\le2$ deterministic targets, not a theorem. The
+stepsize grid is coarse (factors of $2$--$2.5$), so the reported empirical maxima
+are accurate only to within one grid step; the qualitative four-to-six order gap
+is far larger than this resolution. Establishing that the KL scheme admits
+Riemannian-sized stepsizes in general requires a revised proof; the present data
+indicate where to look (the $\lambda_{\max}^3/\lambda_{\min}^3$ factor) and that
+the shared mean step, not the covariance update, is the true stepsize bottleneck.
+
+\end{document}

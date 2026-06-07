@@ -1,0 +1,67 @@
+# Configuration for the discretization stepsize experiment.
+#
+# Compares the Riemannian-distance and KL/Bregman discretizations of the same
+# Gaussian natural gradient flow (dm/dt = C g, dC/dt = C + C H C). All targets
+# are 1-/2-dimensional, deterministic, CPU-only.
+
+# Two-dimensional main targets and the shared lambda grid.
+targets: [gaussian_posterior, literature_logconcave, smooth_logconcave]
+lambdas: [0.01, 0.1, 1.0]
+methods: [riemannian, kl]
+
+# Coarse stepsize grid (deliberately spans far past the theoretical bounds).
+dt_grid: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0]
+
+# Terminal physical time; N = ceil(T / dt) steps per run.
+T: 15.0
+
+# Smooth-target Gauss--Hermite quadrature order and its strong-convexity ridge.
+smooth_target:
+  delta: 0.05
+  gamma: 1.0
+  gh_nodes: 80
+
+# High-accuracy continuous-time ODE reference (used only for the accuracy metric
+# and overlaid reference curves; stability conclusions never depend on it).
+ode_reference:
+  rtol: 1.0e-10
+  atol: 1.0e-12
+  n_eval: 400
+
+# Decimation cap for the long-format CSV (full trajectory is always used for
+# classification regardless of this value).
+max_saved_rows: 400
+
+# Scalar Gaussian diagnostic (target D).
+scalar_diagnostic:
+  C0_values: [0.01, 0.1, 10.0, 100.0]
+  dt_values: [0.5, 1.0, 2.0, 5.0]
+  T: 15.0
+  mean_overshoot:           # shared-mean-step overshoot probe
+    m0: 1.0
+    C0: 100.0
+
+output_dir: outputs/natural_gradient_discretization_stepsize
+
+# Fast subset used when the runner is invoked with --smoke (shallow-merged over
+# the base config).
+smoke:
+  lambdas: [0.1, 1.0]
+  dt_grid: [0.01, 0.1, 0.5, 1.0, 5.0]
+  T: 5.0
+  smooth_target:
+    delta: 0.05
+    gamma: 1.0
+    gh_nodes: 40
+  ode_reference:
+    rtol: 1.0e-8
+    atol: 1.0e-10
+    n_eval: 200
+  scalar_diagnostic:
+    C0_values: [0.1, 10.0, 100.0]
+    dt_values: [0.5, 1.0, 5.0]
+    T: 5.0
+    mean_overshoot:
+      m0: 1.0
+      C0: 100.0
+  output_dir: outputs/natural_gradient_discretization_stepsize_smoke

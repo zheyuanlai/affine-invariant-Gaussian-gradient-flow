@@ -41,6 +41,33 @@ indicating that the `N_theta` factor in the current proof bound is a proof
 artifact rather than a property of the flow. See
 [`reports/natural_gradient_local_rate_report.tex`](reports/natural_gradient_local_rate_report.tex).
 
+### 3. `natural_gradient_discretization_stepsize` — Riemannian vs KL discretization and stepsize stability
+
+Two time discretizations of the same Gaussian natural gradient flow (`dm/dt =
+C g`, `dC/dt = C + C H C`): the **Riemannian-distance** (geodesic) covariance
+update `C' = e^{dt} C^{1/2} exp(dt C^{1/2} H C^{1/2}) C^{1/2}` and the **KL/Bregman**
+update `C' = (1 + dt) (C^{-1} - dt H)^{-1}`. Both share the explicit mean step
+`m' = m + dt C g`. The KL proof admits a much smaller sufficient stepsize than the
+Riemannian proof (an extra factor `max{1, lambda_max^3 / (2 lambda_min^3)}`); the
+question is whether that smaller KL bound is a genuine restriction or a proof
+artifact. Three deterministic 2-D targets (exact Gaussian posterior, non-separable
+quartic log-concave, smooth strongly log-concave) and a scalar `N(0, 1)` diagnostic
+are swept over `dt in {0.001, ..., 10}` and each run is classified SPD-feasible /
+stable / monotone / accurate.
+
+**Finding.** The empirical KL stability limit exceeds its theoretical bound by
+`1e4`–`1e8`, against only `2`–`2e2` for the Riemannian scheme, so the KL stepsize
+condition is conservative; the gap persists under the strict accuracy criterion,
+not just bare stability. The scalar diagnostic isolates the cause: the KL
+covariance update is unconditionally SPD for log-concave targets, and the
+large-stepsize failures of both schemes are driven by the shared explicit mean
+update, not by the covariance step. A matched-stepsize convergence-speed study
+adds the practical counterpart: on both globally smooth targets the Riemannian
+(geodesic) update reaches a smaller terminal energy gap at every convergent
+stepsize, with the margin growing to `1e7`–`1e8` as the stepsize coarsens, while
+KL leads only on the non-smooth quartic and only modestly. See
+[`reports/natural_gradient_discretization_stepsize_report.tex`](reports/natural_gradient_discretization_stepsize_report.tex).
+
 ## Which outputs are final
 
 Only these directories are interpreted as evidence in the reports:
@@ -50,6 +77,7 @@ outputs/gaussian_grid/                              omega/tau, Gaussian target
 outputs/logconcave_grid/                            omega/tau, log-concave target
 outputs/natural_gradient_local_rate/operator_grid/        local rate: Lambda_hat + gamma_loc
 outputs/natural_gradient_local_rate/linearized_rate_grid/ local rate: gamma_loc + eigenvectors
+outputs/natural_gradient_discretization_stepsize/         Riemannian vs KL stepsize stability
 ```
 
 The local-rate final run is a single GPU production grid (`N_theta = 1..16`,
@@ -97,6 +125,25 @@ reports) can be produced with
 `scripts/omega_tau_modes/plot_gaussian_results.py` and
 `plot_logconcave_results.py`.
 
+## Reproducing the discretization-stepsize experiments
+
+Deterministic and CPU-only (closed-form / Gauss–Hermite expectations, no Monte
+Carlo, no GPU). The final outputs live at
+`outputs/natural_gradient_discretization_stepsize/`:
+
+```bash
+python scripts/natural_gradient_discretization_stepsize/run_stepsize_grid.py \
+    --config configs/natural_gradient_discretization_stepsize/stepsize_grid.yaml \
+    --outdir outputs/natural_gradient_discretization_stepsize --overwrite
+
+python scripts/natural_gradient_discretization_stepsize/plot_results.py \
+    --outdir outputs/natural_gradient_discretization_stepsize
+```
+
+The runner writes `results_long.csv`, `summary.csv`, `stepsize_summary.csv`,
+`scalar_diagnostic.csv`, and `target_metadata.json`. Add `--smoke` for the fast
+reduced grid (`outputs/natural_gradient_discretization_stepsize_smoke/`).
+
 ## Reproducing the natural-gradient local-rate production run
 
 The production grid runs on a CUDA GPU (developed on an NVIDIA H200). The joint
@@ -140,16 +187,19 @@ the speed, not the meaning, of the estimates. Potential centering and the
 # 1. regenerate every report figure (PDF + PNG) and LaTeX table fragment
 python reports/make_report_assets.py
 #    -> reports/assets/figs/*.pdf, *.png  and  reports/assets/tab_*.tex
+#    (use --only {omega_tau,local_rate,discretization} to build one group)
 
-# 2. compile the two reports (tectonic resolves preamble.tex and assets/)
+# 2. compile the reports (tectonic resolves preamble.tex and assets/)
 cd reports
 tectonic affine_invariant_omega_tau_report.tex
 tectonic natural_gradient_local_rate_report.tex
+tectonic natural_gradient_discretization_stepsize_report.tex
 ```
 
 `make_report_assets.py` only reads the final CSVs and writes figures/tables; it
 does not re-run any dynamics. The reports `\input` a shared
-[`reports/preamble.tex`](reports/preamble.tex).
+[`reports/preamble.tex`](reports/preamble.tex). A group whose final outputs are
+absent on a given checkout is skipped (with a notice) so the others still build.
 
 ## Repository layout
 
@@ -157,16 +207,21 @@ does not re-run any dynamics. The reports `\input` a shared
 configs/
   omega_tau_modes/                gaussian_target / logconcave_target configs
   natural_gradient_local_rate/    smoke + grid + production configs
+  natural_gradient_discretization_stepsize/  stepsize_grid config
 src/
   common/                         spd, symspace, monte_carlo, io, plotting style,
                                   torch backend helpers
   omega_tau_modes/                (omega, tau) dynamics, targets, metrics, plotting
   natural_gradient_local_rate/    potentials, operators, linearized rate, torch backend
+  natural_gradient_discretization_stepsize/  targets, methods, metrics, ode_reference,
+                                  optimize_star, runner, plotting
 scripts/
   omega_tau_modes/                grid runners + plotting
   natural_gradient_local_rate/    operator/rate/flow runners, plotting, patch tool
+  natural_gradient_discretization_stepsize/  stepsize grid runner + plotting
 tests/
   common/  omega_tau_modes/  natural_gradient_local_rate/
+  natural_gradient_discretization_stepsize/
 reports/                          LaTeX reports, shared preamble, asset generator, assets/
 docs/specs/                       tracked implementation specs (source of truth)
 outputs/                          experiment outputs (final CSVs committed)

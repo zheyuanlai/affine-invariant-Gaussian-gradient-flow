@@ -466,15 +466,206 @@ def build_local_rate_assets():
     _tab_lr_metadata(df)
 
 
+# ===========================================================================
+# discretization stepsize (Riemannian vs KL)
+# ===========================================================================
+
+DISC_DIR = os.path.join(_ROOT, "outputs", "natural_gradient_discretization_stepsize")
+
+
+def _tab_disc_stepsize(step_df):
+    """Empirical vs theoretical maximum stepsize, by target/lambda/method.
+
+    Reports the largest stable, monotone, and accurate stepsizes together with
+    the monotone/theory and accurate/theory ratios, so the proof-artifact gap is
+    visible in both the monotone and the (stricter) accurate class.
+    """
+    tt = {"gaussian_posterior": "Gaussian", "literature_logconcave": "quartic",
+          "smooth_logconcave": "smooth"}
+    lines = [
+        r"\begin{tabular}{lllccccc}",
+        r"\toprule",
+        r"target & $\lambda$ & method & $\Delta t_{\mathrm{theory}}$ & "
+        r"$\Delta t_{\max}^{\mathrm{stab}}$ & $\Delta t_{\max}^{\mathrm{mono}}$ & "
+        r"$\Delta t_{\max}^{\mathrm{acc}}$ & "
+        r"$\tfrac{\mathrm{mono}}{\mathrm{theory}}$ / "
+        r"$\tfrac{\mathrm{acc}}{\mathrm{theory}}$ \\",
+        r"\midrule",
+    ]
+    order = {"gaussian_posterior": 0, "smooth_logconcave": 1, "literature_logconcave": 2}
+    step_df = step_df.sort_values(
+        by=["target_name", "lambda", "method"],
+        key=lambda s: s.map(order) if s.name == "target_name" else s)
+    for _, r in step_df.iterrows():
+        avail = r["theory_bound_available"]
+        theory_s = _fmt_sci(r["dt_theory_for_method"]) if avail else "--"
+        mono_ratio_s = _fmt_sci(r["monotone_over_theory_ratio"]) if avail else "--"
+        acc_ratio_s = _fmt_sci(r["accurate_over_theory_ratio"]) if avail else "--"
+        ratio_s = f"{mono_ratio_s} / {acc_ratio_s}" if avail else "--"
+        lines.append(
+            f"{tt.get(r['target_name'], r['target_name'])} & {r['lambda']:g} & "
+            f"{r['method']} & {theory_s} & {_fmt(r['dt_max_stable'], 3)} & "
+            f"{_fmt(r['dt_max_monotone'], 3)} & {_fmt(r['dt_max_accurate'], 3)} & "
+            f"{ratio_s} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_disc_stepsize.tex", "\n".join(lines))
+
+
+def _fmt_sci(x):
+    if x is None or (isinstance(x, float) and not np.isfinite(x)):
+        return "--"
+    if x == 0:
+        return "0"
+    exp = int(np.floor(np.log10(abs(x))))
+    mant = x / 10.0 ** exp
+    if -2 <= exp <= 2:
+        return f"{x:.3g}"
+    return rf"${mant:.1f}\times10^{{{exp}}}$"
+
+
+def _tab_disc_metadata(meta):
+    """Per-target reference optimum and theory constants."""
+    tt = {"gaussian_posterior": "Gaussian posterior",
+          "smooth_logconcave": "smooth log-concave",
+          "literature_logconcave": "quartic log-concave"}
+    lines = [
+        r"\begin{tabular}{llcccc}",
+        r"\toprule",
+        r"target & $\lambda$ & $\alpha$ & $\beta$ & $\mathcal{E}_\star$ & global smooth \\",
+        r"\midrule",
+    ]
+    keys = sorted(meta["targets"].keys(),
+                  key=lambda k: ({"gaussian_posterior": 0, "smooth_logconcave": 1,
+                                  "literature_logconcave": 2}[k.split("__")[0]],
+                                 meta["targets"][k]["lambda"]))
+    for k in keys:
+        m = meta["targets"][k]
+        a = _fmt(m["alpha"], 3) if m["alpha"] is not None else "--"
+        b = _fmt(m["beta"], 3) if m["beta"] is not None else "--"
+        lines.append(
+            f"{tt.get(m['target_name'], m['target_name'])} & {m['lambda']:g} & "
+            f"{a} & {b} & {_fmt(m['F_star'], 4)} & "
+            f"{'yes' if m['has_theory'] else 'no'} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_disc_metadata.tex", "\n".join(lines))
+
+
+# Stepsizes used by the matched-stepsize convergence comparison (must match the
+# per-target sets the appendix-derived figures use).
+_CONV_DT = {
+    "gaussian_posterior": [0.05, 0.1, 0.5, 1.0],
+    "smooth_logconcave": [0.05, 0.1, 0.5, 1.0],
+    "literature_logconcave": [0.002, 0.005, 0.01, 0.02],
+}
+_GAP_EPS = 1e-16
+
+
+def _tab_disc_convergence(long_df):
+    """Head-to-head convergence speed: terminal energy gap, Riemannian vs KL.
+
+    For each (target, dt) we report the terminal energy gap (geometric mean over
+    the three lambda) of each scheme at a matched stepsize, the winner, and the
+    factor by which the winner's terminal gap is smaller. This isolates the
+    per-step convergence-rate comparison from the stepsize-range question.
+    """
+    tt = {"gaussian_posterior": "Gaussian", "smooth_logconcave": "smooth",
+          "literature_logconcave": "quartic"}
+
+    def gmean_gap(target, method, dt):
+        gaps = []
+        for lam in (0.01, 0.1, 1.0):
+            r = long_df[(long_df.target_name == target)
+                        & (np.isclose(long_df["lambda"], lam))
+                        & (long_df.method == method) & (np.isclose(long_df.dt, dt))]
+            if len(r):
+                r = r.sort_values("n")
+                gaps.append(max(float(r.energy_gap.iloc[-1]), _GAP_EPS))
+        return float(np.exp(np.mean(np.log(gaps)))) if gaps else np.nan
+
+    lines = [
+        r"\begin{tabular}{llcccc}",
+        r"\toprule",
+        r"target & $\Delta t$ & gap$_{\mathrm{Riem}}$ & gap$_{\mathrm{KL}}$ & "
+        r"winner & factor \\",
+        r"\midrule",
+    ]
+    for ti, target in enumerate(["gaussian_posterior", "smooth_logconcave",
+                                 "literature_logconcave"]):
+        for di, dt in enumerate(_CONV_DT[target]):
+            gr, gk = gmean_gap(target, "riemannian", dt), gmean_gap(target, "kl", dt)
+            if not (np.isfinite(gr) and np.isfinite(gk)):
+                continue
+            winner = "Riem." if gr < gk else "KL"
+            factor = max(gr, gk) / min(gr, gk)
+            tlabel = tt[target] if di == 0 else ""
+            lines.append(
+                f"{tlabel} & {dt:g} & {_fmt_sci(gr)} & {_fmt_sci(gk)} & "
+                f"{winner} & {_fmt_sci(factor)} \\\\")
+        if ti < 2:
+            lines.append(r"\midrule")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_disc_convergence.tex", "\n".join(lines))
+
+
+def build_discretization_assets():
+    """Figures + tables for the Riemannian-vs-KL discretization report.
+
+    Reuses the per-group plot builders (single source of truth) writing into
+    ``reports/assets/figs``; adds two booktabs tables read from the final CSVs.
+    """
+    print("discretization assets:")
+    sys.path.insert(0, os.path.join(_ROOT, "scripts", "natural_gradient_discretization_stepsize"))
+    import importlib
+    pr = importlib.import_module("plot_results")
+    import json
+
+    long_df = pd.read_csv(os.path.join(DISC_DIR, "results_long.csv"))
+    summary = pd.read_csv(os.path.join(DISC_DIR, "summary.csv"))
+    step_df = pd.read_csv(os.path.join(DISC_DIR, "stepsize_summary.csv"))
+    scalar_df = pd.read_csv(os.path.join(DISC_DIR, "scalar_diagnostic.csv"))
+    with open(os.path.join(DISC_DIR, "target_metadata.json")) as fh:
+        meta = json.load(fh)
+
+    for tname in ("gaussian_posterior", "literature_logconcave", "smooth_logconcave"):
+        pr.fig_energy_gap(long_df, tname, FIGS, meta, summary=summary)
+        pr.fig_stability_heatmap(summary, step_df, tname, FIGS)
+    pr.fig_theory_vs_empirical(step_df, FIGS)
+    pr.fig_scalar_diagnostic(scalar_df, FIGS)
+    pr.fig_time_to_tolerance(summary, FIGS)
+    # Convergence-speed study (matched-stepsize Riemannian vs KL, convergent dt).
+    pr.fig_convergence_speed_grid(long_df, summary, FIGS)
+    pr.fig_iterations_vs_stepsize(summary, FIGS)
+    _tab_disc_stepsize(step_df)
+    _tab_disc_metadata(meta)
+    _tab_disc_convergence(long_df)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--repo-root", default=_ROOT)
-    p.parse_args()
+    p.add_argument("--only", choices=["omega_tau", "local_rate", "discretization"],
+                   default=None, help="Build only one group's assets.")
+    args = p.parse_args()
     os.makedirs(FIGS, exist_ok=True)
     apply_style()
-    build_omega_tau_assets()
-    build_local_rate_assets()
+    builders = {
+        "omega_tau": build_omega_tau_assets,
+        "local_rate": build_local_rate_assets,
+        "discretization": build_discretization_assets,
+    }
+    selected = [args.only] if args.only else list(builders)
+    failures = []
+    for name in selected:
+        try:
+            builders[name]()
+        except FileNotFoundError as e:
+            # A group whose final outputs are absent (e.g. gitignored config.json
+            # not regenerated) should not block the other groups' assets.
+            print(f"  [skip] {name}: missing input ({e})")
+            failures.append(name)
     print(f"\nAll report assets written under {ASSETS}")
+    if failures:
+        print(f"Skipped (missing inputs): {', '.join(failures)}")
 
 
 if __name__ == "__main__":

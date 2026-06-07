@@ -1,0 +1,795 @@
+{
+  "config": {
+    "targets": [
+      "gaussian_posterior",
+      "literature_logconcave",
+      "smooth_logconcave"
+    ],
+    "lambdas": [
+      0.01,
+      0.1,
+      1.0
+    ],
+    "methods": [
+      "riemannian",
+      "kl"
+    ],
+    "dt_grid": [
+      0.001,
+      0.002,
+      0.005,
+      0.01,
+      0.02,
+      0.05,
+      0.1,
+      0.2,
+      0.5,
+      1.0,
+      2.0,
+      5.0,
+      10.0
+    ],
+    "T": 15.0
+  },
+  "targets": {
+    "gaussian_posterior__lam0.01": {
+      "target_name": "gaussian_posterior",
+      "lambda": 0.01,
+      "d": 2,
+      "Q_diag": [
+        1.0,
+        0.01
+      ],
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          0.5,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.01,
+      "beta": 1.0,
+      "description": "Gaussian posterior N(0, Q^{-1}), Q=diag(1,lambda)",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "F_star": -1.302585092994046,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "theory_bounds": {
+        "theory_bound_available": true,
+        "lambda_min": 0.5,
+        "lambda_max": 100.0,
+        "L_riem": 100.0,
+        "L_kl": 400000000.0,
+        "dt_theory_riem": 0.01,
+        "dt_theory_kl": 2.5e-09
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 7552,
+        "njev": 6,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        6.118044538541751e-06,
+        0.00015294886766812306
+      ],
+      "ode_terminal_C": [
+        [
+          0.9999996940977732,
+          0.0
+        ],
+        [
+          0.0,
+          99.99850110109683
+        ]
+      ]
+    },
+    "gaussian_posterior__lam0.1": {
+      "target_name": "gaussian_posterior",
+      "lambda": 0.1,
+      "d": 2,
+      "Q_diag": [
+        1.0,
+        0.1
+      ],
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          0.5,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.1,
+      "beta": 1.0,
+      "description": "Gaussian posterior N(0, Q^{-1}), Q=diag(1,lambda)",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          10.0
+        ]
+      ],
+      "F_star": -0.15129254649702295,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "theory_bounds": {
+        "theory_bound_available": true,
+        "lambda_min": 0.5,
+        "lambda_max": 10.0,
+        "L_riem": 10.0,
+        "L_kl": 40000.0,
+        "dt_theory_riem": 0.1,
+        "dt_theory_kl": 2.5e-05
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 6527,
+        "njev": 5,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        6.11804453888794e-06,
+        1.5295097310762267e-05
+      ],
+      "ode_terminal_C": [
+        [
+          0.9999996940977731,
+          0.0
+        ],
+        [
+          0.0,
+          9.99998776392215
+        ]
+      ]
+    },
+    "gaussian_posterior__lam1": {
+      "target_name": "gaussian_posterior",
+      "lambda": 1.0,
+      "d": 2,
+      "Q_diag": [
+        1.0,
+        1.0
+      ],
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          0.5,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 1.0,
+      "beta": 1.0,
+      "description": "Gaussian posterior N(0, Q^{-1}), Q=diag(1,lambda)",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "F_star": 1.0,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "theory_bounds": {
+        "theory_bound_available": true,
+        "lambda_min": 0.5,
+        "lambda_max": 2.0,
+        "L_riem": 2.0,
+        "L_kl": 64.0,
+        "dt_theory_riem": 0.5,
+        "dt_theory_kl": 0.015625
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 7987,
+        "njev": 4,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        6.118044539656967e-06,
+        1.5295118367564678e-06
+      ],
+      "ode_terminal_C": [
+        [
+          0.9999996940977731,
+          0.0
+        ],
+        [
+          0.0,
+          1.0000001529511837
+        ]
+      ]
+    },
+    "literature_logconcave__lam0.01": {
+      "target_name": "literature_logconcave",
+      "lambda": 0.01,
+      "d": 2,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": false,
+      "alpha": null,
+      "beta": null,
+      "description": "non-separable quartic V=(sqrt(lam)x-y)^2/20 + y^4/20",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          1129.0994257680309,
+          12.90994415767775
+        ],
+        [
+          12.90994415767775,
+          1.2909944401392668
+        ]
+      ],
+      "F_star": -2.8315840454325665,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "grad_norm": 1.883676022751567e-08,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 7.877787327386428e-09,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 17
+      },
+      "theory_bounds": {
+        "theory_bound_available": false,
+        "lambda_min": null,
+        "lambda_max": null,
+        "L_riem": null,
+        "L_kl": null,
+        "dt_theory_riem": null,
+        "dt_theory_kl": null
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 14081,
+        "njev": 15,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        0.001448861188912186,
+        6.842159562513408e-05
+      ],
+      "ode_terminal_C": [
+        [
+          1129.0035320046024,
+          12.90895673286747
+        ],
+        [
+          12.90895673286747,
+          1.2909943953124423
+        ]
+      ]
+    },
+    "literature_logconcave__lam0.1": {
+      "target_name": "literature_logconcave",
+      "lambda": 0.1,
+      "d": 2,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": false,
+      "alpha": null,
+      "beta": null,
+      "description": "non-separable quartic V=(sqrt(lam)x-y)^2/20 + y^4/20",
+      "m_star": [
+        1.5421746685487207e-11,
+        5.87559807558712e-12
+      ],
+      "C_star": [
+        [
+          112.90994448778119,
+          4.082482904645989
+        ],
+        [
+          4.082482904645989,
+          1.2909944487343472
+        ]
+      ],
+      "F_star": -1.6802914989355435,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+        "grad_norm": 6.610456307359731e-12,
+        "stationarity_g_norm": 4.651207301741743e-12,
+        "stationarity_cov_residual": 1.9751030956579602e-12,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 26
+      },
+      "theory_bounds": {
+        "theory_bound_available": false,
+        "lambda_min": null,
+        "lambda_max": null,
+        "L_riem": null,
+        "L_kl": null,
+        "dt_theory_riem": null,
+        "dt_theory_kl": null
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 12784,
+        "njev": 15,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        0.0002980438290564251,
+        7.006674576233614e-05
+      ],
+      "ode_terminal_C": [
+        [
+          112.9090123877755,
+          4.082451531259017
+        ],
+        [
+          4.082451531259017,
+          1.2909944004841454
+        ]
+      ]
+    },
+    "literature_logconcave__lam1": {
+      "target_name": "literature_logconcave",
+      "lambda": 1.0,
+      "d": 2,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": false,
+      "alpha": null,
+      "beta": null,
+      "description": "non-separable quartic V=(sqrt(lam)x-y)^2/20 + y^4/20",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          11.290994452916351,
+          1.2909944487792797
+        ],
+        [
+          1.2909944487792797,
+          1.290994448337738
+        ]
+      ],
+      "F_star": -0.5289989524385206,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "grad_norm": 7.42965198428197e-10,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 5.10483592758604e-10,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 13
+      },
+      "theory_bounds": {
+        "theory_bound_available": false,
+        "lambda_min": null,
+        "lambda_max": null,
+        "L_riem": null,
+        "L_kl": null,
+        "dt_theory_riem": null,
+        "dt_theory_kl": null
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 12232,
+        "njev": 17,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        7.957588696576976e-05,
+        7.192838746990186e-05
+      ],
+      "ode_terminal_C": [
+        [
+          11.290987834936976,
+          1.2909934107639256
+        ],
+        [
+          1.2909934107639256,
+          1.2909943980589278
+        ]
+      ]
+    },
+    "smooth_logconcave__lam0.01": {
+      "target_name": "smooth_logconcave",
+      "lambda": 0.01,
+      "d": 2,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 1.151,
+      "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "m_star": [
+        -1.197343810682855e-18,
+        8.21313248910411e-18
+      ],
+      "C_star": [
+        [
+          19.664004847564943,
+          0.28642472263936497
+        ],
+        [
+          0.28642472263936497,
+          1.4607660855431215
+        ]
+      ],
+      "F_star": -0.5636773675007198,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+        "grad_norm": 2.8580188292252742e-12,
+        "stationarity_g_norm": 2.5939883082619414e-17,
+        "stationarity_cov_residual": 1.1360825280167707e-12,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 10
+      },
+      "theory_bounds": {
+        "theory_bound_available": true,
+        "lambda_min": 0.8688097306689835,
+        "lambda_max": 20.0,
+        "L_riem": 23.02,
+        "L_kl": 140407.81516808,
+        "dt_theory_riem": 0.043440486533449174,
+        "dt_theory_kl": 7.122110680256049e-06
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 9137,
+        "njev": 6,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        1.51378062368657e-05,
+        7.273240507230168e-07
+      ],
+      "ode_terminal_C": [
+        [
+          19.66398312362782,
+          0.28643372175819104
+        ],
+        [
+          0.28643372175819104,
+          1.4608141714859488
+        ]
+      ]
+    },
+    "smooth_logconcave__lam0.1": {
+      "target_name": "smooth_logconcave",
+      "lambda": 0.1,
+      "d": 2,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 1.1600000000000001,
+      "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "m_star": [
+        2.7065323224072817e-18,
+        1.1570179831934861e-17
+      ],
+      "C_star": [
+        [
+          17.084732250322432,
+          0.7932236734074727
+        ],
+        [
+          0.7932236734074727,
+          1.5050361011595395
+        ]
+      ],
+      "F_star": -0.4933196841663623,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+        "grad_norm": 4.0975001639984434e-14,
+        "stationarity_g_norm": 2.2313812776963747e-18,
+        "stationarity_cov_residual": 2.186649926809768e-14,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 10
+      },
+      "theory_bounds": {
+        "theory_bound_available": true,
+        "lambda_min": 0.8620689655172413,
+        "lambda_max": 20.0,
+        "L_riem": 23.200000000000003,
+        "L_kl": 144851.14880000002,
+        "dt_theory_riem": 0.043103448275862065,
+        "dt_theory_kl": 6.903638723505932e-06
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 8790,
+        "njev": 6,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        1.32868620454585e-05,
+        1.0263710873124095e-06
+      ],
+      "ode_terminal_C": [
+        [
+          17.084731735069184,
+          0.7932543395184339
+        ],
+        [
+          0.7932543395184339,
+          1.5050962043976912
+        ]
+      ]
+    },
+    "smooth_logconcave__lam1": {
+      "target_name": "smooth_logconcave",
+      "lambda": 1.0,
+      "d": 2,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 1.25,
+      "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "m_star": [
+        -6.444652534762687e-18,
+        -1.2517984028724788e-17
+      ],
+      "C_star": [
+        [
+          7.414625175430351,
+          1.121937764092701
+        ],
+        [
+          1.121937764092701,
+          1.6829066475128809
+        ]
+      ],
+      "F_star": -0.07492531811234793,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "grad_norm": 2.475343556286198e-10,
+        "stationarity_g_norm": 7.199440940272105e-19,
+        "stationarity_cov_residual": 1.1596943568740891e-10,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 10
+      },
+      "theory_bounds": {
+        "theory_bound_available": true,
+        "lambda_min": 0.8,
+        "lambda_max": 20.0,
+        "L_riem": 25.0,
+        "L_kl": 195312.49999999994,
+        "dt_theory_riem": 0.04,
+        "dt_theory_kl": 5.120000000000002e-06
+      },
+      "ode_solver": {
+        "success": true,
+        "status": 0,
+        "message": "The solver successfully reached the end of the integration interval.",
+        "nfev": 8471,
+        "njev": 5,
+        "rtol": 1e-10,
+        "atol": 1e-12,
+        "method": "Radau",
+        "T": 15.0
+      },
+      "ode_terminal_m": [
+        5.822780584221786e-06,
+        1.0866149757258154e-06
+      ],
+      "ode_terminal_C": [
+        [
+          7.414676778730434,
+          1.122017779490328
+        ],
+        [
+          1.122017779490328,
+          1.683027527305361
+        ]
+      ]
+    }
+  }
+}
