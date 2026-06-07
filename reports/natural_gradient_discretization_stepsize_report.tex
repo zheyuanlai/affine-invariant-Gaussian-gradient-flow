@@ -35,9 +35,10 @@ comprehensive convergence-speed study across all three targets, three
 conditionings $\lambda$, and every convergent stepsize (Sec.~\ref{app:speed}):
 at fine stepsizes the two schemes converge at essentially the same rate in
 elapsed time $n\Delta t$ and the iteration count to a fixed tolerance scales as $1/\Delta t$,
-while at the coarsest convergent stepsizes the Riemannian (geodesic) update
-converges faster per step than the KL update, retaining higher fidelity to the
-continuous flow.
+while at the coarsest convergent stepsizes they separate: on the two globally
+smooth targets the Riemannian (geodesic) update converges faster per step than KL,
+retaining higher fidelity to the continuous flow, whereas on the non-smooth
+quartic target KL is the faster scheme.
 \end{abstract}
 
 \section{Introduction}
@@ -505,7 +506,9 @@ each panel contains exactly two curves---Riemannian (solid) and KL
 (dashed)---at one $(\lambda,\Delta t)$ cell. The stepsizes shown are the curated
 convergent set for each target (stable for both schemes at every $\lambda$);
 the quartic target uses stepsizes an order of magnitude smaller, reflecting its
-unbounded curvature. The comparison splits cleanly by stepsize regime. At the
+unbounded curvature. On the two \emph{globally smooth} targets
+(Figs.~\ref{fig:speed-gauss}--\ref{fig:speed-smooth}) the comparison splits
+cleanly by stepsize regime. At the
 \emph{fine} stepsizes (left columns) the Riemannian and KL curves are nearly
 indistinguishable: the two schemes agree to first order, so when $\Delta t$ is
 small they descend along essentially the same gap-versus-$n\Delta t$ curve, and
@@ -520,7 +523,12 @@ KL). The geodesic covariance update therefore retains higher-order fidelity to
 the flow as the stepsize coarsens, whereas the rational KL update accumulates a
 larger discretization error---a genuine per-step convergence-rate advantage for
 the Riemannian scheme at large stepsizes, distinct from the stability question of
-the preceding sections. Both schemes remain monotone and convergent throughout; the
+the preceding sections. The non-smooth quartic target
+(Fig.~\ref{fig:speed-lit}) is the exception: there the two schemes agree at the
+finer stepsizes but \emph{KL} is the faster scheme, decisively so at the coarsest
+convergent $\Delta t=0.02$, where the Riemannian exponential map sits near its
+stability edge while the rational KL update has already converged. In all cases
+both schemes remain monotone and convergent throughout; the
 difference is the rate, not whether they converge.
 
 \begin{figure}[t]
@@ -550,8 +558,11 @@ advantage as $\Delta t$ coarsens.}
 \includegraphics[width=\textwidth]{fig_convergence_speed_literature_logconcave.pdf}
 \caption{Quartic log-concave posterior: energy gap vs elapsed time $n\Delta t$ (same layout).
 The convergent stepsizes are an order of magnitude smaller than for the smooth
-targets; the schemes agree closely at the finer stepsizes, with the Riemannian
-scheme pulling slightly ahead at the coarsest convergent $\Delta t=0.02$.}
+targets; the schemes agree closely at the finer stepsizes, but here \emph{KL}
+holds the advantage---most clearly at the coarsest convergent $\Delta t=0.02$,
+where the Riemannian exponential map sits near its stability edge (terminal gap
+$\sim\!10^{-5}$) while KL has converged ($\sim\!10^{-9}$). This is the one target
+on which KL, not Riemannian, is the faster scheme.}
 \label{fig:speed-lit}
 \end{figure}
 
@@ -564,15 +575,18 @@ axes---a larger convergent stepsize reaches the same tolerance in proportionally
 fewer steps---while the elapsed time $n\Delta t$ to that tolerance (bottom row) is nearly
 flat in $\Delta t$ until the largest convergent stepsizes, where the discrete
 trajectory begins to lag the continuous flow. Consistent with the matched-stepsize
-panels, the Riemannian and KL curves coincide at the fine and intermediate
-stepsizes but separate at the coarsest convergent stepsizes, where the Riemannian
-scheme reaches the tolerance in fewer iterations (and KL may not reach $10^{-6}$
-at all within the horizon, terminating at a larger plateau). The practical reading
+panels, the two schemes coincide at the fine and intermediate stepsizes and
+separate only at the coarsest convergent stepsizes, where the faster scheme
+reaches the tolerance in fewer iterations (and the slower one may not reach
+$10^{-6}$ at all within the horizon, terminating at a larger plateau). Which
+scheme that is depends on the target: on the two smooth targets it is Riemannian,
+while on the quartic it is KL---at $\Delta t=0.02$ the Riemannian run never reaches
+$10^{-6}$ whereas KL does. The practical reading
 is twofold: the dominant efficiency lever remains how large a stable stepsize a
 scheme admits (the conclusion of the stability sections), but among the stepsizes both
-schemes can take, the Riemannian update additionally converges faster per step in
-the coarse-stepsize regime, while the two are interchangeable when $\Delta t$ is
-small.
+schemes can take, the geometrically faithful Riemannian update converges faster
+per step in the coarse-stepsize regime on smooth targets, while the two are
+interchangeable when $\Delta t$ is small.
 
 \begin{figure}[t]
 \centering
@@ -580,8 +594,9 @@ small.
 \caption{Cost to reach gap $\le10^{-6}$ for stable runs, averaged over $\lambda$,
 vs $\Delta t$. Top: iterations (log--log), with the $\propto1/\Delta t$ reference
 slope; bottom: elapsed time $n\Delta t$ (semi-log $x$), nearly flat in $\Delta t$. Riemannian
-(blue) and KL (red) coincide at fine $\Delta t$ and separate at the coarsest
-convergent stepsizes, where Riemannian reaches the tolerance in fewer iterations.}
+(blue) and KL (red) coincide at fine $\Delta t$ and separate only at the coarsest
+convergent stepsizes; the faster scheme is target-dependent (Riemannian on the
+smooth targets, KL on the quartic).}
 \label{fig:speed-cost}
 \end{figure}
 
@@ -629,8 +644,8 @@ The evidence supports a balanced reading, not a simple ranking.
 We are careful not to overclaim. At well-conditioned settings the absolute stable
 stepsize of the two schemes is comparable (indeed at $\lambda=1$ the Riemannian
 scheme tolerates a slightly larger stable $\Delta t$ than KL), and on the
-non-smooth quartic target both are restricted to small stepsizes, where KL holds a
-slight convergence-speed edge. The conclusions are specifically about the
+non-smooth quartic target both are restricted to small stepsizes, where KL is the
+faster of the two. The conclusions are specifically about the
 \emph{gap between the KL proof bound and KL practice} (large and systematic) and
 the \emph{matched-stepsize convergence-speed advantage of the Riemannian update on
 smooth targets}, not a blanket statement that one scheme dominates the other in
