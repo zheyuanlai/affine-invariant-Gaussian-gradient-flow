@@ -163,12 +163,14 @@ $\grad^2 V\equiv Q$ the global constants are $\alpha=\min(1,\lambda)$,
 $\beta=\max(1,\lambda)$. This is the cleanest stepsize test: there is no
 quadrature or sampling error anywhere.
 
-\paragraph{Non-separable quartic log-concave posterior (target B).}
+\paragraph{Non-smooth (quartic) log-concave posterior (target B).}
 $\Phi_R(x,y)=\tfrac{(\sqrt\lambda x-y)^2}{20}+\tfrac{y^4}{20}$. This is convex but
 \emph{not} globally smooth: $\grad^2 V$ grows without bound through the quartic
 term, so no theorem-based global $(\alpha,\beta)$ exists and we set
 \texttt{theory\_bound\_available=false}; only empirical stepsize thresholds are
-reported. All required expectations close in the Gaussian moments of $Y$,
+reported. We refer to this target as \emph{non-smooth log-concave} throughout, the
+defining property being the absence of a global smoothness constant. All required
+expectations close in the Gaussian moments of $Y$,
 $\E[Y^2]=m_y^2+C_{22}$, $\E[Y^3]=m_y^3+3m_yC_{22}$,
 $\E[Y^4]=m_y^4+6m_y^2C_{22}+3C_{22}^2$, so $g$, $H$ and $\E[V]$ are exact.
 Initialization $m_0=(10,10)^\top$, $C_0=4I$. The optimum $a_\star$ is found
@@ -261,7 +263,7 @@ $C_0$. The proof Lipschitz constants and sufficient stepsizes are
 \Delta t_{\mathrm{KL,theory}}=\frac1{\beta\lambda_{\max}\,
 \max\{1,\ \lambda_{\max}^3/(2\lambda_{\min}^3)\}} .
 \end{equation}
-For the quartic target B (not globally smooth) no such bound is reported.
+For the non-smooth target B (no global smoothness constant) no such bound is reported.
 \end{definition}
 The diagnostic quantities are the ratios
 $\Delta t_{\max}^{\mathrm{stable}}/\Delta t_{\mathrm{theory}}$ and
@@ -276,12 +278,12 @@ proof-artifact discussion.
 \paragraph{Metadata.}
 Table~\ref{tab:disc-meta} lists the reference optimum $\mathcal{E}_\star$ and the global
 constants $(\alpha,\beta)$ for each target/$\lambda$. The Gaussian and smooth
-targets are globally smooth (theory bounds available); the quartic target is not.
+targets are globally smooth (theory bounds available); the non-smooth target is not.
 
 \begin{table}[t]
 \centering
 \caption{Per-target reference optimum $\mathcal{E}_\star$ and global strong-convexity /
-smoothness constants $(\alpha,\beta)$. The quartic target is convex but not
+smoothness constants $(\alpha,\beta)$. The non-smooth target is convex but not
 globally smooth, so no theorem-based $(\alpha,\beta)$ is reported.}
 \label{tab:disc-meta}
 \inputtable{tab_disc_metadata.tex}
@@ -296,7 +298,7 @@ converge cleanly at these stepsizes; the curves of the two methods are
 visually close at matched $\Delta t$, since they agree to first order and the
 shared mean update dominates the transient. The Gaussian target reaches the
 analytic optimum to machine precision; the smooth target converges to the
-numerically optimized $a_\star$. On the quartic target, both schemes require much
+numerically optimized $a_\star$. On the non-smooth target, both schemes require much
 smaller stepsizes (Fig.~\ref{fig:gap-lit}), consistent with its unbounded
 curvature: the representative stepsizes shown there are the largest that
 converge for that target ($\Delta t\in\{0.005,0.01,0.02\}$), an order of
@@ -325,7 +327,7 @@ numerically optimized $a_\star$.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_gap_literature_logconcave.pdf}
-\caption{Quartic (non-globally-smooth) log-concave posterior: energy gap vs
+\caption{Non-smooth (quartic) log-concave posterior: energy gap vs
 elapsed time $n\Delta t$
 at its convergent representative stepsizes $\Delta t\in\{0.005,0.01,0.02\}$. Both
 schemes converge cleanly here; the stepsizes are an order of magnitude smaller
@@ -369,7 +371,7 @@ theoretical line ($\sim10^{-6}$) is far to the left of the empirical boundary
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_heatmap_literature_logconcave.pdf}
-\caption{Quartic log-concave stability classification (no theory line, since the
+\caption{Non-smooth log-concave stability classification (no theory line, since the
 target is not globally smooth). Both schemes are stable only for small
 $\Delta t$.}
 \label{fig:heat-lit}
@@ -505,7 +507,7 @@ $\lambda$ and columns indexing a representative convergent stepsize, so that
 each panel contains exactly two curves---Riemannian (solid) and KL
 (dashed)---at one $(\lambda,\Delta t)$ cell. The stepsizes shown are the curated
 convergent set for each target (stable for both schemes at every $\lambda$);
-the quartic target uses stepsizes an order of magnitude smaller, reflecting its
+the non-smooth target uses stepsizes an order of magnitude smaller, reflecting its
 unbounded curvature. On the two \emph{globally smooth} targets
 (Figs.~\ref{fig:speed-gauss}--\ref{fig:speed-smooth}) the comparison splits
 cleanly by stepsize regime. At the
@@ -556,7 +558,7 @@ advantage as $\Delta t$ coarsens.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{fig_convergence_speed_literature_logconcave.pdf}
-\caption{Quartic log-concave posterior: energy gap vs elapsed time $n\Delta t$ (same layout).
+\caption{Non-smooth (quartic) log-concave posterior: energy gap vs elapsed time $n\Delta t$ (same layout).
 The convergent stepsizes are an order of magnitude smaller than for the smooth
 targets; the schemes agree closely at the finer stepsizes, but here \emph{KL}
 holds the advantage---most clearly at the coarsest convergent $\Delta t=0.02$,
@@ -580,7 +582,7 @@ separate only at the coarsest convergent stepsizes, where the faster scheme
 reaches the tolerance in fewer iterations (and the slower one may not reach
 $10^{-6}$ at all within the horizon, terminating at a larger plateau). Which
 scheme that is depends on the target: on the two smooth targets it is Riemannian,
-while on the quartic it is KL---at $\Delta t=0.02$ the Riemannian run never reaches
+while on the non-smooth target it is KL---at $\Delta t=0.02$ the Riemannian run never reaches
 $10^{-6}$ whereas KL does. The practical reading
 is twofold: the dominant efficiency lever remains how large a stable stepsize a
 scheme admits (the conclusion of the stability sections), but among the stepsizes both
@@ -596,7 +598,7 @@ vs $\Delta t$. Top: iterations (log--log), with the $\propto1/\Delta t$ referenc
 slope; bottom: elapsed time $n\Delta t$ (semi-log $x$), nearly flat in $\Delta t$. Riemannian
 (blue) and KL (red) coincide at fine $\Delta t$ and separate only at the coarsest
 convergent stepsizes; the faster scheme is target-dependent (Riemannian on the
-smooth targets, KL on the quartic).}
+smooth targets, KL on the non-smooth one).}
 \label{fig:speed-cost}
 \end{figure}
 

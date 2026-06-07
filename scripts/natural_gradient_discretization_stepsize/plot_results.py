@@ -40,7 +40,7 @@ from src.natural_gradient_discretization_stepsize.plotting import (
 
 TARGET_TITLE = {
     "gaussian_posterior": "Gaussian posterior",
-    "literature_logconcave": "literature log-concave (quartic)",
+    "literature_logconcave": "non-smooth log-concave",
     "smooth_logconcave": "smooth strongly log-concave",
 }
 

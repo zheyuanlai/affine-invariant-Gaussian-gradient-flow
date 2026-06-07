@@ -480,7 +480,7 @@ def _tab_disc_stepsize(step_df):
     the monotone/theory and accurate/theory ratios, so the proof-artifact gap is
     visible in both the monotone and the (stricter) accurate class.
     """
-    tt = {"gaussian_posterior": "Gaussian", "literature_logconcave": "quartic",
+    tt = {"gaussian_posterior": "Gaussian", "literature_logconcave": "non-smooth",
           "smooth_logconcave": "smooth"}
     lines = [
         r"\begin{tabular}{lllccccc}",
@@ -527,7 +527,7 @@ def _tab_disc_metadata(meta):
     """Per-target reference optimum and theory constants."""
     tt = {"gaussian_posterior": "Gaussian posterior",
           "smooth_logconcave": "smooth log-concave",
-          "literature_logconcave": "quartic log-concave"}
+          "literature_logconcave": "non-smooth log-concave"}
     lines = [
         r"\begin{tabular}{llcccc}",
         r"\toprule",
@@ -569,7 +569,7 @@ def _tab_disc_convergence(long_df):
     per-step convergence-rate comparison from the stepsize-range question.
     """
     tt = {"gaussian_posterior": "Gaussian", "smooth_logconcave": "smooth",
-          "literature_logconcave": "quartic"}
+          "literature_logconcave": "non-smooth"}
 
     def gmean_gap(target, method, dt):
         gaps = []

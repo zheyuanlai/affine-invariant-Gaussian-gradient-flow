@@ -50,7 +50,7 @@ update `C' = (1 + dt) (C^{-1} - dt H)^{-1}`. Both share the explicit mean step
 `m' = m + dt C g`. The KL proof admits a much smaller sufficient stepsize than the
 Riemannian proof (an extra factor `max{1, lambda_max^3 / (2 lambda_min^3)}`); the
 question is whether that smaller KL bound is a genuine restriction or a proof
-artifact. Three deterministic 2-D targets (exact Gaussian posterior, non-separable
+artifact. Three deterministic 2-D targets (exact Gaussian posterior, non-smooth
 quartic log-concave, smooth strongly log-concave) and a scalar `N(0, 1)` diagnostic
 are swept over `dt in {0.001, ..., 10}` and each run is classified SPD-feasible /
 stable / monotone / accurate.
