@@ -1,0 +1,65 @@
+# Production configuration for the WFR Gaussian gradient-flow experiment.
+#
+# Wasserstein--Fisher--Rao forward--backward splitting on the Gaussian manifold.
+# Two deterministic 2-D targets (exact Gaussian posterior, smooth nonseparable
+# strongly log-concave log-cosh posterior), far underdispersed initializations,
+# and five methods (fr_only, w_only, wfr_fixed, wfr_theory, wfr_adaptive). All
+# expectations are exact (closed form / Gauss--Hermite); no Monte Carlo, CPU only.
+#
+# The anisotropy parameter is named Lambda (lambda_n is the WFR transport
+# strength). The Wasserstein step size h_n = lambda_n * Delta t is scheduled
+# directly; lambda_n is recovered for reporting.
+
+targets: [gaussian, smooth_log_cosh]
+Lambdas: [100.0, 1000.0]
+epsilons: [0.01, 0.001]
+
+# Methods compared in the main figures/tables. Each carries its own schedule.
+methods: [fr_only, w_only, wfr_fixed, wfr_theory, wfr_adaptive]
+
+# Fisher--Rao step size used by the main comparison (predeclared, shared across
+# methods for a fair head-to-head). The KL/FR covariance step is unconditionally
+# SPD for log-concave targets; dt=0.5 is robustly stable for both targets.
+main_dt: 0.5
+
+# Fair cost budget: every run is stepped until it has spent this many expectation
+# batches (the single-step methods spend 1/iter, the WFR splitting 2/iter).
+max_batches: 8000
+
+# Fixed-schedule fraction c (h = c/beta) used by w_only and wfr_fixed in the main
+# comparison, and the default main fixed WFR schedule.
+fixed_c: 0.5
+
+# Adaptive schedule parameters: h_max = h_max_frac/beta, calibration scale s0.
+adaptive:
+  h_max_frac: 0.9
+  s0: 0.5
+
+# Wasserstein-only stability fraction sweep (reported separately; the main
+# w_only curve uses fixed_c above).
+w_only_c_grid: [0.25, 0.5, 0.9]
+
+# Schedule sweep for the fixed WFR schedule (Figure 4 / Table 2): hitting batches
+# to gap < 1e-3 as a function of c, with the theory schedule h=mu_min as a marker.
+schedule_sweep:
+  c_grid: [0.0, 0.05, 0.1, 0.25, 0.5, 0.9]
+
+# Optional Delta t / c stability heatmap sweep for wfr_fixed (Figure 5).
+dt_sweep:
+  dt_grid: [0.05, 0.1, 0.2, 0.5, 1.0]
+  c_grid: [0.0, 0.25, 0.5, 0.9]
+
+# Smooth-target Gauss--Hermite quadrature order and its parameters.
+smooth_target:
+  delta: 0.05
+  gamma: 1.0
+  gh_nodes: 80
+
+# Mean initialization radius along the flat-valley direction.
+r: 8.0
+
+# Decimation cap for the long-format CSV (full trajectory always used for
+# classification and hitting times).
+max_saved_rows: 600
+
+output_dir: outputs/wfr_gradient_flow

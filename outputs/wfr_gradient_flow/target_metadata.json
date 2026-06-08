@@ -1,0 +1,628 @@
+{
+  "targets": {
+    "gaussian__L100__eps0.01": {
+      "target_name": "gaussian",
+      "Lambda": 100.0,
+      "d": 2,
+      "epsilon": 0.01,
+      "r": 8.0,
+      "Gamma_diag": [
+        1.0,
+        100.0
+      ],
+      "m0": [
+        0.7960297521679913,
+        7.960297521679913
+      ],
+      "C0": [
+        [
+          0.01,
+          0.0
+        ],
+        [
+          0.0,
+          0.01
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.01,
+      "beta": 1.0,
+      "beta_formula": "max eig(Gamma^{-1}) = max(1, 1/Lambda) = 1",
+      "description": "exact Gaussian posterior N(0, Gamma), Gamma=diag(1,Lambda)",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "F_star": -1.302585092994046,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "mu_min_theory": 0.01,
+      "gap0": 6.546468645318771,
+      "schedules": {
+        "fr_only": {
+          "h": 0.0
+        },
+        "w_only": {
+          "h": 0.5,
+          "c": 0.5
+        },
+        "wfr_fixed": {
+          "h": 0.5,
+          "c": 0.5
+        },
+        "wfr_theory": {
+          "h": 0.01,
+          "note": "h=mu_min=min(lambda_min(C0),1/beta)"
+        },
+        "wfr_adaptive": {
+          "h_max": 0.9,
+          "h_max_frac": 0.9,
+          "s0": 0.5
+        }
+      }
+    },
+    "gaussian__L100__eps0.001": {
+      "target_name": "gaussian",
+      "Lambda": 100.0,
+      "d": 2,
+      "epsilon": 0.001,
+      "r": 8.0,
+      "Gamma_diag": [
+        1.0,
+        100.0
+      ],
+      "m0": [
+        0.7960297521679913,
+        7.960297521679913
+      ],
+      "C0": [
+        [
+          0.001,
+          0.0
+        ],
+        [
+          0.0,
+          0.001
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.01,
+      "beta": 1.0,
+      "beta_formula": "max eig(Gamma^{-1}) = max(1, 1/Lambda) = 1",
+      "description": "exact Gaussian posterior N(0, Gamma), Gamma=diag(1,Lambda)",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "F_star": -1.302585092994046,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "mu_min_theory": 0.001,
+      "gap0": 8.844508738312816,
+      "schedules": {
+        "fr_only": {
+          "h": 0.0
+        },
+        "w_only": {
+          "h": 0.5,
+          "c": 0.5
+        },
+        "wfr_fixed": {
+          "h": 0.5,
+          "c": 0.5
+        },
+        "wfr_theory": {
+          "h": 0.001,
+          "note": "h=mu_min=min(lambda_min(C0),1/beta)"
+        },
+        "wfr_adaptive": {
+          "h_max": 0.9,
+          "h_max_frac": 0.9,
+          "s0": 0.5
+        }
+      }
+    },
+    "gaussian__L1000__eps0.01": {
+      "target_name": "gaussian",
+      "Lambda": 1000.0,
+      "d": 2,
+      "epsilon": 0.01,
+      "r": 8.0,
+      "Gamma_diag": [
+        1.0,
+        1000.0
+      ],
+      "m0": [
+        0.2528558164964056,
+        7.996002997502185
+      ],
+      "C0": [
+        [
+          0.01,
+          0.0
+        ],
+        [
+          0.0,
+          0.01
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.001,
+      "beta": 1.0,
+      "beta_formula": "max eig(Gamma^{-1}) = max(1, 1/Lambda) = 1",
+      "description": "exact Gaussian posterior N(0, Gamma), Gamma=diag(1,Lambda)",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1000.0
+        ]
+      ],
+      "F_star": -2.4538776394910684,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "mu_min_theory": 0.01,
+      "gap0": 7.127988889415224,
+      "schedules": {
+        "fr_only": {
+          "h": 0.0
+        },
+        "w_only": {
+          "h": 0.5,
+          "c": 0.5
+        },
+        "wfr_fixed": {
+          "h": 0.5,
+          "c": 0.5
+        },
+        "wfr_theory": {
+          "h": 0.01,
+          "note": "h=mu_min=min(lambda_min(C0),1/beta)"
+        },
+        "wfr_adaptive": {
+          "h_max": 0.9,
+          "h_max_frac": 0.9,
+          "s0": 0.5
+        }
+      }
+    },
+    "gaussian__L1000__eps0.001": {
+      "target_name": "gaussian",
+      "Lambda": 1000.0,
+      "d": 2,
+      "epsilon": 0.001,
+      "r": 8.0,
+      "Gamma_diag": [
+        1.0,
+        1000.0
+      ],
+      "m0": [
+        0.2528558164964056,
+        7.996002997502185
+      ],
+      "C0": [
+        [
+          0.001,
+          0.0
+        ],
+        [
+          0.0,
+          0.001
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.001,
+      "beta": 1.0,
+      "beta_formula": "max eig(Gamma^{-1}) = max(1, 1/Lambda) = 1",
+      "description": "exact Gaussian posterior N(0, Gamma), Gamma=diag(1,Lambda)",
+      "m_star": [
+        0.0,
+        0.0
+      ],
+      "C_star": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1000.0
+        ]
+      ],
+      "F_star": -2.4538776394910684,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "mu_min_theory": 0.001,
+      "gap0": 9.42606948240927,
+      "schedules": {
+        "fr_only": {
+          "h": 0.0
+        },
+        "w_only": {
+          "h": 0.5,
+          "c": 0.5
+        },
+        "wfr_fixed": {
+          "h": 0.5,
+          "c": 0.5
+        },
+        "wfr_theory": {
+          "h": 0.001,
+          "note": "h=mu_min=min(lambda_min(C0),1/beta)"
+        },
+        "wfr_adaptive": {
+          "h_max": 0.9,
+          "h_max_frac": 0.9,
+          "s0": 0.5
+        }
+      }
+    },
+    "smooth_log_cosh__L100__eps0.01": {
+      "target_name": "smooth_log_cosh",
+      "Lambda": 100.0,
+      "d": 2,
+      "epsilon": 0.01,
+      "r": 8.0,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        0.7960297521679913,
+        7.960297521679913
+      ],
+      "C0": [
+        [
+          0.01,
+          0.0
+        ],
+        [
+          0.0,
+          0.01
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 10.160975772792485,
+      "beta_formula": "lambda_max([[delta+Lambda/10, -sqrt(Lambda)/10], [-sqrt(Lambda)/10, delta+1/10+gamma]])",
+      "description": "smooth strongly log-concave V=(sqrt(Lambda)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "m_star": [
+        4.300987677115174e-12,
+        -4.5229081892137245e-13
+      ],
+      "C_star": [
+        [
+          0.11762685701380318,
+          0.18214991767958155
+        ],
+        [
+          0.18214991767958155,
+          1.8306066266333014
+        ]
+      ],
+      "F_star": 1.998619772423618,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "grad_norm": 3.175036656965612e-08,
+        "stationarity_g_norm": 4.391805211399692e-11,
+        "stationarity_cov_residual": 1.0707662898624664e-07,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 12
+      },
+      "mu_min_theory": 0.01,
+      "gap0": 11.524700878981053,
+      "schedules": {
+        "fr_only": {
+          "h": 0.0
+        },
+        "w_only": {
+          "h": 0.04920787247016413,
+          "c": 0.5
+        },
+        "wfr_fixed": {
+          "h": 0.04920787247016413,
+          "c": 0.5
+        },
+        "wfr_theory": {
+          "h": 0.01,
+          "note": "h=mu_min=min(lambda_min(C0),1/beta)"
+        },
+        "wfr_adaptive": {
+          "h_max": 0.08857417044629544,
+          "h_max_frac": 0.9,
+          "s0": 0.5
+        }
+      }
+    },
+    "smooth_log_cosh__L100__eps0.001": {
+      "target_name": "smooth_log_cosh",
+      "Lambda": 100.0,
+      "d": 2,
+      "epsilon": 0.001,
+      "r": 8.0,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        0.7960297521679913,
+        7.960297521679913
+      ],
+      "C0": [
+        [
+          0.001,
+          0.0
+        ],
+        [
+          0.0,
+          0.001
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 10.160975772792485,
+      "beta_formula": "lambda_max([[delta+Lambda/10, -sqrt(Lambda)/10], [-sqrt(Lambda)/10, delta+1/10+gamma]])",
+      "description": "smooth strongly log-concave V=(sqrt(Lambda)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "m_star": [
+        4.300987677115174e-12,
+        -4.5229081892137245e-13
+      ],
+      "C_star": [
+        [
+          0.11762685701380318,
+          0.18214991767958155
+        ],
+        [
+          0.18214991767958155,
+          1.8306066266333014
+        ]
+      ],
+      "F_star": 1.998619772423618,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "grad_norm": 3.175036656965612e-08,
+        "stationarity_g_norm": 4.391805211399692e-11,
+        "stationarity_cov_residual": 1.0707662898624664e-07,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 12
+      },
+      "mu_min_theory": 0.001,
+      "gap0": 13.781385969757775,
+      "schedules": {
+        "fr_only": {
+          "h": 0.0
+        },
+        "w_only": {
+          "h": 0.04920787247016413,
+          "c": 0.5
+        },
+        "wfr_fixed": {
+          "h": 0.04920787247016413,
+          "c": 0.5
+        },
+        "wfr_theory": {
+          "h": 0.001,
+          "note": "h=mu_min=min(lambda_min(C0),1/beta)"
+        },
+        "wfr_adaptive": {
+          "h_max": 0.08857417044629544,
+          "h_max_frac": 0.9,
+          "s0": 0.5
+        }
+      }
+    },
+    "smooth_log_cosh__L1000__eps0.01": {
+      "target_name": "smooth_log_cosh",
+      "Lambda": 1000.0,
+      "d": 2,
+      "epsilon": 0.01,
+      "r": 8.0,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        0.2528558164964056,
+        7.996002997502185
+      ],
+      "C0": [
+        [
+          0.01,
+          0.0
+        ],
+        [
+          0.0,
+          0.01
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 100.15100907146089,
+      "beta_formula": "lambda_max([[delta+Lambda/10, -sqrt(Lambda)/10], [-sqrt(Lambda)/10, delta+1/10+gamma]])",
+      "description": "smooth strongly log-concave V=(sqrt(Lambda)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "m_star": [
+        -1.1054279215662395e-11,
+        3.086772397104609e-13
+      ],
+      "C_star": [
+        [
+          0.011826010723302893,
+          0.05793051166576572
+        ],
+        [
+          0.05793051166576572,
+          1.8328395911002477
+        ]
+      ],
+      "F_star": 3.147258603570852,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "grad_norm": 1.628798536811054e-08,
+        "stationarity_g_norm": 1.1075148790495245e-09,
+        "stationarity_cov_residual": 1.0045238998547442e-06,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 16
+      },
+      "mu_min_theory": 0.009984921862209782,
+      "gap0": 10.861767515089468,
+      "schedules": {
+        "fr_only": {
+          "h": 0.0
+        },
+        "w_only": {
+          "h": 0.004992460931104891,
+          "c": 0.5
+        },
+        "wfr_fixed": {
+          "h": 0.004992460931104891,
+          "c": 0.5
+        },
+        "wfr_theory": {
+          "h": 0.009984921862209782,
+          "note": "h=mu_min=min(lambda_min(C0),1/beta)"
+        },
+        "wfr_adaptive": {
+          "h_max": 0.008986429675988804,
+          "h_max_frac": 0.9,
+          "s0": 0.5
+        }
+      }
+    },
+    "smooth_log_cosh__L1000__eps0.001": {
+      "target_name": "smooth_log_cosh",
+      "Lambda": 1000.0,
+      "d": 2,
+      "epsilon": 0.001,
+      "r": 8.0,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        0.2528558164964056,
+        7.996002997502185
+      ],
+      "C0": [
+        [
+          0.001,
+          0.0
+        ],
+        [
+          0.0,
+          0.001
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 100.15100907146089,
+      "beta_formula": "lambda_max([[delta+Lambda/10, -sqrt(Lambda)/10], [-sqrt(Lambda)/10, delta+1/10+gamma]])",
+      "description": "smooth strongly log-concave V=(sqrt(Lambda)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "m_star": [
+        -1.1054279215662395e-11,
+        3.086772397104609e-13
+      ],
+      "C_star": [
+        [
+          0.011826010723302893,
+          0.05793051166576572
+        ],
+        [
+          0.05793051166576572,
+          1.8328395911002477
+        ]
+      ],
+      "F_star": 3.147258603570852,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "grad_norm": 1.628798536811054e-08,
+        "stationarity_g_norm": 1.1075148790495245e-09,
+        "stationarity_cov_residual": 1.0045238998547442e-06,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 16
+      },
+      "mu_min_theory": 0.001,
+      "gap0": 12.713452606019008,
+      "schedules": {
+        "fr_only": {
+          "h": 0.0
+        },
+        "w_only": {
+          "h": 0.004992460931104891,
+          "c": 0.5
+        },
+        "wfr_fixed": {
+          "h": 0.004992460931104891,
+          "c": 0.5
+        },
+        "wfr_theory": {
+          "h": 0.001,
+          "note": "h=mu_min=min(lambda_min(C0),1/beta)"
+        },
+        "wfr_adaptive": {
+          "h_max": 0.008986429675988804,
+          "h_max_frac": 0.9,
+          "s0": 0.5
+        }
+      }
+    }
+  }
+}

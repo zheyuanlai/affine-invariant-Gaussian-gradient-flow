@@ -1,0 +1,39 @@
+# Smoke configuration for the WFR Gaussian gradient-flow experiment.
+#
+# Fast reduced grid for development and CI: one Lambda, one epsilon, all five
+# methods, a short batch budget. Writes to a separate smoke output directory so
+# it never touches the production outputs the report reads.
+
+targets: [gaussian, smooth_log_cosh]
+Lambdas: [100.0]
+epsilons: [0.01]
+
+methods: [fr_only, w_only, wfr_fixed, wfr_theory, wfr_adaptive]
+
+main_dt: 0.5
+max_batches: 800
+fixed_c: 0.5
+
+adaptive:
+  h_max_frac: 0.9
+  s0: 0.5
+
+w_only_c_grid: [0.5]
+
+schedule_sweep:
+  c_grid: [0.0, 0.1, 0.5, 0.9]
+
+dt_sweep:
+  dt_grid: [0.1, 0.5, 1.0]
+  c_grid: [0.0, 0.5]
+
+smooth_target:
+  delta: 0.05
+  gamma: 1.0
+  gh_nodes: 40
+
+r: 8.0
+
+max_saved_rows: 300
+
+output_dir: outputs/wfr_gradient_flow_smoke

@@ -37,6 +37,9 @@ from src.common.plotting_style import apply_style, save_figure  # noqa: E402
 from src.omega_tau_modes.plotting_utils import (  # noqa: E402
     plot_heatmap_with_not_reached_mask, speedup_diverging_norm,
 )
+from src.wfr_gradient_flow.plotting import (  # noqa: E402
+    METHOD_STYLE, METHOD_ORDER, PHASE_METHODS, TARGET_TITLE, clip_gap, GAP_FLOOR,
+)
 
 # ---------------------------------------------------------------------------
 # Paths and shared constants
@@ -47,6 +50,15 @@ FIGS = os.path.join(ASSETS, "figs")
 GAUSS_DIR = os.path.join(_ROOT, "outputs", "gaussian_grid")
 LOGC_DIR = os.path.join(_ROOT, "outputs", "logconcave_grid")
 LR_DIR = os.path.join(_ROOT, "outputs", "natural_gradient_local_rate")
+WFR_DIR = os.path.join(_ROOT, "outputs", "wfr_gradient_flow")
+
+# WFR display order / labels.
+WFR_TARGET_ORDER = ["gaussian", "smooth_log_cosh"]
+WFR_METHOD_TEX = {
+    "fr_only": "FR-only", "w_only": "W-only", "wfr_fixed": "WFR-fixed",
+    "wfr_theory": "WFR-theory", "wfr_adaptive": "WFR-adaptive",
+}
+WFR_TARGET_TEX = {"gaussian": "Gaussian", "smooth_log_cosh": "smooth log-cosh"}
 
 # Display order / labels for the five mode initializations.
 INIT_ORDER = ["mean_only", "volume_high", "volume_low", "shape_only", "mixed"]
@@ -706,10 +718,405 @@ def build_discretization_assets():
               "(run run_rate_benchmark.py)")
 
 
+# ===========================================================================
+# WFR Gaussian gradient flow
+# ===========================================================================
+
+def _wfr_fmt_int(x):
+    if x is None or (isinstance(x, float) and not np.isfinite(x)) or int(x) < 0:
+        return r"$\infty$"
+    return f"{int(x)}"
+
+
+def _wfr_fmt_sci(x):
+    if x is None or (isinstance(x, float) and not np.isfinite(x)):
+        return "--"
+    if x == 0:
+        return "0"
+    if x < 1e-12:
+        return r"$<\!10^{-12}$"
+    exp = int(np.floor(np.log10(abs(x))))
+    if -2 <= exp <= 2:
+        return f"{x:.2g}"
+    mant = x / 10.0 ** exp
+    return rf"${mant:.1f}\times10^{{{exp}}}$"
+
+
+def _wfr_fig_phase_separation(long_df, target_name, warmup_batches=60):
+    """Gap vs expectation batches for one target, all (Lambda, eps): four methods.
+
+    Two columns -- a warmup zoom (linear x, log y up to ``warmup_batches``) and the
+    full trajectory (log x, log y) -- one row per ``(Lambda, eps)`` combination.
+    The warmup column exposes the Wasserstein early-descent advantage; the full
+    column exposes the Fisher--Rao tail advantage and the WFR combination.
+    """
+    sub = long_df[long_df.target_name == target_name]
+    combos = (sub[["Lambda", "epsilon"]].drop_duplicates()
+              .sort_values(["Lambda", "epsilon"]).itertuples(index=False))
+    combos = list(combos)
+    nrow = len(combos)
+    fig, axes = plt.subplots(nrow, 2, figsize=(10.5, 3.0 * nrow),
+                             squeeze=False)
+    for i, (Lambda, eps) in enumerate(combos):
+        cell = sub[(np.isclose(sub.Lambda, Lambda)) & (np.isclose(sub.epsilon, eps))]
+        ax_w, ax_f = axes[i, 0], axes[i, 1]
+        for method in PHASE_METHODS:
+            s = cell[cell.method == method].sort_values("expectation_batches")
+            if s.empty:
+                continue
+            st = METHOD_STYLE[method]
+            b = s.expectation_batches.values
+            g = clip_gap(s.objective_gap.values)
+            ax_w.plot(b, g, color=st["color"], ls=st["ls"], label=st["label"], lw=1.6)
+            ax_f.plot(b, g, color=st["color"], ls=st["ls"], label=st["label"], lw=1.6)
+        ax_w.set_xlim(0, warmup_batches)
+        ax_w.set_yscale("log")
+        ax_f.set_xscale("log")
+        ax_f.set_yscale("log")
+        ax_w.set_ylabel(rf"$\Lambda={Lambda:g},\ \varepsilon={eps:g}$"
+                        "\n" r"energy gap")
+        for ax in (ax_w, ax_f):
+            ax.grid(True, which="both", alpha=0.25)
+            ax.set_ylim(GAP_FLOOR, None)
+        if i == 0:
+            ax_w.set_title("warmup (linear batches)")
+            ax_f.set_title("full trajectory (log batches)")
+        if i == nrow - 1:
+            ax_w.set_xlabel("expectation batches")
+            ax_f.set_xlabel("expectation batches")
+    axes[0, 1].legend(fontsize=8, loc="upper right", framealpha=0.9)
+    fig.suptitle(f"{TARGET_TITLE[target_name]}: WFR phase separation "
+                 "(gap vs expectation-batch cost)", y=0.995)
+    fig.tight_layout(rect=(0, 0, 1, 0.99))
+    return fig
+
+
+def _wfr_fig_adaptive_schedule(long_df, summary_df):
+    """The wfr_adaptive transport ``h_n beta`` and calibration ``s_n`` over a run.
+
+    One column per target; the top row shows the normalized transport
+    ``h_n beta`` (so the 0.9 ceiling is target-independent) and the bottom row the
+    calibration ratio ``s_n`` driving it, both vs expectation batches, for every
+    ``(Lambda, eps)``. The schedule keeps transport near the ceiling while
+    ``s_n`` is small (underdispersed warmup) and decays it as ``s_n`` approaches
+    one (the covariance becomes locally calibrated).
+    """
+    fig, axes = plt.subplots(2, len(WFR_TARGET_ORDER), figsize=(5.2 * len(WFR_TARGET_ORDER), 6.4),
+                             squeeze=False, sharex="col")
+    for j, target_name in enumerate(WFR_TARGET_ORDER):
+        sub = long_df[(long_df.target_name == target_name)
+                      & (long_df.method == "wfr_adaptive")]
+        beta_map = (summary_df[summary_df.target_name == target_name]
+                    .set_index(["Lambda", "epsilon"]).beta.to_dict())
+        combos = (sub[["Lambda", "epsilon"]].drop_duplicates()
+                  .sort_values(["Lambda", "epsilon"]).itertuples(index=False))
+        cmap = plt.cm.viridis(np.linspace(0.1, 0.85, 4))
+        for k, (Lambda, eps) in enumerate(combos):
+            s = sub[(np.isclose(sub.Lambda, Lambda)) & (np.isclose(sub.epsilon, eps))]
+            s = s[s.iteration > 0].sort_values("expectation_batches")
+            if s.empty:
+                continue
+            beta = beta_map.get((Lambda, eps), 1.0)
+            lbl = rf"$\Lambda={Lambda:g},\varepsilon={eps:g}$"
+            axes[0, j].plot(s.expectation_batches, s.h_n * beta, color=cmap[k % 4], lw=1.5, label=lbl)
+            axes[1, j].plot(s.expectation_batches, s.s_n, color=cmap[k % 4], lw=1.5, label=lbl)
+        axes[0, j].set_title(TARGET_TITLE[target_name])
+        axes[0, j].axhline(0.9, color="k", ls=":", lw=1, alpha=0.6)
+        axes[0, j].set_ylabel(r"normalized transport $h_n\beta$")
+        axes[1, j].axhline(0.5, color="k", ls=":", lw=1, alpha=0.6)
+        axes[1, j].set_ylabel(r"calibration $s_n=\lambda_{\min}(C^{1/2}(-H)C^{1/2})$")
+        axes[1, j].set_xlabel("expectation batches")
+        axes[1, j].set_xscale("log")
+        for r in (0, 1):
+            axes[r, j].grid(True, which="both", alpha=0.25)
+        axes[1, j].set_yscale("log")
+    axes[0, 0].legend(fontsize=8, loc="best")
+    fig.suptitle("WFR-adaptive transport schedule and curvature calibration", y=0.995)
+    fig.tight_layout(rect=(0, 0, 1, 0.99))
+    return fig
+
+
+def _wfr_fig_error_decomposition(long_df):
+    """Mean-error and covariance-error vs batches on the hardest start per target.
+
+    Two columns per target (mean-error norm, covariance-error Frobenius), top row
+    Gaussian and bottom row smooth, at ``Lambda=1000, eps=1e-3``. This exposes the
+    *mechanism* behind the phase separation rather than asserting it: at the
+    underdispersed start the covariance error (~10^3) dwarfs the mean error (~10),
+    so the covariance is the bottleneck; W-only barely dents the covariance error
+    (it inflates volume but cannot calibrate shape), while FR-only and WFR collapse
+    it once the mean has arrived.
+    """
+    hard = {"Lambda": 1000.0, "epsilon": 1e-3}
+    fig, axes = plt.subplots(len(WFR_TARGET_ORDER), 2,
+                             figsize=(11.0, 3.6 * len(WFR_TARGET_ORDER)), squeeze=False)
+    for i, tname in enumerate(WFR_TARGET_ORDER):
+        cell = long_df[(long_df.target_name == tname)
+                       & np.isclose(long_df.Lambda, hard["Lambda"])
+                       & np.isclose(long_df.epsilon, hard["epsilon"])]
+        for col, (ycol, ylab) in enumerate([
+                ("mean_error_norm", r"mean error $\|m-m_\star\|$"),
+                ("covariance_error_fro", r"covariance error $\|C-C_\star\|_F$")]):
+            ax = axes[i][col]
+            for method in PHASE_METHODS:
+                s = cell[cell.method == method].sort_values("expectation_batches")
+                if s.empty:
+                    continue
+                st = METHOD_STYLE[method]
+                y = np.clip(s[ycol].values, GAP_FLOOR, None)
+                ax.semilogy(s.expectation_batches.values, y, color=st["color"],
+                            ls=st["ls"], label=st["label"], lw=1.6)
+            ax.set_xlim(0, 160)
+            ax.grid(True, which="both", alpha=0.25)
+            ax.set_ylabel(ylab)
+            if i == len(WFR_TARGET_ORDER) - 1:
+                ax.set_xlabel("expectation batches")
+            if col == 0:
+                ax.set_title(TARGET_TITLE[tname] + r"  ($\Lambda=1000,\varepsilon=10^{-3}$)",
+                             loc="left", fontsize=10)
+    axes[0][0].legend(fontsize=8, loc="best")
+    fig.suptitle("Phase-separation mechanism: the covariance, not the mean, is the "
+                 "bottleneck", y=0.995)
+    fig.tight_layout(rect=(0, 0, 1, 0.98))
+    return fig
+
+
+def _wfr_fig_schedule_sweep(sweep_df):
+    """Hitting iterations and batches to gap < 1e-3 vs the fixed fraction ``c``.
+
+    Two rows -- iterations (top) and expectation batches (bottom) -- one column
+    per target; one curve per ``(Lambda, eps)``. ``c = 0`` is FR-only; the
+    theorem-bound schedule ``h = mu_min`` is overlaid as a star at its own
+    ``c = mu_min beta``. The contrast between rows is the point: more transport
+    monotonically reduces iterations but, because the WFR splitting costs two
+    expectation batches per iteration, it does not reduce the batch cost below
+    FR-only -- the per-iteration gain is paid back in evaluations.
+    """
+    fig, axes = plt.subplots(2, len(WFR_TARGET_ORDER), figsize=(5.4 * len(WFR_TARGET_ORDER), 7.2),
+                             squeeze=False, sharex="col")
+    ycols = ["iter_to_1e_minus_3", "batches_to_1e_minus_3"]
+    ylabels = [r"iterations to gap $<10^{-3}$",
+               r"expectation batches to gap $<10^{-3}$"]
+    for j, target_name in enumerate(WFR_TARGET_ORDER):
+        sub = sweep_df[sweep_df.target_name == target_name]
+        combos = list(sub[["Lambda", "epsilon"]].drop_duplicates()
+                      .sort_values(["Lambda", "epsilon"]).itertuples(index=False))
+        cmap = plt.cm.plasma(np.linspace(0.05, 0.8, 4))
+        for r, (ycol, ylab) in enumerate(zip(ycols, ylabels)):
+            ax = axes[r, j]
+            for k, (Lambda, eps) in enumerate(combos):
+                fx = sub[(sub.schedule_kind == "fixed_c")
+                         & (np.isclose(sub.Lambda, Lambda)) & (np.isclose(sub.epsilon, eps))]
+                fx = fx.sort_values("c")
+                yv = fx[ycol].replace(-1, np.nan)
+                lbl = rf"$\Lambda={Lambda:g},\varepsilon={eps:g}$"
+                ax.plot(fx.c, yv, "o-", color=cmap[k % 4], lw=1.5, ms=4, label=lbl)
+                th = sub[(sub.schedule_kind == "theory_mu_min")
+                         & (np.isclose(sub.Lambda, Lambda)) & (np.isclose(sub.epsilon, eps))]
+                if not th.empty:
+                    yt = th[ycol].replace(-1, np.nan).iloc[0]
+                    ax.plot(th.c.iloc[0], yt, "*", color=cmap[k % 4], ms=13,
+                            markeredgecolor="k", markeredgewidth=0.5, zorder=5)
+            ax.set_ylabel(ylab)
+            ax.grid(True, which="both", alpha=0.25)
+            if r == 0:
+                ax.set_title(TARGET_TITLE[target_name])
+            else:
+                ax.set_xlabel(r"fixed transport fraction $c$  ($h=c/\beta$)")
+    axes[0, 0].legend(fontsize=8, loc="best")
+    fig.suptitle(r"WFR schedule sweep: transport cuts iterations (top) but not "
+                 r"expectation batches (bottom); $\star=$ theory $h=\mu_{\min}$", y=0.995)
+    fig.tight_layout(rect=(0, 0, 1, 0.98))
+    return fig
+
+
+def _wfr_fig_dt_heatmap(dt_df):
+    """Per-target ``Delta t`` x ``c`` heatmap of hitting batches to gap<1e-3.
+
+    One panel per ``(target, Lambda, eps)``; cells show log10 batches-to-1e-3
+    (white = never reached within budget / not SPD-feasible). Demonstrates the
+    joint robustness of the WFR-fixed scheme across the discretization step
+    ``Delta t`` and the transport fraction ``c``.
+    """
+    keys = (dt_df[["target_name", "Lambda", "epsilon"]].drop_duplicates()
+            .sort_values(["target_name", "Lambda", "epsilon"]).itertuples(index=False))
+    keys = list(keys)
+    n = len(keys)
+    ncol = min(4, n)
+    nrow = int(np.ceil(n / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(3.5 * ncol, 3.1 * nrow), squeeze=False)
+    dts = sorted(dt_df.dt.unique())
+    cs = sorted(dt_df.c.unique())
+    for idx, (tname, Lambda, eps) in enumerate(keys):
+        ax = axes[idx // ncol][idx % ncol]
+        cell = dt_df[(dt_df.target_name == tname)
+                     & (np.isclose(dt_df.Lambda, Lambda)) & (np.isclose(dt_df.epsilon, eps))]
+        Z = np.full((len(cs), len(dts)), np.nan)
+        for _, row in cell.iterrows():
+            i, k = cs.index(row["c"]), dts.index(row["dt"])
+            b = row.batches_to_1e_minus_3
+            if b is not None and b >= 0 and row.spd_feasible == 1:
+                Z[i, k] = np.log10(b)
+        im = ax.imshow(Z, origin="lower", aspect="auto", cmap="viridis_r")
+        ax.set_xticks(range(len(dts))); ax.set_xticklabels([f"{d:g}" for d in dts], fontsize=7)
+        ax.set_yticks(range(len(cs))); ax.set_yticklabels([f"{c:g}" for c in cs], fontsize=7)
+        ax.set_title(rf"{TARGET_TITLE[tname]}" "\n" rf"$\Lambda={Lambda:g},\varepsilon={eps:g}$", fontsize=8)
+        if idx % ncol == 0:
+            ax.set_ylabel(r"$c$")
+        if idx // ncol == nrow - 1:
+            ax.set_xlabel(r"$\Delta t$")
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label=r"$\log_{10}$ batches")
+    for idx in range(n, nrow * ncol):
+        axes[idx // ncol][idx % ncol].axis("off")
+    fig.suptitle(r"WFR-fixed: batches to gap $<10^{-3}$ over $\Delta t\times c$", y=0.995)
+    fig.tight_layout(rect=(0, 0, 1, 0.98))
+    return fig
+
+
+def _tab_wfr_hitting(summary_df):
+    """Main hitting-batch table: batches to gap thresholds + final gap, per run."""
+    lines = [
+        r"\begin{tabular}{llrrrrrr}", r"\toprule",
+        r"target & method & $\Lambda$ & $\varepsilon$ & "
+        r"$b_{10^{-1}}$ & $b_{10^{-3}}$ & $b_{10^{-6}}$ & gap$_{\mathrm{final}}$ \\",
+        r"\midrule",
+    ]
+    df = summary_df.sort_values(["target_name", "Lambda", "epsilon", "method"])
+    prev = None
+    for _, r in df.iterrows():
+        tgt = WFR_TARGET_TEX.get(r.target_name, r.target_name)
+        key = (r.target_name, r.Lambda, r.epsilon)
+        if prev is not None and key != prev:
+            lines.append(r"\midrule")
+        show_tgt = tgt if key != prev else ""
+        lines.append(
+            f"{show_tgt} & {WFR_METHOD_TEX.get(r.method, r.method)} & "
+            f"{r.Lambda:g} & {r.epsilon:g} & "
+            f"{_wfr_fmt_int(r.batches_to_1e_minus_1)} & "
+            f"{_wfr_fmt_int(r.batches_to_1e_minus_3)} & "
+            f"{_wfr_fmt_int(r.batches_to_1e_minus_6)} & {_wfr_fmt_sci(r.gap_final)} \\\\")
+        prev = key
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_wfr_hitting.tex", "\n".join(lines))
+
+
+def _tab_wfr_iters(summary_df):
+    """Iterations vs expectation batches to gap < 1e-3, per run.
+
+    Makes the cost trade-off explicit: WFR needs the fewest *iterations* but two
+    batches per iteration, so FR-only is the most *batch*-efficient.
+    """
+    lines = [
+        r"\begin{tabular}{ll rr @{\hskip 1em} rr}", r"\toprule",
+        r" & & \multicolumn{2}{c}{iterations} & \multicolumn{2}{c}{exp.\ batches} \\",
+        r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
+        r"target & method & $\Lambda{=}100$ & $\Lambda{=}1000$ & "
+        r"$\Lambda{=}100$ & $\Lambda{=}1000$ \\", r"\midrule",
+    ]
+    # Use eps = 1e-3 (the harder, more underdispersed start) for this summary.
+    df = summary_df[np.isclose(summary_df.epsilon, 1e-3)]
+    for ti, tname in enumerate(WFR_TARGET_ORDER):
+        if ti:
+            lines.append(r"\midrule")
+        for mi, method in enumerate(METHOD_ORDER):
+            sub = df[(df.target_name == tname) & (df.method == method)]
+            def cell(col, Lam):
+                r = sub[np.isclose(sub.Lambda, Lam)]
+                return _wfr_fmt_int(r[col].iloc[0]) if len(r) else "--"
+            show = WFR_TARGET_TEX.get(tname, tname) if mi == 0 else ""
+            lines.append(
+                f"{show} & {WFR_METHOD_TEX.get(method, method)} & "
+                f"{cell('iter_to_1e_minus_3', 100)} & {cell('iter_to_1e_minus_3', 1000)} & "
+                f"{cell('batches_to_1e_minus_3', 100)} & {cell('batches_to_1e_minus_3', 1000)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_wfr_iters.tex", "\n".join(lines))
+
+
+def _tab_wfr_sweep(sweep_df):
+    """Schedule-sweep table: fixed c, h=c/beta, batches to 1e-3, final gap."""
+    lines = [
+        r"\begin{tabular}{llrrrr}", r"\toprule",
+        r"target & $(\Lambda,\varepsilon)$ & $c$ & $h=c/\beta$ & "
+        r"$b_{10^{-3}}$ & gap$_{\mathrm{final}}$ \\", r"\midrule",
+    ]
+    df = sweep_df[sweep_df.schedule_kind == "fixed_c"].sort_values(
+        ["target_name", "Lambda", "epsilon", "c"])
+    prev = None
+    for _, r in df.iterrows():
+        key = (r.target_name, r.Lambda, r.epsilon)
+        if prev is not None and key != prev:
+            lines.append(r"\midrule")
+        show = (WFR_TARGET_TEX.get(r.target_name, r.target_name) if key != prev else "")
+        combo = rf"$({r.Lambda:g},{r.epsilon:g})$" if key != prev else ""
+        lines.append(
+            f"{show} & {combo} & {r.c:g} & {_fmt(r.h, 4)} & "
+            f"{_wfr_fmt_int(r.batches_to_1e_minus_3)} & {_wfr_fmt_sci(r.gap_final)} \\\\")
+        prev = key
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_wfr_sweep.tex", "\n".join(lines))
+
+
+def _tab_wfr_metadata(metadata):
+    """Target metadata: alpha, beta, condition number beta/alpha, eps, gap0."""
+    lines = [
+        r"\begin{tabular}{llrrrrr}", r"\toprule",
+        r"target & $\Lambda$ & $\varepsilon$ & $\alpha$ & $\beta$ & "
+        r"$\beta/\alpha$ & gap$_0$ \\", r"\midrule",
+    ]
+    rows = []
+    for key, md in metadata["targets"].items():
+        rows.append((md["target_name"], md["Lambda"], md["epsilon"],
+                     md["alpha"], md["beta"], md.get("gap0", float("nan"))))
+    for tname, Lambda, eps, alpha, beta, gap0 in sorted(rows):
+        cond = beta / alpha if alpha else float("nan")
+        lines.append(
+            f"{WFR_TARGET_TEX.get(tname, tname)} & {Lambda:g} & {eps:g} & "
+            f"{_fmt(alpha, 3)} & {_fmt(beta, 3)} & {_fmt(cond, 1)} & "
+            f"{_wfr_fmt_sci(gap0)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_wfr_metadata.tex", "\n".join(lines))
+
+
+def build_wfr_assets():
+    """Figures + tables for the WFR Gaussian gradient-flow report.
+
+    Reads the final CSVs in ``outputs/wfr_gradient_flow`` and writes figures into
+    ``reports/assets/figs`` and table fragments into ``reports/assets``. Raises
+    ``FileNotFoundError`` (via pandas) if the required CSVs are absent, so the
+    top-level driver can skip the group cleanly on a checkout without outputs.
+    """
+    print("WFR Gaussian gradient flow:")
+    import json
+    long_df = pd.read_csv(os.path.join(WFR_DIR, "results_long.csv"))
+    summary_df = pd.read_csv(os.path.join(WFR_DIR, "summary.csv"))
+    sweep_df = pd.read_csv(os.path.join(WFR_DIR, "schedule_sweep.csv"))
+    with open(os.path.join(WFR_DIR, "target_metadata.json")) as fh:
+        metadata = json.load(fh)
+
+    for tname in WFR_TARGET_ORDER:
+        _savefig(_wfr_fig_phase_separation(long_df, tname),
+                 f"wfr_phase_separation_{tname}")
+    _savefig(_wfr_fig_adaptive_schedule(long_df, summary_df), "wfr_adaptive_schedule")
+    _savefig(_wfr_fig_error_decomposition(long_df), "wfr_error_decomposition")
+    _savefig(_wfr_fig_schedule_sweep(sweep_df), "wfr_schedule_sweep")
+
+    dt_path = os.path.join(WFR_DIR, "dt_sweep.csv")
+    if os.path.exists(dt_path):
+        dt_df = pd.read_csv(dt_path)
+        if not dt_df.empty:
+            _savefig(_wfr_fig_dt_heatmap(dt_df), "wfr_dt_heatmap")
+
+    _tab_wfr_hitting(summary_df)
+    _tab_wfr_iters(summary_df)
+    _tab_wfr_sweep(sweep_df)
+    _tab_wfr_metadata(metadata)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--repo-root", default=_ROOT)
-    p.add_argument("--only", choices=["omega_tau", "local_rate", "discretization"],
+    p.add_argument("--only",
+                   choices=["omega_tau", "local_rate", "discretization", "wfr"],
                    default=None, help="Build only one group's assets.")
     args = p.parse_args()
     os.makedirs(FIGS, exist_ok=True)
@@ -718,6 +1125,7 @@ def main():
         "omega_tau": build_omega_tau_assets,
         "local_rate": build_local_rate_assets,
         "discretization": build_discretization_assets,
+        "wfr": build_wfr_assets,
     }
     selected = [args.only] if args.only else list(builders)
     failures = []

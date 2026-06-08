@@ -1,0 +1,74 @@
+{
+  "config_path": "configs/wfr_gradient_flow/wfr_grid.yaml",
+  "config": {
+    "targets": [
+      "gaussian",
+      "smooth_log_cosh"
+    ],
+    "Lambdas": [
+      100.0,
+      1000.0
+    ],
+    "epsilons": [
+      0.01,
+      0.001
+    ],
+    "methods": [
+      "fr_only",
+      "w_only",
+      "wfr_fixed",
+      "wfr_theory",
+      "wfr_adaptive"
+    ],
+    "main_dt": 0.5,
+    "max_batches": 8000,
+    "fixed_c": 0.5,
+    "adaptive": {
+      "h_max_frac": 0.9,
+      "s0": 0.5
+    },
+    "w_only_c_grid": [
+      0.25,
+      0.5,
+      0.9
+    ],
+    "schedule_sweep": {
+      "c_grid": [
+        0.0,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        0.9
+      ]
+    },
+    "dt_sweep": {
+      "dt_grid": [
+        0.05,
+        0.1,
+        0.2,
+        0.5,
+        1.0
+      ],
+      "c_grid": [
+        0.0,
+        0.25,
+        0.5,
+        0.9
+      ]
+    },
+    "smooth_target": {
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80
+    },
+    "r": 8.0,
+    "max_saved_rows": 600,
+    "output_dir": "outputs/wfr_gradient_flow"
+  },
+  "wall_time_total": 7458.307008981705,
+  "python": "3.12.2",
+  "platform": "macOS-26.2-arm64-arm-64bit",
+  "numpy": "2.0.0",
+  "smoke": false
+}

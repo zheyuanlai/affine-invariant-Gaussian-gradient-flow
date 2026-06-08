@@ -1,0 +1,19 @@
+\begin{tabular}{ll rr @{\hskip 1em} rr}
+\toprule
+ & & \multicolumn{2}{c}{iterations} & \multicolumn{2}{c}{exp.\ batches} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+target & method & $\Lambda{=}100$ & $\Lambda{=}1000$ & $\Lambda{=}100$ & $\Lambda{=}1000$ \\
+\midrule
+Gaussian & W-only & 575 & 3653 & 575 & 3653 \\
+ & FR-only & 36 & 41 & 36 & 41 \\
+ & WFR-fixed & 16 & 22 & 32 & 44 \\
+ & WFR-theory & 31 & 37 & 62 & 74 \\
+ & WFR-adaptive & 15 & 21 & 30 & 42 \\
+\midrule
+smooth log-cosh & W-only & 260 & 2560 & 260 & 2560 \\
+ & FR-only & 31 & 31 & 31 & 31 \\
+ & WFR-fixed & 17 & 23 & 34 & 46 \\
+ & WFR-theory & 26 & 26 & 52 & 52 \\
+ & WFR-adaptive & 16 & 22 & 32 & 44 \\
+\bottomrule
+\end{tabular}

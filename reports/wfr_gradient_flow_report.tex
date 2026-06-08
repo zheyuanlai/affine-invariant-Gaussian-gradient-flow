@@ -1,0 +1,465 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+
+\title{Wasserstein--Fisher--Rao Gaussian Gradient Flow:\\
+Phase Separation Between Transport and Natural-Gradient Descent}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study the Wasserstein--Fisher--Rao (WFR) gradient flow on the Gaussian
+variational manifold, a hybrid of the Bures--Wasserstein transport flow and the
+Fisher--Rao (natural-gradient) flow with a tunable transport strength
+$\lambda_t$. We discretize the flow by forward--backward operator splitting --
+one Wasserstein half-step followed by one Fisher--Rao half-step per iteration --
+and compare it against the two pure flows ($\lambda\equiv 0$, Fisher--Rao only;
+and Wasserstein only) on two ill-conditioned two-dimensional targets: an exact
+anisotropic Gaussian posterior and a smooth nonseparable strongly log-concave
+posterior. From a far, underdispersed initialization the experiments expose a
+clean \emph{phase separation}: the Wasserstein transport drives fast early
+descent (warmup) but stalls in the tail, while the Fisher--Rao step is slow
+during warmup but converges rapidly once the covariance is locally calibrated to
+the curvature. The WFR splitting inherits both phases, and a curvature-adaptive
+transport schedule $h_n = h_{\max}/(1+(s_n/s_0)^2)$ -- large transport when the
+state is underdispersed, decaying transport as the covariance calibrates --
+realizes the hand-off automatically.
+
+\emph{Cost matters, and the honest accounting is nuanced.} Per
+\textbf{iteration}, the WFR splitting reaches every tolerance in roughly half the
+iterations of pure Fisher--Rao. But the splitting evaluates the posterior
+expectations \emph{twice} per iteration (once at each half-step), so on the fair
+\textbf{expectation-batch} axis the per-iteration advantage is largely cancelled:
+to tight tolerances pure Fisher--Rao is the most batch-efficient method, the WFR
+splitting is competitive (and overtakes it on the loosest warmup threshold in the
+hardest, most underdispersed regimes), and Wasserstein-only is decisively worst
+-- it plateaus and never reaches $10^{-6}$ at $\Lambda=1000$. The adaptive
+schedule dominates the fixed and theorem-bound schedules among WFR variants; the
+theorem bound $h=\mu_{\min}$ is far too conservative once the state is
+underdispersed.
+\end{abstract}
+
+\tableofcontents
+
+\section{Setup}
+\label{sec:setup}
+
+\paragraph{Gaussian variational family and energy.}
+We approximate a target posterior $\rho_\post \propto e^{-V}$ on $\R^d$ ($d=2$
+throughout) by a Gaussian $\N(m,C)$, $C\in\SPD(d)$, parameterized by the state
+$a=(m,C)$. The variational objective is the (reverse) KL up to an
+$a$-independent constant,
+\begin{equation}
+\label{eq:energy}
+\mathcal{E}(a) \;=\; \E_{\theta\sim\N(m,C)}[V(\theta)] \;-\; \tfrac12\log\det C ,
+\qquad
+\mathcal{E}(a) - \mathcal{E}(a_\star) \;=\; \KL\!\big(\N(m,C)\,\big\|\,\rho_\post\big),
+\end{equation}
+minimized at $a_\star=(m_\star,C_\star)$. We write the posterior log-gradient
+and log-Hessian expectations
+\begin{equation}
+\label{eq:gH}
+g \;=\; \E_{\N(m,C)}[\grad\log\rho_\post] \;=\; -\,\E[\grad V],
+\qquad
+H \;=\; \E_{\N(m,C)}[\grad^2\log\rho_\post] \;=\; -\,\E[\grad^2 V],
+\end{equation}
+so that $-H=\E[\grad^2 V]\succeq 0$ for a log-concave target. We assume global
+strong log-concavity and smoothness, $\alpha I \preceq \grad^2 V \preceq \beta I$.
+
+\paragraph{The WFR Gaussian flow.}
+The Bures--Wasserstein gradient flow of $\mathcal{E}$ moves mass by transport; the
+Fisher--Rao flow rescales mass by the natural gradient. The WFR flow combines
+them with transport strength $\lambda_t\ge 0$:
+\begin{equation}
+\label{eq:wfr-flow}
+\dot m \;=\; (C+\lambda_t I)\,g, \qquad
+\dot C \;=\; \underbrace{C + CHC}_{\text{Fisher--Rao}}
+\;+\; \lambda_t\underbrace{\big(2I + CH + HC\big)}_{\text{Wasserstein}} .
+\end{equation}
+Setting $\lambda_t\equiv 0$ recovers the Fisher--Rao (natural-gradient) flow;
+dropping the Fisher--Rao terms recovers the Bures--Wasserstein flow. The
+additive $2\lambda_t I$ term is the source of the warmup advantage analyzed
+below: it inflates an underdispersed covariance at a rate independent of the
+current scale.
+
+\paragraph{Targets.}
+The anisotropy parameter is $\Lambda$ (the symbol $\lambda$ is reserved for the
+transport strength $\lambda_t$). We use two targets.
+\begin{itemize}
+\item \textbf{Gaussian posterior:} $\rho_\post=\N(0,\Gamma)$ with
+$\Gamma=\mathrm{diag}(1,\Lambda)$ the \emph{covariance}. Then
+$V(\theta)=\tfrac12\theta^\top\Gamma^{-1}\theta$, so $g=-\Gamma^{-1}m$ and
+$H=-\Gamma^{-1}$ are exact and state-independent, $\alpha=1/\Lambda$, $\beta=1$,
+and the optimum is closed form $m_\star=0$, $C_\star=\Gamma$ with an analytic
+energy gap \eqref{eq:energy}.
+\item \textbf{Smooth log-cosh posterior:} the nonseparable strongly log-concave
+\begin{equation}
+V(x,y) \;=\; \tfrac{1}{20}\big(\sqrt{\Lambda}\,x - y\big)^2
+\;+\; \tfrac{\delta}{2}\,(x^2+y^2)
+\;+\; \gamma\,\log\cosh(y),
+\quad \delta=0.05,\ \gamma=1 ,
+\end{equation}
+with $\alpha=\delta$ and the eigenvalue smoothness constant
+$\beta=\lambda_{\max}\!\big(\begin{smallmatrix}\delta+\Lambda/10 &
+-\sqrt{\Lambda}/10\\ -\sqrt{\Lambda}/10 & \delta+1/10+\gamma\end{smallmatrix}\big)$.
+Expectations of $\tanh$, $\mathrm{sech}^2$ and $\log\cosh$ under the marginal
+$Y\sim\N(m_y,C_{22})$ are evaluated by deterministic Gauss--Hermite quadrature;
+the optimum is found numerically.
+\end{itemize}
+The target metadata, including $\beta/\alpha$ (the condition number that governs
+the tail rate), is reported in Table~\ref{tab:wfr-metadata}.
+
+\paragraph{Initialization.}
+Every run starts far and underdispersed: $C_0=\varepsilon I$ and the mean placed
+a distance $r=8$ along the flat-valley direction
+$(1,\sqrt{\Lambda})/\sqrt{1+\Lambda}$. This is the regime that separates the two
+flows -- the covariance must inflate by orders of magnitude and the mean must
+traverse the valley.
+
+\section{Forward--backward discretization and the five methods}
+\label{sec:methods}
+
+\paragraph{Operator splitting.}
+We discretize \eqref{eq:wfr-flow} by forward--backward operator splitting with
+Fisher--Rao step $\Delta t$ and Wasserstein step $h_n=\lambda_n\,\Delta t$. Each
+iteration applies one Wasserstein half-step then one Fisher--Rao half-step.
+With $g_n,H_n$ from \eqref{eq:gH} evaluated at $a_n=(m_n,C_n)$, the
+\emph{Wasserstein half-step} is
+\begin{align}
+\label{eq:w-step}
+m_{n+1/2} &= m_n + h_n\,g_n, &
+M_n &= I + h_n H_n, \qquad \widetilde C = M_n C_n M_n, \notag\\
+C_{n+1/2} &= \tfrac12\Big(\widetilde C + 2h_n I
++ \big[\widetilde C(\widetilde C + 4h_n I)\big]^{1/2}\Big),
+\end{align}
+and, with $g_{n+1/2},H_{n+1/2}$ re-evaluated at $a_{n+1/2}$, the
+\emph{Fisher--Rao half-step} is the KL/natural-gradient update
+\begin{equation}
+\label{eq:fr-step}
+m_{n+1} = m_{n+1/2} + \Delta t\,C_{n+1/2}\,g_{n+1/2}, \qquad
+C_{n+1} = (1+\Delta t)\big(C_{n+1/2}^{-1} - \Delta t\,H_{n+1/2}\big)^{-1}.
+\end{equation}
+The matrix square root in \eqref{eq:w-step} is computed spectrally: $\widetilde
+C$ and $\widetilde C+4h_nI$ commute, so with the symmetric eigendecomposition
+$\widetilde C=V\,\mathrm{diag}(w)\,V^\top$,
+\begin{equation}
+C_{n+1/2} = V\,\mathrm{diag}\!\Big(\tfrac12\big(w + 2h_n
++ \sqrt{w(w+4h_n)}\big)\Big)\,V^\top,
+\end{equation}
+which is exact, symmetric, and SPD whenever $\widetilde C\succeq 0$ and
+$h_n\ge 0$. The Fisher--Rao covariance update \eqref{eq:fr-step} is
+unconditionally SPD for log-concave targets ($-H\succeq0$). At $h_n=0$ the
+Wasserstein half-step is the identity and the iteration reduces exactly to the
+pure Fisher--Rao step.
+
+\paragraph{Cost: expectation batches.}
+The fair cost axis is the number of \emph{expectation batches} (evaluations of
+$(g,H)$): the single-step methods spend one per iteration, the full WFR
+splitting spends two (one at $a_n$, one at $a_{n+1/2}$). We report convergence
+against expectation batches throughout, so the WFR splitting is charged for its
+second evaluation.
+
+\paragraph{The five methods.}
+\begin{itemize}
+\item \textbf{FR-only} ($\lambda\equiv0$): pure Fisher--Rao, $h_n=0$.
+\item \textbf{W-only}: the Wasserstein half-step \eqref{eq:w-step} alone with the
+fixed $h_n=c/\beta$.
+\item \textbf{WFR-fixed}: the full splitting with fixed $h_n=c/\beta$.
+\item \textbf{WFR-theory}: the full splitting with the constant
+$h_n=\mu_{\min}=\min(\lambda_{\min}(C_0),1/\beta)$, the maximizer of the proven
+discrete transport contribution $f(h)=\alpha h/(1+h/\mu_{\min})^2$.
+\item \textbf{WFR-adaptive}: the full splitting with the curvature-adaptive
+schedule
+\begin{equation}
+\label{eq:adaptive}
+h_n = \frac{h_{\max}}{1+(s_n/s_0)^2}, \quad
+h_{\max}=\frac{0.9}{\beta}, \quad s_0=0.5, \quad
+s_n = \lambda_{\min}\!\big(C_n^{1/2}(-H_n)\,C_n^{1/2}\big).
+\end{equation}
+\end{itemize}
+The calibration ratio $s_n$ is the smallest eigenvalue of the dimensionless
+curvature-in-covariance-metric operator: $s_n\ll1$ signals an underdispersed
+state (the Fisher--Rao step is throttled, large transport helps warmup), while
+$s_n\approx1$ signals a locally calibrated covariance (the Fisher--Rao step is
+reliable, transport should decay). For the Gaussian target at $C=\Gamma$,
+$-H=\Gamma^{-1}$ gives $C^{1/2}(-H)C^{1/2}=I$ and $s_n=1$ exactly.
+
+\section{Results}
+\label{sec:results}
+
+Unless stated otherwise the head-to-head uses a shared Fisher--Rao step
+$\Delta t=0.5$ and the fixed fraction $c=0.5$ for W-only and WFR-fixed, on the
+production grid $\Lambda\in\{100,1000\}$, $\varepsilon\in\{10^{-2},10^{-3}\}$.
+Target constants are in Table~\ref{tab:wfr-metadata}.
+
+\begin{table}[t]
+\centering
+\caption{Target metadata: strong-log-concavity $\alpha$, smoothness $\beta$,
+condition number $\beta/\alpha$, initial covariance scale $\varepsilon$, and the
+initial energy gap $\mathrm{gap}_0=\mathcal{E}(a_0)-\mathcal{E}(a_\star)$.}
+\label{tab:wfr-metadata}
+\inputtable{tab_wfr_metadata.tex}
+\end{table}
+
+\subsection{Phase separation: transport wins warmup, Fisher--Rao wins the tail}
+
+Figures~\ref{fig:wfr-phase-gaussian}--\ref{fig:wfr-phase-smooth} show the energy
+gap against expectation batches, with a warmup zoom (left) and the full
+trajectory (right). Three facts are consistent across every $(\Lambda,
+\varepsilon)$:
+\begin{enumerate}
+\item \textbf{W-only descends fastest in the first few batches} but
+\emph{plateaus}: from $C_0=\varepsilon I$ the additive $2h_nI$ term in
+\eqref{eq:w-step} inflates the covariance at a scale-independent rate, collapsing
+the bulk of the initial gap quickly, after which the lack of the
+natural-gradient rescaling leaves it stalled far from $a_\star$.
+\item \textbf{FR-only is slow during warmup} -- the natural-gradient covariance
+inflates only geometrically and the mean update $\Delta t\,C g$ is throttled by
+the tiny $C$ -- \textbf{but converges fastest in the tail} once the covariance is
+calibrated.
+\item \textbf{WFR (fixed and adaptive) inherit both phases}: they track W-only's
+fast warmup and then FR-only's fast tail. \emph{Per iteration} this makes them
+the fastest methods -- the adaptive schedule reaches gap $<10^{-3}$ in about half
+the iterations of FR-only (Table~\ref{tab:wfr-iters}). The expectation-batch cost
+of that per-iteration advantage is the subject of
+Section~\ref{sec:cost-accounting}.
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{wfr_phase_separation_gaussian.pdf}
+\caption{Gaussian posterior: energy gap vs expectation batches, warmup zoom
+(left) and full trajectory (right), one row per $(\Lambda,\varepsilon)$. W-only
+wins the first batches then plateaus; FR-only lags then overtakes; WFR-adaptive
+captures both phases.}
+\label{fig:wfr-phase-gaussian}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{wfr_phase_separation_smooth_log_cosh.pdf}
+\caption{Smooth log-cosh posterior: same layout as
+Figure~\ref{fig:wfr-phase-gaussian}. The phase separation persists on the
+nonseparable, numerically-optimized target.}
+\label{fig:wfr-phase-smooth}
+\end{figure}
+
+\subsection{The mechanism: the covariance, not the mean, is the bottleneck}
+\label{sec:mechanism}
+
+The phase separation is not just a property of the scalar energy gap -- it has a
+concrete mechanism, visible once the gap is decomposed into its mean and
+covariance parts. Figure~\ref{fig:wfr-decomp} plots $\|m_n-m_\star\|$ and
+$\|C_n-C_\star\|_F$ separately on the hardest start ($\Lambda=1000$,
+$\varepsilon=10^{-3}$). Three observations pin down why the flows behave as they
+do:
+\begin{enumerate}
+\item \textbf{The covariance dominates the error budget.} At the underdispersed
+start the covariance error is $\approx\!10^{3}$ (it must inflate from
+$\varepsilon I$ to a top eigenvalue $\Lambda=10^3$) while the mean error is only
+$\approx\!8$. The optimization is, to leading order, a covariance-inflation
+problem; the mean is a sideshow.
+\item \textbf{The mean always calibrates before the covariance.} For every
+convergent method the mean error crosses $10^{-3}$ tens of batches before the
+covariance error does (e.g.\ on the smooth target, FR-only at $39$ vs $52$
+batches; WFR-adaptive at $48$ vs $84$). The tail rate is therefore set entirely
+by how fast the covariance is calibrated -- which is exactly the quantity the
+Fisher--Rao step accelerates and the adaptive ratio $s_n$ measures.
+\item \textbf{W-only inflates volume but cannot calibrate shape.} Its covariance
+error barely moves (it drifts from $\approx\!10^3$ down to $\approx\!8.8\times
+10^2$ over the first $128$ batches) because the additive $2h_nI$ term grows the
+volume isotropically without ever matching the target's anisotropy. This is the
+mechanism behind its plateau: transport produces a big but mis-shaped covariance,
+and only the natural-gradient rescaling can fix the shape.
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{wfr_error_decomposition.pdf}
+\caption{Phase-separation mechanism on the hardest start ($\Lambda=1000$,
+$\varepsilon=10^{-3}$): mean error $\|m-m_\star\|$ (left) and covariance error
+$\|C-C_\star\|_F$ (right), Gaussian (top) and smooth log-cosh (bottom), vs
+expectation batches. The covariance error starts two orders of magnitude above
+the mean error; W-only never collapses it, while FR-only and WFR do once the mean
+has arrived.}
+\label{fig:wfr-decomp}
+\end{figure}
+
+\subsection{The adaptive schedule tracks curvature calibration}
+
+Figure~\ref{fig:wfr-adaptive} shows the normalized transport $h_n\beta$ and the
+calibration ratio $s_n$ along the WFR-adaptive runs. The schedule holds transport
+near the ceiling $h_{\max}\beta=0.9$ while $s_n\ll s_0$ (the underdispersed
+warmup) and decays it as $s_n$ approaches $1$ (the covariance becomes locally
+calibrated and the Fisher--Rao step takes over), exactly the hand-off implied by
+the phase separation.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{wfr_adaptive_schedule.pdf}
+\caption{WFR-adaptive transport schedule. Top: normalized transport $h_n\beta$
+(ceiling $0.9$ dotted). Bottom: calibration ratio
+$s_n=\lambda_{\min}(C_n^{1/2}(-H_n)C_n^{1/2})$ (log scale, $s_0=0.5$ dotted).
+Transport stays high through warmup and decays as the state calibrates.}
+\label{fig:wfr-adaptive}
+\end{figure}
+
+\subsection{Cost accounting: iterations versus expectation batches}
+\label{sec:cost-accounting}
+
+The phase figures already plot the fair cost axis. We now make the trade-off
+explicit. Table~\ref{tab:wfr-iters} reports, for the harder underdispersed start
+$\varepsilon=10^{-3}$, the iterations and the expectation batches each method
+needs to reach $\mathrm{gap}<10^{-3}$.
+\begin{itemize}
+\item \textbf{Per iteration the WFR splitting wins.} WFR-adaptive reaches the
+tolerance in $15$--$22$ iterations against FR-only's $30$--$41$ -- roughly half,
+because each iteration blends a transport move and a natural-gradient move.
+\item \textbf{Per expectation batch the picture reverses.} The full splitting
+evaluates $(g,H)$ twice per iteration (once at $a_n$, once at $a_{n+1/2}$), so its
+batch cost is about double its iteration count, whereas FR-only spends one batch
+per iteration. Once charged this way, \emph{FR-only is the most batch-efficient
+method to the tight tolerances} ($30$--$41$ batches against WFR-adaptive's
+$42$--$58$). WFR-adaptive remains competitive and is never far behind; it
+\emph{overtakes} FR-only only on the loosest, warmup-dominated threshold
+$10^{-1}$ in the hardest regimes (Table~\ref{tab:wfr-hitting}), where its faster
+warmup outruns the doubled per-iteration cost before the Fisher--Rao tail takes
+over.
+\item \textbf{W-only is decisively worst.} It plateaus far from the optimum and
+never reaches $10^{-6}$ at $\Lambda=1000$ within the batch budget
+(Table~\ref{tab:wfr-hitting}); transport alone cannot calibrate the covariance.
+\end{itemize}
+All twenty production runs per method are SPD-feasible and monotone throughout.
+
+\begin{table}[t]
+\centering
+\caption{Iterations versus expectation batches to reach gap $<10^{-3}$ at the
+harder start $\varepsilon=10^{-3}$. WFR-adaptive needs the fewest iterations
+(about half of FR-only), but at two batches per iteration FR-only is the most
+batch-efficient; W-only is far behind on both axes.}
+\label{tab:wfr-iters}
+\small
+\inputtable{tab_wfr_iters.tex}
+\end{table}
+
+\subsection{How much transport? The schedule sweep}
+
+Figure~\ref{fig:wfr-sweep} sweeps the fixed fraction $c$ (so $h=c/\beta$, with
+$c=0$ recovering FR-only) on both cost axes; Table~\ref{tab:wfr-sweep} gives the
+batch numbers. The two rows of the figure tell the trade-off cleanly: increasing
+$c$ \emph{monotonically reduces the iteration count} (top), but the
+expectation-batch cost (bottom) sits \emph{above} the $c=0$ (FR-only) value for
+every positive $c$, because each WFR iteration costs two batches. The
+theorem-bound schedule $h=\mu_{\min}$ (star markers) lands in the interior of the
+fixed-$c$ curve rather than at an optimum: with the tiny $C_0=\varepsilon I$ the
+bound gives $\mu_{\min}=\varepsilon$ on the Gaussian target (since $\beta=1$), an
+extremely small transport that throttles the warmup the bound was meant to
+accelerate -- direct evidence that the conservative proof-bound schedule
+underuses transport precisely in the underdispersed regime it targets. The full
+five-method comparison is in Table~\ref{tab:wfr-hitting}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{wfr_schedule_sweep.pdf}
+\caption{Schedule sweep: expectation batches to $\mathrm{gap}<10^{-3}$ vs the
+fixed transport fraction $c$ ($h=c/\beta$), one curve per $(\Lambda,
+\varepsilon)$. $c=0$ is FR-only; $\star$ marks the theory schedule
+$h=\mu_{\min}$.}
+\label{fig:wfr-sweep}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Main hitting-batch comparison: expectation batches to reach energy gap
+below $10^{-1}$, $10^{-3}$, $10^{-6}$, and the final gap, per
+target/$\Lambda$/$\varepsilon$/method. $\infty$ denotes the threshold was not
+reached within the batch budget.}
+\label{tab:wfr-hitting}
+\small
+\inputtable{tab_wfr_hitting.tex}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Schedule sweep for WFR-fixed: fraction $c$, transport $h=c/\beta$,
+expectation batches to $\mathrm{gap}<10^{-3}$, and final gap.}
+\label{tab:wfr-sweep}
+\small
+\inputtable{tab_wfr_sweep.tex}
+\end{table}
+
+\subsection{Stability across the discretization step}
+
+The appendix heatmap (Figure~\ref{fig:wfr-dt}) sweeps the Fisher--Rao step
+$\Delta t$ against the transport fraction $c$ for WFR-fixed, confirming that the
+splitting remains SPD-feasible and convergent across a broad joint range rather
+than at a single tuned $\Delta t$.
+
+\section{Findings and implications}
+\label{sec:findings}
+
+\begin{enumerate}
+\item \textbf{The two flows phase-separate.} Wasserstein transport, through its
+scale-independent $2h_nI$ covariance inflation, dominates the warmup; Fisher--Rao
+natural-gradient descent dominates the tail once the covariance is calibrated to
+the curvature. The separation is clean and holds across both targets and all
+$(\Lambda,\varepsilon)$.
+\item \textbf{The WFR splitting combines the phases, halving iterations.} Per
+iteration it reaches every tolerance in roughly half the iterations of pure
+Fisher--Rao (Table~\ref{tab:wfr-iters}).
+\item \textbf{On the fair cost axis the verdict is nuanced, not triumphant.}
+Because the splitting evaluates the posterior expectations twice per iteration,
+pure Fisher--Rao is the most expectation-batch-efficient method to tight
+tolerances. The WFR splitting is competitive and overtakes Fisher--Rao only on
+the loosest, warmup-dominated threshold in the most underdispersed regimes. The
+practical implication: \emph{transport earns its second evaluation only when the
+warmup phase dominates the budget} -- a far start, a very tight transport-free
+warmup bottleneck, or a loose target tolerance. When iterations rather than
+expectation evaluations are the scarce resource (e.g.\ a cheap closed-form
+$(g,H)$), the splitting is preferable outright.
+\item \textbf{Adaptivity beats both fixed schedules, and the proof bound is too
+conservative.} Among WFR variants the curvature-adaptive schedule dominates fixed
+$c$ and the theorem bound $h=\mu_{\min}$; the latter collapses to a negligible
+transport in exactly the underdispersed regime it was meant to accelerate.
+\item \textbf{Transport alone is not enough.} W-only plateaus and never reaches
+$10^{-6}$ at $\Lambda=1000$: without the natural-gradient rescaling it cannot
+calibrate the covariance.
+\end{enumerate}
+
+\section{Limitations}
+\label{sec:limitations}
+
+The study is deliberately controlled and its scope bounds the claims.
+\emph{(i) Dimension and targets:} $d=2$, two globally strongly-log-concave
+targets; the batch/iteration trade-off constants will differ in higher dimension
+and the phase separation is not established for multimodal or heavy-tailed
+targets. \emph{(ii) Exact expectations:} $(g,H)$ are exact (closed form or
+Gauss--Hermite), so the comparison isolates the discretization, not Monte-Carlo
+gradient noise; under sampling noise the relative ranking on the batch axis could
+shift (transport's warmup robustness may matter more, or the second evaluation's
+variance may matter more). \emph{(iii) First-order splitting:} we use one
+Wasserstein then one Fisher--Rao half-step (Lie--Trotter); a Strang splitting or a
+single fused step could change the per-iteration batch count and is untested.
+\emph{(iv) Cost model:} ``expectation batches'' charges $(g,H)$ evaluations
+equally and ignores the per-step linear algebra (eigendecomposition, matrix
+inverse), which is negligible at $d=2$ but not in general. \emph{(v) The adaptive
+schedule} is one heuristic with hand-set $h_{\max}=0.9/\beta$, $s_0=0.5$; we do
+not claim it is optimal, only that it dominates the fixed and proof-bound
+schedules tested.
+
+\appendix
+\section{Discretization-step robustness}
+\label{app:dt}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{wfr_dt_heatmap.pdf}
+\caption{WFR-fixed: $\log_{10}$ expectation batches to $\mathrm{gap}<10^{-3}$
+over the $\Delta t\times c$ grid, per target and $(\Lambda,\varepsilon)$. White
+cells were not SPD-feasible or did not reach the threshold within budget.}
+\label{fig:wfr-dt}
+\end{figure}
+
+\end{document}
