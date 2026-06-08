@@ -79,19 +79,19 @@ half-step `C' = 1/2 (Ctilde + 2hI + [Ctilde(Ctilde + 4hI)]^{1/2})`,
 five methods (`fr_only`, `w_only`, `wfr_fixed`, `wfr_theory`, `wfr_adaptive`) on
 two ill-conditioned 2-D targets (an exact anisotropic Gaussian posterior `N(0,
 diag(1, Lambda))` and a smooth nonseparable log-concave log-cosh posterior) from
-a far, underdispersed start. The fair cost axis is **expectation batches**: the
-single-step methods spend one `(g, H)` evaluation per iteration, the WFR
-splitting two. All expectations are exact (closed form / Gauss–Hermite); CPU only.
+a far, underdispersed start. Convergence is measured as the **energy gap versus
+iteration**. All expectations are exact (closed form / Gauss–Hermite); CPU only.
 
 **Finding.** The flows **phase-separate**. Wasserstein transport — whose additive
 `2hI` term inflates an underdispersed covariance at a scale-independent rate —
-wins the warmup (smallest gap in the first few batches) but plateaus far from the
-optimum; the Fisher–Rao step is slow during warmup but converges fastest in the
-tail once the covariance is calibrated to the curvature. The WFR splitting
-inherits both, and the curvature-adaptive schedule `h_n = h_max/(1 + (s_n/s0)^2)`
+wins the warmup (smallest gap in the first few iterations) but plateaus far from
+the optimum; the Fisher–Rao step is slow during warmup but converges fastest in
+the tail once the covariance is calibrated to the curvature. The WFR splitting
+inherits both, reaching every tolerance in roughly half the iterations of pure
+Fisher–Rao, and the curvature-adaptive schedule `h_n = h_max/(1 + (s_n/s0)^2)`
 with `s_n = lambda_min(C^{1/2}(-H)C^{1/2})` — large transport while underdispersed
-(`s_n << 1`), decaying as the covariance calibrates (`s_n -> 1`) — gives the best
-cost-normalized convergence across every `(Lambda, epsilon)` regime. See
+(`s_n << 1`), decaying as the covariance calibrates (`s_n -> 1`) — converges
+fastest across every `(Lambda, epsilon)` regime. See
 [`reports/wfr_gradient_flow_report.tex`](reports/wfr_gradient_flow_report.tex).
 
 ## Which outputs are final
