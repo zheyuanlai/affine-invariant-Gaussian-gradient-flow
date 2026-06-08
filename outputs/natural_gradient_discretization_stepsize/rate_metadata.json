@@ -1,0 +1,377 @@
+{
+  "config": {
+    "targets": [
+      "gaussian_posterior",
+      "smooth_logconcave"
+    ],
+    "lambdas": [
+      0.01,
+      0.1,
+      1.0
+    ],
+    "methods": [
+      "riemannian",
+      "kl"
+    ],
+    "c_grid": [
+      0.05,
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "T": 15.0,
+    "eps_values": [
+      0.0001,
+      1e-06,
+      1e-08
+    ],
+    "gap_floor": 1e-16
+  },
+  "note": "Common Riemannian-scale reference dt_ref=1/(beta*lambda_max) for BOTH schemes; the KL contraction formula is a formal benchmark evaluated on this grid, not a proof that the KL theorem holds at these stepsizes.",
+  "targets": {
+    "gaussian_posterior__lam0.01": {
+      "target_name": "gaussian_posterior",
+      "lambda": 0.01,
+      "d": 2,
+      "Q_diag": [
+        1.0,
+        0.01
+      ],
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          0.5,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.01,
+      "beta": 1.0,
+      "description": "Gaussian posterior N(0, Q^{-1}), Q=diag(1,lambda)",
+      "lambda_min": 0.5,
+      "lambda_max": 100.0,
+      "dt_ref": 0.01,
+      "F_star": -1.302585092994046,
+      "r_continuous": 0.01,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "c_grid": [
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "dt_grid": [
+        0.0005,
+        0.001,
+        0.0025,
+        0.005,
+        0.0075,
+        0.01
+      ]
+    },
+    "gaussian_posterior__lam0.1": {
+      "target_name": "gaussian_posterior",
+      "lambda": 0.1,
+      "d": 2,
+      "Q_diag": [
+        1.0,
+        0.1
+      ],
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          0.5,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.1,
+      "beta": 1.0,
+      "description": "Gaussian posterior N(0, Q^{-1}), Q=diag(1,lambda)",
+      "lambda_min": 0.5,
+      "lambda_max": 10.0,
+      "dt_ref": 0.1,
+      "F_star": -0.15129254649702295,
+      "r_continuous": 0.1,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "c_grid": [
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "dt_grid": [
+        0.005000000000000001,
+        0.010000000000000002,
+        0.025,
+        0.05,
+        0.07500000000000001,
+        0.1
+      ]
+    },
+    "gaussian_posterior__lam1": {
+      "target_name": "gaussian_posterior",
+      "lambda": 1.0,
+      "d": 2,
+      "Q_diag": [
+        1.0,
+        1.0
+      ],
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          0.5,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 1.0,
+      "beta": 1.0,
+      "description": "Gaussian posterior N(0, Q^{-1}), Q=diag(1,lambda)",
+      "lambda_min": 0.5,
+      "lambda_max": 2.0,
+      "dt_ref": 0.5,
+      "F_star": 1.0,
+      "r_continuous": 1.0,
+      "optimizer": {
+        "method": "analytic",
+        "converged": true,
+        "grad_norm": 0.0,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 0.0,
+        "n_restarts": 0
+      },
+      "c_grid": [
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "dt_grid": [
+        0.025,
+        0.05,
+        0.125,
+        0.25,
+        0.375,
+        0.5
+      ]
+    },
+    "smooth_logconcave__lam0.01": {
+      "target_name": "smooth_logconcave",
+      "lambda": 0.01,
+      "d": 2,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 1.151,
+      "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "lambda_min": 0.8688097306689835,
+      "lambda_max": 20.0,
+      "dt_ref": 0.043440486533449174,
+      "F_star": -0.5636773675007198,
+      "r_continuous": 0.08688097306689835,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+        "grad_norm": 2.8580188292252742e-12,
+        "stationarity_g_norm": 2.5939883082619414e-17,
+        "stationarity_cov_residual": 1.1360825280167707e-12,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 10
+      },
+      "c_grid": [
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "dt_grid": [
+        0.002172024326672459,
+        0.004344048653344918,
+        0.010860121633362294,
+        0.021720243266724587,
+        0.03258036490008688,
+        0.043440486533449174
+      ]
+    },
+    "smooth_logconcave__lam0.1": {
+      "target_name": "smooth_logconcave",
+      "lambda": 0.1,
+      "d": 2,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 1.1600000000000001,
+      "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "lambda_min": 0.8620689655172413,
+      "lambda_max": 20.0,
+      "dt_ref": 0.043103448275862065,
+      "F_star": -0.4933196841663623,
+      "r_continuous": 0.08620689655172414,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+        "grad_norm": 4.0975001639984434e-14,
+        "stationarity_g_norm": 2.2313812776963747e-18,
+        "stationarity_cov_residual": 2.186649926809768e-14,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 10
+      },
+      "c_grid": [
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "dt_grid": [
+        0.0021551724137931034,
+        0.004310344827586207,
+        0.010775862068965516,
+        0.021551724137931032,
+        0.03232758620689655,
+        0.043103448275862065
+      ]
+    },
+    "smooth_logconcave__lam1": {
+      "target_name": "smooth_logconcave",
+      "lambda": 1.0,
+      "d": 2,
+      "delta": 0.05,
+      "gamma": 1.0,
+      "gh_nodes": 80,
+      "m0": [
+        10.0,
+        10.0
+      ],
+      "C0": [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "has_theory": true,
+      "alpha": 0.05,
+      "beta": 1.25,
+      "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
+      "lambda_min": 0.8,
+      "lambda_max": 20.0,
+      "dt_ref": 0.04,
+      "F_star": -0.07492531811234793,
+      "r_continuous": 0.08000000000000002,
+      "optimizer": {
+        "method": "lbfgsb_cholesky",
+        "converged": true,
+        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "grad_norm": 2.475343556286198e-10,
+        "stationarity_g_norm": 7.199440940272105e-19,
+        "stationarity_cov_residual": 1.1596943568740891e-10,
+        "n_restarts": 4,
+        "n_converged_restarts": 4,
+        "nit": 10
+      },
+      "c_grid": [
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "dt_grid": [
+        0.002,
+        0.004,
+        0.01,
+        0.02,
+        0.03,
+        0.04
+      ]
+    }
+  }
+}

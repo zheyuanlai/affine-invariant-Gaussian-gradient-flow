@@ -38,7 +38,13 @@ elapsed time $n\Delta t$ and the iteration count to a fixed tolerance scales as 
 while at the coarsest convergent stepsizes they separate: on the two globally
 smooth targets the Riemannian (geodesic) update converges faster per step than KL,
 retaining higher fidelity to the continuous flow, whereas on the non-smooth
-quartic target KL is the faster scheme.
+quartic target KL is the faster scheme. Finally, on a common Riemannian-scale
+reference stepsize $\Delta t_{\mathrm{ref}}=1/(\beta\lambda_{\max})$ we benchmark
+the theorem-predicted contraction factors of both schemes against the observed
+contraction (Sec.~\ref{sec:rate}): the observed contraction is consistently
+faster than either formula predicts, and the KL formula is the more conservative
+of the two even at matched Riemannian-scale stepsizes, reinforcing that the KL
+disadvantage lies in the current proof rather than in the scheme.
 \end{abstract}
 
 \section{Introduction}
@@ -304,39 +310,6 @@ curvature: the representative stepsizes shown there are the largest that
 converge for that target ($\Delta t\in\{0.005,0.01,0.02\}$), an order of
 magnitude below those of the smooth targets.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_gap_gaussian_posterior.pdf}
-\caption{Gaussian posterior: energy gap vs elapsed time $n\Delta t$,
-$\lambda\in\{0.01,0.1,1\}$,
-Riemannian (blue) vs KL (red) at $\Delta t\in\{0.1,0.5,1\}$ (darker = larger
-$\Delta t$). The analytic gap \eqref{eq:gauss-gap} reaches machine precision.}
-\label{fig:gap-gauss}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_gap_smooth_logconcave.pdf}
-\caption{Smooth strongly log-concave posterior: energy gap vs elapsed time
-$n\Delta t$. Both schemes
-converge at the representative stepsizes; the gap is measured against the
-numerically optimized $a_\star$.}
-\label{fig:gap-smooth}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_gap_literature_logconcave.pdf}
-\caption{Non-smooth (quartic) log-concave posterior: energy gap vs
-elapsed time $n\Delta t$
-at its convergent representative stepsizes $\Delta t\in\{0.005,0.01,0.02\}$. Both
-schemes converge cleanly here; the stepsizes are an order of magnitude smaller
-than for the smooth targets, reflecting the unbounded curvature of the quartic
-tail. (Larger stepsizes diverge for both methods and are excluded; see the
-stability heatmap, Fig.~\ref{fig:heat-lit}.)}
-\label{fig:gap-lit}
-\end{figure}
-
 \paragraph{Stepsize stability.}
 Figures~\ref{fig:heat-gauss}--\ref{fig:heat-lit} are the stability heatmaps:
 for each $(\lambda,\Delta t)$ a cell is green (stable and monotone), amber (stable
@@ -348,34 +321,6 @@ empirical stability boundary sits near $\Delta t\approx1$--$2$ while the proof
 admits only $\Delta t\approx10^{-5}$--$10^{-6}$. Second, the Riemannian theoretical
 line sits much closer to its empirical boundary. The same picture holds across all
 three $\lambda$ and both smooth targets.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_heatmap_gaussian_posterior.pdf}
-\caption{Gaussian posterior stability classification. Green: stable \& monotone;
-amber: stable, non-monotone; red: unstable/diverged. Dotted line: theoretical
-$\Delta t$ for the method. The KL stable region extends far past its (tiny)
-theoretical stepsize.}
-\label{fig:heat-gauss}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_heatmap_smooth_logconcave.pdf}
-\caption{Smooth log-concave stability classification (same legend). The KL
-theoretical line ($\sim10^{-6}$) is far to the left of the empirical boundary
-($\sim1$).}
-\label{fig:heat-smooth}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_heatmap_literature_logconcave.pdf}
-\caption{Non-smooth log-concave stability classification (no theory line, since the
-target is not globally smooth). Both schemes are stable only for small
-$\Delta t$.}
-\label{fig:heat-lit}
-\end{figure}
 
 \paragraph{Theory vs empirical (the proof-artifact figure).}
 Figure~\ref{fig:theory-vs-emp} and Table~\ref{tab:disc-step} compare, for the two
@@ -396,17 +341,6 @@ thus conservative by four to six extra orders of magnitude relative to the
 Riemannian bound---precisely the size of the
 $\lambda_{\max}^3/(2\lambda_{\min}^3)$ factor that separates the two theoretical
 stepsizes.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_theory_vs_empirical.pdf}
-\caption{Theoretical (shaded bars) vs empirical maximum stepsize (markers:
-$\circ$ monotone, $\triangle$ stable) for the Gaussian and smooth targets,
-Riemannian (blue) vs KL (red), log scale. The gap between the KL theoretical bar
-and its empirical markers is enormous; the Riemannian gap is small. This is the
-central proof-artifact figure.}
-\label{fig:theory-vs-emp}
-\end{figure}
 
 \begin{table}[t]
 \centering
@@ -432,15 +366,6 @@ $10^4$ at $\Delta t=5$ even though the KL covariance remains perfectly stable).
 This locates the large-stepsize instability in the mean update shared by both
 schemes, not in the KL covariance step.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_scalar_covariance.pdf}
-\caption{Scalar $\N(0,1)$ covariance diagnostic. Solid: Riemannian; dashed: KL;
-color shade encodes $\Delta t$; dotted grey: target $C=1$. The KL covariance
-contracts to $1$ for all $(C_0,\Delta t)$ shown.}
-\label{fig:scalar}
-\end{figure}
-
 \paragraph{Cost.}
 Since the dimension is $d\le2$, wall-clock differences between the schemes are
 small and noisy and we do not draw strong cost conclusions from them.
@@ -451,15 +376,6 @@ by how large a stable $\Delta t$ it admits rather than by per-step cost. The KL
 covariance step (one symmetric solve) is the cheaper update per step; the
 Riemannian step (eigendecomposition for $C^{1/2}$ and $\exp$) is more expensive in
 higher dimension, though that difference is immaterial here.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\textwidth]{fig_time_to_tolerance.pdf}
-\caption{Iterations to reach gap $\le10^{-4}$ for stable runs, vs $\Delta t$
-(log--log). At matched $\Delta t$ the two schemes are comparable; the meaningful
-difference is the range of stable $\Delta t$, not per-step cost.}
-\label{fig:cost}
-\end{figure}
 
 \section{Convergence speed: Riemannian versus KL at matched stepsize}\label{app:speed}
 
@@ -533,41 +449,6 @@ stability edge while the rational KL update has already converged. In all cases
 both schemes remain monotone and convergent throughout; the
 difference is the rate, not whether they converge.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_convergence_speed_gaussian_posterior.pdf}
-\caption{Gaussian posterior: energy gap vs elapsed time $n\Delta t$, Riemannian (solid) vs
-KL (dashed). Rows: $\lambda$; columns: convergent stepsize $\Delta t$. The two
-schemes coincide at the fine stepsizes (left) but separate at the coarse
-stepsizes (right), where the Riemannian update reaches machine precision while KL
-plateaus higher.}
-\label{fig:speed-gauss}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_convergence_speed_smooth_logconcave.pdf}
-\caption{Smooth strongly log-concave posterior: energy gap vs elapsed time
-$n\Delta t$
-(same layout and legend as Fig.~\ref{fig:speed-gauss}). The same regime split
-holds: matched-stepsize agreement at fine $\Delta t$, and a growing Riemannian
-advantage as $\Delta t$ coarsens.}
-\label{fig:speed-smooth}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{fig_convergence_speed_literature_logconcave.pdf}
-\caption{Non-smooth (quartic) log-concave posterior: energy gap vs elapsed time $n\Delta t$ (same layout).
-The convergent stepsizes are an order of magnitude smaller than for the smooth
-targets; the schemes agree closely at the finer stepsizes, but here \emph{KL}
-holds the advantage---most clearly at the coarsest convergent $\Delta t=0.02$,
-where the Riemannian exponential map sits near its stability edge (terminal gap
-$\sim\!10^{-5}$) while KL has converged ($\sim\!10^{-9}$). This is the one target
-on which KL, not Riemannian, is the faster scheme.}
-\label{fig:speed-lit}
-\end{figure}
-
 \paragraph{The cost of a stepsize.}
 Figure~\ref{fig:speed-cost} quantifies the efficiency consequence. For the stable
 runs we measure the iterations and the elapsed time $n\Delta t$ required to reach a fixed
@@ -590,17 +471,131 @@ schemes can take, the geometrically faithful Riemannian update converges faster
 per step in the coarse-stepsize regime on smooth targets, while the two are
 interchangeable when $\Delta t$ is small.
 
-\begin{figure}[t]
+\section{Theoretical rate benchmark at Riemannian-scale stepsizes}\label{sec:rate}
+
+The stability sections established that the KL proof stepsize is conservative,
+and the convergence-speed section compared the two schemes empirically at matched
+stepsizes. We now test a complementary question: do the theorem-predicted
+\emph{contraction factors} themselves predict the observed contraction, and how
+much slack do they carry at practically meaningful stepsizes? This isolates the
+quality of the rate bounds from the question of the maximal admissible stepsize.
+
+\paragraph{Why only the two globally smooth targets.}
+We restrict to the exact Gaussian posterior (target A) and the smooth strongly
+log-concave posterior (target C), because both satisfy global $\alpha$-strong
+log-concavity and $\beta$-smoothness, so a clean theorem contraction factor
+exists. We exclude the non-smooth quartic target B: it has no global $\beta$, so
+no theorem rate is available to benchmark against.
+
+\paragraph{A common Riemannian-scale reference stepsize.}
+We deliberately use the \emph{Riemannian-scale} reference stepsize
+\begin{equation}\label{eq:dtref}
+\Delta t_{\mathrm{ref}}=\frac1{\beta\lambda_{\max}},
+\qquad
+\lambda_{\min}=\min\{\lambda_{0,\min},1/\beta\},
+\quad
+\lambda_{\max}=\max\{\lambda_{0,\max},1/\alpha\},
+\end{equation}
+for \emph{both} schemes, and sweep the fractions
+$c\in\{0.05,0.1,0.25,0.5,0.75,1\}$ with $\Delta t=c\,\Delta t_{\mathrm{ref}}$, to
+the same terminal time $T=15$ ($N=\lceil T/\Delta t\rceil$ steps). We do
+\emph{not} use the tiny KL proof stepsize to size the grid; the stability study
+already showed it is orders of magnitude smaller than the practically usable
+range. The KL contraction formula is instead \emph{evaluated} on this common
+grid, as a \emph{formal KL rate benchmark at Riemannian-scale stepsizes}---not a
+claim that the current KL theorem has been proved for these stepsizes.
+
+\paragraph{Contraction factors.}
+For the Riemannian scheme the theorem per-step factor and per-unit-time rate are
+\begin{equation}\label{eq:qriem}
+q_{\mathrm{Riem}}(\Delta t)=1-\alpha\lambda_{\min}\Delta t\,(2-\beta\lambda_{\max}\Delta t),
+\qquad
+r_{\mathrm{Riem}}(\Delta t)=-\frac{\log q_{\mathrm{Riem}}(\Delta t)}{\Delta t}.
+\end{equation}
+On the grid $\Delta t\le\Delta t_{\mathrm{ref}}$ the bracket
+$(2-\beta\lambda_{\max}\Delta t)\ge1$, so $q_{\mathrm{Riem}}\in(0,1)$. The KL
+analysis gives, with
+\begin{equation}\label{eq:kappa}
+\kappa(\Delta t)=\lambda_{\min}\min\!\Big\{
+\frac{1+\Delta t\,\alpha\lambda_{\min}}{2(1+\Delta t)},\
+\frac1{4(1+\Delta t\,\beta\lambda_{\max})^2}\Big\},
+\end{equation}
+the factor and rate
+\begin{equation}\label{eq:qkl}
+q_{\mathrm{KL}}(\Delta t)=1-2\alpha\,\kappa(\Delta t)\,\Delta t,
+\qquad
+r_{\mathrm{KL}}(\Delta t)=-\frac{\log q_{\mathrm{KL}}(\Delta t)}{\Delta t}.
+\end{equation}
+For reference, the continuous-time lower-bound rate is
+$r_{\mathrm{cont}}=2\alpha\lambda_{\min}$. As $\Delta t\to0$ the Riemannian rate
+$r_{\mathrm{Riem}}\to r_{\mathrm{cont}}$, whereas the KL formula rate tends to
+$r_{\mathrm{cont}}/4$: at small $\Delta t$ the minimum in \eqref{eq:kappa} is
+attained by the second term, $\kappa(0)=\lambda_{\min}/4$, so
+$r_{\mathrm{KL}}\to\alpha\lambda_{\min}/2=r_{\mathrm{cont}}/4$. The KL formula is
+thus a factor $\approx4$ more conservative than the Riemannian one even in the
+small-stepsize limit, before any stepsize-dependent widening of the gap.
+
+\paragraph{Observed contraction.}
+For each run we record the full energy-gap trajectory and report a terminal
+contraction factor
+$\hat q_{\mathrm{term}}=(\mathrm{gap}_N/\mathrm{gap}_0)^{1/N}$ and rate
+$\hat r_{\mathrm{term}}=-\log(\mathrm{gap}_N/\mathrm{gap}_0)/(N\Delta t)$, using a
+small floor ($10^{-16}$) on the raw gap for the logarithm (the raw gap is kept in
+the CSV, and floor-limited runs are flagged). We also fit a log-linear rate
+$\hat r_{\mathrm{fit}}$ over the mid-regime
+$10^{-10}\le\mathrm{gap}_n/\mathrm{gap}_0\le10^{-2}$, excluding the
+machine-precision plateau. The \emph{terminal slack}
+$q_{\mathrm{theory}}^{\,N}\mathrm{gap}_0/\mathrm{gap}_N$ measures how far the
+method-specific theory envelope sits above the observed terminal gap.
+
+\paragraph{Findings.}
+Table~\ref{tab:disc-rate} aggregates the benchmark and
+Figures~\ref{fig:rate-env-gauss}--\ref{fig:rate-itertol} display it.
+Three observations hold consistently across both targets and all three $\lambda$.
+First, the observed contraction is \emph{faster than either formula predicts}: in
+the rate scatter (Fig.~\ref{fig:rate-scatter}) every point lies above the
+$y=x$ diagonal, and the terminal slack is positive by several orders of magnitude
+for every cell (Fig.~\ref{fig:rate-slack}, Table~\ref{tab:disc-rate}). Second,
+the KL formula is the \emph{more conservative} of the two: at every $\Delta t$ on
+the common grid $r_{\mathrm{KL}}(\Delta t)\le r_{\mathrm{Riem}}(\Delta t)$, so the
+KL rate envelope predicts slower contraction and sits higher above the observed
+curve, and the observed/theory rate ratio is correspondingly larger for KL
+(Table~\ref{tab:disc-rate}: $\sim\!80$--$300\times$ for KL against
+$\sim\!20$--$40\times$ for Riemannian). The terminal slack is large and positive
+for \emph{both} schemes (several orders of magnitude); it is largest for KL at the
+finer fractions, while at the coarsest fractions the Riemannian observed gap
+descends to near machine precision (deeper observed convergence), which inflates
+the Riemannian slack into the KL range there. Third, at the finest fractions ($c=0.05$) the two
+\emph{observed} rates are nearly identical and close to the common continuous-time
+value, consistent with both schemes being first-order discretizations of the same
+flow; the Riemannian theoretical rate also approaches $r_{\mathrm{cont}}$ there
+(from below), while the KL theoretical rate approaches only $r_{\mathrm{cont}}/4$
+(eq.~\eqref{eq:kappa}), so both theoretical rates sit well below the observed rate
+and the KL one further still. The iteration-to-tolerance comparison
+(Fig.~\ref{fig:rate-itertol}) tells the same story from the cost side: where both
+the observed and the theoretical iteration counts to gap $\le10^{-6}$ are finite,
+$N_{\mathrm{theory}}$ exceeds $N_{\mathrm{obs}}$, and the KL theoretical count is
+the largest. This strengthens the paper's central reading: at the
+practically relevant Riemannian-scale stepsizes the KL disadvantage is in the
+current \emph{proof}---both its stepsize bound and its rate formula are
+conservative---not in the scheme's behavior. We are careful not to overclaim: the
+KL formula evaluated here is a formal benchmark on a stepsize range the present KL
+theorem does not establish, so the gap quantifies the conservativeness of the
+current analysis, not a proved KL rate at these stepsizes.
+
+\begin{table}[t]
 \centering
-\includegraphics[width=\textwidth]{fig_iterations_vs_stepsize.pdf}
-\caption{Cost to reach gap $\le10^{-6}$ for stable runs, averaged over $\lambda$,
-vs $\Delta t$. Top: iterations (log--log), with the $\propto1/\Delta t$ reference
-slope; bottom: elapsed time $n\Delta t$ (semi-log $x$), nearly flat in $\Delta t$. Riemannian
-(blue) and KL (red) coincide at fine $\Delta t$ and separate only at the coarsest
-convergent stepsizes; the faster scheme is target-dependent (Riemannian on the
-smooth targets, KL on the non-smooth one).}
-\label{fig:speed-cost}
-\end{figure}
+\caption{Theoretical rate benchmark on the common Riemannian-scale grid,
+aggregated over $\lambda\in\{0.01,0.1,1\}$ (geometric means). For each
+target/method/$c$: the observed terminal rate $\bar r_{\mathrm{obs}}$, the
+method-specific theoretical rate $\bar r_{\mathrm{th}}$, their ratio (observed
+faster when $>1$), the terminal slack, the run count $n$, and the number of
+floor-limited runs. The observed/theory ratio is well above $1$ throughout and is
+larger for KL than for Riemannian at matched $c$ (the KL formula being the more
+conservative); the terminal slack is large for both schemes.}
+\label{tab:disc-rate}
+\inputtable{tab_discretization_rate_summary.tex}
+\end{table}
 
 \section{Conclusion}\label{sec:conclusion}
 
@@ -661,5 +656,217 @@ is far larger than this resolution. Establishing that the KL scheme admits
 Riemannian-sized stepsizes in general requires a revised proof; the present data
 indicate where to look (the $\lambda_{\max}^3/\lambda_{\min}^3$ factor) and that
 the shared mean step, not the covariance update, is the true stepsize bottleneck.
+
+
+\appendix
+\clearpage
+\section{Figures}\label{app:figures}
+All figures are collected here to keep the main text readable; they are referenced by number from the sections above and appear in the order first cited.
+
+\subsection{Figures for the stability results (Sec.~\ref{sec:results})}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_gap_gaussian_posterior.pdf}
+\caption{Gaussian posterior: energy gap vs elapsed time $n\Delta t$,
+$\lambda\in\{0.01,0.1,1\}$,
+Riemannian (blue) vs KL (red) at $\Delta t\in\{0.1,0.5,1\}$ (darker = larger
+$\Delta t$). The analytic gap \eqref{eq:gauss-gap} reaches machine precision.}
+\label{fig:gap-gauss}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_gap_smooth_logconcave.pdf}
+\caption{Smooth strongly log-concave posterior: energy gap vs elapsed time
+$n\Delta t$. Both schemes
+converge at the representative stepsizes; the gap is measured against the
+numerically optimized $a_\star$.}
+\label{fig:gap-smooth}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_gap_literature_logconcave.pdf}
+\caption{Non-smooth (quartic) log-concave posterior: energy gap vs
+elapsed time $n\Delta t$
+at its convergent representative stepsizes $\Delta t\in\{0.005,0.01,0.02\}$. Both
+schemes converge cleanly here; the stepsizes are an order of magnitude smaller
+than for the smooth targets, reflecting the unbounded curvature of the quartic
+tail. (Larger stepsizes diverge for both methods and are excluded; see the
+stability heatmap, Fig.~\ref{fig:heat-lit}.)}
+\label{fig:gap-lit}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_heatmap_gaussian_posterior.pdf}
+\caption{Gaussian posterior stability classification. Green: stable \& monotone;
+amber: stable, non-monotone; red: unstable/diverged. Dotted line: theoretical
+$\Delta t$ for the method. The KL stable region extends far past its (tiny)
+theoretical stepsize.}
+\label{fig:heat-gauss}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_heatmap_smooth_logconcave.pdf}
+\caption{Smooth log-concave stability classification (same legend). The KL
+theoretical line ($\sim10^{-6}$) is far to the left of the empirical boundary
+($\sim1$).}
+\label{fig:heat-smooth}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_heatmap_literature_logconcave.pdf}
+\caption{Non-smooth log-concave stability classification (no theory line, since the
+target is not globally smooth). Both schemes are stable only for small
+$\Delta t$.}
+\label{fig:heat-lit}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_theory_vs_empirical.pdf}
+\caption{Theoretical (shaded bars) vs empirical maximum stepsize (markers:
+$\circ$ monotone, $\triangle$ stable) for the Gaussian and smooth targets,
+Riemannian (blue) vs KL (red), log scale. The gap between the KL theoretical bar
+and its empirical markers is enormous; the Riemannian gap is small. This is the
+central proof-artifact figure.}
+\label{fig:theory-vs-emp}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_scalar_covariance.pdf}
+\caption{Scalar $\N(0,1)$ covariance diagnostic. Solid: Riemannian; dashed: KL;
+color shade encodes $\Delta t$; dotted grey: target $C=1$. The KL covariance
+contracts to $1$ for all $(C_0,\Delta t)$ shown.}
+\label{fig:scalar}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.95\textwidth]{fig_time_to_tolerance.pdf}
+\caption{Iterations to reach gap $\le10^{-4}$ for stable runs, vs $\Delta t$
+(log--log). At matched $\Delta t$ the two schemes are comparable; the meaningful
+difference is the range of stable $\Delta t$, not per-step cost.}
+\label{fig:cost}
+\end{figure}
+
+\clearpage
+
+\subsection{Figures for the convergence-speed study (Sec.~\ref{app:speed})}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_convergence_speed_gaussian_posterior.pdf}
+\caption{Gaussian posterior: energy gap vs elapsed time $n\Delta t$, Riemannian (solid) vs
+KL (dashed). Rows: $\lambda$; columns: convergent stepsize $\Delta t$. The two
+schemes coincide at the fine stepsizes (left) but separate at the coarse
+stepsizes (right), where the Riemannian update reaches machine precision while KL
+plateaus higher.}
+\label{fig:speed-gauss}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_convergence_speed_smooth_logconcave.pdf}
+\caption{Smooth strongly log-concave posterior: energy gap vs elapsed time
+$n\Delta t$
+(same layout and legend as Fig.~\ref{fig:speed-gauss}). The same regime split
+holds: matched-stepsize agreement at fine $\Delta t$, and a growing Riemannian
+advantage as $\Delta t$ coarsens.}
+\label{fig:speed-smooth}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_convergence_speed_literature_logconcave.pdf}
+\caption{Non-smooth (quartic) log-concave posterior: energy gap vs elapsed time $n\Delta t$ (same layout).
+The convergent stepsizes are an order of magnitude smaller than for the smooth
+targets; the schemes agree closely at the finer stepsizes, but here \emph{KL}
+holds the advantage---most clearly at the coarsest convergent $\Delta t=0.02$,
+where the Riemannian exponential map sits near its stability edge (terminal gap
+$\sim\!10^{-5}$) while KL has converged ($\sim\!10^{-9}$). This is the one target
+on which KL, not Riemannian, is the faster scheme.}
+\label{fig:speed-lit}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_iterations_vs_stepsize.pdf}
+\caption{Cost to reach gap $\le10^{-6}$ for stable runs, averaged over $\lambda$,
+vs $\Delta t$. Top: iterations (log--log), with the $\propto1/\Delta t$ reference
+slope; bottom: elapsed time $n\Delta t$ (semi-log $x$), nearly flat in $\Delta t$. Riemannian
+(blue) and KL (red) coincide at fine $\Delta t$ and separate only at the coarsest
+convergent stepsizes; the faster scheme is target-dependent (Riemannian on the
+smooth targets, KL on the non-smooth one).}
+\label{fig:speed-cost}
+\end{figure}
+
+\clearpage
+
+\subsection{Figures for the theoretical-rate benchmark (Sec.~\ref{sec:rate})}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_rate_envelope_gaussian_posterior.pdf}
+\caption{Gaussian posterior: observed energy gap (solid Riemannian, dashed KL)
+versus the method-specific theory envelopes $q_{\mathrm{theory}}^{\,n}\mathrm{gap}_0$
+(dotted), rows $\lambda$, columns $c=\Delta t/\Delta t_{\mathrm{ref}}$. Both
+envelopes sit well above the observed curves; the KL envelope (dotted red) is the
+higher of the two.}
+\label{fig:rate-env-gauss}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_rate_envelope_smooth_logconcave.pdf}
+\caption{Smooth strongly log-concave posterior: observed gap vs theory envelopes
+(same layout and legend as Fig.~\ref{fig:rate-env-gauss}). The same ordering
+holds: observed contraction is faster than both envelopes, with the KL envelope
+the more conservative.}
+\label{fig:rate-env-smooth}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_rate_scatter.pdf}
+\caption{Observed terminal rate $\hat r_{\mathrm{term}}$ vs method-specific
+theoretical rate $r_{\mathrm{theory}}$ (log--log), all target/$\lambda$/$c$ runs.
+Color: method; marker: target. Every point lies above $y=x$: the observed
+contraction is faster than the theorem prediction, and the KL points (red) sit
+furthest to the left (smallest theoretical rate) at matched observed rate.}
+\label{fig:rate-scatter}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_rate_slack_heatmap.pdf}
+\caption{$\log_{10}$ terminal slack
+$q_{\mathrm{theory}}^{\,N}\mathrm{gap}_0/\mathrm{gap}_N$ per target/$\lambda$/$c$,
+Riemannian (left) vs KL (right). Larger is more conservative. The slack is large
+and positive throughout for both schemes; it is largest for KL at the finer
+fractions, while at the coarsest fractions the Riemannian observed gap reaches
+near machine precision (deeper observed convergence) and its slack rises into the
+KL range. A trailing $*$ marks a run whose observed gap reached the numerical
+floor (slack is then a lower bound).}
+\label{fig:rate-slack}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_rate_iterations_to_tol.pdf}
+\caption{Theoretical vs observed iterations to gap $\le10^{-6}$ on the common
+grid. Points plotted only where both are finite; the count of runs whose
+\emph{observed} trajectory does not reach $10^{-6}$ within $T$ is annotated. Where
+both are defined, $N_{\mathrm{theory}}>N_{\mathrm{obs}}$ (above $y=x$), most
+strongly for KL.}
+\label{fig:rate-itertol}
+\end{figure}
+
+\clearpage
 
 \end{document}

@@ -607,6 +607,59 @@ def _tab_disc_convergence(long_df):
     _write_table("tab_disc_convergence.tex", "\n".join(lines))
 
 
+# Rate-benchmark aggregation: geometric means over the runs in each cell.
+_RATE_TT = {"gaussian_posterior": "Gaussian", "smooth_logconcave": "smooth"}
+
+
+def _gmean(vals):
+    v = np.asarray([x for x in vals if x is not None and np.isfinite(x) and x > 0],
+                   dtype=float)
+    return float(np.exp(np.mean(np.log(v)))) if v.size else np.nan
+
+
+def _tab_discretization_rate_summary(rate_summary):
+    """Aggregated rate benchmark: observed vs theoretical contraction by c.
+
+    One row per (target, method, c): geometric-mean observed rate, theoretical
+    rate, observed/theory ratio, terminal slack, run count, and floor-limited
+    count. Aggregation is over the three lambda values.
+    """
+    df = rate_summary[rate_summary.status == "ok"].copy()
+    lines = [
+        r"\begin{tabular}{lllcccccc}",
+        r"\toprule",
+        r"target & method & $c$ & $\bar r_{\mathrm{obs}}$ & $\bar r_{\mathrm{th}}$ & "
+        r"$\overline{r_{\mathrm{obs}}/r_{\mathrm{th}}}$ & "
+        r"$\overline{\mathrm{slack}}$ & $n$ & floor \\",
+        r"\midrule",
+    ]
+    targets = [t for t in ("gaussian_posterior", "smooth_logconcave")
+               if t in set(df.target.unique())]
+    for ti, target in enumerate(targets):
+        for method in ("riemannian", "kl"):
+            cs = sorted(df[(df.target == target) & (df.method == method)].c.unique())
+            for ci, c in enumerate(cs):
+                cell = df[(df.target == target) & (df.method == method)
+                          & (np.isclose(df.c, c))]
+                if cell.empty:
+                    continue
+                ratio = cell.r_hat_terminal.values / cell.r_theory.values
+                tlabel = _RATE_TT[target] if (method == "riemannian" and ci == 0) else ""
+                mlabel = method if ci == 0 else ""
+                n_floor = int(cell.floor_limited_final.sum())
+                lines.append(
+                    f"{tlabel} & {mlabel} & {c:g} & "
+                    f"{_fmt_sci(_gmean(cell.r_hat_terminal))} & "
+                    f"{_fmt_sci(_gmean(cell.r_theory))} & "
+                    f"{_fmt_sci(_gmean(ratio))} & "
+                    f"{_fmt_sci(_gmean(cell.terminal_slack))} & "
+                    f"{len(cell)} & {n_floor} \\\\")
+            if not (ti == len(targets) - 1 and method == "kl"):
+                lines.append(r"\midrule")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_discretization_rate_summary.tex", "\n".join(lines))
+
+
 def build_discretization_assets():
     """Figures + tables for the Riemannian-vs-KL discretization report.
 
@@ -638,6 +691,19 @@ def build_discretization_assets():
     _tab_disc_stepsize(step_df)
     _tab_disc_metadata(meta)
     _tab_disc_convergence(long_df)
+
+    # Supplementary theoretical-rate benchmark (rate_* CSVs). Built only when
+    # present so the rest of the discretization assets never block on it.
+    rate_summary_path = os.path.join(DISC_DIR, "rate_summary.csv")
+    if os.path.exists(rate_summary_path):
+        rate_long = pd.read_csv(os.path.join(DISC_DIR, "rate_results_long.csv"))
+        rate_summary = pd.read_csv(rate_summary_path)
+        rate_tol = pd.read_csv(os.path.join(DISC_DIR, "rate_tolerance_summary.csv"))
+        pr.build_rate_figs(rate_long, rate_summary, rate_tol, FIGS)
+        _tab_discretization_rate_summary(rate_summary)
+    else:
+        print("  [skip] rate benchmark assets: rate_summary.csv not found "
+              "(run run_rate_benchmark.py)")
 
 
 def main():

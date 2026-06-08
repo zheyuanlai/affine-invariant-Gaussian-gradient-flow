@@ -1,0 +1,53 @@
+# Configuration for the supplementary theoretical-rate benchmark.
+#
+# Compares the theorem-predicted contraction factors of the Riemannian and KL
+# discretizations against the observed numerical contraction, on a COMMON
+# Riemannian-scale reference stepsize dt_ref = 1/(beta * lambda_max). The tiny
+# KL proof stepsize is deliberately NOT used to size the grid; the KL formula is
+# evaluated on the same Riemannian-scale grid. Only globally-smooth targets are
+# included (no clean theorem rate exists for the non-smooth quartic).
+#
+# Deterministic, CPU-only: closed-form Gaussian expectations and Gauss--Hermite
+# quadrature for the smooth target; no Monte Carlo, no GPU, no randomness.
+
+# Globally-smooth targets only, and the shared lambda grid.
+targets: [gaussian_posterior, smooth_logconcave]
+lambdas: [0.01, 0.1, 1.0]
+methods: [riemannian, kl]
+
+# Riemannian-scale stepsize fractions: dt = c * dt_ref.
+c_grid: [0.05, 0.1, 0.25, 0.5, 0.75, 1.0]
+
+# Terminal physical time; N = ceil(T / dt) steps per run (matches the report).
+T: 15.0
+
+# Floor applied to the raw energy gap before any log-rate computation (the raw
+# gap is always kept in the CSV alongside the floored value).
+gap_floor: 1.0e-16
+
+# Tolerances for the iteration-to-tolerance comparison.
+eps_values: [1.0e-4, 1.0e-6, 1.0e-8]
+
+# Smooth-target Gauss--Hermite quadrature order and its strong-convexity ridge.
+smooth_target:
+  delta: 0.05
+  gamma: 1.0
+  gh_nodes: 80
+
+# Decimation cap for the long-format CSV (full trajectory is always used for
+# the rate/tolerance computations regardless of this value).
+max_saved_rows: 400
+
+output_dir: outputs/natural_gradient_discretization_stepsize
+
+# Fast subset used when the runner is invoked with --smoke (shallow-merged over
+# the base config).
+smoke:
+  lambdas: [0.1, 1.0]
+  c_grid: [0.25, 1.0]
+  T: 5.0
+  smooth_target:
+    delta: 0.05
+    gamma: 1.0
+    gh_nodes: 40
+  output_dir: outputs/natural_gradient_discretization_stepsize_rate_smoke
