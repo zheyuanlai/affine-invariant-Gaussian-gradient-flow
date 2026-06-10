@@ -50,7 +50,8 @@ def main():
         args.config = DEFAULT_CONFIG
     cfg = _common.load_config(args.config)
     outdir = _common.stage_dir(cfg, args, "linearized_rate_grid")
-    long_path = os.path.join(outdir, "results_long.csv")
+    suffix = _common.shard_suffix(args)
+    long_path = os.path.join(outdir, f"results_long{suffix}.csv")
     if os.path.exists(long_path) and not args.overwrite:
         print(f"[exists] {long_path} (use --overwrite to regenerate)")
         return
@@ -63,7 +64,8 @@ def main():
     save_eigs = bool(lr_cfg.get("save_eigenvectors", True))
     eigdir = ensure_dir(os.path.join(outdir, "eigenvectors")) if save_eigs else None
 
-    points = list(_common.grid_points(cfg))
+    all_points = list(_common.grid_points(cfg))
+    points = _common.apply_grid_shard(all_points, args)
     rows = []
     t0 = time.time()
     for i, point in enumerate(points, 1):
@@ -93,6 +95,9 @@ def main():
         gamma_loc_min=("gamma_loc", "min"),
         inverse_gamma_loc_mean=("inverse_gamma_loc", "mean"),
         inverse_gamma_over_logkappa_mean=("inverse_gamma_over_logkappa", "mean"),
+        tau_H_sq_mean=("tau_H_sq", "mean"),
+        coupling_bound_rate_mean=("coupling_bound_rate", "mean"),
+        gamma_over_coupling_bound_min=("gamma_over_coupling_bound", "min"),
         Lambda_hat_full_sym_mean=("Lambda_hat_full_sym", "mean"),
         Lambda_hat_diag_mean=("Lambda_hat_diag", "mean"),
         Lambda_hat_separable_exact_mean=("Lambda_hat_separable_exact", "mean"),
@@ -101,13 +106,16 @@ def main():
         self_adjoint_error_L_star_max=("self_adjoint_error_L_star", "max"),
         n_seeds=("seed", "count"),
     ).reset_index()
-    save_dataframe(os.path.join(outdir, "summary.csv"), agg)
-    save_json(os.path.join(outdir, "config.json"),
+    summary_path = os.path.join(outdir, f"summary{suffix}.csv")
+    save_dataframe(summary_path, agg)
+    save_json(os.path.join(outdir, f"config{suffix}.json"),
               {"config_path": os.path.abspath(args.config), "config": cfg,
-               "run_id": run_id})
+               "run_id": run_id, "num_shards": int(args.num_shards),
+               "shard_index": int(args.shard_index), "n_points_total": len(all_points),
+               "n_points_this_shard": len(points)})
 
     print(f"\nLong CSV -> {long_path}")
-    print(f"Summary  -> {os.path.join(outdir, 'summary.csv')}")
+    print(f"Summary  -> {summary_path}")
     if save_eigs:
         print(f"Eigvecs  -> {eigdir}")
 

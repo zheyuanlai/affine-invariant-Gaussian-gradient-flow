@@ -56,7 +56,8 @@ def main():
         args.config = DEFAULT_CONFIG
     cfg = _common.load_config(args.config)
     outdir = _common.stage_dir(cfg, args, "operator_grid")
-    long_path = os.path.join(outdir, "results_long.csv")
+    suffix = _common.shard_suffix(args)
+    long_path = os.path.join(outdir, f"results_long{suffix}.csv")
     if os.path.exists(long_path) and not args.overwrite:
         print(f"[exists] {long_path} (use --overwrite to regenerate)")
         return
@@ -64,7 +65,8 @@ def main():
     _common.apply_cli_overrides(opts, args)
     run_id, group = _common.run_context()
 
-    points = list(_common.grid_points(cfg))
+    all_points = list(_common.grid_points(cfg))
+    points = _common.apply_grid_shard(all_points, args)
     rows = []
     t0 = time.time()
     for i, point in enumerate(points, 1):
@@ -88,18 +90,23 @@ def main():
         Lambda_hat_full_sym_std=("Lambda_hat_full_sym", "std"),
         Lambda_hat_diag_mean=("Lambda_hat_diag", "mean"),
         Lambda_hat_separable_exact_mean=("Lambda_hat_separable_exact", "mean"),
+        tau_H_sq_mean=("tau_H_sq", "mean"),
+        coupling_bound_rate_mean=("coupling_bound_rate", "mean"),
         full_minus_diag_mean=("full_minus_diag", "mean"),
         lambda_over_logkappa_mean=("lambda_over_logkappa", "mean"),
         self_adjoint_error_H_sym_max=("self_adjoint_error_H_sym", "max"),
         n_seeds=("seed", "count"),
     ).reset_index()
-    save_dataframe(os.path.join(outdir, "summary.csv"), agg)
-    save_json(os.path.join(outdir, "config.json"),
+    summary_path = os.path.join(outdir, f"summary{suffix}.csv")
+    save_dataframe(summary_path, agg)
+    save_json(os.path.join(outdir, f"config{suffix}.json"),
               {"config_path": os.path.abspath(args.config), "config": cfg,
-               "run_id": run_id})
+               "run_id": run_id, "num_shards": int(args.num_shards),
+               "shard_index": int(args.shard_index), "n_points_total": len(all_points),
+               "n_points_this_shard": len(points)})
 
     print(f"\nLong CSV -> {long_path}")
-    print(f"Summary  -> {os.path.join(outdir, 'summary.csv')}")
+    print(f"Summary  -> {summary_path}")
 
 
 if __name__ == "__main__":

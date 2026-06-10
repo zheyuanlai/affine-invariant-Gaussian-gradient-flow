@@ -91,6 +91,27 @@ spectrum to be meaningful on a finite bank.
   Frobenius isometry, makes the packed matrix genuinely symmetric, and $\gloc$ is
   obtained from a dense symmetric eigensolve.
 \end{itemize}
+The revised proof route also records the first-Hermite coupling
+\begin{equation*}
+    \tau_H^2=\|T\|_{\mathrm{op}}^2
+    =
+    \sup_{\|w\|=1}
+    \left\|
+    \E[\grad^2 V(Z)(w^\top Z)]
+    \right\|_F^2 .
+\end{equation*}
+This is the quantity that controls the mean-covariance coupling in the
+linearized generator. The deterministic reduction
+$\gloc\ge 1/(\tau_H^2+3)$ separates this coupling channel from large positive
+covariance-curvature modes, which may increase $\Lhat$ without slowing the flow.
+The same Bochner-Schur identity and the upper Hessian bound give the baseline
+$\tau_H^2\le\beta$, hence $\gloc\ge 1/(\beta+3)\ge 1/(\kappa+3)$ in whitened
+coordinates. The remaining question is whether $\beta$ can be replaced by
+$O(1+\log\kappa)$.
+The implementation also decomposes the top singular mode of $T$ into the
+longitudinal, mixed, and transverse blocks of Section~3, so future adversarial
+runs can identify whether large coupling is entering through the only unresolved
+high-rank transverse channel.
 For separable control potentials a Gauss--Hermite quadrature provides an exact,
 sample-free benchmark $\Lambda_{\mathrm{exact}}=\max_i\E[V_i''(Z)(Z^2-1)]$ that is
 dimension-free by construction; it is used below to expose finite-sample noise in
@@ -271,6 +292,10 @@ is flat. The gap is estimator noise, not a property of the flow, which is why th
 dimension-independence conclusion is drawn from the well-conditioned $\gloc$
 (a smallest-eigenvalue problem on the metric-correct operator) and not from
 $\Lhat$.
+In the revised diagnostics, $\tau_H^2$ is tracked separately: unlike $\Lhat$, it
+measures only the first-Hermite mean-covariance coupling, and the row-wise check
+$\gloc\ge 1/(\tau_H^2+3)$ is an algebraic consequence of the Bochner-Schur
+identity on the same operator.
 
 \begin{figure}[t]
 \centering

@@ -1,0 +1,523 @@
+
+
+\section{Local convergence near equilibrium}
+We proceed to prove the local convergence rate of Gaussian natural gradient flow \eqref{ODEs:NG} near equilibrium under Assumption \ref{assump:logconcave-smooth}, where we denote $\kappa = \frac{\beta}{\alpha}$. Based on the evidence from numerical experiments, we expect that the local convergence rate Gaussian natural gradient flow does not rely on initialization as in Theorem \ref{thm:glob-conv}.
+
+We work on the equilibrium-whitened coordinates without loss of generality
+\begin{equation}\label{eq:whitened}
+    z = C_\star^{-1/2} (\theta - m_\star)
+\end{equation}
+such that the optimality is $a_\star = \mathcal{N} (0, I_{N_\theta})$ and $z \sim \mathcal{N} (0, I_{N_\theta})$, in which case we have $\alpha \leq 1 \leq \beta$.
+This gives the stationary conditions $\E_{\mathcal{N} (0, I_{N_\theta})} [\nabla V(z)] = 0$ and $\E_{\mathcal{N} (0, I_{N_\theta})} [\nabla^2 V(z)] = I_{N_\theta}$. Hence for any $a = (m, C) \in \Aspace$, we can parameterize $(m, C) = (u, I + X)$ with $u \in \R^{N_\theta}$ and $X \in \Sym (N_\theta)$.
+We emphasize that the weak dimension-free statement already follows from the $\beta-1$ branch of the estimate below: since $\beta \leq \kappa$ in whitened coordinates, the baseline rate is at least $(\kappa+3)^{-1}$. The real question is whether the sharp dependence is logarithmic in $\kappa$, independent of $N_\theta$.
+
+\begin{definition}\label{def:local-operators}
+    For $u \in \R^{N_\theta}$ and $X \in \Sym (N_\theta)$, define the operators,
+    \begin{align*}
+        T [X]_k &:= \E[\Tr (X \nabla^2 V(z)) z_k] = \sum_{i, j} \E[\partial^3_{ijk} V(z)] X_{ij}, \\
+        T^* [u]_{ij} &:= \E[(u^\top z) \nabla^2 V_{ij} (z)], \\
+        H [X]_{ij} &:= \E[\nabla^2 V_{ij} (z) (z^\top Xz - \Tr X)] = \sum_{k, l} \E[\partial^4_{ijkl} V(z)] X_{kl},
+    \end{align*}
+    where we have applied Stein's identity in $T$ and $H$. For the diagonal mode, we define
+    \begin{equation*}
+        \widetilde{T}_{ki} := \E[\nabla^2 V_{ii} (z) z_k], \qquad G_{ij} := \E[\nabla^2 V_{ii} (z) z_j^2].
+    \end{equation*}
+\end{definition}
+
+We first show the tail-cut bound of $G_{ij}$.
+
+\begin{lemma}[Tail-cut bound]\label{lem:tailcut}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, for any $i, j$, we have
+    \begin{equation*}
+        \alpha \leq G_{ij} \leq 4 + \frac{4}{\sqrt{\pi}} ( 1 + \log \kappa).
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    Since $\alpha I \preceq \nabla^2 V \preceq \beta I$, then $\alpha \leq \nabla^2 V_{ii} (z) \leq \beta$, hence $G_{ij} = \E[\nabla^2 V_{ii} (z) z_j^2] \geq \alpha \E[z_j^2] = \alpha$ since $z_j \sim \N (0, 1)$. This proves the lower bound. For the upper bound, if $\kappa \leq e^{1/2}$, then $G_{ij} \leq \beta \leq \kappa \leq e^{1/2} < 4 + \frac{4}{\sqrt{\pi}} ( 1 + \log \kappa)$, so we consider the case where $\kappa > e^{1/2}$ and choose $t_0 = \sqrt{2 \log \kappa}> 1$. We split the expectation into the bulk region and the tail region:
+    \begin{equation*}
+        G_{ij} = \E[\nabla^2 V_{ii} (z) z_j^2] = \E[\nabla^2 V_{ii} (z) z_j^2 \mathbf{1}_{|z_j| < t_0}] + \E[\nabla^2 V_{ii} (z) z_j^2 \mathbf{1}_{|z_j| \geq t_0}].
+    \end{equation*}
+    For the bulk part,
+    \begin{equation*}
+        \E[\nabla^2 V_{ii} (z) z_j^2 \mathbf{1}_{|z_j| < t_0}] \leq t_0^2 \E[\nabla^2 V_{ii} (z)] = 2 \log \kappa.
+    \end{equation*}
+    For the tail part, we define $\varphi (t) = \frac{1}{\sqrt{2\pi}} e^{-t^2 / 2}$, then
+    \begin{equation*}
+        \E[\nabla^2 V_{ii} (z) z_j^2 \mathbf{1}_{|z_j| \geq t_0}] \leq \kappa \E[z_j^2 \mathbf{1}_{|z_j| \geq t_0}] = 2 \kappa \int_{t_0}^\infty t^2 \varphi(t) \dd t,
+    \end{equation*}
+    using integration by parts and Mills ratio,
+    \begin{equation*}
+        \int_{t_0}^\infty t^2 \varphi(t) \dd t = t_0 \varphi (t_0) + \int_{t_0}^\infty \varphi(t) \dd t \leq t_0 \varphi (t_0) + \frac{\varphi (t_0)}{t_0} \leq 2t_0 \varphi(t_0) = 2\sqrt{\frac{\log \kappa}{\pi}} \kappa^{-1}.
+    \end{equation*}
+    Hence,
+    \begin{equation*}
+        G_{ij} \leq 2 \log \kappa + \frac{4}{\sqrt{\pi}} \sqrt{\log \kappa} \leq 4 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa).
+    \end{equation*}
+\end{proof}
+
+We then prove an identity which characterizes the ``perturbation'' near equilibrium.
+
+\begin{lemma}\label{lem:bochner}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, for any $u \in \R^{N_\theta}$, $X \in \Sym (N_\theta)$, and $\eta(z) := u + Xz$, 
+    \begin{equation*}
+        \E[\eta(z)^\top \nabla^2 V(z) \eta (z)] = \|u\|^2 + 2 u^\top T[X] + \|X\|_F^2 + \Tr(X H[X]).
+    \end{equation*}
+    Specifically when $X = \diag \lambda$,
+    \begin{equation*}
+        \E[\eta(z)^\top \nabla^2 V(z) \eta (z)] = \|u\|^2 + 2 u^\top \widetilde{T} \lambda + \|\lambda\|^2 + \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda.
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    We expand 
+    \begin{equation*}
+        \eta^\top \nabla^2 V \eta = u^\top \nabla^2 V u + 2u^\top \nabla^2 V (Xz) + (Xz)^\top \nabla^2 V (Xz)
+    \end{equation*}
+    and analyze the expectation for each term.
+    For the constant term, since $\E[\nabla^2 V] = I$, then $\E[u^\top \nabla^2 V u] = u^\top \E[\nabla^2 V] u = \|u\|^2$. For the cross term, by Stein's Lemma and the definition of $T$, 
+    \begin{equation*}
+        \E[u^\top \nabla^2 V (Xz)] = \sum_{a, b, c} u_a X_{bc} \E[\nabla^2 V_{ab} (z) z_c] = \sum_{a, b, c} u_a X_{bc} \E[\partial_a \partial_b \partial_c V (z)] = u^\top T[X].
+    \end{equation*}
+    For the quadratic term, we apply Stein's Lemma twice to obtain 
+    \begin{align*}
+        \E[(Xz)^\top \nabla^2 V (Xz)] &= \sum_{a, b, c, d} X_{ac} X_{bd} \E[\nabla^2 V_{ab} (z) z_c z_d] \\
+        &= \sum_{a, b, c, d} X_{ac} X_{bd} (\E[\partial_a \partial_b \partial_c \partial_d V (z)] + \delta_{cd} \delta_{ab}) = \Tr(X H[X]) + \|X\|_F^2.
+    \end{align*}
+    Adding these three terms up completes the proof.
+\end{proof}
+
+Based on Lemma \ref{lem:bochner}, we aim to prove the spectral upper bound of $\widetilde{T}^\top \widetilde{T}$.
+
+\begin{lemma}\label{lem:matrix-schur}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, 
+    \begin{equation*}
+        \widetilde{T}^\top \widetilde{T} \preceq I + (G - \mathbf{1} \mathbf{1}^\top).
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    We choose $\eta (z) = u + \diag (\lambda) z$ in Lemma \ref{lem:bochner}, since $\nabla^2 V(z) \succeq 0$, then
+    \begin{equation*}
+        0 \leq  \|u\|^2 + 2 u^\top \widetilde{T} \lambda + \|\lambda\|^2 + \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda
+    \end{equation*}
+    for any $u \in \R^{N_\theta}$ and $\lambda \in \R^{N_\theta}$, which is equivalent to 
+    \begin{equation*}
+        \begin{pmatrix}
+            I & \widetilde{T} \\
+            \widetilde{T} & I + (G - \mathbf{1} \mathbf{1}^\top)
+        \end{pmatrix} \succeq 0.
+    \end{equation*}
+    As $I \succeq 0$, then we have $I + (G - \mathbf{1} \mathbf{1}^\top) - \widetilde{T}^\top \widetilde{T} \succeq 0$ by Schur complement criterion, which completes the proof.
+\end{proof}
+
+Based on these Lemmas, we prove the following baseline operator bound. The second branch is the dimension-dependent tail-cut route. The first branch gives a dimension-free but only $O(\kappa^{-1})$ rate; therefore it does not resolve the expected logarithmic local rate.
+
+\begin{lemma}[Operator bound]\label{lem:operator-bound}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, 
+    \begin{equation*}
+        \lambda_{\max} (G - \mathbf{1} \mathbf{1}^\top) \leq \Gamma := \min \left\{\beta - 1, N_\theta \left(3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}.
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    We prove two spectral upper bounds of $G - \mathbf{1} \mathbf{1}^\top$ separately. On the one hand, we take $\eta(z) = \diag (\lambda) z$ as in Lemma \ref{lem:bochner}, this gives
+    \begin{equation*}
+        \E[\eta(z)^\top \nabla^2 V (z) \eta (z)] = \|\lambda\|^2 + \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda
+    \end{equation*}
+    and concurrently
+    \begin{equation*}
+        \E[\eta(z)^\top \nabla^2 V (z) \eta (z)] \leq \beta \E \|\diag (\lambda) z\|^2 = \beta \|\diag \lambda\|_F^2 = \beta \|\lambda\|^2.
+    \end{equation*}
+    Collectively, $\lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda \leq (\beta - 1) \|\lambda\|^2$, hence $\lambda_{\max} (G - \mathbf{1} \mathbf{1}^\top) \leq \beta - 1$.
+
+    On the other hand, by Lemma \ref{lem:tailcut}, we obtain
+    \begin{equation*}
+        |G_{ij} - 1| \leq 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa),
+    \end{equation*}
+    this gives
+    \begin{align*}
+        \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda &= \sum_{i,j} \lambda_i \lambda_j (G_{ij} - 1) \leq \sum_{i, j} |\lambda_i| \cdot |\lambda_j| \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \\
+        &\leq \left( \sum_{i} |\lambda_i| \right)^2 \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \leq  \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) N_\theta \|\lambda\|^2,
+    \end{align*}
+    this gives $\lambda_{\max} (G - \mathbf{1} \mathbf{1}^\top ) \leq \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) N_\theta$. Hence collectively,
+    \begin{equation*}
+        \lambda_{\max} (G - \mathbf{1} \mathbf{1}^\top) \leq \min \left\{\beta - 1, N_\theta \left(3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}.
+    \end{equation*}
+\end{proof}
+
+\begin{definition}[Hessian first-Hermite coupling]\label{def:tau-H}
+    We define the mean-covariance coupling size
+    \begin{equation*}
+        \tau_H
+        :=
+        \|T\|_{\mathrm{op}}
+        =
+        \sup_{\|X\|_F=1}\|T[X]\|
+        =
+        \sup_{\|w\|=1}
+        \left\|
+        \E[\nabla^2 V(z)(w^\top z)]
+        \right\|_F.
+    \end{equation*}
+    The last equality is the adjoint identity between $T$ and $T^*$.
+\end{definition}
+
+\begin{lemma}[Rank-one first-Hermite curvature bound]\label{lem:rank-one-hermite}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, for any unit vectors $w,q\in\R^{N_\theta}$,
+    \begin{equation*}
+        \left|
+        \E[(w^\top z)q^\top \nabla^2 V(z)q]
+        \right|
+        \leq
+        C_0\sqrt{1+\log\kappa},
+    \end{equation*}
+    where one may take $C_0=2\sqrt{2}+1$. Consequently, for any $p,q,w\in\R^{N_\theta}$,
+    \begin{equation*}
+        \left|
+        \E[(w^\top z)p^\top \nabla^2 V(z)q]
+        \right|
+        \leq
+        C_0\|w\|\,\|p\|\,\|q\|\sqrt{1+\log\kappa}.
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    Fix $w,q$ with $\|w\|=\|q\|=1$ and set $t=w^\top z$ and $h(z)=q^\top\nabla^2V(z)q$. Then $\alpha\leq h\leq\beta$, $\E h=1$, and $\beta\leq\kappa$ in the whitened coordinates. Since $\E t=0$,
+    \begin{equation*}
+        \E[t h]=\E[t(h-1)].
+    \end{equation*}
+    Let $r=\sqrt{2(1+\log\kappa)}$. On the bulk,
+    \begin{equation*}
+        \E[|t|\,|h-1|\,\mathbf{1}_{|t|\leq r}]
+        \leq
+        r\,\E|h-1|
+        \leq
+        2r.
+    \end{equation*}
+    On the tail, using $\beta+1\leq 2\kappa$ and $\E[|t|\mathbf{1}_{|t|>r}]=2\varphi(r)$, where $\varphi(s)=(2\pi)^{-1/2}e^{-s^2/2}$,
+    \begin{equation*}
+        \E[|t|\,|h-1|\,\mathbf{1}_{|t|> r}]
+        \leq
+        4\kappa\varphi(r)
+        =
+        \frac{4}{e\sqrt{2\pi}}
+        \leq
+        1.
+    \end{equation*}
+    Therefore
+    \begin{equation*}
+        |\E[t h]|
+        \leq
+        2\sqrt{2(1+\log\kappa)}+1
+        \leq
+        (2\sqrt{2}+1)\sqrt{1+\log\kappa}.
+    \end{equation*}
+    The bilinear estimate follows by homogeneity in $w,p,q$ and polarization:
+    \begin{equation*}
+        p^\top\nabla^2Vq
+        =
+        \frac14\left((p+q)^\top\nabla^2V(p+q)-(p-q)^\top\nabla^2V(p-q)\right)
+    \end{equation*}
+    after first normalizing nonzero $p$ and $q$.
+\end{proof}
+
+\begin{lemma}[Directional decomposition of $\tau_H$]\label{lem:tau-decomp}
+    Fix a unit vector $w$ and write $z=t w+y$ with $t=w^\top z$ and $y\perp w$. For any $X\in\Sym(N_\theta)$, decompose
+    \begin{equation*}
+        X=a\,ww^\top+w b^\top+bw^\top+B,
+        \qquad
+        b\perp w,
+        \qquad
+        Bw=0.
+    \end{equation*}
+    Then
+    \begin{align*}
+        w^\top T[X]
+        &=
+        a\,\E[w^\top \nabla^2 V(z)w\,t]
+        +
+        2\E[b^\top\nabla^2 V(z)w\,t]
+        +
+        \E[\Tr(B\nabla^2 V(z))\,t]  \\
+        &=
+        a\,\E[w^\top \nabla^2 V(z)w\,t]
+        +
+        2\E[b^\top\nabla^2 V(z)w\,t]
+        +
+        \E[(By)^\top \nabla^2 V(z)w].
+    \end{align*}
+\end{lemma}
+
+\begin{proof}
+    The first identity is the definition of $T$ after inserting the block decomposition of $X$. For the last term, choose an orthonormal basis with $w=e_1$ and $B_{1i}=0$. By Stein's identity and the symmetry of third derivatives,
+    \begin{align*}
+        \E[\Tr(B\nabla^2 V(z))\,z_1]
+        &=
+        \sum_{a,b\geq 2} B_{ab}\E[\partial_{ab}^2 V(z)z_1]
+        =
+        \sum_{a,b\geq 2} B_{ab}\E[\partial_{ab1}^3 V(z)] \\
+        &=
+        \sum_{a,b\geq 2} B_{ab}\E[\partial_{a1}^2 V(z)z_b]
+        =
+        \E[(By)^\top \nabla^2 V(z)w].
+    \end{align*}
+\end{proof}
+
+\begin{remark}[Remaining logarithmic subproblem]
+    By Lemma \ref{lem:rank-one-hermite}, the longitudinal and mixed terms in Lemma \ref{lem:tau-decomp} obey
+    \begin{equation*}
+        \left|
+        a\,\E[w^\top \nabla^2 V(z)w\,t]
+        +
+        2\E[b^\top\nabla^2 V(z)w\,t]
+        \right|
+        \leq
+        C_0\left(|a|+2\|b\|\right)\sqrt{1+\log\kappa}.
+    \end{equation*}
+    The hard term is therefore the high-rank transverse Hessian-compatible modulation
+    \begin{equation*}
+        \sup_{\substack{\|B\|_F=1\\ Bw=0}}
+        \left|
+        \E[(By)^\top \nabla^2 V(z)w]
+        \right|.
+    \end{equation*}
+    A dimension-free $O(\sqrt{1+\log\kappa})$ bound for this term would prove Conjecture \ref{conj:tau-H}. Conversely, a counterexample to the logarithmic local rate must make this transverse coupling large for a true Hessian field and must show that $(-\lambda_{\star,\max})(1+\log\kappa)$ can approach zero; a large positive fourth-order covariance mode alone is insufficient.
+\end{remark}
+
+\begin{remark}[Why Hessian compatibility is essential]\label{rem:hessian-compatibility}
+    If one drops the constraint that $W=\nabla^2 V$ and allows arbitrary measurable matrix fields with $\alpha I\preceq W\preceq \beta I$ and $\E[W]=I$, then the coupling bound in Conjecture \ref{conj:tau-H} is false. For example, for a small $\varepsilon>0$ the relaxed field
+    \begin{equation*}
+        W(z)=I+\varepsilon \tanh(z_1) I
+    \end{equation*}
+    satisfies the ellipticity and normalization conditions, but
+    \begin{equation*}
+        \left\|\E[W(z)z_1]\right\|_F
+        =
+        \varepsilon\,\E[z_1\tanh(z_1)]\,\sqrt{N_\theta},
+    \end{equation*}
+    so $\tau_H^2$ grows linearly with $N_\theta$. This field cannot be a Hessian unless $\tanh(z_1)$ is replaced by a constant: Hessian compatibility requires $\partial_1 W_{22}=\partial_2 W_{21}$, but here $\partial_1 W_{22}\neq 0$ while $W_{21}=0$. Thus any dimension-free proof must use the integrability identities of a single potential, not merely pointwise ellipticity and whitening.
+\end{remark}
+
+We then compute the linearized Jacobian matrix of Gaussian natural gradient flow \eqref{ODEs:NG} and bound its largest eigenvalue.
+
+\begin{proposition}\label{prop:Jac-eig}
+    We consider the Gaussian natural gradient flow \eqref{ODEs:NG} under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}. For $u = m \in \R^{N_\theta}$ and $X = C - I \in \Sym (N_\theta)$, the linearized Jacobian matrix at equilibrium is given by
+    \begin{equation*}
+        - J_\star (u, X) = \left( u + \frac{1}{2} T[X], X + T^*[u] + \frac{1}{2} H[X] \right).
+    \end{equation*}
+    Moreover, the largest eigenvalue $\lambda_{\star, \max}$ of $J_\star$ satisfies
+    \begin{equation*}
+        -\lambda_{\star, \max} \geq \frac{1}{4 + \Gamma} = \frac{1}{4 + \min \left\{\beta - 1, N_\theta \left(3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}},
+    \end{equation*}
+    and the smallest eigenvalue $\lambda_{\star, \min}$ of $J_\star$ satisfies
+    \begin{equation*}
+        -\lambda_{\star, \min} \leq \frac{4 + \Gamma}{2} = \frac{4 + \min \left\{\beta - 1, N_\theta \left(3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}}{2}.
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    We apply Bonnet's identity and Price's identity, i.e.,
+    \begin{equation*}
+        \partial_m \E_{\N (m, C)} [f] = \E_{\N(m, C)} [\nabla f], \qquad \partial_C \E_{\N(m, C)} [f] = \frac{1}{2} \E_{\N(m, C)} [\nabla^2 f],
+    \end{equation*}
+    by Taylor's expansion near $a_\star$, we obtain
+    \begin{align*}
+        \E_{\N (u, I + X)} [\nabla V] &= u + \frac{1}{2} T[X] + O (\| (u, X) \|^2), \\
+        \E_{\N (u, I + X)} [\nabla^2 V] &= I + T^*[u] + \frac{1}{2} H[X] + O(\|(u, X)\|^2).
+    \end{align*}
+    By substituting $\E_{\N (u, I + X)} [\nabla V]$ and $\E_{\N (u, I + X)} [\nabla^2 V]$ into \eqref{ODEs:NG}, we obtain the local ODEs
+    \begin{equation*}
+        \begin{cases}
+            \dot u &= -u - \frac{1}{2} T[X] + O(\|(u, X)\|_\star^2), \\
+            \dot X &= -X - T^*[u] - \frac{1}{2} H[X] + O(\|(u, X)\|_\star^2).
+        \end{cases}
+    \end{equation*}
+    Therefore the linearized Jacobian matrix is 
+    \begin{equation*}
+        - J_\star (u, X) = \left( u + \frac{1}{2} T[X], X + T^*[u] + \frac{1}{2} H[X] \right).
+    \end{equation*}
+
+    We proceed to show that the operator $J_\star$ is self-adjoint with respect to $\langle \cdot, \cdot \rangle_\star^\mathrm{FR}$. For $(u_1, X_1), (u_2, X_2) \in \R^{N_\theta} \times \Sym (N_\theta)$, we calculate
+    \begin{align*}
+        \langle -J_\star (u_1, X_1), (u_2, X_2) \rangle_\star^\mathrm{FR} &= u_1^\top u_2 + \frac{1}{2} T[X_1]^\top u_2 + \frac{1}{2} \Tr(X_1 X_2) + \frac{1}{2} \Tr(T^*[u_1] X_2) + \frac{1}{4} \Tr (H[X_1] X_2),
+    \end{align*}
+    since $u^\top T[X] = \Tr(T^*[u] X)$ and $\Tr(H[X_1] X_2) = \Tr(X_1 H[X_2])$, then the expression is symmetric, which justifies the self-adjointness.
+
+    Thus by the spectral theorem, we obtain
+    \begin{equation*}
+        -\lambda_{\star, \max} = \min_{(u, X) \neq 0} \frac{\langle -J_\star (u, X), (u, X) \rangle_\star^\mathrm{FR}}{\langle (u, X), (u, X) \rangle_\star^\mathrm{FR}} = \min_{(u, X) \ne 0} \frac{Q(u, X)}{\|u\|^2 + \frac{1}{2} \|X\|_F^2},
+    \end{equation*}
+    where $Q(u, X) := \|u\|^2 + u^\top T[X] + \frac{1}{2} \|X\|_F^2 + \frac{1}{4} \Tr(X H[X])$. 
+    Since the standard Gaussian measure and the Hessian bounds are invariant under orthogonal changes of basis, we work in orthogonal basis $X = \diag \lambda$, hence
+    \begin{equation*}
+        Q(u, \diag \lambda) = \|u\|^2 + u^\top \widetilde{T} \lambda + \frac{1}{2} \|\lambda\|^2 + \frac{1}{4} \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda.
+    \end{equation*}
+    We hence only need to show $Q(u, \diag \lambda) \geq \frac{1}{4 + \Gamma} (\|u\|^2 + \frac{1}{2} \|\lambda\|^2)$, which is equivalent to 
+    \begin{equation*}
+        \left( 1 - \nu \right) \|u\|^2 + u^\top \widetilde{T} \lambda + \frac{1 - \nu}{2} \|\lambda\|^2 + \frac{1}{4} \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda \geq 0,
+    \end{equation*}
+    where we denote $\nu = \frac{1}{4 + \Gamma}$ and $0 < \nu \leq \frac{1}{4}$.
+    It suffices to show that
+    \begin{equation*}
+        \frac{1 - \nu}{2} I + \frac{1}{4} (G - \mathbf{1} \mathbf{1}^\top) - \frac{\widetilde{T}^\top \widetilde{T}}{4(1 - \nu)} \succeq 0,
+    \end{equation*}
+    from Lemma \ref{lem:matrix-schur} and Lemma \ref{lem:operator-bound}, a sufficient condition is
+    \begin{equation*}
+        \frac{1 - \nu}{2} - \frac{1 + \nu \Gamma}{4 (1 - \nu)} \geq 0 \Longleftrightarrow f(\nu) := 1 - \nu (4 + \Gamma) + 2\nu^2 \geq 0.
+    \end{equation*}
+    The smaller root of $f$ is 
+    \begin{equation*}
+        \nu_1 = \frac{(4 + \Gamma) - \sqrt{(4 + \Gamma)^2 - 8}}{4} = \frac{2}{4 + \Gamma + \sqrt{(4 + \Gamma)^2 - 8}} \geq \frac{1}{4 + \Gamma},
+    \end{equation*}
+    hence $f (\frac{1}{4 + \Gamma}) \geq 0$, which completes the proof of the largest eigenvalue bound. 
+
+    We proceed to bound the smallest eigenvalue of $J_\star$. By Lemma \ref{lem:matrix-schur} and Lemma \ref{lem:operator-bound}, for diagonal matrix $\diag \lambda$ we have
+    \begin{align*}
+        Q(u, \diag \lambda) &= \|u\|^2 + u^\top \widetilde{T} \lambda + \frac{1}{2} \|\lambda\|^2 + \frac{1}{4} \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda \\
+        &\leq \|u\|^2 + \sqrt{1 + \Gamma}\, \|u\| \|\lambda\| + \left( \frac{1}{2} + \frac{\Gamma}{4} \right) \|\lambda\|^2 \\
+        &\leq \left( 1 + \frac{\Gamma}{4} + \frac{1}{4} \sqrt{\Gamma^2 + 8\Gamma + 8} \right) \left( \|u\|^2 + \frac{1}{2} \|\lambda\|^2 \right).
+    \end{align*}
+    By the spectral theorem, we obtain
+    \begin{align*}
+        -\lambda_{\star, \min} &= \max_{(u, X) \neq 0} \frac{Q (u, X)}{\|u\|^2 + \frac{1}{2} \|X\|_F^2} \leq 1 + \frac{\Gamma}{4} + \frac{1}{4} \sqrt{\Gamma^2 + 8\Gamma + 8} \leq \frac{4 + \Gamma}{2},
+    \end{align*}
+    which completes the proof.
+\end{proof}
+
+\begin{proposition}[Coupling-only rate reduction]\label{prop:tau-rate-reduction}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, if
+    \begin{equation*}
+        \tau_H^2 \leq M,
+    \end{equation*}
+    then the local convergence rate satisfies
+    \begin{equation*}
+        -\lambda_{\star,\max}
+        \geq
+        \frac{1}{M+3}.
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    By Lemma \ref{lem:bochner}, the block operator
+    \begin{equation*}
+        \begin{pmatrix}
+            I & T \\
+            T^* & I+H
+        \end{pmatrix}
+        \succeq 0
+    \end{equation*}
+    on $\R^{N_\theta}\times \Sym(N_\theta)$. Hence
+    \begin{equation*}
+        I+H-T^*T \succeq 0.
+    \end{equation*}
+    In Fisher--Rao packed coordinates $Y=X/\sqrt{2}$, Proposition \ref{prop:Jac-eig} gives the block form
+    \begin{equation*}
+        L_\star
+        =
+        \begin{pmatrix}
+            I & T/\sqrt{2} \\
+            T^*/\sqrt{2} & I+\frac12 H
+        \end{pmatrix}.
+    \end{equation*}
+    The Schur inequality gives the operator lower bound
+    \begin{equation*}
+        I+\frac12 H
+        =
+        \frac12(I+T^*T)
+        +
+        \frac12(I+H-T^*T)
+        \succeq
+        \frac12(I+T^*T).
+    \end{equation*}
+    Therefore $L_\star$ is bounded below by
+    \begin{equation*}
+        L_0
+        :=
+        \begin{pmatrix}
+            I & T/\sqrt{2} \\
+            T^*/\sqrt{2} & \frac12(I+T^*T)
+        \end{pmatrix}.
+    \end{equation*}
+    Decompose $T$ by singular values. On a singular two-dimensional block with singular value $s$, the matrix of $L_0$ is
+    \begin{equation*}
+        \begin{pmatrix}
+            1 & s/\sqrt{2} \\
+            s/\sqrt{2} & (1+s^2)/2
+        \end{pmatrix},
+    \end{equation*}
+    whose determinant is $1/2$ and whose trace is $(3+s^2)/2$. Since $s^2\leq \|T\|_{\mathrm{op}}^2=\tau_H^2\leq M$, the smaller eigenvalue is at least determinant divided by trace:
+    \begin{equation*}
+        \lambda_{\min}(L_0)
+        \geq
+        \frac{1}{M+3}.
+    \end{equation*}
+    The remaining kernel blocks have eigenvalues $1$ or $1/2$, which obey the same lower bound.
+    Hence $\lambda_{\min}(L_\star)\geq (M+3)^{-1}$, which is the desired bound on $-\lambda_{\star,\max}$.
+\end{proof}
+
+\begin{proposition}[Baseline coupling bound]\label{prop:baseline-tau-bound}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened},
+    \begin{equation*}
+        \tau_H^2\leq \beta.
+    \end{equation*}
+    Consequently,
+    \begin{equation*}
+        -\lambda_{\star,\max}
+        \geq
+        \frac{1}{\beta+3}
+        \geq
+        \frac{1}{\kappa+3}.
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    The Bochner-Schur positivity in Lemma \ref{lem:bochner} gives
+    \begin{equation*}
+        T^*T\preceq I+H.
+    \end{equation*}
+    On the other hand, for any $X\in\Sym(N_\theta)$,
+    \begin{equation*}
+        \langle X,(I+H)X\rangle_F
+        =
+        \E[(Xz)^\top \nabla^2V(z)(Xz)]
+        \leq
+        \beta\,\E\|Xz\|^2
+        =
+        \beta\|X\|_F^2.
+    \end{equation*}
+    Hence $I+H\preceq \beta I$ on $\Sym(N_\theta)$, so
+    \begin{equation*}
+        \tau_H^2
+        =
+        \|T\|_{\mathrm{op}}^2
+        =
+        \|T^*T\|_{\mathrm{op}}
+        \leq
+        \beta.
+    \end{equation*}
+    Proposition \ref{prop:tau-rate-reduction} with $M=\beta$ gives the first rate bound. Since $\alpha\leq 1$ in the whitened coordinates, $\beta\leq \beta/\alpha=\kappa$, giving the final inequality.
+\end{proof}
+
+\begin{conjecture}[Hessian first-Hermite bound]\label{conj:tau-H}
+    Under the equilibrium-whitened assumptions
+    \begin{equation*}
+        \E[\nabla V(z)]=0,
+        \qquad
+        \E[\nabla^2 V(z)]=I,
+        \qquad
+        \alpha I\preceq \nabla^2 V(z)\preceq \beta I,
+    \end{equation*}
+    there exists a universal constant $C>0$, independent of $N_\theta$, such that
+    \begin{equation*}
+        \tau_H^2
+        \leq
+        C(1+\log\kappa).
+    \end{equation*}
+    By Proposition \ref{prop:tau-rate-reduction}, this conjecture implies the logarithmic dimension-free local rate
+    \begin{equation*}
+        -\lambda_{\star,\max}
+        \geq
+        \frac{1}{C(1+\log\kappa)+3}.
+    \end{equation*}
+\end{conjecture}

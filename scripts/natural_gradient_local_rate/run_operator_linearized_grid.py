@@ -61,6 +61,8 @@ def _operator_summary(df):
         Lambda_hat_full_sym_std=("Lambda_hat_full_sym", "std"),
         Lambda_hat_diag_mean=("Lambda_hat_diag", "mean"),
         Lambda_hat_separable_exact_mean=("Lambda_hat_separable_exact", "mean"),
+        tau_H_sq_mean=("tau_H_sq", "mean"),
+        coupling_bound_rate_mean=("coupling_bound_rate", "mean"),
         full_minus_diag_mean=("full_minus_diag", "mean"),
         lambda_over_logkappa_mean=("lambda_over_logkappa", "mean"),
         self_adjoint_error_H_sym_max=("self_adjoint_error_H_sym", "max"),
@@ -76,6 +78,9 @@ def _linearized_summary(df):
         gamma_loc_min=("gamma_loc", "min"),
         inverse_gamma_loc_mean=("inverse_gamma_loc", "mean"),
         inverse_gamma_over_logkappa_mean=("inverse_gamma_over_logkappa", "mean"),
+        tau_H_sq_mean=("tau_H_sq", "mean"),
+        coupling_bound_rate_mean=("coupling_bound_rate", "mean"),
+        gamma_over_coupling_bound_min=("gamma_over_coupling_bound", "min"),
         Lambda_hat_full_sym_mean=("Lambda_hat_full_sym", "mean"),
         Lambda_hat_diag_mean=("Lambda_hat_diag", "mean"),
         Lambda_hat_separable_exact_mean=("Lambda_hat_separable_exact", "mean"),
@@ -92,10 +97,11 @@ def main():
         args.config = DEFAULT_CONFIG
     cfg = _common.load_config(args.config)
     base = args.outdir if args.outdir else cfg["outputs"]["base_dir"]
+    suffix = _common.shard_suffix(args)
     opdir = _stage_dir(base, "operator_grid")
     lrdir = _stage_dir(base, "linearized_rate_grid")
-    op_long = os.path.join(opdir, "results_long.csv")
-    lr_long = os.path.join(lrdir, "results_long.csv")
+    op_long = os.path.join(opdir, f"results_long{suffix}.csv")
+    lr_long = os.path.join(lrdir, f"results_long{suffix}.csv")
     existing = [p for p in (op_long, lr_long) if os.path.exists(p)]
     if existing and not args.overwrite:
         print("[exists] " + ", ".join(existing) + " (use --overwrite to regenerate)")
@@ -112,7 +118,8 @@ def main():
     save_eigs = bool(lr_cfg.get("save_eigenvectors", True))
     eigdir = ensure_dir(os.path.join(lrdir, "eigenvectors")) if save_eigs else None
 
-    points = list(_common.grid_points(cfg))
+    all_points = list(_common.grid_points(cfg))
+    points = _common.apply_grid_shard(all_points, args)
     rows = []
     t0 = time.time()
     for i, point in enumerate(points, 1):
@@ -130,24 +137,29 @@ def main():
         print(f"  [{i:3d}/{len(points)}] {_common.point_key(point):32s} "
               f"sym={row['Lambda_hat_full_sym']:.4f} "
               f"gamma={row['gamma_loc']:.4f} "
+              f"tau2={row['tau_H_sq']:.4f} "
               f"diag={row['Lambda_hat_diag']:.4f} [{row['status']}] "
               f"({time.time()-t0:.1f}s)")
 
     df = _common.order_columns(pd.DataFrame(rows))
     save_dataframe(op_long, df)
     save_dataframe(lr_long, df)
-    save_dataframe(os.path.join(opdir, "summary.csv"), _operator_summary(df))
-    save_dataframe(os.path.join(lrdir, "summary.csv"), _linearized_summary(df))
+    op_summary = os.path.join(opdir, f"summary{suffix}.csv")
+    lr_summary = os.path.join(lrdir, f"summary{suffix}.csv")
+    save_dataframe(op_summary, _operator_summary(df))
+    save_dataframe(lr_summary, _linearized_summary(df))
 
     meta = {"config_path": os.path.abspath(args.config), "config": cfg,
-            "run_id": run_id, "runner": "run_operator_linearized_grid.py"}
-    save_json(os.path.join(opdir, "config.json"), meta)
-    save_json(os.path.join(lrdir, "config.json"), meta)
+            "run_id": run_id, "runner": "run_operator_linearized_grid.py",
+            "num_shards": int(args.num_shards), "shard_index": int(args.shard_index),
+            "n_points_total": len(all_points), "n_points_this_shard": len(points)}
+    save_json(os.path.join(opdir, f"config{suffix}.json"), meta)
+    save_json(os.path.join(lrdir, f"config{suffix}.json"), meta)
 
     print(f"\nOperator long -> {op_long}")
-    print(f"Operator summary -> {os.path.join(opdir, 'summary.csv')}")
+    print(f"Operator summary -> {op_summary}")
     print(f"Linearized long -> {lr_long}")
-    print(f"Linearized summary -> {os.path.join(lrdir, 'summary.csv')}")
+    print(f"Linearized summary -> {lr_summary}")
     if save_eigs:
         print(f"Eigvecs -> {eigdir}")
 

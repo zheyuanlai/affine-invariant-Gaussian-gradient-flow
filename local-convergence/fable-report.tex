@@ -1,0 +1,1096 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\numberwithin{equation}{section}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\KL}{KL}
+\DeclareMathOperator{\Sym}{Sym}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\argmin}{argmin}
+
+\title{A Counterexample to the Fourth-Order Operator-Norm Route for Dimension-Free Local Convergence of Gaussian Natural Gradient Flow}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We analyze the local convergence rate of the Gaussian natural gradient flow near the optimal Gaussian variational approximation. 
+In equilibrium-whitened coordinates, the current manuscript proves a local rate lower bound involving a fourth-order operator norm. 
+A natural conjecture was that this fourth-order operator norm admits a dimension-free logarithmic bound in the condition number. 
+We show that this stronger operator-norm conjecture is false by constructing a family of admissible radial potentials for which the fourth-order trace mode exceeds the proposed one-dimensional tail-cut bound. 
+However, the same examples are radial and even, so the mean-covariance coupling vanishes and the actual local convergence rate remains maximal. 
+Therefore the counterexample does not refute the dimension-free local-rate conjecture itself. 
+Instead, it shows that controlling the largest fourth-order covariance mode is too lossy. 
+The correct rate-controlling quantity should measure the mean-covariance coupling, which can be formulated using only the Hessian field.
+\end{abstract}
+
+\section{Problem setup}
+
+We consider a target posterior distribution on $\mathbb R^{N_\theta}$ of the form
+\begin{equation}
+    \rho_{\mathrm{post}}(\theta) \propto \exp(-V(\theta)),
+\end{equation}
+where $V:\mathbb R^{N_\theta}\to \mathbb R$ is the negative log-density up to an additive constant. 
+The Gaussian variational family is
+\begin{equation}
+    \mathcal P_G
+    =
+    \left\{
+    \rho_a = \mathcal N(m,C):
+    a=(m,C)\in \mathbb R^{N_\theta}\times \Sym_{++}(N_\theta)
+    \right\}.
+\end{equation}
+The Gaussian variational inference problem is
+\begin{equation}
+    a_\star=(m_\star,C_\star)
+    \in
+    \argmin_a \KL(\rho_a\|\rho_{\mathrm{post}}).
+\end{equation}
+
+The Gaussian natural gradient flow, equivalently the Fisher--Rao gradient flow restricted to the Gaussian family, is
+\begin{align}
+    \frac{d m_t}{dt}
+    &=
+    C_t
+    \mathbb E_{\theta\sim \mathcal N(m_t,C_t)}
+    [
+    \nabla_\theta \log \rho_{\mathrm{post}}(\theta)
+    ],
+    \\
+    \frac{d C_t}{dt}
+    &=
+    C_t
+    +
+    C_t
+    \mathbb E_{\theta\sim \mathcal N(m_t,C_t)}
+    [
+    \nabla_\theta\nabla_\theta \log \rho_{\mathrm{post}}(\theta)
+    ]
+    C_t.
+\end{align}
+Since $\log \rho_{\mathrm{post}}=-V+\mathrm{const.}$, this can equivalently be written as
+\begin{align}
+    \frac{d m_t}{dt}
+    &=
+    -
+    C_t
+    \mathbb E_{\theta\sim \mathcal N(m_t,C_t)}
+    [
+    \nabla V(\theta)
+    ],
+    \\
+    \frac{d C_t}{dt}
+    &=
+    C_t
+    -
+    C_t
+    \mathbb E_{\theta\sim \mathcal N(m_t,C_t)}
+    [
+    \nabla^2 V(\theta)
+    ]
+    C_t.
+\end{align}
+
+Throughout this report, we assume the standard log-concavity and smoothness condition
+\begin{equation}
+    \alpha I
+    \preceq
+    \nabla^2 V(\theta)
+    \preceq
+    \beta I,
+    \qquad
+    \theta\in\mathbb R^{N_\theta},
+\end{equation}
+with condition number
+\begin{equation}
+    \kappa=\frac{\beta}{\alpha}.
+\end{equation}
+
+We focus on the local convergence rate near the Gaussian variational optimum. 
+By affine invariance, we may work in equilibrium-whitened coordinates
+\begin{equation}
+    z=C_\star^{-1/2}(\theta-m_\star),
+\end{equation}
+so that the stationary Gaussian becomes
+\begin{equation}
+    \rho_{a_\star}=\mathcal N(0,I).
+\end{equation}
+In these coordinates, writing again $V$ for the transformed potential, the stationarity conditions become
+\begin{equation}
+    \mathbb E[\nabla V(z)] = 0,
+    \qquad
+    \mathbb E[\nabla^2 V(z)] = I,
+    \qquad
+    z\sim \mathcal N(0,I).
+\end{equation}
+The Hessian bounds become
+\begin{equation}
+    \alpha I
+    \preceq
+    \nabla^2 V(z)
+    \preceq
+    \beta I,
+    \qquad
+    \alpha\le 1\le \beta.
+\end{equation}
+We denote
+\begin{equation}
+    W(z):=\nabla^2 V(z).
+\end{equation}
+
+The goal is to understand the largest eigenvalue $\lambda_{\star,\max}<0$ of the linearized Jacobian $J_\star$ at equilibrium. 
+The local convergence rate is controlled by
+\begin{equation}
+    -\lambda_{\star,\max}.
+\end{equation}
+Larger values of $-\lambda_{\star,\max}$ correspond to faster local convergence.
+
+\section{Linearization and the rate-controlling quadratic form}
+
+Let
+\begin{equation}
+    m=u,
+    \qquad
+    C=I+X,
+    \qquad
+    X\in \Sym(N_\theta),
+\end{equation}
+denote a perturbation around the equilibrium $(0,I)$. 
+The linearized dynamics has the form
+\begin{equation}
+    -J_\star(u,X)
+    =
+    \left(
+    u+\frac12 T[X],
+    \,
+    X+T^\ast[u]+\frac12 H[X]
+    \right),
+\end{equation}
+where the linear operators can be written using only the Hessian $W(z)$:
+\begin{align}
+    T[X]
+    &=
+    \mathbb E
+    \left[
+    \Tr(XW(z))z
+    \right],
+    \\
+    T^\ast[u]
+    &=
+    \mathbb E
+    \left[
+    (u^\top z)W(z)
+    \right],
+    \\
+    H[X]
+    &=
+    \mathbb E
+    \left[
+    W(z)\left(z^\top Xz-\Tr X\right)
+    \right].
+\end{align}
+These are Hessian-only formulas. 
+If $V$ is smoother, the same objects can be rewritten using third and fourth derivatives by Gaussian integration by parts, but such derivative notation is not essential for the formulation.
+
+Define the bilinear form
+\begin{equation}
+    B(S,S')
+    :=
+    \mathbb E
+    \left[
+    (Sz)^\top (W(z)-I)(S'z)
+    \right],
+    \qquad
+    S,S'\in \Sym(N_\theta).
+\end{equation}
+Then
+\begin{equation}
+    B(S,S)
+    =
+    \Tr(SH[S]).
+\end{equation}
+
+For diagonal $X=\diag(\lambda)$, define
+\begin{equation}
+    G_{ij}
+    =
+    \mathbb E[W_{ii}(z)z_j^2],
+    \qquad
+    A:=G-11^\top.
+\end{equation}
+Then
+\begin{equation}
+    \lambda^\top A\lambda
+    =
+    B(\diag\lambda,\diag\lambda).
+\end{equation}
+
+The fourth-order operator norm of interest is
+\begin{equation}
+    \Lambda
+    :=
+    \sup_{\|S\|_F=1}
+    B(S,S).
+\end{equation}
+Equivalently, in a fixed diagonal frame,
+\begin{equation}
+    \Lambda
+    \ge
+    \lambda_{\max}(G-11^\top),
+\end{equation}
+and after optimizing over orthonormal frames, $\Lambda$ captures the largest covariance-mode curvature contribution.
+
+The existing manuscript proof bounds the local rate through an estimate on this fourth-order operator. 
+In particular, it proves a bound of the form
+\begin{equation}
+    -\lambda_{\star,\max}
+    \ge
+    \frac{1}{4+\Gamma},
+\end{equation}
+where
+\begin{equation}
+    \Gamma
+    =
+    \min
+    \left\{
+    \beta-1,
+    \,
+    N_\theta
+    \left(
+    3+\frac{4}{\sqrt{\pi}}(1+\log\kappa)
+    \right)
+    \right\}.
+\end{equation}
+The second branch contains the dimension factor $N_\theta$. 
+The natural question is whether this factor is intrinsic or merely a proof artifact.
+
+\section{The dimension-free local-rate conjecture}
+
+The broad conjecture motivating the analysis is the following.
+
+\begin{conjecture}[Dimension-free local rate]
+Under the equilibrium-whitened assumptions
+\begin{equation}
+    \mathbb E[\nabla V(z)]=0,
+    \qquad
+    \mathbb E[\nabla^2 V(z)]=I,
+    \qquad
+    \alpha I\preceq \nabla^2 V(z)\preceq \beta I,
+\end{equation}
+there exists a constant $c(\kappa)>0$, independent of $N_\theta$, such that
+\begin{equation}
+    -\lambda_{\star,\max}
+    \ge
+    c(\kappa).
+\end{equation}
+The expected sharp dependence is logarithmic:
+\begin{equation}
+    c(\kappa)
+    \gtrsim
+    \frac{1}{1+\log\kappa}.
+\end{equation}
+\end{conjecture}
+
+The counterexample below does not contradict this conjecture.
+
+A stronger conjecture was proposed as a possible route to proving the dimension-free local-rate conjecture. 
+This stronger conjecture attempts to control the fourth-order operator norm $\Lambda$ directly.
+
+Define the one-dimensional tail-cut constant
+\begin{equation}
+    D_\kappa
+    :=
+    \left(
+    4+\frac{4}{\sqrt{\pi}}
+    \right)(1+\log\kappa).
+\end{equation}
+This constant arises from a one-dimensional Gaussian tail-cut estimate. 
+Roughly, if
+\begin{equation}
+    f:\mathbb R\to[\alpha,\beta],
+    \qquad
+    \mathbb E[f(Z)]=1,
+    \qquad
+    Z\sim \mathcal N(0,1),
+\end{equation}
+then the tail-cut argument gives a dimension-free upper bound of the form
+\begin{equation}
+    \mathbb E[f(Z)Z^2]\le D_\kappa.
+\end{equation}
+This motivates the following operator-norm conjecture.
+
+\begin{conjecture}[Fourth-order operator-norm conjecture]
+Under the same equilibrium-whitened assumptions,
+\begin{equation}
+    \Lambda
+    \le
+    D_\kappa-1.
+\end{equation}
+\end{conjecture}
+
+This conjecture would imply a dimension-free control of the fourth-order covariance operator and hence would give a route to proving a dimension-free local rate. 
+However, this fourth-order operator-norm conjecture is false.
+
+The counterexample below shows that $\Lambda$ can exceed $D_\kappa-1$, even for true Hessian fields $W=\nabla^2 V$ coming from admissible strongly convex smooth potentials. 
+Therefore, the proof strategy based on bounding $\Lambda$ by $D_\kappa-1$ cannot work.
+
+Importantly, the counterexample does not produce slow local convergence. 
+In fact, the local rate remains maximal. 
+Thus the example refutes the fourth-order operator-norm conjecture, but not the dimension-free local-rate conjecture.
+
+\section{Radial potentials and their Hessian structure}
+
+We construct a radial potential
+\begin{equation}
+    V(z)=g(\|z\|^2),
+    \qquad
+    z\in\mathbb R^{N_\theta}.
+\end{equation}
+Let
+\begin{equation}
+    s=\|z\|^2,
+    \qquad
+    \rho=\|z\|=\sqrt{s}.
+\end{equation}
+
+For radial potentials, the Hessian $W(z)=\nabla^2 V(z)$ has two eigenvalues:
+\begin{enumerate}[label=(\roman*)]
+    \item a tangential eigenvalue $h(s)$, with multiplicity $N_\theta-1$;
+    \item a radial eigenvalue $r(s)$, in the direction $z/\|z\|$.
+\end{enumerate}
+Explicitly,
+\begin{equation}
+    h(s)=2g'(s),
+\end{equation}
+and
+\begin{equation}
+    r(s)=2g'(s)+4s g''(s).
+\end{equation}
+Equivalently,
+\begin{equation}
+    W(z)
+    =
+    h(s)I
+    +
+    (r(s)-h(s))
+    \frac{zz^\top}{\|z\|^2},
+    \qquad
+    z\neq 0.
+\end{equation}
+
+The relation between $h$ and $r$ is the Hardy-average identity
+\begin{equation}
+    h(\rho^2)
+    =
+    \frac{1}{\rho}
+    \int_0^\rho r(t^2)\,dt.
+\end{equation}
+Therefore, once the radial eigenvalue $r$ is specified, the tangential eigenvalue $h$ is determined by the Hardy average.
+
+The Hessian bound
+\begin{equation}
+    \alpha I
+    \preceq
+    W(z)
+    \preceq
+    \beta I
+\end{equation}
+is equivalent to
+\begin{equation}
+    \alpha\le h(s)\le \beta,
+    \qquad
+    \alpha\le r(s)\le \beta.
+\end{equation}
+Thus, to construct an admissible radial potential, it suffices to choose $r\in[\alpha,\beta]$ such that its Hardy average $h$ also lies in $[\alpha,\beta]$.
+
+\section{The radial threshold construction}
+
+Fix $0<\alpha<1<\beta$, and let
+\begin{equation}
+    \kappa=\frac{\beta}{\alpha}.
+\end{equation}
+Choose a threshold $s_0>0$, and define the radial eigenvalue
+\begin{equation}
+    r(s)
+    =
+    \alpha \mathbf 1_{\{s\le s_0\}}
+    +
+    \beta \mathbf 1_{\{s>s_0\}}.
+\end{equation}
+Using the Hardy-average formula, the corresponding tangential eigenvalue is
+\begin{equation}
+    h(s)
+    =
+    \beta
+    -
+    (\beta-\alpha)
+    \min
+    \left\{
+    1,\sqrt{\frac{s_0}{s}}
+    \right\}.
+\end{equation}
+Indeed, if $s\le s_0$, then $h(s)=\alpha$. 
+If $s>s_0$, then
+\begin{equation}
+    h(s)
+    =
+    \frac{1}{\sqrt{s}}
+    \left(
+    \int_0^{\sqrt{s_0}}\alpha\,dt
+    +
+    \int_{\sqrt{s_0}}^{\sqrt{s}}\beta\,dt
+    \right)
+    =
+    \beta-(\beta-\alpha)\sqrt{\frac{s_0}{s}}.
+\end{equation}
+Therefore
+\begin{equation}
+    \alpha\le h(s)\le \beta,
+    \qquad
+    \alpha\le r(s)\le \beta.
+\end{equation}
+Thus the Hessian eigenvalues are uniformly bounded between $\alpha$ and $\beta$.
+
+Strictly speaking, the sharp threshold profile is not smooth. 
+This is not a serious obstruction. 
+One may replace $r$ by a smooth monotone transition $r_\varepsilon$ from $\alpha$ to $\beta$, define $h_\varepsilon$ by the Hardy average, and then define $g_\varepsilon$ by
+\begin{equation}
+    g_\varepsilon'(s)=\frac12 h_\varepsilon(s).
+\end{equation}
+The resulting $V_\varepsilon(z)=g_\varepsilon(\|z\|^2)$ is smooth, satisfies the same Hessian bounds, and converges to the threshold construction as $\varepsilon\to 0$. 
+Therefore the threshold profile should be understood as the limiting model of a smooth admissible family.
+
+\section{Whitening condition}
+
+We now impose the equilibrium-whitened condition
+\begin{equation}
+    \mathbb E[W(z)] = I,
+    \qquad
+    z\sim \mathcal N(0,I).
+\end{equation}
+For radial potentials, this condition reduces to a scalar condition. 
+Let
+\begin{equation}
+    m=N_\theta+2,
+    \qquad
+    S_m\sim \chi_m^2.
+\end{equation}
+Then
+\begin{equation}
+    \mathbb E[W(z)]=I
+    \quad
+    \Longleftrightarrow
+    \quad
+    \mathbb E_{\chi_m^2}[h(S_m)] = 1.
+\end{equation}
+
+For the threshold family,
+\begin{equation}
+    h(s)
+    =
+    \beta
+    -
+    (\beta-\alpha)
+    \min
+    \left\{
+    1,\sqrt{\frac{s_0}{s}}
+    \right\}.
+\end{equation}
+Thus the whitening condition becomes
+\begin{equation}
+    \beta
+    -
+    (\beta-\alpha)
+    \mathbb E_{\chi_m^2}
+    \left[
+    \min
+    \left\{
+    1,\sqrt{\frac{s_0}{S_m}}
+    \right\}
+    \right]
+    =
+    1.
+\end{equation}
+Equivalently,
+\begin{equation}
+    \mathbb E_{\chi_m^2}
+    \left[
+    \min
+    \left\{
+    1,\sqrt{\frac{s_0}{S_m}}
+    \right\}
+    \right]
+    =
+    \frac{\beta-1}{\beta-\alpha}.
+\end{equation}
+Define
+\begin{equation}
+    p:=\frac{1-\alpha}{\beta-\alpha}.
+\end{equation}
+Then
+\begin{equation}
+    \frac{\beta-1}{\beta-\alpha}
+    =
+    1-p.
+\end{equation}
+
+Let $G_m$ denote the cumulative distribution function of $\chi_m^2$, and define
+\begin{equation}
+    T_m
+    :=
+    \frac{\Gamma((m-1)/2)}
+    {\sqrt{2}\Gamma(m/2)}.
+\end{equation}
+A direct computation gives
+\begin{equation}
+    \mathbb E_{\chi_m^2}
+    \left[
+    \min
+    \left\{
+    1,\sqrt{\frac{s_0}{S_m}}
+    \right\}
+    \right]
+    =
+    G_m(s_0)
+    +
+    \sqrt{s_0}T_m
+    \left(1-G_{m-1}(s_0)\right).
+\end{equation}
+Therefore $s_0$ is chosen as the unique solution of
+\begin{equation}
+    \Psi(s_0)
+    =
+    1-p,
+\end{equation}
+where
+\begin{equation}
+    \Psi(s)
+    :=
+    G_m(s)
+    +
+    \sqrt{s}T_m
+    \left(1-G_{m-1}(s)\right).
+\end{equation}
+Since $\Psi(0)=0$, $\Psi(\infty)=1$, and $\Psi$ is monotone increasing, such $s_0$ exists and is unique.
+
+With this choice of $s_0$, the radial threshold potential satisfies
+\begin{equation}
+    \mathbb E[\nabla^2 V(z)] = I.
+\end{equation}
+Thus it is admissible in equilibrium-whitened coordinates.
+
+\section{The fourth-order trace mode}
+
+Now consider the normalized trace direction
+\begin{equation}
+    S_0=\frac{I}{\sqrt{N_\theta}}.
+\end{equation}
+Recall that
+\begin{equation}
+    B(S,S)
+    =
+    \mathbb E
+    \left[
+    (Sz)^\top (W(z)-I)(Sz)
+    \right].
+\end{equation}
+For $S_0=I/\sqrt{N_\theta}$,
+\begin{equation}
+    B(S_0,S_0)
+    =
+    \frac{1}{N_\theta}
+    \mathbb E
+    [
+    z^\top (W(z)-I)z
+    ].
+\end{equation}
+Since $W(z)$ has radial eigenvalue $r(s)$ in the direction $z$,
+\begin{equation}
+    z^\top W(z)z
+    =
+    r(s)\|z\|^2
+    =
+    r(s)s.
+\end{equation}
+Therefore
+\begin{equation}
+    B(S_0,S_0)
+    =
+    \frac{1}{N_\theta}
+    \mathbb E[(r(S)-1)S],
+    \qquad
+    S\sim \chi_{N_\theta}^2.
+\end{equation}
+By the standard size-bias identity for chi-square variables,
+\begin{equation}
+    \frac{1}{N_\theta}
+    \mathbb E_{\chi_{N_\theta}^2}[r(S)S]
+    =
+    \mathbb E_{\chi_{N_\theta+2}^2}[r(S)].
+\end{equation}
+Hence
+\begin{equation}
+    B(S_0,S_0)
+    =
+    \mathbb E_{\chi_{N_\theta+2}^2}[r(S)]-1.
+\end{equation}
+For the threshold profile,
+\begin{equation}
+    r(s)
+    =
+    \alpha \mathbf 1_{\{s\le s_0\}}
+    +
+    \beta \mathbf 1_{\{s>s_0\}},
+\end{equation}
+we obtain
+\begin{equation}
+    B(S_0,S_0)
+    =
+    \alpha G_m(s_0)
+    +
+    \beta(1-G_m(s_0))
+    -1.
+\end{equation}
+Equivalently,
+\begin{equation}
+    B(S_0,S_0)
+    =
+    (\beta-1)
+    -
+    (\beta-\alpha)G_m(s_0),
+    \qquad
+    m=N_\theta+2.
+\end{equation}
+
+Since
+\begin{equation}
+    \Lambda
+    =
+    \sup_{\|S\|_F=1}B(S,S),
+\end{equation}
+we have the lower bound
+\begin{equation}
+    \Lambda
+    \ge
+    B(S_0,S_0)
+    =
+    (\beta-1)
+    -
+    (\beta-\alpha)G_m(s_0).
+\end{equation}
+This is the key estimate.
+
+\section{Asymptotic growth of the trace mode}
+
+For fixed $\alpha,\beta$ with $0<\alpha<1<\beta$, the threshold $s_0$ is determined by
+\begin{equation}
+    \Psi(s_0)=1-p,
+    \qquad
+    p=\frac{1-\alpha}{\beta-\alpha}.
+\end{equation}
+As $N_\theta\to\infty$, the random variable
+\begin{equation}
+    S_m\sim \chi_m^2,
+    \qquad
+    m=N_\theta+2,
+\end{equation}
+concentrates around $m$. 
+Since
+\begin{equation}
+    \min\left\{1,\sqrt{\frac{s_0}{S_m}}\right\}
+\end{equation}
+is approximately $\sqrt{s_0/m}$ when $s_0<m$, the whitening condition heuristically gives
+\begin{equation}
+    \sqrt{\frac{s_0}{m}}
+    \approx
+    1-p.
+\end{equation}
+Thus
+\begin{equation}
+    \frac{s_0}{m}
+    \approx
+    (1-p)^2
+    <
+    1.
+\end{equation}
+Therefore $s_0$ lies a fixed fraction below the typical value of $\chi_m^2$. 
+Consequently,
+\begin{equation}
+    G_m(s_0)
+    =
+    \mathbb P(\chi_m^2\le s_0)
+    \to 0
+    \qquad
+    \text{as }
+    N_\theta\to\infty.
+\end{equation}
+It follows that
+\begin{equation}
+    B(S_0,S_0)
+    =
+    (\beta-1)
+    -
+    (\beta-\alpha)G_m(s_0)
+    \to
+    \beta-1.
+\end{equation}
+Therefore,
+\begin{equation}
+    \Lambda
+    \ge
+    B(S_0,S_0)
+    \to
+    \beta-1.
+\end{equation}
+If $\beta-1>D_\kappa-1$, then for all sufficiently large dimensions,
+\begin{equation}
+    \Lambda>D_\kappa-1.
+\end{equation}
+This contradicts the operator-norm conjecture
+\begin{equation}
+    \Lambda\le D_\kappa-1.
+\end{equation}
+
+\section{Explicit violation}
+
+Choose, for example,
+\begin{equation}
+    \alpha=\frac13,
+    \qquad
+    \beta=\frac{\kappa}{3}.
+\end{equation}
+Then
+\begin{equation}
+    \frac{\beta}{\alpha}=\kappa.
+\end{equation}
+
+For $\kappa=10^3$,
+\begin{equation}
+    D_\kappa-1
+    =
+    \left(4+\frac{4}{\sqrt{\pi}}\right)(1+\log 10^3)-1
+    \approx
+    48.48.
+\end{equation}
+At dimension $N_\theta=1024$, the radial threshold construction gives
+\begin{equation}
+    B(S_0,S_0)
+    \approx
+    57.23.
+\end{equation}
+Therefore,
+\begin{equation}
+    \Lambda
+    \ge
+    B(S_0,S_0)
+    \approx
+    57.23
+    >
+    48.48
+    \approx
+    D_\kappa-1.
+\end{equation}
+
+For $\kappa=10^4$, again with
+\begin{equation}
+    \alpha=\frac13,
+    \qquad
+    \beta=\frac{10^4}{3},
+    \qquad
+    N_\theta=1024,
+\end{equation}
+one obtains
+\begin{equation}
+    D_\kappa-1
+    \approx
+    62.88,
+\end{equation}
+whereas
+\begin{equation}
+    B(S_0,S_0)
+    \approx
+    82.58.
+\end{equation}
+Thus
+\begin{equation}
+    \Lambda
+    \ge
+    82.58
+    >
+    62.88
+    =
+    D_\kappa-1.
+\end{equation}
+Hence the conjectured operator-norm bound fails.
+
+\section{Why this does not contradict dimension-free local convergence}
+
+The above example is radial. 
+Therefore
+\begin{equation}
+    V(-z)=V(z).
+\end{equation}
+By symmetry, the mean-covariance coupling vanishes:
+\begin{equation}
+    T[X]
+    =
+    \mathbb E[
+    \Tr(XW(z))z
+    ]
+    =
+    0.
+\end{equation}
+Indeed, $W(z)$ is even in $z$, while $z$ is odd, so the integrand is odd.
+
+Therefore the linearized operator decouples into the mean block and covariance block:
+\begin{equation}
+    -J_\star(u,X)
+    =
+    \left(
+    u,
+    \,
+    X+\frac12 H[X]
+    \right).
+\end{equation}
+The mean block has contraction rate $1$. 
+The covariance block is controlled by the spectrum of $H$.
+
+For this radial family, $H$ has two relevant isotypic eigenvalues:
+\begin{enumerate}[label=(\roman*)]
+    \item the trace mode,
+    \begin{equation}
+        B_{\mathrm{tr}}
+        =
+        B\left(\frac{I}{\sqrt{N_\theta}},\frac{I}{\sqrt{N_\theta}}\right)
+        =
+        \mathbb E_{\chi_{N_\theta+2}^2}[r]-1;
+    \end{equation}
+    \item the traceless covariance mode,
+    \begin{equation}
+        c_{\mathrm{tl}}
+        =
+        2
+        \left(
+        \mathbb E_{\chi_{N_\theta+4}^2}[h]-1
+        \right).
+    \end{equation}
+\end{enumerate}
+
+The trace mode is precisely the mode used to make $\Lambda$ large. 
+But it is positive. 
+It is therefore a fast-contracting mode, not a slow mode.
+
+Moreover, $h$ is nondecreasing, and the whitening condition gives
+\begin{equation}
+    \mathbb E_{\chi_{N_\theta+2}^2}[h]=1.
+\end{equation}
+Since $\chi_{N_\theta+4}^2$ stochastically dominates $\chi_{N_\theta+2}^2$, we have
+\begin{equation}
+    \mathbb E_{\chi_{N_\theta+4}^2}[h]
+    \ge
+    \mathbb E_{\chi_{N_\theta+2}^2}[h]
+    =
+    1.
+\end{equation}
+Thus
+\begin{equation}
+    c_{\mathrm{tl}}\ge 0.
+\end{equation}
+Consequently,
+\begin{equation}
+    \lambda_{\min}(H)\ge 0.
+\end{equation}
+The local covariance-block rate is therefore at least $1$, and in the normalized convention,
+\begin{equation}
+    -\lambda_{\star,\max}
+    =
+    1.
+\end{equation}
+
+Thus the same example that violates
+\begin{equation}
+    \Lambda\le D_\kappa-1
+\end{equation}
+has maximal local convergence rate.
+
+This is the central point: the counterexample does not produce slow convergence. 
+Instead, it shows that $\Lambda$ is the wrong quantity to control. 
+The quantity $\Lambda$ measures the largest positive covariance curvature mode, which may correspond to fast contraction. 
+The slow rate is instead controlled by the bottom of the relevant linearized spectrum and by the mean-covariance coupling.
+
+\section{Interpretation}
+
+The operator-norm conjecture fails because it tries to control the largest eigenvalue of a fourth-order covariance operator:
+\begin{equation}
+    \Lambda=\sup_{\|S\|_F=1}B(S,S).
+\end{equation}
+But the local convergence rate is not determined by this largest eigenvalue alone. 
+A large positive value of $B(S,S)$ can make the flow faster in direction $S$. 
+Therefore bounding $\Lambda$ is a sufficient but structurally lossy strategy.
+
+The radial example concentrates the large value of $B(S,S)$ on the trace/volume mode. 
+This makes $\Lambda$ large, but does not slow down the flow. 
+Because the potential is symmetric, the dangerous mean-covariance coupling is absent.
+
+Therefore the correct conclusion is:
+\begin{equation}
+    \boxed{
+    \text{The conjecture } \Lambda\le D_\kappa-1 \text{ is false.}
+    }
+\end{equation}
+But also:
+\begin{equation}
+    \boxed{
+    \text{The dimension-free local-rate conjecture remains open.}
+    }
+\end{equation}
+The counterexample only rules out one proof strategy.
+
+\section{Revised conjectural direction}
+
+The failure of the $\Lambda$-bound suggests that the local rate should be controlled by a lower-order, coupling-sensitive quantity rather than by the fourth-order operator norm.
+
+A Hessian-only candidate is
+\begin{equation}
+    \tau_H
+    :=
+    \sup_{\substack{|w|=1\\ \|S\|_F=1}}
+    \left|
+    \mathbb E[
+    w^\top W(z)Sz
+    ]
+    \right|.
+\end{equation}
+Equivalently,
+\begin{equation}
+    \tau_H
+    =
+    \sup_{|w|=1}
+    \left\|
+    \mathbb E[
+    W(z)(w^\top z)
+    ]
+    \right\|_F.
+\end{equation}
+This quantity measures the first Hermite coefficient of the Hessian field $W(z)$. 
+It captures the mean-covariance coupling $T$, since
+\begin{equation}
+    T[X]
+    =
+    \mathbb E[
+    \Tr(XW(z))z
+    ].
+\end{equation}
+
+For radial even potentials,
+\begin{equation}
+    \tau_H=0,
+\end{equation}
+which correctly predicts that the counterexample should not slow the flow.
+
+A more plausible dimension-free conjecture is therefore the following.
+
+\begin{conjecture}[Hessian first-moment conjecture]
+Under the equilibrium-whitened assumptions
+\begin{equation}
+    \mathbb E[W(z)]=I,
+    \qquad
+    \alpha I\preceq W(z)\preceq \beta I,
+\end{equation}
+there exists a universal constant $C>0$ such that
+\begin{equation}
+    \tau_H
+    \le
+    C(1-\alpha)\sqrt{1+\log\kappa},
+\end{equation}
+or at least
+\begin{equation}
+    \tau_H^2
+    \le
+    C(1-\alpha)^2(1+\log\kappa),
+\end{equation}
+dimension-free in $N_\theta$.
+\end{conjecture}
+
+Such a bound would imply a fast dimension-free local rate of the form
+\begin{equation}
+    -\lambda_{\star,\max}
+    \gtrsim
+    \frac{1}{1+(1-\alpha)^2(1+\log\kappa)}.
+\end{equation}
+Unlike the false $\Lambda$-conjecture, this conjecture targets the part of the linearization that can genuinely slow down convergence: the coupling between the mean and covariance blocks.
+
+\section{Conclusion}
+
+The radial threshold construction gives a rigorous counterexample to the fourth-order operator-norm conjecture
+\begin{equation}
+    \Lambda\le D_\kappa-1.
+\end{equation}
+The construction is admissible because its Hessian eigenvalues lie in $[\alpha,\beta]$, and the threshold $s_0$ is chosen so that the equilibrium-whitened condition
+\begin{equation}
+    \mathbb E[\nabla^2 V(z)]=I
+\end{equation}
+holds. 
+In the normalized trace direction $S_0=I/\sqrt{N_\theta}$, the fourth-order form satisfies
+\begin{equation}
+    B(S_0,S_0)
+    =
+    (\beta-1)-(\beta-\alpha)G_{N_\theta+2}(s_0).
+\end{equation}
+As $N_\theta\to\infty$, this approaches $\beta-1$. 
+For parameter regimes such as
+\begin{equation}
+    \alpha=\frac13,
+    \qquad
+    \beta=\frac{\kappa}{3},
+\end{equation}
+this quantity exceeds
+\begin{equation}
+    D_\kappa-1
+    =
+    \left(4+\frac{4}{\sqrt{\pi}}\right)(1+\log\kappa)-1
+\end{equation}
+in sufficiently high dimension. 
+Hence
+\begin{equation}
+    \Lambda>D_\kappa-1,
+\end{equation}
+contradicting the proposed operator-norm conjecture.
+
+However, the construction is radial and even. 
+Therefore the mean-covariance coupling vanishes, the large trace mode is a fast mode, and the local convergence rate remains maximal:
+\begin{equation}
+    -\lambda_{\star,\max}=1.
+\end{equation}
+Thus the counterexample does not refute the dimension-free local-rate conjecture. 
+It shows that the proof strategy based on bounding the largest fourth-order covariance mode is too lossy. 
+The correct object should instead measure the mean-covariance coupling, for example through the Hessian first-moment quantity
+\begin{equation}
+    \tau_H
+    =
+    \sup_{\substack{|w|=1\\ \|S\|_F=1}}
+    \left|
+    \mathbb E[
+    w^\top \nabla^2 V(z)Sz
+    ]
+    \right|.
+\end{equation}
+The remaining open problem is to prove a dimension-free logarithmic bound on this coupling quantity under only the Hessian bounds and the whitening condition.
+
+\end{document}

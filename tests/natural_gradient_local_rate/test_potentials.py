@@ -92,7 +92,8 @@ def test_separable_uses_deterministic_LA():
     assert pot.metadata()["L_A_is_empirical"] is False
 
 
-@pytest.mark.parametrize("family", ["additive_index", "random_feature", "radial_tail"])
+@pytest.mark.parametrize("family", ["additive_index", "random_feature", "radial_tail",
+                                    "product_feature"])
 def test_coupled_families_empirical_LA(family):
     pot = build_potential(family, N_theta=5, kappa_target=5.0, seed=0,
                           centering_samples=4096, safety_factor=2.0)

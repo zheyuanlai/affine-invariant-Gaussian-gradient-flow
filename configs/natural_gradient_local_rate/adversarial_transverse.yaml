@@ -1,0 +1,41 @@
+# Adversarial transverse-coupling scan for the logarithmic local-rate conjecture.
+# This is a CPU-oriented search config, not production evidence.
+experiment:
+  name: natural_gradient_local_rate_adversarial_transverse
+
+grid:
+  N_theta: [4, 8, 12]
+  kappa_target: [10, 50, 100]
+  potential_family: ["product_feature", "random_feature", "additive_index", "radial_tail"]
+  seeds: [0, 1, 2]
+
+monte_carlo:
+  M_mc: 32768
+  antithetic: true
+  chunk_size: 2048
+
+eigsh:
+  tol: 1.0e-6
+  maxiter: 1000
+
+operator:
+  estimator: "symmetrized"
+  diagonal_benchmark: true
+  separable_exact_benchmark: true
+  compute_gamma_loc: true
+  backend: "numpy"
+  chunk_size: 2048
+  eigsh_tol: 1.0e-6
+  eigsh_maxiter: 1000
+  quadrature_nodes: 80
+
+potential:
+  feature_multiplier: 8
+  phi: "log_cosh"
+  empirical_LA_safety_factor: 2.0
+
+linearized_rate:
+  save_eigenvectors: true
+
+outputs:
+  base_dir: outputs/natural_gradient_local_rate

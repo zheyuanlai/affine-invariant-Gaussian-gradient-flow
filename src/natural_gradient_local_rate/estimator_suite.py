@@ -43,7 +43,7 @@ from src.natural_gradient_local_rate.operators import (
 )
 from src.natural_gradient_local_rate.linearized_rate import (
     estimate_lambda_hat, estimate_gamma_loc, estimate_diagonal_lambda,
-    RAW_DENSE_LIMIT,
+    estimate_tau_H, RAW_DENSE_LIMIT,
 )
 from src.natural_gradient_local_rate.separable_exact import separable_exact_lambda
 
@@ -152,6 +152,21 @@ def compute_row(potential, Z, point, opts=None, *, run_id="",
         "full_minus_diag": float("nan"),
         "diag_minus_exact": float("nan"),
         "full_sym_minus_exact": float("nan"),
+        "tau_H": float("nan"),
+        "tau_H_sq": float("nan"),
+        "coupling_bound_rate": float("nan"),
+        "tau_top_total": float("nan"),
+        "tau_top_longitudinal": float("nan"),
+        "tau_top_mixed": float("nan"),
+        "tau_top_transverse": float("nan"),
+        "tau_top_longitudinal_fraction": float("nan"),
+        "tau_top_mixed_fraction": float("nan"),
+        "tau_top_transverse_fraction": float("nan"),
+        "tau_top_X_longitudinal_norm_sq": float("nan"),
+        "tau_top_X_mixed_norm_sq": float("nan"),
+        "tau_top_X_transverse_norm_sq": float("nan"),
+        "tau_top_svd_gap": float("nan"),
+        "gamma_over_coupling_bound": float("nan"),
         "gamma_loc": float("nan"),
         "inverse_gamma_loc": float("nan"),
         "self_adjoint_error_H_raw": float("nan"),
@@ -213,6 +228,27 @@ def compute_row(potential, Z, point, opts=None, *, run_id="",
         row["diag_minus_exact"] = _safe_diff(row["Lambda_hat_diag"], row["Lambda_hat_separable_exact"])
         row["full_sym_minus_exact"] = _safe_diff(row["Lambda_hat_full_sym"], row["Lambda_hat_separable_exact"])
 
+        # --- first-Hermite coupling tau_H (the revised rate-control target) ---
+        tau = estimate_tau_H(potential, Zbank, chunk_size=cs)
+        row["tau_H"] = tau["tau_H"]
+        row["tau_H_sq"] = tau["tau_H_sq"]
+        row["coupling_bound_rate"] = tau["coupling_bound_rate"]
+        for k in (
+            "tau_top_total",
+            "tau_top_longitudinal",
+            "tau_top_mixed",
+            "tau_top_transverse",
+            "tau_top_longitudinal_fraction",
+            "tau_top_mixed_fraction",
+            "tau_top_transverse_fraction",
+            "tau_top_X_longitudinal_norm_sq",
+            "tau_top_X_mixed_norm_sq",
+            "tau_top_X_transverse_norm_sq",
+            "tau_top_svd_gap",
+        ):
+            if k in tau:
+                row[k] = tau[k]
+
         # --- local rate gamma_loc (always via H_sym + Fisher--Rao metric) ---
         if o["compute_gamma_loc"]:
             gamma, (u_star, X_star) = estimate_gamma_loc(
@@ -230,6 +266,8 @@ def compute_row(potential, Z, point, opts=None, *, run_id="",
             row["eig_residual_L_star"] = float(resid)
             row["_u_star"] = u_star
             row["_X_star"] = X_star
+            row["gamma_over_coupling_bound"] = _safe_ratio(
+                row["gamma_loc"], row["coupling_bound_rate"])
 
         # --- reference / headline bookkeeping ---
         headline = (row["Lambda_hat_raw_forward"] if o["estimator"] == "raw_forward"

@@ -49,7 +49,7 @@ _SQRT2 = math.sqrt(2.0)
 # Potential families the torch backend can reconstruct analytically.
 TORCH_SUPPORTED_FAMILIES = (
     "gaussian", "separable", "additive_index", "ridge_sum",
-    "random_feature", "radial_tail",
+    "random_feature", "radial_tail", "product_feature",
 )
 # Raw-forward eigenvalue (non-symmetric) is a CPU-style diagnostic; on GPU we
 # only compute it for small operators to keep production sweeps fast.
@@ -110,6 +110,15 @@ def _phi_second_derivative(name):
         return lambda s: 1.0 - torch.tanh(s) ** 2   # sech^2
     raise NotImplementedError(
         f"torch backend only supports the 'log_cosh' nonlinearity, got {name!r}")
+
+
+def _tanh_product_derivatives(x):
+    """Return ``tanh(x)``, first derivative and second derivative on torch tensors."""
+    torch = get_torch()
+    f = torch.tanh(x)
+    fp = 1.0 - f * f
+    fpp = -2.0 * f * fp
+    return f, fp, fpp
 
 
 class _TorchPotential:
@@ -227,6 +236,39 @@ class TorchRadialTailPotential(_TorchPotential):
         return 0.5 * (H + H.transpose(-1, -2))
 
 
+class TorchProductFeaturePotential(_TorchPotential):
+    """Centered product-feature potential used for transverse-coupling searches."""
+
+    def __init__(self, N_theta, rho, M, W, V, c, d, coeff, device, dtype):
+        self.N_theta = int(N_theta)
+        self.device = device
+        self.dtype = dtype
+        self.rho = float(rho)
+        self.M = _to_t(M, device, dtype)
+        self.W = _to_t(W, device, dtype)
+        self.V = _to_t(V, device, dtype)
+        self.c = _to_t(c, device, dtype).reshape(-1)
+        self.d = _to_t(d, device, dtype).reshape(-1)
+        self.coeff = _to_t(coeff, device, dtype).reshape(-1)
+        self._I = get_torch().eye(self.N_theta, device=device, dtype=dtype)
+
+    def batch_hess(self, theta_batch):
+        torch = get_torch()
+        T = theta_batch
+        s = T @ self.W.T + self.c
+        t = T @ self.V.T + self.d
+        fs, fps, fpps = _tanh_product_derivatives(s)
+        ft, fpt, fppt = _tanh_product_derivatives(t)
+        c = self.coeff.reshape(1, -1)
+        ww = torch.einsum("br,ri,rj->bij", c * fpps * ft, self.W, self.W)
+        vv = torch.einsum("br,ri,rj->bij", c * fs * fppt, self.V, self.V)
+        wv = torch.einsum("br,ri,rj->bij", c * fps * fpt, self.W, self.V)
+        vw = torch.einsum("br,ri,rj->bij", c * fps * fpt, self.V, self.W)
+        hphi = ww + vv + wv + vw
+        H = self._I + self.rho * (hphi - self.M)
+        return 0.5 * (H + H.transpose(-1, -2))
+
+
 def torch_potential_from_cpu(cpu_pot, device, dtype):
     """Build a torch potential by copying parameters from a CPU potential object."""
     # Imported here to avoid any import-time coupling; these are NumPy-only.
@@ -235,6 +277,7 @@ def torch_potential_from_cpu(cpu_pot, device, dtype):
     )
     from src.natural_gradient_local_rate.potentials.additive_index import RidgeSumFeature
     from src.natural_gradient_local_rate.potentials.radial_tail import RadialTailPotential
+    from src.natural_gradient_local_rate.potentials.product_feature import ProductFeaturePotential
 
     if isinstance(cpu_pot, GaussianPotential):
         return TorchGaussianPotential(cpu_pot.N_theta, device, dtype)
@@ -252,9 +295,14 @@ def torch_potential_from_cpu(cpu_pot, device, dtype):
             return TorchRadialTailPotential(
                 cpu_pot.N_theta, cpu_pot.rho, cpu_pot.M, raw.scale, raw.shift,
                 raw.phi_name, device, dtype)
+        if isinstance(raw, ProductFeaturePotential):
+            return TorchProductFeaturePotential(
+                cpu_pot.N_theta, cpu_pot.rho, cpu_pot.M, raw.W, raw.V, raw.c,
+                raw.d, raw.coeff, device, dtype)
         raise NotImplementedError(
             f"torch backend does not support raw feature {type(raw).__name__!r} "
-            "(supported: SeparablePotential, RidgeSumFeature, RadialTailPotential). "
+            "(supported: SeparablePotential, RidgeSumFeature, RadialTailPotential, "
+            "ProductFeaturePotential). "
             "Use backend='numpy'.")
     raise NotImplementedError(
         f"torch backend does not support potential {type(cpu_pot).__name__!r}.")
@@ -393,11 +441,48 @@ class _TorchRadialRaw(_TorchRawFeature):
                 + 4.0 * hpp[:, None, None] * outer)         # (B, N, N)
 
 
+class _TorchProductRaw(_TorchRawFeature):
+    """Raw product feature: ``sum coeff tanh(Wz+c) tanh(Vz+d)``."""
+
+    def __init__(self, N_theta, W, V, c, d, coeff, device, dtype):
+        self.N_theta = int(N_theta)
+        self.W = _to_t(W, device, dtype)
+        self.V = _to_t(V, device, dtype)
+        self.c = _to_t(c, device, dtype).reshape(-1)
+        self.d = _to_t(d, device, dtype).reshape(-1)
+        self.coeff = _to_t(coeff, device, dtype).reshape(-1)
+
+    def _pre(self, Zc):
+        s = Zc @ self.W.T + self.c
+        t = Zc @ self.V.T + self.d
+        fs, fps, fpps = _tanh_product_derivatives(s)
+        ft, fpt, fppt = _tanh_product_derivatives(t)
+        return fs, fps, fpps, ft, fpt, fppt
+
+    def grad_phi_sum(self, Zc):
+        fs, fps, _, ft, fpt, _ = self._pre(Zc)
+        c = self.coeff.reshape(1, -1)
+        grad = (fps * ft * c) @ self.W + (fs * fpt * c) @ self.V
+        return grad.sum(dim=0)
+
+    def hess_phi_batch(self, Zc):
+        torch = get_torch()
+        fs, fps, fpps, ft, fpt, fppt = self._pre(Zc)
+        c = self.coeff.reshape(1, -1)
+        ww = torch.einsum("br,ri,rj->bij", c * fpps * ft, self.W, self.W)
+        vv = torch.einsum("br,ri,rj->bij", c * fs * fppt, self.V, self.V)
+        wv = torch.einsum("br,ri,rj->bij", c * fps * fpt, self.W, self.V)
+        vw = torch.einsum("br,ri,rj->bij", c * fps * fpt, self.V, self.W)
+        H = ww + vv + wv + vw
+        return 0.5 * (H + H.transpose(-1, -2))
+
+
 def _torch_raw_feature_from_cpu(raw, device, dtype):
     """Build the on-device raw-feature evaluator from a NumPy raw feature."""
     from src.natural_gradient_local_rate.potentials import SeparablePotential
     from src.natural_gradient_local_rate.potentials.additive_index import RidgeSumFeature
     from src.natural_gradient_local_rate.potentials.radial_tail import RadialTailPotential
+    from src.natural_gradient_local_rate.potentials.product_feature import ProductFeaturePotential
     if isinstance(raw, SeparablePotential):
         return _TorchSeparableRaw(raw.N_theta, raw.c, raw.phi_name, device, dtype)
     if isinstance(raw, RidgeSumFeature):
@@ -406,6 +491,9 @@ def _torch_raw_feature_from_cpu(raw, device, dtype):
     if isinstance(raw, RadialTailPotential):
         return _TorchRadialRaw(raw.N_theta, raw.scale, raw.shift, raw.phi_name,
                                device, dtype)
+    if isinstance(raw, ProductFeaturePotential):
+        return _TorchProductRaw(raw.N_theta, raw.W, raw.V, raw.c, raw.d,
+                                raw.coeff, device, dtype)
     raise NotImplementedError(
         f"GPU centering does not support raw feature {type(raw).__name__!r}.")
 
@@ -802,6 +890,49 @@ def _residual(Mt, w, v):
     return float((torch.linalg.norm(Mt @ v - w * v) / max(1.0, abs(float(w)))).item())
 
 
+def _torch_decompose_T_top_mode(T_mat, N):
+    """Torch analogue of the top-``T`` longitudinal/mixed/transverse split."""
+    torch = get_torch()
+    U, S, Vh = torch.linalg.svd(T_mat, full_matrices=False)
+    if S.numel() == 0:
+        return {}
+    w = U[:, 0]
+    X = torch_vec_to_sym(Vh[0, :], N)
+    a = w @ (X @ w)
+    b = X @ w - a * w
+    ww = torch.outer(w, w)
+    X_long = a * ww
+    X_mixed = torch.outer(w, b) + torch.outer(b, w)
+    B = 0.5 * (X - X_long - X_mixed + (X - X_long - X_mixed).T)
+
+    def contribution(Y):
+        return w @ (T_mat @ torch_sym_to_vec(Y))
+
+    total = contribution(X)
+    long = contribution(X_long)
+    mixed = contribution(X_mixed)
+    trans = contribution(B)
+    denom = float(total.item())
+    use_fraction = abs(denom) > 1e-14
+
+    def frac(value):
+        return float((value / total).item()) if use_fraction else float("nan")
+
+    return {
+        "tau_top_total": denom,
+        "tau_top_longitudinal": float(long.item()),
+        "tau_top_mixed": float(mixed.item()),
+        "tau_top_transverse": float(trans.item()),
+        "tau_top_longitudinal_fraction": frac(long),
+        "tau_top_mixed_fraction": frac(mixed),
+        "tau_top_transverse_fraction": frac(trans),
+        "tau_top_X_longitudinal_norm_sq": float((a * a).item()),
+        "tau_top_X_mixed_norm_sq": float((2.0 * (b @ b)).item()),
+        "tau_top_X_transverse_norm_sq": float((torch.linalg.norm(B) ** 2).item()),
+        "tau_top_svd_gap": float((S[0] - (S[1] if S.numel() > 1 else torch.zeros((), device=S.device, dtype=S.dtype))).item()),
+    }
+
+
 def torch_estimate_lambda_hat_dense(pot_t, Z, chunk_size=None, basis_block_size=None):
     """Largest eigenvalue of dense ``H_sym`` with its eigen-residual."""
     torch = get_torch()
@@ -879,6 +1010,11 @@ def torch_operator_estimates(pot_t, Z, *, chunk_size=None, basis_block_size=None
     out["torch_accumulation_mode"] = mode
     G, T_mat, A = _accumulate_dense(pot_t, Z, chunk_size, mode=mode)
     H_sym = 0.5 * (G + G.T)
+    tau_sq = torch.clamp(torch.linalg.eigvalsh(T_mat @ T_mat.T)[-1], min=0.0)
+    out["tau_H_sq"] = float(tau_sq.item())
+    out["tau_H"] = float(torch.sqrt(tau_sq).item())
+    out["coupling_bound_rate"] = float((1.0 / (tau_sq + 3.0)).item())
+    out.update(_torch_decompose_T_top_mode(T_mat, N))
     L = torch.zeros((D, D), device=Z.device, dtype=Z.dtype)
     L[:N, :N] = torch.eye(N, device=Z.device, dtype=Z.dtype)
     L[:N, N:] = T_mat / _SQRT2
@@ -1009,6 +1145,21 @@ def compute_row_torch(cpu_potential, Z, point, opts, *, run_id="",
         "full_minus_diag": float("nan"),
         "diag_minus_exact": float("nan"),
         "full_sym_minus_exact": float("nan"),
+        "tau_H": float("nan"),
+        "tau_H_sq": float("nan"),
+        "coupling_bound_rate": float("nan"),
+        "tau_top_total": float("nan"),
+        "tau_top_longitudinal": float("nan"),
+        "tau_top_mixed": float("nan"),
+        "tau_top_transverse": float("nan"),
+        "tau_top_longitudinal_fraction": float("nan"),
+        "tau_top_mixed_fraction": float("nan"),
+        "tau_top_transverse_fraction": float("nan"),
+        "tau_top_X_longitudinal_norm_sq": float("nan"),
+        "tau_top_X_mixed_norm_sq": float("nan"),
+        "tau_top_X_transverse_norm_sq": float("nan"),
+        "tau_top_svd_gap": float("nan"),
+        "gamma_over_coupling_bound": float("nan"),
         "gamma_loc": float("nan"),
         "inverse_gamma_loc": float("nan"),
         "self_adjoint_error_H_raw": float("nan"),
@@ -1055,6 +1206,8 @@ def compute_row_torch(cpu_potential, Z, point, opts, *, run_id="",
         if np.isfinite(row["gamma_loc"]):
             row["inverse_gamma_loc"] = (1.0 / row["gamma_loc"]
                                         if row["gamma_loc"] != 0.0 else float("inf"))
+            row["gamma_over_coupling_bound"] = _safe_ratio(
+                row["gamma_loc"], row["coupling_bound_rate"])
 
         # separable exact via the cheap CPU quadrature on the CPU potential
         if bool(opts.get("separable_exact_benchmark", True)):

@@ -20,7 +20,10 @@ from src.natural_gradient_local_rate import torch_backend as tb
 from src.natural_gradient_local_rate.estimator_suite import compute_row
 
 _CPU = "cpu"
-PRODUCTION_FAMILIES = ["separable", "additive_index", "random_feature", "radial_tail"]
+PRODUCTION_FAMILIES = [
+    "separable", "additive_index", "random_feature", "radial_tail",
+    "product_feature",
+]
 TORCH_FAMILIES = ["gaussian"] + PRODUCTION_FAMILIES
 
 
@@ -80,12 +83,16 @@ def test_compute_row_torch_matches_numpy_row(fam):
     r_t = compute_row(cpu, Z, point, opts_t)
     assert r_np["status"] == "ok" and r_t["status"] == "ok"
     assert r_t["backend"] == "torch" and r_np["backend"] == "numpy"
-    for key in ["Lambda_hat_full_sym", "Lambda_hat_diag", "gamma_loc",
+    for key in ["Lambda_hat_full_sym", "Lambda_hat_diag", "tau_H_sq", "gamma_loc",
                 "Lambda_hat_separable_exact"]:
         a, b = r_np[key], r_t[key]
         if np.isnan(a) and np.isnan(b):
             continue
         assert b == pytest.approx(a, abs=1e-7), f"{key}: numpy={a} torch={b}"
+    if r_np["tau_top_svd_gap"] > 1e-8:
+        for key in ["tau_top_total", "tau_top_longitudinal", "tau_top_mixed",
+                    "tau_top_transverse"]:
+            assert r_t[key] == pytest.approx(r_np[key], abs=1e-7), key
     # self-adjointness diagnostics near machine precision on both paths
     assert r_t["self_adjoint_error_H_sym"] < 1e-9
     assert r_t["self_adjoint_error_L_star"] < 1e-9

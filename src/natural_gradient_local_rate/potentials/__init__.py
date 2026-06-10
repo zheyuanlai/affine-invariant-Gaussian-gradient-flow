@@ -15,9 +15,13 @@ from src.natural_gradient_local_rate.potentials.additive_index import (
 )
 from src.natural_gradient_local_rate.potentials.random_feature import RandomFeaturePotential
 from src.natural_gradient_local_rate.potentials.radial_tail import RadialTailPotential
+from src.natural_gradient_local_rate.potentials.product_feature import ProductFeaturePotential
 
 # Families that go through the centered-feature construction (exclude "gaussian").
-FEATURE_FAMILIES = ["separable", "additive_index", "random_feature", "radial_tail"]
+FEATURE_FAMILIES = [
+    "separable", "additive_index", "random_feature", "radial_tail",
+    "product_feature",
+]
 ALL_FAMILIES = ["gaussian"] + FEATURE_FAMILIES
 
 
@@ -48,6 +52,11 @@ def build_raw_feature(family, N_theta, seed, *, feature_multiplier=4,
     if family == "radial_tail":
         return RadialTailPotential(N_theta, seed=seed,
                                    scale=radial_scale, shift=radial_shift, phi=phi)
+    if family == "product_feature":
+        r = additive_r if additive_r is not None else feature_multiplier * N_theta
+        return ProductFeaturePotential(N_theta, r=r, seed=seed,
+                                       feature_multiplier=feature_multiplier,
+                                       feature_scale=feature_scale)
     raise ValueError(f"unknown potential family '{family}', have {ALL_FAMILIES}")
 
 
@@ -88,6 +97,6 @@ def build_potential(family, N_theta, kappa_target, seed, *,
 __all__ = [
     "BasePotential", "GaussianPotential", "CenteredPotential", "RawFeaturePotential",
     "SeparablePotential", "AdditiveIndexPotential", "RandomFeaturePotential",
-    "RadialTailPotential", "RidgeSumFeature", "get_nonlinearity",
+    "RadialTailPotential", "ProductFeaturePotential", "RidgeSumFeature", "get_nonlinearity",
     "build_potential", "build_raw_feature", "FEATURE_FAMILIES", "ALL_FAMILIES",
 ]

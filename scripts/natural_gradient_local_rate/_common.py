@@ -20,7 +20,7 @@ from src.natural_gradient_local_rate.estimator_suite import (
 
 FAMILY_CODE = {
     "gaussian": 0, "separable": 1, "additive_index": 2,
-    "random_feature": 3, "radial_tail": 4,
+    "random_feature": 3, "radial_tail": 4, "product_feature": 5,
 }
 
 _BANK_BASE = 20260603  # fixed base so banks are reproducible across stages
@@ -34,7 +34,13 @@ REQUIRED_COLUMNS = [
     "kappa_target", "rho", "M_mc", "operator_estimator", "backend", "chunk_size",
     "Lambda_hat_raw_forward", "Lambda_hat_full_sym", "Lambda_hat_diag",
     "Lambda_hat_separable_exact", "full_over_diag", "full_minus_diag",
-    "diag_minus_exact", "gamma_loc", "inverse_gamma_loc",
+    "diag_minus_exact", "tau_H", "tau_H_sq", "coupling_bound_rate",
+    "tau_top_total", "tau_top_longitudinal", "tau_top_mixed",
+    "tau_top_transverse", "tau_top_longitudinal_fraction",
+    "tau_top_mixed_fraction", "tau_top_transverse_fraction",
+    "tau_top_X_longitudinal_norm_sq", "tau_top_X_mixed_norm_sq",
+    "tau_top_X_transverse_norm_sq", "tau_top_svd_gap",
+    "gamma_over_coupling_bound", "gamma_loc", "inverse_gamma_loc",
     "self_adjoint_error_H_raw", "self_adjoint_error_H_sym",
     "self_adjoint_error_L_star", "eig_residual_H", "eig_residual_L_star",
     "current_bound_rate", "conjecture_bound_rate", "lambda_over_logkappa",
@@ -105,6 +111,10 @@ def add_backend_cli_args(parser):
     parser.add_argument("--explicit-dense-max-N-theta", type=int, default=None,
                         dest="explicit_dense_max_N_theta",
                         help="Override operator.explicit_dense_max_N_theta (torch dense path)")
+    parser.add_argument("--num-shards", type=int, default=1,
+                        help="Split grid points into this many deterministic shards")
+    parser.add_argument("--shard-index", type=int, default=0,
+                        help="Run only this zero-based shard index")
     return parser
 
 
@@ -137,6 +147,26 @@ def grid_points(cfg):
             "family": str(fam),
             "seed": int(seed),
         }
+
+
+def apply_grid_shard(points, args):
+    """Return the deterministic shard of ``points`` selected by CLI args."""
+    num = int(getattr(args, "num_shards", 1))
+    idx = int(getattr(args, "shard_index", 0))
+    if num <= 0:
+        raise ValueError(f"--num-shards must be positive, got {num}")
+    if idx < 0 or idx >= num:
+        raise ValueError(f"--shard-index must be in [0, {num}), got {idx}")
+    if num == 1:
+        return list(points)
+    return [pt for k, pt in enumerate(points) if k % num == idx]
+
+
+def shard_suffix(args):
+    """Filesystem suffix for sharded outputs, or empty string for unsharded runs."""
+    num = int(getattr(args, "num_shards", 1))
+    idx = int(getattr(args, "shard_index", 0))
+    return "" if num == 1 else f"_shard{idx:02d}-of-{num:02d}"
 
 
 def point_key(point):

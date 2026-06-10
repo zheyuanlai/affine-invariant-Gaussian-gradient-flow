@@ -16,10 +16,10 @@ from __future__ import annotations
 import numpy as np
 from scipy.sparse.linalg import LinearOperator, eigsh
 
-from src.common.symspace import vec_to_sym
+from src.common.symspace import sym_norm, sym_to_vec, vec_to_sym
 from src.natural_gradient_local_rate.operators import (
     make_H_linear_operator, make_H_forward_operator, make_L_star_operator,
-    diagonal_A_matrix, unpack_weighted_eigenvector,
+    diagonal_A_matrix, T_matrix, unpack_weighted_eigenvector,
 )
 
 # Operators with dimension <= this are diagonalized densely (exact, robust).
@@ -134,6 +134,87 @@ def estimate_diagonal_lambda(potential, Z, chunk_size=None):
         "max_diag": float(np.max(np.diag(A))),
         "A": A,
     }
+
+
+def _decompose_T_top_mode(Tmat, N):
+    """Decompose the top ``T`` singular mode into longitudinal/mixed/transverse blocks.
+
+    For the top singular pair ``T[X] = tau_H w`` with ``||w||=||X||_F=1``, write
+
+        ``X = a ww^T + wb^T + bw^T + B``, with ``b perpendicular to w`` and
+        ``Bw = 0``.
+
+    The returned contributions are the three summands of ``w^T T[X]``. They are
+    diagnostic only: a large transverse contribution is the numerically relevant
+    signal for the hard analytic subproblem in the manuscript.
+    """
+    if Tmat.size == 0:
+        return {}
+    U, S, Vt = np.linalg.svd(Tmat, full_matrices=False)
+    if S.size == 0:
+        return {}
+    tau = float(S[0])
+    w = U[:, 0]
+    X = vec_to_sym(Vt[0, :], N)
+    a = float(w @ X @ w)
+    b = X @ w - a * w
+    B = X - a * np.outer(w, w) - np.outer(w, b) - np.outer(b, w)
+    B = 0.5 * (B + B.T)
+
+    X_long = a * np.outer(w, w)
+    X_mixed = np.outer(w, b) + np.outer(b, w)
+
+    def contribution(Y):
+        return float(w @ (Tmat @ sym_to_vec(Y)))
+
+    total = contribution(X)
+    denom = total if abs(total) > 1e-14 else np.nan
+    long = contribution(X_long)
+    mixed = contribution(X_mixed)
+    trans = contribution(B)
+    return {
+        "tau_top_total": total,
+        "tau_top_longitudinal": long,
+        "tau_top_mixed": mixed,
+        "tau_top_transverse": trans,
+        "tau_top_longitudinal_fraction": float(long / denom) if np.isfinite(denom) else float("nan"),
+        "tau_top_mixed_fraction": float(mixed / denom) if np.isfinite(denom) else float("nan"),
+        "tau_top_transverse_fraction": float(trans / denom) if np.isfinite(denom) else float("nan"),
+        "tau_top_X_longitudinal_norm_sq": float(a * a),
+        "tau_top_X_mixed_norm_sq": float(2.0 * (b @ b)),
+        "tau_top_X_transverse_norm_sq": float(sym_norm(B) ** 2),
+        "tau_top_svd_gap": float(tau - (float(S[1]) if S.size > 1 else 0.0)),
+    }
+
+
+def estimate_tau_H(potential, Z, chunk_size=None):
+    """Estimate the Hessian first-Hermite coupling ``tau_H = ||T||_op``.
+
+    ``T`` is represented in Frobenius-isometric coordinates on ``Sym(N)``:
+
+        ``T_mat @ sym_to_vec(X) = E[Tr(X Hess V(Z)) Z]``.
+
+    The equivalent adjoint form is
+
+        ``tau_H = sup_{||w||=1} ||E[Hess V(Z) (w^T Z)]||_F``.
+
+    Returns a dict containing ``tau_H``, ``tau_H_sq`` and the deterministic
+    coupling-only rate bound ``1 / (tau_H_sq + 3)`` from the revised
+    Schur-complement reduction.
+    """
+    Tmat = T_matrix(potential, Z, chunk_size=chunk_size)
+    # The nonzero singular values of T are the square-roots of eig(T T^T);
+    # this is only N x N, so dense eigvalsh is cheap and stable.
+    gram = Tmat @ Tmat.T
+    tau_sq = max(0.0, float(np.linalg.eigvalsh(0.5 * (gram + gram.T))[-1]))
+    out = {
+        "tau_H": float(np.sqrt(tau_sq)),
+        "tau_H_sq": tau_sq,
+        "coupling_bound_rate": 1.0 / (tau_sq + 3.0),
+        "T_matrix": Tmat,
+    }
+    out.update(_decompose_T_top_mode(Tmat, potential.N_theta))
+    return out
 
 
 def estimate_gamma_loc(potential, Z, eigsh_tol=1e-6, eigsh_maxiter=1000,

@@ -33,6 +33,8 @@ from src.common.symspace import (
     sym_inner, random_symmetric, pack_tangent_fr, unpack_tangent_fr,
 )
 
+_SQRT2 = np.sqrt(2.0)
+
 
 # ---------------------------------------------------------------------------
 # Low-level applications on an explicit (hess_batch, Z)
@@ -73,6 +75,24 @@ def apply_H_lin_adjoint(X, hess_batch, Z):
 def apply_H_sym(X, hess_batch, Z):
     """Self-adjoint estimator ``0.5 (H_lin + H_lin*)[X]``."""
     return 0.5 * (apply_H_lin(X, hess_batch, Z) + apply_H_lin_adjoint(X, hess_batch, Z))
+
+
+def sym_to_vec_batch(H):
+    """Vectorize a batch of symmetric matrices with Frobenius-isometric scaling.
+
+    Returns an array ``(M, sym_dim(N))`` matching
+    :func:`src.common.symspace.sym_to_vec` row by row. The Hessian batches used
+    by the operator estimators are already symmetric up to round-off; we
+    symmetrize the selected entries for robustness.
+    """
+    H = np.asarray(H, dtype=np.float64)
+    N = H.shape[1]
+    rows, cols = np.triu_indices(N)
+    V = 0.5 * (H[:, rows, cols] + H[:, cols, rows])
+    offdiag = rows != cols
+    V = V.astype(np.float64, copy=True)
+    V[:, offdiag] *= _SQRT2
+    return V
 
 
 # ---------------------------------------------------------------------------
@@ -155,6 +175,21 @@ def _diagonal_A_from_bank(bank):
         Z2m1 = Zc * Zc - 1.0                     # (c, N): Z_j[k]^2 - 1
         A += diagH.T @ Z2m1                      # sum_j diagH[j,i] * Z2m1[j,k]
     return A / M
+
+
+def _T_matrix_from_bank(bank):
+    """Dense matrix of ``T: Sym(N) -> R^N`` in Frobenius-isometric coordinates.
+
+    If ``x = sym_to_vec(X)``, then ``T_mat @ x == T[X]``. Its spectral norm is
+    the Hessian first-Hermite coupling ``tau_H`` used in the revised
+    dimension-free local-rate route.
+    """
+    N, M = bank.N, bank.M
+    T_mat = np.zeros((N, sym_dim(N)), dtype=np.float64)
+    for Zc, Hc in bank.chunks():
+        Vw = sym_to_vec_batch(Hc)
+        T_mat += Zc.T @ Vw
+    return T_mat / M
 
 
 def _lstar_from_bank(bank, u, X):
@@ -249,6 +284,13 @@ def diagonal_A_matrix(potential, Z, chunk_size=None, max_precompute_bytes=2e9):
     bank = HessianBank(potential, Z, chunk_size=chunk_size,
                        max_precompute_bytes=max_precompute_bytes)
     return _diagonal_A_from_bank(bank)
+
+
+def T_matrix(potential, Z, chunk_size=None, max_precompute_bytes=2e9):
+    """Dense Frobenius-coordinate matrix for the mean-covariance coupling ``T``."""
+    bank = HessianBank(potential, Z, chunk_size=chunk_size,
+                       max_precompute_bytes=max_precompute_bytes)
+    return _T_matrix_from_bank(bank)
 
 
 def make_L_star_operator(potential, Z, covariance_weight="half",
