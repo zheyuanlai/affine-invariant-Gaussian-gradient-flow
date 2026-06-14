@@ -53,6 +53,7 @@ ENV/
 
 # Local specs/manuscript sources (not tracked)
 docs/
+local-convergence/
 
 *.json
 *.npz

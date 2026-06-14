@@ -9,10 +9,12 @@ Final inputs
 * omega/tau flows :  ``outputs/gaussian_grid/{summary,results_long}.csv``
                      ``outputs/logconcave_grid/{summary,results_long}.csv``
 * local rate      :  ``outputs/natural_gradient_local_rate/operator_grid/results_long.csv``
+* nonconvex instab:  ``outputs/natural_gradient_nonconvex_instability/*.csv``
 
 Usage
 -----
     python reports/make_report_assets.py [--repo-root .]
+    python reports/make_report_assets.py --only nonconvex_instability
 
 Outputs
 -------
@@ -51,6 +53,7 @@ GAUSS_DIR = os.path.join(_ROOT, "outputs", "gaussian_grid")
 LOGC_DIR = os.path.join(_ROOT, "outputs", "logconcave_grid")
 LR_DIR = os.path.join(_ROOT, "outputs", "natural_gradient_local_rate")
 WFR_DIR = os.path.join(_ROOT, "outputs", "wfr_gradient_flow")
+NONCONVEX_DIR = os.path.join(_ROOT, "outputs", "natural_gradient_nonconvex_instability")
 
 # WFR display order / labels.
 WFR_TARGET_ORDER = ["gaussian", "smooth_log_cosh"]
@@ -1106,11 +1109,35 @@ def build_wfr_assets():
     _tab_wfr_metadata(metadata)
 
 
+# ===========================================================================
+# natural-gradient nonconvex instability
+# ===========================================================================
+
+def build_nonconvex_instability_assets():
+    """Figures + table for the nonconvex-instability report."""
+    print("natural-gradient nonconvex instability:")
+    from src.natural_gradient_nonconvex_instability.plotting import (
+        build_all_figures,
+        summary_table_tex,
+    )
+
+    long_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "results_long.csv"))
+    summary_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "summary.csv"))
+    kl_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "kl_pole_summary.csv"))
+    bw_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "wasserstein_bound_summary.csv"))
+    build_all_figures(long_df, kl_df, bw_df, FIGS)
+    _write_table("tab_nonconvex_summary.tex",
+                 summary_table_tex(summary_df, kl_df, bw_df))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--repo-root", default=_ROOT)
     p.add_argument("--only",
-                   choices=["omega_tau", "local_rate", "discretization", "wfr"],
+                   choices=[
+                       "omega_tau", "local_rate", "discretization", "wfr",
+                       "nonconvex_instability",
+                   ],
                    default=None, help="Build only one group's assets.")
     args = p.parse_args()
     os.makedirs(FIGS, exist_ok=True)
@@ -1120,6 +1147,7 @@ def main():
         "local_rate": build_local_rate_assets,
         "discretization": build_discretization_assets,
         "wfr": build_wfr_assets,
+        "nonconvex_instability": build_nonconvex_instability_assets,
     }
     selected = [args.only] if args.only else list(builders)
     failures = []

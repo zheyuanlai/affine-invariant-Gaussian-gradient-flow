@@ -1,0 +1,161 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+
+\title{Nonconvex Instability of Fisher--Rao Gaussian Discretizations\\
+and Running-Minimum Bures--Wasserstein Stationarity}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We construct deterministic one-dimensional Gaussian experiments for the smooth
+non-log-concave target
+\[
+V_R(x)=\frac12 x^2-2R^2\log\cosh(x/R),
+\qquad -1\leq V_R''(x)\leq 1 .
+\]
+Although the Hessian is globally bounded, the two Gaussian Fisher--Rao
+covariance discretizations can generate very large trajectory-wise
+Fisher--Rao gradient norms. The Riemannian exponential covariance step undergoes
+a negative-curvature cascade from $c_0=1$, while the KL/Bregman covariance step
+has a pole near the loss of positive definiteness. In contrast, the
+Bures--Wasserstein forward--backward step is evaluated through the
+running-minimum Bures--Wasserstein gradient norm, the quantity appearing in the
+nonconvex stationarity theory. The experiment is numerical evidence for the
+absence of a smoothness-only, covariance-free, trajectory-wise Fisher--Rao
+gradient control; it is not a literal mathematical proof from finite numerics.
+\end{abstract}
+
+\section{Setup}
+
+For $X\sim\N(m,c)$ define
+\[
+A_R(m,c)=\E[V_R''(X)],\qquad
+\mathcal F(m,c)=\E[V_R(X)]-\frac12\log c .
+\]
+The experiments are deterministic and CPU-only. All expectations are evaluated
+by fixed Gauss--Hermite quadrature; no normalization constant for the target is
+needed. The derivatives are implemented as
+\[
+V_R'(x)=x-2R\tanh(x/R),\qquad
+V_R''(x)=1-2\{1-\tanh^2(x/R)\}.
+\]
+The symmetric trajectory experiments use $m=0$, so we write $A_R(c)=A_R(0,c)$.
+The target is normalizable and non-log-concave: $V_R''(0)=-1$, while
+$V_R''(x)\to 1$ in the tails.
+
+\section{Algorithms}
+
+The Riemannian Fisher--Rao covariance discretization is
+\[
+c_{n+1}=c_n\exp\{\Delta t(1-c_nA_R(c_n))\}.
+\]
+The implementation evolves $\log c_n$ and stops when $c_n>R^2/4$ or when the
+log-covariance overflow guard is reached.
+
+The KL/Bregman Fisher--Rao covariance discretization is
+\[
+c_{n+1}=\frac{(1+\Delta t)c_n}{1+\Delta t\,c_nA_R(c_n)}.
+\]
+If the denominator is non-positive, the step is marked non-SPD.
+
+The Bures--Wasserstein forward--backward step is
+\[
+\widetilde c_n=(1-\eta A_R(c_n))^2c_n,\qquad
+c_{n+1}=\frac12\{\widetilde c_n+2\eta+
+\sqrt{\widetilde c_n(\widetilde c_n+4\eta)}\}.
+\]
+We record two stationarity diagnostics,
+\[
+\|\nabla_{\mathrm{FR}}\mathcal F\|^2=(1-cA_R(c))^2,\qquad
+\|\nabla_{\mathrm{BW}}\mathcal F\|^2=\frac{(1-cA_R(c))^2}{c}.
+\]
+For the BW experiment the comparison is to
+$\min_{0\leq k<N}\|\nabla_{\mathrm{BW}}\mathcal F(c_k)\|^2$, not to the
+pointwise Fisher--Rao norm.
+
+\section{Results}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\linewidth]{fig_nonconvex_riemannian_cascade}
+\caption{Riemannian Fisher--Rao covariance cascade from $c_0=1$,
+$\Delta t=1$. The trajectory-wise Fisher--Rao gradient squared grows rapidly
+despite the global Hessian bound $|V_R''|\leq 1$.}
+\label{fig:nonconvex-riem}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.68\linewidth]{fig_nonconvex_kl_pole}
+\caption{KL/Bregman pole experiment at $R=1000$, $\Delta t=1$,
+$c_0=1-\varepsilon$. The reference line shows the formal
+$4\varepsilon^{-2}$ scaling associated with the pole approximation.}
+\label{fig:nonconvex-kl}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.76\linewidth]{fig_nonconvex_wasserstein_bound}
+\caption{Bures--Wasserstein forward--backward runs with $\eta=0.9$. Solid
+curves are the running minimum of the BW gradient squared; dashed curves are
+the loose envelope $150\Delta/(\eta N)$ with
+$\Delta=\mathcal F(c_0)-\mathcal F_\star^{\mathrm{num}}$.}
+\label{fig:nonconvex-bw}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_nonconvex_summary.tex}
+\caption{Summary diagnostics. Riemannian rows report the maximum Fisher--Rao
+gradient norm along each cascade; the KL row reports the log--log slope of the
+first-step pole diagnostic; BW rows report the final running minimum and final
+theorem envelope check.}
+\label{tab:nonconvex-summary}
+\end{table}
+
+Figure~\ref{fig:nonconvex-riem} shows the Riemannian cascade. Near $c=1$ and
+large $R$, the Gaussian samples see almost constant negative curvature
+$A_R(c)\approx -1$, so the multiplicative factor is approximately
+$\exp(1+c)$. This produces a covariance burst and a large value of
+$(1-cA_R(c))^2$ before the stopping criterion is reached.
+
+Figure~\ref{fig:nonconvex-kl} isolates the rational pole in the KL/Bregman
+scheme. With $c_0=1-\varepsilon$ and $A_R(c_0)\approx -1$, the denominator is
+close to $\varepsilon$ and $c_1$ is close to $2/\varepsilon$. The plotted
+Fisher--Rao gradient at the next state follows the pole trend until the
+finite-$R$ curvature average no longer behaves like a constant $-1$ over the
+entire Gaussian cloud.
+
+Figure~\ref{fig:nonconvex-bw} uses the stationarity quantity controlled by the
+nonconvex BW forward--backward theory. The envelope is intentionally loose,
+because $\Delta$ scales with the target depth. The important comparison is
+geometric: the BW claim is a running-minimum BW-gradient statement, whereas the
+Fisher--Rao instability figures are trajectory-wise FR-gradient diagnostics.
+
+\section{Findings and Implications}
+
+These experiments show that a globally bounded Hessian alone does not provide a
+useful covariance-free trajectory-wise control of the Gaussian Fisher--Rao
+gradient norm for these discretizations. The obstruction is not roughness of
+the target: $V_R$ is smooth and has $-1\leq V_R''\leq 1$. Instead, negative
+curvature couples to covariance through the factor $cA_R(c)$, and both
+Fisher--Rao discretizations can amplify that factor sharply.
+
+The BW comparison should not be read as a pointwise Fisher--Rao guarantee. It is
+a different geometry and a different nonconvex conclusion: the running minimum
+of the BW gradient norm is compared with an $O(1/N)$ envelope.
+
+\section{Limitations}
+
+The evidence is finite-dimensional, finite-precision, and finite-horizon. It
+supports the claimed absence of a smoothness-only covariance-free
+trajectory-wise Fisher--Rao bound, but it is not a formal impossibility theorem.
+The Gauss--Hermite quadrature order, overflow guards, and numerical optimizer
+for $\mathcal F_\star^{\mathrm{num}}$ are saved with the output metadata to make
+the experiment reproducible.
+
+\end{document}
+

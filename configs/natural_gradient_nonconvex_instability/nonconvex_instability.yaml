@@ -1,0 +1,59 @@
+# Deterministic CPU-only nonconvex-instability experiments.
+#
+# Target:
+#   V_R(x) = 0.5*x^2 - 2*R^2*log(cosh(x/R))
+#   -1 <= V_R'' <= 1, but the target is non-log-concave.
+
+gh_nodes: 160
+output_dir: outputs/natural_gradient_nonconvex_instability
+
+riemannian_cascade:
+  R_values: [20, 50, 100, 300, 1000]
+  dt: 1.0
+  c0: 1.0
+  max_iter: 20
+  stop_fraction: 0.25      # stop when c > R^2 / 4
+  max_log_c: 700.0
+
+kl_pole:
+  R: 1000
+  dt: 1.0
+  c0_rule: 1_minus_epsilon
+  epsilons: [1.0e-1, 1.0e-2, 1.0e-3, 1.0e-4, 1.0e-5, 1.0e-6]
+  max_iter: 2
+
+wasserstein_fb:
+  R_values: [20, 50, 100, 300, 1000]
+  eta: 0.9
+  c0: 1.0
+  max_iter: 20000
+
+optimizer:
+  maxiter: 300
+  gtol: 1.0e-10
+
+smoke:
+  gh_nodes: 48
+  output_dir: outputs/natural_gradient_nonconvex_instability_smoke
+  riemannian_cascade:
+    R_values: [20, 1000]
+    dt: 1.0
+    c0: 1.0
+    max_iter: 5
+    stop_fraction: 0.25
+    max_log_c: 700.0
+  kl_pole:
+    R: 1000
+    dt: 1.0
+    c0_rule: 1_minus_epsilon
+    epsilons: [1.0e-1, 1.0e-3]
+    max_iter: 1
+  wasserstein_fb:
+    R_values: [20]
+    eta: 0.9
+    c0: 1.0
+    max_iter: 50
+  optimizer:
+    maxiter: 80
+    gtol: 1.0e-8
+
