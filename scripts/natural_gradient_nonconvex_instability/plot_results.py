@@ -18,6 +18,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from src.common.plotting_style import apply_style  # noqa: E402
 from src.natural_gradient_nonconvex_instability.plotting import (  # noqa: E402
     build_all_figures,
+    clipped_kl_largestep_table_tex,
+    clipped_kl_summary_table_tex,
     summary_table_tex,
 )
 
@@ -39,10 +41,18 @@ def main():
     summary_df = pd.read_csv(os.path.join(args.outdir, "summary.csv"))
     kl_df = pd.read_csv(os.path.join(args.outdir, "kl_pole_summary.csv"))
     bw_df = pd.read_csv(os.path.join(args.outdir, "wasserstein_bound_summary.csv"))
-    build_all_figures(long_df, kl_df, bw_df, figs_dir)
+    clipped_df = pd.read_csv(os.path.join(args.outdir, "clipped_kl_stationarity.csv"))
+    clipped_summary_df = pd.read_csv(os.path.join(args.outdir, "clipped_kl_summary.csv"))
+    build_all_figures(long_df, kl_df, bw_df, clipped_df, figs_dir)
     _write(os.path.join(args.outdir, "tab_nonconvex_summary.tex"),
            summary_table_tex(summary_df, kl_df, bw_df))
-    print(f"Wrote figures and tab_nonconvex_summary.tex under {args.outdir}")
+    _write(os.path.join(args.outdir, "tab_nonconvex_clipped_kl_summary.tex"),
+           clipped_kl_summary_table_tex(clipped_summary_df))
+    _write(os.path.join(args.outdir, "tab_nonconvex_clipped_kl_largestep.tex"),
+           clipped_kl_largestep_table_tex(clipped_summary_df))
+    print("Wrote figures, tab_nonconvex_summary.tex, "
+          "tab_nonconvex_clipped_kl_summary.tex, and "
+          f"tab_nonconvex_clipped_kl_largestep.tex under {args.outdir}")
 
 
 if __name__ == "__main__":

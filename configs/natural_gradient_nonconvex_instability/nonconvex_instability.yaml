@@ -28,6 +28,23 @@ wasserstein_fb:
   c0: 1.0
   max_iter: 20000
 
+# Projected KL scheme with covariance clipping (Theorem 2.18). Only
+# theorem-safe stepsizes are used: with beta=1 the Bregman smoothness constant
+# is L_clip = max(lambda_plus, lambda_plus^4 / lambda_minus^3) and
+# dt = dt_safety / L_clip with dt_safety < 1.
+clipped_kl_stationarity:
+  R_values: [20, 50, 100, 300, 1000]
+  lambda_minus: 0.5
+  lambda_plus: 2.0
+  beta: 1.0
+  dt_safety: 0.9
+  c0: 1.0
+  num_steps: 300
+  # Also run the non-theorem-safe stepsize dt = 1/(beta*lambda_plus) for
+  # comparison. Here dt*L_clip = 64 > 1, so Theorem 2.18 does not apply; the
+  # study asks whether the stationarity envelope still follows empirically.
+  compare_riemannian_scale_dt: true
+
 optimizer:
   maxiter: 300
   gtol: 1.0e-10
@@ -53,6 +70,15 @@ smoke:
     eta: 0.9
     c0: 1.0
     max_iter: 50
+  clipped_kl_stationarity:
+    R_values: [20, 1000]
+    lambda_minus: 0.5
+    lambda_plus: 2.0
+    beta: 1.0
+    dt_safety: 0.9
+    c0: 1.0
+    num_steps: 30
+    compare_riemannian_scale_dt: true
   optimizer:
     maxiter: 80
     gtol: 1.0e-8

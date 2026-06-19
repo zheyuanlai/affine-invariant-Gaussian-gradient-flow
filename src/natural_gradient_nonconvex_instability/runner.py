@@ -13,8 +13,12 @@ from scipy.optimize import minimize
 
 from src.common.io_utils import ensure_dir, save_dataframe, save_json
 from src.natural_gradient_nonconvex_instability.methods import (
+    clip_smoothness_constant,
+    clipped_kl_next,
+    gaussian_kl_divergence,
     kl_next,
     riemannian_next_log_c,
+    theorem_safe_dt,
     wasserstein_fb_next,
 )
 from src.natural_gradient_nonconvex_instability.targets import (
@@ -53,6 +57,24 @@ BW_BOUND_COLS = [
     "R", "eta", "N", "running_min_bw_grad_sq", "theorem_envelope",
     "bound_satisfied", "F0", "F_star_num", "Delta",
 ]
+
+CLIPPED_KL_COLS = [
+    "R", "lambda_minus", "lambda_plus", "beta", "L_clip", "dt_safety", "dt",
+    "dt_rule", "step", "c", "c_tilde", "c_next", "A", "F",
+    "D_kl_current_to_next", "running_min_D", "prefix_bound", "bound_margin",
+    "clipped_lower_active", "clipped_upper_active", "denominator", "status",
+]
+
+CLIPPED_SUMMARY_COLS = [
+    "R", "lambda_minus", "lambda_plus", "dt", "dt_rule", "dt_times_L_clip",
+    "num_steps", "final_c", "min_c", "max_c", "final_running_min_D",
+    "final_bound", "min_bound_margin", "max_violation", "first_upper_clip_step",
+    "first_lower_clip_step", "energy_monotone", "denominator_positive",
+    "theorem_check_pass",
+]
+
+# Absolute tolerance on the theorem-check residual (running_min_D - prefix_bound).
+CLIPPED_THEOREM_TOL = 1.0e-9
 
 
 def shallow_apply_smoke(cfg):
@@ -332,6 +354,124 @@ def simulate_wasserstein_fb(target, star, *, eta=0.9, c0=1.0, max_iter=20000):
     return rows, summary, bound_rows
 
 
+def simulate_clipped_kl(target, *, lambda_minus=0.5, lambda_plus=2.0, beta=1.0,
+                        dt_safety=0.9, c0=1.0, num_steps=300, dt=None,
+                        dt_rule="theorem_safe"):
+    """Projected KL covariance scheme with eigenvalue clipping (Theorem 2.18).
+
+    The covariance is evolved by the unprojected KL step and then clipped back
+    into ``[lambda_minus, lambda_plus]``. For each prefix horizon ``N`` we record
+    the running-minimum Bregman displacement ``D_min(N) = min_{0<=n<N} D_n`` with
+    ``D_n = KL(rho_{a_n} || rho_{a_{n+1}})`` and the energy-drop envelope
+    ``B_N = (dt / N) {F(c_0) - F(c_N)}``. The theorem check is ``D_min(N) <= B_N``.
+
+    By default the theorem-safe stepsize ``dt = dt_safety / L_clip`` is used, with
+    ``L_clip = beta * max(lambda_plus, lambda_plus^4 / lambda_minus^3)`` and
+    ``dt_safety < 1`` (``dt_rule="theorem_safe"``). Passing an explicit ``dt``
+    overrides this and the ``dt_rule`` label records which rule produced it; this
+    is used to probe the deliberately non-theorem-safe stepsize
+    ``dt = 1 / (beta * lambda_plus)`` (``dt * L_clip > 1``), which lies outside
+    the Theorem 2.18 condition.
+    """
+    L_clip = clip_smoothness_constant(beta, lambda_minus, lambda_plus)
+    if dt is None:
+        dt = theorem_safe_dt(beta, lambda_minus, lambda_plus, dt_safety)
+    dt = float(dt)
+    F0 = target.energy(0.0, float(c0))
+
+    rows = []
+    c = float(c0)
+    running_min = float("inf")
+    first_upper = -1
+    first_lower = -1
+    energy_monotone = True
+    denom_positive = True
+    max_violation = 0.0
+    min_margin = float("inf")
+
+    for n in range(int(num_steps)):
+        A = target.A0(c)
+        F_cur = target.energy(0.0, c)
+        step = clipped_kl_next(c, A, dt, lambda_minus, lambda_plus)
+        denom = step.denom if step.denom is not None else float("nan")
+        if not (np.isfinite(denom) and denom > 0.0):
+            denom_positive = False
+        if step.status != "ok":
+            rows.append({
+                "R": target.R, "lambda_minus": float(lambda_minus),
+                "lambda_plus": float(lambda_plus), "beta": float(beta),
+                "L_clip": L_clip, "dt_safety": float(dt_safety), "dt": dt,
+                "dt_rule": str(dt_rule),
+                "step": int(n), "c": float(c), "c_tilde": step.ctilde,
+                "c_next": np.nan, "A": float(A), "F": float(F_cur),
+                "D_kl_current_to_next": np.nan, "running_min_D": running_min,
+                "prefix_bound": np.nan, "bound_margin": np.nan,
+                "clipped_lower_active": 0, "clipped_upper_active": 0,
+                "denominator": denom, "status": step.status,
+            })
+            break
+
+        c_tilde = float(step.ctilde)
+        c_next = float(step.c_next)
+        lower_active = int(c_tilde < float(lambda_minus))
+        upper_active = int(c_tilde > float(lambda_plus))
+        if upper_active and first_upper < 0:
+            first_upper = int(n)
+        if lower_active and first_lower < 0:
+            first_lower = int(n)
+
+        D_n = gaussian_kl_divergence(c, c_next)
+        running_min = min(running_min, D_n)
+        F_next = target.energy(0.0, c_next)
+        N = n + 1
+        prefix_bound = (dt / N) * (F0 - F_next)
+        bound_margin = prefix_bound - running_min
+        min_margin = min(min_margin, bound_margin)
+        max_violation = max(max_violation, max(0.0, running_min - prefix_bound))
+        if F_next > F_cur + 1e-12:
+            energy_monotone = False
+
+        rows.append({
+            "R": target.R, "lambda_minus": float(lambda_minus),
+            "lambda_plus": float(lambda_plus), "beta": float(beta),
+            "L_clip": L_clip, "dt_safety": float(dt_safety), "dt": dt,
+            "dt_rule": str(dt_rule),
+            "step": int(n), "c": float(c), "c_tilde": c_tilde,
+            "c_next": c_next, "A": float(A), "F": float(F_cur),
+            "D_kl_current_to_next": float(D_n), "running_min_D": float(running_min),
+            "prefix_bound": float(prefix_bound), "bound_margin": float(bound_margin),
+            "clipped_lower_active": lower_active,
+            "clipped_upper_active": upper_active,
+            "denominator": float(denom), "status": "ok",
+        })
+        c = c_next
+
+    cs = [r["c"] for r in rows if np.isfinite(r["c"])]
+    summary = {
+        "R": target.R,
+        "lambda_minus": float(lambda_minus),
+        "lambda_plus": float(lambda_plus),
+        "dt": dt,
+        "dt_rule": str(dt_rule),
+        "dt_times_L_clip": float(dt * L_clip),
+        "num_steps": int(len(rows)),
+        "final_c": rows[-1]["c_next"] if rows else np.nan,
+        "min_c": float(min(cs)) if cs else np.nan,
+        "max_c": float(max(cs)) if cs else np.nan,
+        "final_running_min_D": float(running_min) if np.isfinite(running_min) else np.nan,
+        "final_bound": rows[-1]["prefix_bound"] if rows else np.nan,
+        "min_bound_margin": float(min_margin) if np.isfinite(min_margin) else np.nan,
+        "max_violation": float(max_violation),
+        "first_upper_clip_step": int(first_upper),
+        "first_lower_clip_step": int(first_lower),
+        "energy_monotone": bool(energy_monotone),
+        "denominator_positive": bool(denom_positive),
+        "theorem_check_pass": bool(denom_positive
+                                   and max_violation <= CLIPPED_THEOREM_TOL),
+    }
+    return rows, summary
+
+
 def _kl_pole_summary(kl_rows):
     first_rows = []
     for eps, group in kl_rows.groupby("epsilon", dropna=True):
@@ -457,15 +597,50 @@ def run_all(cfg, outdir):
         summaries.append(summary)
         bw_bound_rows.extend(bnd)
 
+    ccfg = cfg.get("clipped_kl_stationarity", {})
+    clipped_rows = []
+    clipped_summaries = []
+    c_lam_m = float(ccfg.get("lambda_minus", 0.5))
+    c_lam_p = float(ccfg.get("lambda_plus", 2.0))
+    c_beta = float(ccfg.get("beta", 1.0))
+    c_dt_safety = float(ccfg.get("dt_safety", 0.9))
+    c_c0 = float(ccfg.get("c0", 1.0))
+    c_steps = int(ccfg.get("num_steps", 300))
+    # Optional non-theorem-safe stepsize study: dt = 1 / (beta * lambda_plus),
+    # which gives dt * L_clip > 1 and so violates the Theorem 2.18 condition.
+    compare_rs = bool(ccfg.get("compare_riemannian_scale_dt", False))
+    for R in [float(x) for x in ccfg.get("R_values", [20, 50, 100, 300, 1000])]:
+        target = get_target(R)
+        rows, summary = simulate_clipped_kl(
+            target, lambda_minus=c_lam_m, lambda_plus=c_lam_p, beta=c_beta,
+            dt_safety=c_dt_safety, c0=c_c0, num_steps=c_steps,
+            dt_rule="theorem_safe",
+        )
+        clipped_rows.extend(rows)
+        clipped_summaries.append(summary)
+        if compare_rs:
+            rs_rows, rs_summary = simulate_clipped_kl(
+                target, lambda_minus=c_lam_m, lambda_plus=c_lam_p, beta=c_beta,
+                dt_safety=c_dt_safety, c0=c_c0, num_steps=c_steps,
+                dt=1.0 / (c_beta * c_lam_p), dt_rule="riemannian_scale",
+            )
+            clipped_rows.extend(rs_rows)
+            clipped_summaries.append(rs_summary)
+
     long_df = pd.DataFrame(all_rows).reindex(columns=RESULTS_LONG_COLS)
     summary_df = pd.DataFrame(summaries).reindex(columns=SUMMARY_COLS)
     kl_df = _kl_pole_summary(long_df[long_df.experiment == "kl_pole"])
     bw_df = pd.DataFrame(bw_bound_rows).reindex(columns=BW_BOUND_COLS)
+    clipped_df = pd.DataFrame(clipped_rows).reindex(columns=CLIPPED_KL_COLS)
+    clipped_summary_df = pd.DataFrame(clipped_summaries).reindex(
+        columns=CLIPPED_SUMMARY_COLS)
 
     save_dataframe(os.path.join(outdir, "results_long.csv"), long_df)
     save_dataframe(os.path.join(outdir, "summary.csv"), summary_df)
     save_dataframe(os.path.join(outdir, "kl_pole_summary.csv"), kl_df)
     save_dataframe(os.path.join(outdir, "wasserstein_bound_summary.csv"), bw_df)
+    save_dataframe(os.path.join(outdir, "clipped_kl_stationarity.csv"), clipped_df)
+    save_dataframe(os.path.join(outdir, "clipped_kl_summary.csv"), clipped_summary_df)
     save_json(os.path.join(outdir, "target_metadata.json"), target_meta)
     save_json(os.path.join(outdir, "run_metadata.json"), {
         "config": cfg,
@@ -477,8 +652,11 @@ def run_all(cfg, outdir):
             "summary.csv",
             "kl_pole_summary.csv",
             "wasserstein_bound_summary.csv",
+            "clipped_kl_stationarity.csv",
+            "clipped_kl_summary.csv",
             "target_metadata.json",
             "run_metadata.json",
         ],
     })
-    return long_df, summary_df, kl_df, bw_df, target_meta
+    return (long_df, summary_df, kl_df, bw_df, clipped_df,
+            clipped_summary_df, target_meta)

@@ -1,8 +1,7 @@
 \documentclass[11pt]{article}
 \input{preamble.tex}
 
-\title{Nonconvex Instability of Fisher--Rao Gaussian Discretizations\\
-and Running-Minimum Bures--Wasserstein Stationarity}
+\title{Nonconvex Fisher--Rao Instability and Projected KL Stationarity}
 \author{}
 \date{}
 
@@ -10,152 +9,369 @@ and Running-Minimum Bures--Wasserstein Stationarity}
 \maketitle
 
 \begin{abstract}
-We construct deterministic one-dimensional Gaussian experiments for the smooth
-non-log-concave target
+We study deterministic one-dimensional Gaussian variational inference for the
+smooth but non-log-concave target
 \[
-V_R(x)=\frac12 x^2-2R^2\log\cosh(x/R),
+V_R(x)=\tfrac12 x^2-2R^2\log\cosh(x/R),
 \qquad -1\leq V_R''(x)\leq 1 .
 \]
-Although the Hessian is globally bounded, the two Gaussian Fisher--Rao
-covariance discretizations can generate very large trajectory-wise
-Fisher--Rao gradient norms. The Riemannian exponential covariance step undergoes
-a negative-curvature cascade from $c_0=1$, while the KL/Bregman covariance step
-has a pole near the loss of positive definiteness. In contrast, the
-Bures--Wasserstein forward--backward step is evaluated through the
-running-minimum Bures--Wasserstein gradient norm, the quantity appearing in the
-nonconvex stationarity theory. The experiment is numerical evidence for the
-absence of a smoothness-only, covariance-free, trajectory-wise Fisher--Rao
-gradient control; it is not a literal mathematical proof from finite numerics.
+Two complementary points are made. First, a globally bounded Hessian alone does
+\emph{not} numerically control the trajectory-wise Fisher--Rao gradient: the
+Riemannian-exponential covariance step undergoes a negative-curvature cascade
+from $c_0=1$, and the KL/Bregman covariance step has a rational pole near the
+loss of positive definiteness. Second, when the covariance is constrained to a
+prescribed spectral interval $[\lambda_-,\lambda_+]$, the \emph{projected} KL
+scheme of Section~2.4 (Theorem~2.18) of the manuscript has the correct
+constrained Bregman stationarity diagnostic: the running minimum of the Bregman
+displacement $\KL(\rho_{a_n}\|\rho_{a_{n+1}})$ satisfies the energy-drop envelope
+$\min_{0\le n<N}\KL(\rho_{a_n}\|\rho_{a_{n+1}})\le
+\frac{\Delta t}{N}\{\KL(\rho_{a_0}\|\rho_\post)-\KL(\rho_{a_N}\|\rho_\post)\}$
+in the theorem-safe stepsize regime. A small additional study probes the larger
+stepsize $\Delta t=1/(\beta\lambda_+)$, which violates the theorem's
+relative-smoothness condition ($\Delta t\,L_{\mathrm{clip}}=64\gg1$): the
+envelope still holds empirically, because the projected trajectory reaches the
+active upper constraint --- a constrained-stationary point --- in a single step.
+We emphasize what is and is not shown: the clipped scheme certifies constrained
+Bregman stationarity over the covariance-truncated feasible set; it does not make
+the unconstrained Fisher--Rao gradient small, nor does it converge to the
+unconstrained Gaussian variational optimum.
 \end{abstract}
 
 \section{Setup}
+\label{sec:setup}
 
-For $X\sim\N(m,c)$ define
+We target the one-dimensional posterior $\rho_\post\propto e^{-V_R}$ with
 \[
-A_R(m,c)=\E[V_R''(X)],\qquad
-\mathcal F(m,c)=\E[V_R(X)]-\frac12\log c .
-\]
-The experiments are deterministic and CPU-only. All expectations are evaluated
-by fixed Gauss--Hermite quadrature; no normalization constant for the target is
-needed. The derivatives are implemented as
-\[
+V_R(x)=\tfrac12 x^2-2R^2\log\cosh(x/R),\qquad
 V_R'(x)=x-2R\tanh(x/R),\qquad
-V_R''(x)=1-2\{1-\tanh^2(x/R)\}.
+V_R''(x)=1-2\bigl\{1-\tanh^2(x/R)\bigr\}.
 \]
-The symmetric trajectory experiments use $m=0$, so we write $A_R(c)=A_R(0,c)$.
-The target is normalizable and non-log-concave: $V_R''(0)=-1$, while
-$V_R''(x)\to 1$ in the tails.
-
-\section{Algorithms}
-
-The Riemannian Fisher--Rao covariance discretization is
+The Hessian satisfies $-1\leq V_R''(x)\leq 1$, with $V_R''(0)=-1$ and
+$V_R''(x)\to 1$ in the tails; the target is therefore globally smooth
+($\|\nabla^2 V_R\|\le\beta$ with $\beta=1$) but non-log-concave. For
+$X\sim\N(0,c)$ define
 \[
-c_{n+1}=c_n\exp\{\Delta t(1-c_nA_R(c_n))\}.
+A_R(c)=\E[V_R''(X)],\qquad
+F_R(c)=\E[V_R(X)]-\tfrac12\log c .
 \]
-The implementation evolves $\log c_n$ and stops when $c_n>R^2/4$ or when the
-log-covariance overflow guard is reached.
+All trajectory experiments are symmetric ($m=0$) and deterministic: the
+expectations $A_R(c)$ and $F_R(c)$ are evaluated by fixed Gauss--Hermite
+quadrature, and no normalizing constant for $\rho_\post$ is required. The
+function $F_R$ is the Gaussian variational objective $\KL(\rho_a\|\rho_\post)$ up
+to the (unknown) additive log-partition constant; that constant cancels in every
+energy \emph{drop} used below, so we always work with $F_R(c_0)-F_R(c_N)$.
 
-The KL/Bregman Fisher--Rao covariance discretization is
+\section{Unprojected Fisher--Rao diagnostics}
+\label{sec:unprojected}
+
+We record, along each trajectory, the squared Fisher--Rao and Bures--Wasserstein
+gradient norms of the symmetric Gaussian objective,
 \[
-c_{n+1}=\frac{(1+\Delta t)c_n}{1+\Delta t\,c_nA_R(c_n)}.
+\|\grad_{\mathrm{FR}}F_R(c)\|^2=(1-cA_R(c))^2,\qquad
+\|\grad_{\mathrm{BW}}F_R(c)\|^2=\frac{(1-cA_R(c))^2}{c}.
 \]
-If the denominator is non-positive, the step is marked non-SPD.
+Both vanish at a Gaussian stationary point $cA_R(c)=1$ and both are
+\emph{covariance-coupled} through the factor $cA_R(c)$.
+
+\subsection{Riemannian covariance cascade}
+\label{sec:riemannian}
+
+The Riemannian (geodesic) Fisher--Rao covariance step is
+\[
+c_{n+1}=c_n\exp\{\Delta t\,(1-c_nA_R(c_n))\},
+\]
+implemented in the log domain with an overflow guard and a stopping rule
+$c_n>R^2/4$. From $c_0=1$ and large $R$ the Gaussian cloud sees almost constant
+negative curvature $A_R(c)\approx-1$, so the multiplicative factor is
+$\approx e^{1+c}$ and the covariance bursts upward. Figure~\ref{fig:riem} shows
+the resulting trajectory-wise FR gradient squared growing by several orders of
+magnitude despite $|V_R''|\le 1$.
+
+\subsection{KL/Bregman pole}
+\label{sec:klpole}
+
+The (unprojected) KL/Bregman Fisher--Rao covariance step is
+\[
+c_{n+1}=\frac{(1+\Delta t)c_n}{1+\Delta t\,c_nA_R(c_n)} .
+\]
+With $c_0=1-\varepsilon$ and $A_R(c_0)\approx-1$ the denominator is
+$\approx\varepsilon$, so $c_1\approx 2/\varepsilon$ and the next-state FR
+gradient follows a $\propto\varepsilon^{-2}$ pole until the finite-$R$ curvature
+average stops behaving like a constant $-1$. Figure~\ref{fig:kl} isolates this
+rational pole near the loss of positive definiteness.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.49\linewidth}
+\includegraphics[width=\linewidth]{fig_nonconvex_riemannian_cascade}
+\caption{Riemannian cascade from $c_0=1$, $\Delta t=1$.}
+\label{fig:riem}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}
+\includegraphics[width=\linewidth]{fig_nonconvex_kl_pole}
+\caption{KL/Bregman pole at $R=1000$, $c_0=1-\varepsilon$.}
+\label{fig:kl}
+\end{subfigure}
+\caption{Unprojected Fisher--Rao diagnostics. The trajectory-wise FR gradient
+squared is not controlled by the global Hessian bound $|V_R''|\le1$: the
+Riemannian step amplifies $(1-cA_R(c))^2$ through a negative-curvature cascade
+(left), and the KL step exhibits a $\propto\varepsilon^{-2}$ pole as the
+denominator $1+\Delta t\,c_0A_R(c_0)$ approaches zero (right).}
+\label{fig:unprojected}
+\end{figure}
+
+\section{Bures--Wasserstein running-minimum comparison}
+\label{sec:bw}
 
 The Bures--Wasserstein forward--backward step is
 \[
 \widetilde c_n=(1-\eta A_R(c_n))^2c_n,\qquad
-c_{n+1}=\frac12\{\widetilde c_n+2\eta+
-\sqrt{\widetilde c_n(\widetilde c_n+4\eta)}\}.
+c_{n+1}=\tfrac12\{\widetilde c_n+2\eta+\sqrt{\widetilde c_n(\widetilde c_n+4\eta)}\},
 \]
-We record two stationarity diagnostics,
+with $\eta=0.9$. The relevant nonconvex stationarity quantity here is the
+\emph{running minimum} of the BW gradient norm,
+$\min_{0\le k<N}\|\grad_{\mathrm{BW}}F_R(c_k)\|^2$, compared against an $O(1/N)$
+envelope $150\,\Delta/(\eta N)$ with $\Delta=F_R(c_0)-F^{\mathrm{num}}_{R,\star}$
+(the envelope is deliberately loose because $\Delta$ scales with the target
+depth). Figure~\ref{fig:bw} confirms that the running minimum stays below the
+envelope across $R$. This comparison is geometrically distinct from
+Section~\ref{sec:unprojected}: it is a running-minimum statement in the BW
+geometry, not a pointwise Fisher--Rao bound.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\linewidth]{fig_nonconvex_wasserstein_bound}
+\caption{Bures--Wasserstein forward--backward runs, $\eta=0.9$. Solid: running
+minimum of the BW gradient squared; dashed: the loose $150\Delta/(\eta N)$
+envelope.}
+\label{fig:bw}
+\end{figure}
+
+\section{Projected KL scheme with covariance clipping}
+\label{sec:clipped}
+
+Sections~\ref{sec:unprojected}--\ref{sec:bw} motivate \emph{constraining the
+covariance}. Following Section~2.4 of the manuscript, fix
+$0<\lambda_-\le\lambda_+<\infty$ and the covariance-truncated feasible set
+$\Aspace'=\{a=(m,C):\lambda_-I\preceq C\preceq\lambda_+I\}$. Under the
+one-sided smoothness Assumption~2.17, $\|\nabla^2V\|\le\beta$, the projected KL
+scheme clips the unprojected KL update back into $[\lambda_-,\lambda_+]$. In the
+symmetric scalar case ($m=0$, $\nabla^2\log\rho_\post=-V_R''$ so
+$\E[\nabla^2\log\rho_\post]=-A_R(c)$) the update is
 \[
-\|\nabla_{\mathrm{FR}}\mathcal F\|^2=(1-cA_R(c))^2,\qquad
-\|\nabla_{\mathrm{BW}}\mathcal F\|^2=\frac{(1-cA_R(c))^2}{c}.
+\widetilde c_{n+1}=\frac{(1+\Delta t)c_n}{1+\Delta t\,c_nA_R(c_n)},
+\qquad
+c_{n+1}=\operatorname{clip}_{[\lambda_-,\lambda_+]}(\widetilde c_{n+1}),
 \]
-For the BW experiment the comparison is to
-$\min_{0\leq k<N}\|\nabla_{\mathrm{BW}}\mathcal F(c_k)\|^2$, not to the
-pointwise Fisher--Rao norm.
+where $\operatorname{clip}_{[\lambda_-,\lambda_+]}(x)=\min\{\lambda_+,\max\{\lambda_-,x\}\}$
+is the one-dimensional eigenvalue clip.
 
-\section{Results}
+\paragraph{Bregman displacement and energy-drop envelope.}
+The one-step Bregman displacement is the KL divergence between successive
+iterates, $D_n=\KL(\rho_{a_n}\|\rho_{a_{n+1}})$, which for the scalar symmetric
+Gaussians reduces to
+\[
+D_n=\KL\bigl(\N(0,c_n)\,\big\|\,\N(0,c_{n+1})\bigr)
+=\frac12\left(\frac{c_n}{c_{n+1}}-1-\log\frac{c_n}{c_{n+1}}\right)\ge0,
+\]
+with equality iff $c_n=c_{n+1}$. For each prefix horizon $N$ we form the
+running minimum $D_{\min}(N)=\min_{0\le n<N}D_n$ and the energy-drop envelope
+\[
+B_N=\frac{\Delta t}{N}\bigl\{F_R(c_0)-F_R(c_N)\bigr\}.
+\]
+Theorem~2.18 gives the constrained Bregman stationarity guarantee
+\[
+\min_{0\le n\le N-1}\KL(\rho_{a_n}\|\rho_{a_{n+1}})\le
+\frac{\Delta t}{N}\bigl\{\KL(\rho_{a_0}\|\rho_\post)-\KL(\rho_{a_N}\|\rho_\post)\bigr\},
+\qquad\text{i.e.}\qquad D_{\min}(N)\le B_N,
+\]
+valid for the theorem-safe stepsize. Since $\beta=1$, the Bregman smoothness
+constant and stepsize are
+\[
+L_{\mathrm{clip}}=\beta\max\!\left\{\lambda_+,\,\frac{\lambda_+^4}{\lambda_-^3}\right\},
+\qquad
+\Delta t=\frac{\text{safety}}{L_{\mathrm{clip}}},\qquad \text{safety}<1 .
+\]
+With $\lambda_-=0.5$, $\lambda_+=2.0$, and $\text{safety}=0.9$ this gives
+$L_{\mathrm{clip}}=\max\{2,\,16/0.125\}=128$ and $\Delta t=0.9/128\approx
+7.0\times10^{-3}$. In this regime the denominator
+$1+\Delta t\,c_nA_R(c_n)\ge 1-\Delta t\,\beta\lambda_+\ge1-\text{safety}>0$ is
+positive for every feasible $c_n\in[\lambda_-,\lambda_+]$ and every
+$A_R\in[-\beta,\beta]$, so the pole of Section~\ref{sec:klpole} cannot occur.
+
+\paragraph{A non-theorem-safe stepsize.}
+\label{par:largestep}
+The Theorem~2.18 stepsize is sufficient but conservative, and it is natural to
+ask whether the stationarity envelope still follows when it is violated. We
+therefore also run the projected scheme at the larger Riemannian-scale stepsize
+\[
+\Delta t=\frac{1}{\beta\lambda_+}=0.5,
+\qquad\text{so}\qquad
+\Delta t\,L_{\mathrm{clip}}=\frac{\lambda_+^4}{\lambda_-^3}\cdot\frac{1}{\lambda_+}
+=\frac{\lambda_+^3}{\lambda_-^3}=64\gg1 ,
+\]
+which lies well outside the relative-smoothness condition $\Delta t\le1/L_{\mathrm{clip}}$
+that underlies the one-step descent inequality, so Theorem~2.18 gives no
+guarantee. The value $1/(\beta\lambda_+)$ is the largest stepsize for which the
+denominator bound $1+\Delta t\,c_nA_R(c_n)\ge1-\Delta t\,\beta\lambda_+=0$ is
+still (weakly) nonnegative over the feasible box; beyond it the unprojected KL
+covariance step can hit the genuine sign change of Section~\ref{sec:klpole} that
+the clip cannot mask.
+
+\section{Results and interpretation}
+\label{sec:results}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.72\linewidth]{fig_nonconvex_riemannian_cascade}
-\caption{Riemannian Fisher--Rao covariance cascade from $c_0=1$,
-$\Delta t=1$. The trajectory-wise Fisher--Rao gradient squared grows rapidly
-despite the global Hessian bound $|V_R''|\leq 1$.}
-\label{fig:nonconvex-riem}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.68\linewidth]{fig_nonconvex_kl_pole}
-\caption{KL/Bregman pole experiment at $R=1000$, $\Delta t=1$,
-$c_0=1-\varepsilon$. The reference line shows the formal
-$4\varepsilon^{-2}$ scaling associated with the pole approximation.}
-\label{fig:nonconvex-kl}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.76\linewidth]{fig_nonconvex_wasserstein_bound}
-\caption{Bures--Wasserstein forward--backward runs with $\eta=0.9$. Solid
-curves are the running minimum of the BW gradient squared; dashed curves are
-the loose envelope $150\Delta/(\eta N)$ with
-$\Delta=\mathcal F(c_0)-\mathcal F_\star^{\mathrm{num}}$.}
-\label{fig:nonconvex-bw}
+\begin{subfigure}{0.52\linewidth}
+\includegraphics[width=\linewidth]{fig_nonconvex_clipped_kl_stationarity}
+\caption{$D_{\min}(N)$ (solid) vs the envelope $B_N$ (dashed).}
+\label{fig:clip-stat}
+\end{subfigure}\hfill
+\begin{subfigure}{0.46\linewidth}
+\includegraphics[width=\linewidth]{fig_nonconvex_clipped_covariance}
+\caption{Clipped covariance trajectory and $[\lambda_-,\lambda_+]$.}
+\label{fig:clip-cov}
+\end{subfigure}
+\caption{Projected KL scheme, $\lambda_-=0.5$, $\lambda_+=2.0$, $\beta=1$,
+$\Delta t=0.9/128$. The running-minimum Bregman displacement stays below the
+energy-drop envelope at every prefix; once the upper constraint binds (step
+$\approx41$) the projected step is stationary at the boundary, the covariance is
+pinned at $\lambda_+$, and $D_n$ (hence $D_{\min}$) collapses to zero.}
+\label{fig:clipped}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\inputtable{tab_nonconvex_summary.tex}
-\caption{Summary diagnostics. Riemannian rows report the maximum Fisher--Rao
-gradient norm along each cascade; the KL row reports the log--log slope of the
-first-step pole diagnostic; BW rows report the final running minimum and final
-theorem envelope check.}
-\label{tab:nonconvex-summary}
+\inputtable{tab_nonconvex_clipped_kl_summary.tex}
+\caption{Projected-KL stationarity summary by $R$: stepsize $\Delta t$, final
+running minimum $D_{\min}(N)$, final envelope $B_N$, the maximum violation
+$\max_N\max\{0,D_{\min}(N)-B_N\}$, and the theorem check. The check passes for
+every $R$ with maximum violation $0$.}
+\label{tab:clipped}
 \end{table}
 
-Figure~\ref{fig:nonconvex-riem} shows the Riemannian cascade. Near $c=1$ and
-large $R$, the Gaussian samples see almost constant negative curvature
-$A_R(c)\approx -1$, so the multiplicative factor is approximately
-$\exp(1+c)$. This produces a covariance burst and a large value of
-$(1-cA_R(c))^2$ before the stopping criterion is reached.
+\begin{table}[t]
+\centering
+\inputtable{tab_nonconvex_summary.tex}
+\caption{Unprojected diagnostics. Riemannian rows report the maximum FR gradient
+norm along each cascade and the stop reason; the KL row reports the log--log
+pole-window slope; the BW rows report the final running minimum and envelope
+check.}
+\label{tab:summary}
+\end{table}
 
-Figure~\ref{fig:nonconvex-kl} isolates the rational pole in the KL/Bregman
-scheme. With $c_0=1-\varepsilon$ and $A_R(c_0)\approx -1$, the denominator is
-close to $\varepsilon$ and $c_1$ is close to $2/\varepsilon$. The plotted
-Fisher--Rao gradient at the next state follows the pole trend until the
-finite-$R$ curvature average no longer behaves like a constant $-1$ over the
-entire Gaussian cloud.
+\paragraph{Unprojected results motivate covariance control.}
+Table~\ref{tab:summary} and Figure~\ref{fig:unprojected} show that, without any
+covariance constraint, both Fisher--Rao discretizations amplify the
+trajectory-wise gradient factor $(1-cA_R(c))^2$ on this globally smooth target:
+the Riemannian step by $4$--$5$ orders of magnitude before its stopping rule, and
+the KL step along a $\propto\varepsilon^{-2}$ pole. The obstruction is not
+roughness of $V_R$; it is the coupling of negative curvature to the covariance.
 
-Figure~\ref{fig:nonconvex-bw} uses the stationarity quantity controlled by the
-nonconvex BW forward--backward theory. The envelope is intentionally loose,
-because $\Delta$ scales with the target depth. The important comparison is
-geometric: the BW claim is a running-minimum BW-gradient statement, whereas the
-Fisher--Rao instability figures are trajectory-wise FR-gradient diagnostics.
+\paragraph{Clipping removes the pole in the theorem-safe regime.}
+Restricting the covariance to $[\lambda_-,\lambda_+]$ and using the theorem-safe
+$\Delta t=0.9/L_{\mathrm{clip}}$ keeps the denominator bounded away from zero, so
+the projected KL trajectory is well defined for all $N$
+(Figure~\ref{fig:clip-cov}). From $c_0=1$ the negative curvature drives the
+covariance monotonically up to the upper bound $\lambda_+=2$, where it is pinned;
+the covariance never approaches the SPD boundary that produced the pole.
 
-\section{Findings and Implications}
+\paragraph{The running-minimum Bregman displacement satisfies the envelope.}
+Figure~\ref{fig:clip-stat} and Table~\ref{tab:clipped} verify the Theorem~2.18
+check: at every prefix horizon $N$ the running minimum $D_{\min}(N)$ lies below
+the energy-drop envelope $B_N$, with maximum violation $0$ across all $R$. The
+energy $F_R(c_n)$ is monotonically nonincreasing along the trajectory (so
+$B_N\ge0$), and the diagnostic is essentially $R$-independent because the
+dynamics in $c\in[1,2]$ see $A_R(c)\approx-1$ for every $R$ in the grid.
 
-These experiments show that a globally bounded Hessian alone does not provide a
-useful covariance-free trajectory-wise control of the Gaussian Fisher--Rao
-gradient norm for these discretizations. The obstruction is not roughness of
-the target: $V_R$ is smooth and has $-1\leq V_R''\leq 1$. Instead, negative
-curvature couples to covariance through the factor $cA_R(c)$, and both
-Fisher--Rao discretizations can amplify that factor sharply.
+\paragraph{Boundary stationarity is constrained, not unconstrained, smallness.}
+Once the upper covariance constraint becomes active, the clipped update returns
+$c_{n+1}=\lambda_+=c_n$, so $D_n=\KL(\rho_{a_n}\|\rho_{a_{n+1}})=0$ exactly and
+$D_{\min}(N)$ collapses to zero. This is \emph{constrained Bregman stationarity}:
+the projected step is stationary on the boundary of the feasible set
+$\Aspace'$. It is \emph{not} a statement that the unconstrained Fisher--Rao
+gradient $(1-cA_R(c))^2$ is small there --- at $c=\lambda_+=2$ with
+$A_R\approx-1$ the unconstrained FR gradient is in fact $O(1)$ and points
+outward, which is precisely why the iterate stays clipped. The correct reading
+of the experiment is therefore stationarity over the covariance-truncated
+feasible set, not unconstrained optimality.
 
-The BW comparison should not be read as a pointwise Fisher--Rao guarantee. It is
-a different geometry and a different nonconvex conclusion: the running minimum
-of the BW gradient norm is compared with an $O(1/N)$ envelope.
+\subsection{Beyond the theorem-safe regime}
+\label{sec:largestep}
+
+We repeat the projected scheme at the larger stepsize $\Delta t=1/(\beta\lambda_+)=0.5$
+introduced at the end of Section~\ref{sec:clipped}, for which
+$\Delta t\,L_{\mathrm{clip}}=64\gg1$ and Theorem~2.18 offers no guarantee.
+Figure~\ref{fig:largestep} and Table~\ref{tab:largestep} report the outcome.
+\emph{Empirically the stationarity envelope $D_{\min}(N)\le B_N$ still holds, with
+maximum violation $0$ for every $R$.} The mechanism is visible in the figure: the
+single large step makes a comparatively large energy drop and clips the
+covariance onto the upper bound $\lambda_+$ in one move
+(Figure~\ref{fig:largestep}, right), so the only nonzero displacement is the
+transient $D_0$, which is comfortably below the first-prefix envelope $B_1$, and
+from the second step onward the active-constraint stationarity gives $D_n=0$.
+
+We are careful about what this does and does not show. It is \emph{not} evidence
+that the relative-smoothness descent inequality $\E(a_{n+1})\le\E(a_n)-\Delta
+t^{-1}D(a_n,a_{n+1})$ holds at this stepsize in general; rather, on this target
+the projected trajectory reaches a constrained-stationary boundary point in a
+single step, after which the running-minimum check is satisfied trivially.
+Two features make the larger stepsize benign here and warn against
+extrapolating: the energy still decreases monotonically (so $B_N\ge0$), and the
+denominator $1+\Delta t\,c_nA_R(c_n)$ stays positive but grazes
+$\approx4\times10^{-6}$ at $c_n=\lambda_+$ for large $R$ --- exactly the sign
+change of Section~\ref{sec:klpole} that the choice $\Delta t=1/(\beta\lambda_+)$
+sits on the edge of and that the clip is masking. A larger stepsize, or a target
+whose curvature average reaches $-\beta$ inside the feasible box, would cross
+that edge. The conclusion is therefore narrow: the theorem stepsize is
+sufficient but not necessary for the stationarity envelope on this example, and
+the constraint set, not the stepsize bound, is what stabilizes the trajectory.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_nonconvex_clipped_kl_largestep}
+\caption{Projected KL at the non-theorem-safe stepsize $\Delta t=1/(\beta\lambda_+)=0.5$
+($\Delta t\,L_{\mathrm{clip}}=64$). Left: the running minimum $D_{\min}(N)$
+(markers) versus the envelope $B_N$ (dashed); the only nonzero value is the
+transient $D_0$ at $N=1$, below $B_1$, after which $D_{\min}$ collapses to zero.
+Right: the covariance reaches $\lambda_+$ in a single step and is pinned there.}
+\label{fig:largestep}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_nonconvex_clipped_kl_largestep.tex}
+\caption{Theorem-safe versus non-theorem-safe stepsize, by $R$: stepsize $\Delta
+t$, the relative-smoothness ratio $\Delta t\,L_{\mathrm{clip}}$ ($<1$ is
+theorem-safe), the final running minimum $D_{\min}(N)$, the maximum violation,
+energy monotonicity, and the envelope check. The envelope holds in both regimes
+even though the larger stepsize has $\Delta t\,L_{\mathrm{clip}}=64\gg1$.}
+\label{tab:largestep}
+\end{table}
 
 \section{Limitations}
+\label{sec:limitations}
 
-The evidence is finite-dimensional, finite-precision, and finite-horizon. It
-supports the claimed absence of a smoothness-only covariance-free
-trajectory-wise Fisher--Rao bound, but it is not a formal impossibility theorem.
-The Gauss--Hermite quadrature order, overflow guards, and numerical optimizer
-for $\mathcal F_\star^{\mathrm{num}}$ are saved with the output metadata to make
-the experiment reproducible.
+The evidence is deterministic, one-dimensional, finite-precision, and
+finite-horizon. The unprojected experiments support the \emph{absence} of a
+useful smoothness-only, covariance-free, trajectory-wise Fisher--Rao bound on
+this target, but a finite numerical study is not a formal impossibility theorem.
+For the projected scheme we make only the claims the theory supports: in the
+theorem-safe stepsize regime the projected KL iterates satisfy the constrained
+Bregman stationarity envelope $D_{\min}(N)\le B_N$, and the active-constraint
+plateau is constrained stationarity on $\partial\Aspace'$. We do \emph{not}
+claim that clipping makes the unconstrained Fisher--Rao gradient small, nor that
+the projected scheme converges to the unconstrained Gaussian variational optimum
+$a_\star$; indeed the optimum need not lie in $[\lambda_-,\lambda_+]$, and here
+the iterate is pinned at $\lambda_+$. The non-theorem-safe study of
+Section~\ref{sec:largestep} is a single-example observation, not a relaxation of
+the theorem's hypotheses: the envelope holds there because the trajectory reaches
+a constrained-stationary boundary point in one step, while the denominator sits
+on the edge of the sign change that the clip is masking, so the larger stepsize
+should not be expected to be safe in general. The Gauss--Hermite quadrature
+order, the clipping bounds, the stepsize-safety factor, the comparison stepsize
+$1/(\beta\lambda_+)$, and the smoothness constant $\beta=1$ are recorded with the
+output metadata for reproducibility.
 
 \end{document}
-

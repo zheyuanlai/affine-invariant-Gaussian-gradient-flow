@@ -1114,10 +1114,12 @@ def build_wfr_assets():
 # ===========================================================================
 
 def build_nonconvex_instability_assets():
-    """Figures + table for the nonconvex-instability report."""
+    """Figures + tables for the nonconvex-instability report."""
     print("natural-gradient nonconvex instability:")
     from src.natural_gradient_nonconvex_instability.plotting import (
         build_all_figures,
+        clipped_kl_largestep_table_tex,
+        clipped_kl_summary_table_tex,
         summary_table_tex,
     )
 
@@ -1125,9 +1127,15 @@ def build_nonconvex_instability_assets():
     summary_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "summary.csv"))
     kl_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "kl_pole_summary.csv"))
     bw_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "wasserstein_bound_summary.csv"))
-    build_all_figures(long_df, kl_df, bw_df, FIGS)
+    clipped_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "clipped_kl_stationarity.csv"))
+    clipped_summary_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "clipped_kl_summary.csv"))
+    build_all_figures(long_df, kl_df, bw_df, clipped_df, FIGS)
     _write_table("tab_nonconvex_summary.tex",
                  summary_table_tex(summary_df, kl_df, bw_df))
+    _write_table("tab_nonconvex_clipped_kl_summary.tex",
+                 clipped_kl_summary_table_tex(clipped_summary_df))
+    _write_table("tab_nonconvex_clipped_kl_largestep.tex",
+                 clipped_kl_largestep_table_tex(clipped_summary_df))
 
 
 def main():
