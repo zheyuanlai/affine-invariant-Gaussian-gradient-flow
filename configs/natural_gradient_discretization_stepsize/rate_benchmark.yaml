@@ -1,10 +1,12 @@
-# Configuration for the supplementary theoretical-rate benchmark.
+# Configuration for the theoretical-rate benchmark.
 #
 # Compares the theorem-predicted contraction factors of the Riemannian and KL
-# discretizations against the observed numerical contraction, on a COMMON
-# Riemannian-scale reference stepsize dt_ref = 1/(beta * lambda_max). The tiny
-# KL proof stepsize is deliberately NOT used to size the grid; the KL formula is
-# evaluated on the same Riemannian-scale grid. Only globally-smooth targets are
+# discretizations against the observed numerical contraction, on the COMMON
+# theorem-safe reference stepsize dt_ref = 1/(beta * lambda_max). Under the
+# improved KL proof both schemes are admitted on exactly this range, so dt =
+# c*dt_ref (c <= 1) is INSIDE the theorem range for BOTH schemes and the
+# contraction factors q_riem(dt), q_kl(dt) are genuine theorem rates (not a
+# formal benchmark outside the proved range). Only globally-smooth targets are
 # included (no clean theorem rate exists for the non-smooth quartic).
 #
 # Deterministic, CPU-only: closed-form Gaussian expectations and Gauss--Hermite

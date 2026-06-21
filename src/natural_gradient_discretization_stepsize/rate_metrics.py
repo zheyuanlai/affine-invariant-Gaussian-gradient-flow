@@ -1,22 +1,24 @@
-"""Theoretical-rate benchmark utilities (Riemannian-scale stepsize grid).
+"""Theoretical-rate benchmark utilities (shared theorem-safe stepsize grid).
 
-This module supports the *supplementary* rate-benchmark experiment of the
-discretization-stepsize group. It compares the theorem-predicted contraction
-factors of the two schemes against the observed numerical contraction, on a
-common *Riemannian-scale* reference stepsize
+This module supports the rate-benchmark experiment of the discretization-stepsize
+group. It compares the theorem-predicted contraction factors of the two schemes
+against the observed numerical contraction, on the common theorem-safe reference
+stepsize
 
     dt_ref = 1 / (beta * lambda_max),
 
-with the same spectral bounds the stepsize study already uses,
+with the spectral bounds the stepsize study uses,
 
     lambda_min = min(lambda_0_min, 1 / beta),
     lambda_max = max(lambda_0_max, 1 / alpha).
 
-We deliberately do NOT use the tiny KL proof stepsize to size the grid: the
-KL contraction formula is *evaluated* on the common Riemannian-scale grid
-``dt = c * dt_ref`` for ``c in {0.05, ..., 1.0}``. The point is to ask how
-conservative the theoretical contraction factors are at the practically
-meaningful (Riemannian-scale) stepsizes identified by the stability study.
+Under the improved KL proof the KL scheme is admitted on exactly the same
+theorem-safe range ``dt <= 1/(beta*lambda_max)`` as the Riemannian scheme, so the
+grid ``dt = c * dt_ref`` for ``c in {0.05, ..., 1.0}`` lies INSIDE the theorem
+range for BOTH schemes: the contraction factors evaluated here are genuine
+theorem rates, not a formal benchmark outside the proved range. The point is to
+ask how conservative those (now shared-scale) theorem contraction factors are
+relative to the observed contraction.
 
 All quantities are deterministic and closed-form; there is no simulation here
 (see :mod:`...rate_runner` for the trajectory driver that consumes these).
@@ -32,6 +34,11 @@ from __future__ import annotations
 import math
 
 import numpy as np
+
+from src.common.theory_constants import (
+    q_riem as _q_riem,
+    q_kl as _q_kl,
+)
 
 # Default floor applied to the *raw* energy gap before any log-rate computation
 # (machine-precision plateaus would otherwise give -inf log-rates). The raw gap
@@ -77,7 +84,7 @@ def dt_ref(beta, lambda_max):
 # ---------------------------------------------------------------------------
 
 def q_riem_theory(dt, alpha, beta, lambda_min, lambda_max):
-    """Riemannian theorem per-step contraction factor.
+    """Riemannian theorem per-step contraction factor (centralized formula).
 
         q = 1 - alpha * lambda_min * dt * (2 - beta * lambda_max * dt).
 
@@ -85,30 +92,40 @@ def q_riem_theory(dt, alpha, beta, lambda_min, lambda_max):
     the bracket ``(2 - beta lambda_max dt) >= 1 > 0``, so ``q < 1``; and the
     decrement is bounded so ``q > 0`` over the tested grid (verified in tests).
     """
-    blm = beta * lambda_max * dt
-    return 1.0 - alpha * lambda_min * dt * (2.0 - blm)
+    return _q_riem(dt, alpha, beta, lambda_min, lambda_max)
 
 
-def kl_kappa(dt, alpha, beta, lambda_min, lambda_max):
-    """KL-analysis ``kappa(dt)`` factor (the min of the two competing terms).
+def q_kl_theory(dt, alpha, beta, lambda_min, lambda_max):
+    """KL theorem per-step contraction factor (improved proof, centralized).
 
-        kappa = lambda_min * min{ (1 + dt alpha lambda_min)/(2(1+dt)),
-                                  1/(4 (1 + dt beta lambda_max)^2) }.
+        q_KL(dt) = 1 - alpha * lambda_min * dt
+                       / (2 * (1 + dt) * (1 + dt * beta * lambda_max)).
+
+    This is the proven ``Theorem (conv-KL)`` contraction, valid on the same
+    theorem-safe range ``dt <= 1/(beta*lambda_max)`` as the Riemannian factor, so
+    on the grid ``dt = c*dt_ref`` (``c <= 1``) it is a genuine theorem rate.
+    """
+    return _q_kl(dt, alpha, beta, lambda_min, lambda_max)
+
+
+def deprecated_old_kl_kappa(dt, alpha, beta, lambda_min, lambda_max):
+    """OBSOLETE KL-analysis ``kappa(dt)`` factor (min of two competing terms).
+
+    Part of the superseded KL contraction analysis. Retained only for historical
+    regression checks; never used in current summaries or report narrative.
     """
     term1 = (1.0 + dt * alpha * lambda_min) / (2.0 * (1.0 + dt))
     term2 = 1.0 / (4.0 * (1.0 + dt * beta * lambda_max) ** 2)
     return lambda_min * min(term1, term2)
 
 
-def q_kl_formula(dt, alpha, beta, lambda_min, lambda_max):
-    """KL-analysis per-step contraction factor ``1 - 2 alpha kappa(dt) dt``.
+def deprecated_old_q_kl_formula(dt, alpha, beta, lambda_min, lambda_max):
+    """OBSOLETE KL contraction factor ``1 - 2 alpha kappa(dt) dt``.
 
-    Evaluated on the *common Riemannian-scale* grid (NOT the tiny KL proof
-    stepsize). This is a formal/benchmark contraction factor: it is what the
-    current KL analysis would predict at these stepsizes, not a claim that the
-    KL theorem has been proved for them.
+    Superseded by :func:`q_kl_theory` (the proven improved-proof contraction).
+    Retained for historical comparison only.
     """
-    kappa = kl_kappa(dt, alpha, beta, lambda_min, lambda_max)
+    kappa = deprecated_old_kl_kappa(dt, alpha, beta, lambda_min, lambda_max)
     return 1.0 - 2.0 * alpha * kappa * dt
 
 
@@ -129,7 +146,7 @@ def q_theory_for_method(method, dt, alpha, beta, lambda_min, lambda_max):
     if method == "riemannian":
         return q_riem_theory(dt, alpha, beta, lambda_min, lambda_max)
     if method == "kl":
-        return q_kl_formula(dt, alpha, beta, lambda_min, lambda_max)
+        return q_kl_theory(dt, alpha, beta, lambda_min, lambda_max)
     raise ValueError(f"unknown method '{method}'")
 
 

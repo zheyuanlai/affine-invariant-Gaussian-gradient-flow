@@ -7,4 +7,5 @@ symspace       : Frobenius-isometric vectorization of symmetric matrices
 monte_carlo    : reproducible Gaussian sample banks (antithetic / CRN)
 io_utils       : YAML / CSV / JSON helpers and run-id helpers
 plotting_style : shared matplotlib defaults (no seaborn)
+theory_constants : Riemannian/KL/projected-KL theorem stepsize & contraction constants
 """

@@ -47,25 +47,33 @@ Two time discretizations of the same Gaussian natural gradient flow (`dm/dt =
 C g`, `dC/dt = C + C H C`): the **Riemannian-distance** (geodesic) covariance
 update `C' = e^{dt} C^{1/2} exp(dt C^{1/2} H C^{1/2}) C^{1/2}` and the **KL/Bregman**
 update `C' = (1 + dt) (C^{-1} - dt H)^{-1}`. Both share the explicit mean step
-`m' = m + dt C g`. The KL proof admits a much smaller sufficient stepsize than the
-Riemannian proof (an extra factor `max{1, lambda_max^3 / (2 lambda_min^3)}`); the
-question is whether that smaller KL bound is a genuine restriction or a proof
-artifact. Three deterministic 2-D targets (exact Gaussian posterior, non-smooth
-quartic log-concave, smooth strongly log-concave) and a scalar `N(0, 1)` diagnostic
-are swept over `dt in {0.001, ..., 10}` and each run is classified SPD-feasible /
+`m' = m + dt C g`. Under the improved KL proof both schemes share the **same**
+theorem-safe stepsize scale `dt <= 1/(beta lambda_max)`: the KL proof no longer
+carries the obsolete cubic stepsize penalty `max{1, lambda_max^3 / (2 lambda_min^3)}`,
+and the only remaining theoretical difference between the schemes is the per-step
+contraction factor (`q_riem` vs `q_kl`), not the admissible stepsize. The
+experiments now ask how conservative that shared bound is, how the observed
+contraction compares against `q_riem(dt)` and `q_kl(dt)`, where the large-step
+failures come from, and which scheme is more efficient at matched stepsizes.
+Three deterministic 2-D targets (exact Gaussian posterior, non-smooth quartic
+log-concave, smooth strongly log-concave) and a scalar `N(0, 1)` diagnostic are
+swept over `dt in {0.001, ..., 10}` and each run is classified SPD-feasible /
 stable / monotone / accurate.
 
-**Finding.** The empirical KL stability limit exceeds its theoretical bound by
-`1e4`–`1e8`, against only `2`–`2e2` for the Riemannian scheme, so the KL stepsize
-condition is conservative; the gap persists under the strict accuracy criterion,
-not just bare stability. The scalar diagnostic isolates the cause: the KL
-covariance update is unconditionally SPD for log-concave targets, and the
-large-stepsize failures of both schemes are driven by the shared explicit mean
-update, not by the covariance step. A matched-stepsize convergence-speed study
-adds the practical counterpart: on both globally smooth targets the Riemannian
-(geodesic) update reaches a smaller terminal energy gap at every convergent
-stepsize, with the margin growing to `1e7`–`1e8` as the stepsize coarsens, while
-KL leads only on the non-smooth quartic and only modestly. See
+**Finding.** With the shared theorem-safe scale `1/(beta lambda_max)`, both
+schemes remain stable and monotone well beyond the sufficient bound on these
+deterministic targets, with comparable empirical/theory ratios — there is no
+KL-specific stepsize disadvantage from the theory. The scalar diagnostic isolates
+the mechanism: the KL covariance update is unconditionally SPD for log-concave
+targets, and the large-stepsize failures of both schemes are driven by the shared
+explicit mean update, not by the covariance step. On the common theorem-safe rate
+grid the observed contraction is faster than either theorem factor predicts, with
+`q_kl` the more conservative of the two (now a genuine in-theorem rate, not an
+outside-theorem benchmark). A matched-stepsize convergence-speed study adds the
+practical counterpart: on both globally smooth targets the Riemannian (geodesic)
+update reaches a smaller terminal energy gap at every convergent stepsize, with
+the margin growing as the stepsize coarsens, while KL leads only on the non-smooth
+quartic and only modestly. See
 [`reports/natural_gradient_discretization_stepsize_report.tex`](reports/natural_gradient_discretization_stepsize_report.tex).
 
 ### 4. `wfr_gradient_flow` — Wasserstein–Fisher–Rao splitting and phase separation
@@ -104,13 +112,15 @@ Gauss-Hermite quadrature to compute `A_R(c)=E[V_R''(X)]`,
 for a negative-curvature cascade, the KL/Bregman Fisher-Rao covariance step is
 tested near its rational pole, and the Bures-Wasserstein forward-backward step is
 checked against the nonconvex running-minimum BW-gradient stationarity envelope.
-A fourth experiment adds the **projected (clipped) KL scheme** of Section 2.4
-(Theorem 2.18) of the manuscript: the KL covariance update is clipped back into a
-spectral interval `[lambda_minus, lambda_plus]` and, at theorem-safe stepsizes
-`dt = dt_safety / L_clip` with `L_clip = beta*max(lambda_plus,
-lambda_plus^4/lambda_minus^3)`, the running-minimum Bregman displacement
+A fourth experiment adds the **projected (clipped) KL scheme** of the manuscript:
+the KL covariance update is clipped back into a spectral interval
+`[lambda_minus, lambda_plus]` and, at theorem-safe stepsizes
+`dt = safety / L_clip` with `L_clip = 2*beta*lambda_plus` (so
+`dt <= 1/(2*beta*lambda_plus)`), the running-minimum Bregman displacement
 `D_min(N) = min_{0<=n<N} KL(rho_{a_n}||rho_{a_{n+1}})` is checked against the
-energy-drop envelope `B_N = (dt/N)*(F(c_0) - F(c_N))`.
+energy-drop envelope `B_N = (dt/N)*(F(c_0) - F(c_N))`. The theorem-safe scale
+depends on `lambda_plus` and `beta` only, not on `lambda_minus` (a sweep
+confirms `dt_theory` is flat in `lambda_minus` and scales like `1/lambda_plus`).
 
 **Finding.** Bounded Hessian smoothness alone does not numerically control the
 trajectory-wise Fisher-Rao gradient norm independently of covariance: both
@@ -118,16 +128,19 @@ unprojected Fisher-Rao discretizations can produce very large FR gradients on
 this target. With covariance clipping the pole disappears in the theorem-safe
 regime and the projected KL scheme satisfies the constrained Bregman
 stationarity check `D_min(N) <= B_N` (max violation `0`, `theorem_check_pass`
-true for every `R`). Once the upper covariance constraint binds the covariance
-is pinned at `lambda_plus` and `D_n` becomes zero — this is *constrained*
-stationarity on the feasible-set boundary, not a small *unconstrained* Fisher-Rao
-gradient. A small comparison additionally runs the non-theorem-safe stepsize
-`dt = 1/(beta*lambda_plus)` (here `dt*L_clip = 64 >> 1`, outside Theorem 2.18):
-the envelope still holds empirically because the trajectory reaches the active
-constraint in a single step — a single-example observation, not a relaxation of
-the theorem's hypotheses. The BW comparison is deliberately different again: it
-uses the running minimum of the BW gradient norm, matching the nonconvex
-stationarity theory, not a pointwise Fisher-Rao norm. See
+true for every `R`) across the safety fractions `0.25, 0.5, 0.9`. Once the upper
+covariance constraint binds the covariance is pinned at `lambda_plus` and `D_n`
+becomes zero — this is *constrained* stationarity on the feasible-set boundary,
+not a small *unconstrained* Fisher-Rao gradient, and it does not imply
+convergence to the unconstrained Gaussian VI optimum. A small comparison
+additionally runs the outside-theorem stepsize `dt = 1/(beta*lambda_plus)`, which
+is exactly twice the theorem edge `1/(2*beta*lambda_plus)` (so `dt*L_clip = 2`,
+labelled `outside_theorem_2x`): the envelope still holds empirically because the
+trajectory reaches the active constraint in a single step — a single-example
+observation, not a relaxation of the theorem's hypotheses. The BW comparison is
+deliberately different again: it uses the running minimum of the BW gradient
+norm, matching the nonconvex stationarity theory, not a pointwise Fisher-Rao
+norm. See
 [`reports/natural_gradient_nonconvex_instability_report.tex`](reports/natural_gradient_nonconvex_instability_report.tex).
 
 ## Which outputs are final
@@ -211,10 +224,11 @@ reduced grid (`outputs/natural_gradient_discretization_stepsize_smoke/`).
 ### Supplementary theoretical-rate benchmark
 
 A supplementary experiment compares the theorem-predicted contraction factors of
-both schemes against the observed contraction, on a common Riemannian-scale
-reference stepsize `dt_ref = 1/(beta * lambda_max)` (the tiny KL proof stepsize is
-deliberately not used to size the grid). Only the two globally smooth targets are
-run, since the non-smooth quartic has no global `beta`:
+both schemes against the observed contraction, on the common theorem-safe
+reference stepsize `dt_ref = 1/(beta * lambda_max)`. Under the improved KL proof
+both schemes are admitted on `dt <= dt_ref`, so `q_riem(dt)` and `q_kl(dt)` on
+this grid are genuine in-theorem contraction rates. Only the two globally smooth
+targets are run, since the non-smooth quartic has no global `beta`:
 
 ```bash
 python scripts/natural_gradient_discretization_stepsize/run_rate_benchmark.py \
@@ -284,18 +298,23 @@ python scripts/natural_gradient_nonconvex_instability/plot_results.py \
 
 The runner writes `results_long.csv`, `summary.csv`, `kl_pole_summary.csv`,
 `wasserstein_bound_summary.csv`, `clipped_kl_stationarity.csv`,
-`clipped_kl_summary.csv`, `target_metadata.json`, and `run_metadata.json`.
-Add `--smoke` for the fast reduced grid
+`clipped_kl_summary.csv`, `clipped_kl_sweep.csv`, `target_metadata.json`, and
+`run_metadata.json`. Add `--smoke` for the fast reduced grid
 (`outputs/natural_gradient_nonconvex_instability_smoke/`). The
 `clipped_kl_stationarity.csv`/`clipped_kl_summary.csv` files carry a `dt_rule`
-column distinguishing the theorem-safe stepsize from the non-theorem-safe
-`dt = 1/(beta*lambda_plus)` comparison. `plot_results.py` adds the clipped KL
-figures `fig_nonconvex_clipped_kl_stationarity.{pdf,png}`,
-`fig_nonconvex_clipped_covariance.{pdf,png}`, and the large-step comparison
-`fig_nonconvex_clipped_kl_largestep.{pdf,png}` alongside the existing figures.
+column distinguishing the theorem-safe stepsizes (`dt = safety / (2*beta*lambda_plus)`
+at safety `0.25, 0.5, 0.9`) from the `outside_theorem_2x` comparison
+`dt = 1/(beta*lambda_plus)` (`dt*L_clip = 2`); `clipped_kl_sweep.csv` records the
+theorem-safe stepsize `1/(2*beta*lambda_plus)` as `lambda_minus`/`lambda_plus`
+vary. `plot_results.py` adds the clipped KL figures
+`fig_nonconvex_clipped_kl_stationarity.{pdf,png}`,
+`fig_nonconvex_clipped_covariance.{pdf,png}`, the outside-theorem comparison
+`fig_nonconvex_clipped_kl_largestep.{pdf,png}`, and the stepsize-scaling sweep
+`fig_nonconvex_clipped_kl_theory_sweep.{pdf,png}` alongside the existing figures.
 The report assets (including the clipped KL figures,
-`tab_nonconvex_clipped_kl_summary.tex`, and
-`tab_nonconvex_clipped_kl_largestep.tex`) are regenerated by:
+`tab_nonconvex_clipped_kl_summary.tex`,
+`tab_nonconvex_clipped_kl_largestep.tex`, and
+`tab_nonconvex_clipped_kl_sweep.tex`) are regenerated by:
 
 ```bash
 python reports/make_report_assets.py --only nonconvex_instability

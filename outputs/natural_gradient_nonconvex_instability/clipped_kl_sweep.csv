@@ -1,0 +1,9 @@
+sweep_kind,beta,lambda_minus,lambda_plus,L_clip,dt_projected_KL_theory,theory_version
+vary_lambda_minus,1.0,0.1,2.0,4.0,0.25,projected_kl_L_clip_2_beta_lambda_plus
+vary_lambda_minus,1.0,0.25,2.0,4.0,0.25,projected_kl_L_clip_2_beta_lambda_plus
+vary_lambda_minus,1.0,0.5,2.0,4.0,0.25,projected_kl_L_clip_2_beta_lambda_plus
+vary_lambda_minus,1.0,1.0,2.0,4.0,0.25,projected_kl_L_clip_2_beta_lambda_plus
+vary_lambda_plus,1.0,0.5,1.0,2.0,0.5,projected_kl_L_clip_2_beta_lambda_plus
+vary_lambda_plus,1.0,0.5,2.0,4.0,0.25,projected_kl_L_clip_2_beta_lambda_plus
+vary_lambda_plus,1.0,0.5,4.0,8.0,0.125,projected_kl_L_clip_2_beta_lambda_plus
+vary_lambda_plus,1.0,0.5,8.0,16.0,0.0625,projected_kl_L_clip_2_beta_lambda_plus

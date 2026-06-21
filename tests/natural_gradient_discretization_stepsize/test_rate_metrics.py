@@ -40,12 +40,12 @@ def test_q_riem_theory_in_unit_interval(lam):
 
 
 @pytest.mark.parametrize("lam", [0.01, 0.1, 1.0])
-def test_q_kl_formula_in_unit_interval(lam):
-    """q_kl_formula in (0, 1) on the same Riemannian-scale grid."""
+def test_q_kl_theory_in_unit_interval(lam):
+    """q_kl_theory in (0, 1) on the shared theorem-safe grid dt <= dt_ref."""
     alpha, beta, lam_min, lam_max = _bounds(lam)
     dtr = rm.dt_ref(beta, lam_max)
     for c in C_GRID:
-        q = rm.q_kl_formula(c * dtr, alpha, beta, lam_min, lam_max)
+        q = rm.q_kl_theory(c * dtr, alpha, beta, lam_min, lam_max)
         assert 0.0 < q < 1.0, (lam, c, q)
 
 
@@ -59,13 +59,17 @@ def test_q_riem_boundary_at_dt_ref():
 
 
 def test_kl_more_conservative_than_riem_rate():
-    """At matched Riemannian-scale dt the KL formula rate is <= Riemannian rate."""
+    """At matched theorem-safe dt the KL contraction rate is <= Riemannian rate.
+
+    The improved KL proof keeps the same theorem-safe stepsize but a more
+    conservative per-step contraction factor, so r_kl <= r_riem on the grid.
+    """
     alpha, beta, lam_min, lam_max = _bounds(0.1)
     dtr = rm.dt_ref(beta, lam_max)
     for c in C_GRID:
         dt = c * dtr
         r_riem = rm.per_unit_rate(rm.q_riem_theory(dt, alpha, beta, lam_min, lam_max), dt)
-        r_kl = rm.per_unit_rate(rm.q_kl_formula(dt, alpha, beta, lam_min, lam_max), dt)
+        r_kl = rm.per_unit_rate(rm.q_kl_theory(dt, alpha, beta, lam_min, lam_max), dt)
         assert r_kl <= r_riem + 1e-12, (c, r_kl, r_riem)
 
 

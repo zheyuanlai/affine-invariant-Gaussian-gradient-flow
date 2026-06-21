@@ -94,6 +94,7 @@ def test_smoke_runner_writes_requested_outputs(tmp_path):
         "wasserstein_bound_summary.csv",
         "clipped_kl_stationarity.csv",
         "clipped_kl_summary.csv",
+        "clipped_kl_sweep.csv",
         "target_metadata.json",
         "run_metadata.json",
     ]

@@ -1,8 +1,8 @@
 \documentclass[11pt]{article}
 \input{preamble.tex}
 
-\title{Riemannian versus KL Discretization of the Gaussian\\
-Natural Gradient Flow: Convergence, Cost, and Stepsize Stability}
+\title{Riemannian versus KL Discretization of the Gaussian Natural\\
+Gradient Flow under the Improved KL Stepsize Bound}
 \author{}
 \date{}
 
@@ -14,37 +14,38 @@ The Gaussian natural gradient flow for variational inference,
 $\dot m=Cg$, $\dot C=C+CHC$, can be time-discretized in (at least) two ways that
 share the same explicit mean update but differ in the covariance update: a
 \emph{Riemannian-distance} (geodesic / exponential-map) step and a
-\emph{KL/Bregman} (rational inverse-covariance) step. The current analysis of the
-KL scheme carries a sufficient stepsize condition that is markedly smaller than
-that of the Riemannian scheme, by a factor
-$\max\{1,\lambda_{\max}^3/(2\lambda_{\min}^3)\}$ that can be enormous for
-ill-conditioned covariances. We test whether this smaller KL stepsize bound is a
-genuine restriction or an artifact of the proof. On three deterministic
-two-dimensional targets---an exact Gaussian posterior, a non-separable quartic
-log-concave posterior, and a smooth strongly log-concave posterior---and a scalar
-diagnostic, we classify every $(\text{target},\lambda,\text{method},\Delta t)$
-run as SPD-feasible, stable, monotone, or accurate, and compare the empirical
-maximum stepsizes against the theoretical bounds. The empirical KL stability
-limit exceeds its theoretical bound by four to six orders of magnitude, far more
-than the Riemannian scheme's one-to-two orders, indicating the KL stepsize
-condition is conservative. A scalar diagnostic isolates the cause: the KL
-covariance update is unconditionally well posed for log-concave targets, and the
-large-stepsize failures of \emph{both} schemes are driven by the shared explicit
-mean update, not by the covariance step. Beyond stability, we conduct a
-comprehensive convergence-speed study across all three targets, three
-conditionings $\lambda$, and every convergent stepsize (Sec.~\ref{app:speed}):
-at fine stepsizes the two schemes converge at essentially the same rate in
-elapsed time $n\Delta t$ and the iteration count to a fixed tolerance scales as $1/\Delta t$,
-while at the coarsest convergent stepsizes they separate: on the two globally
-smooth targets the Riemannian (geodesic) update converges faster per step than KL,
-retaining higher fidelity to the continuous flow, whereas on the non-smooth
-quartic target KL is the faster scheme. Finally, on a common Riemannian-scale
-reference stepsize $\Delta t_{\mathrm{ref}}=1/(\beta\lambda_{\max})$ we benchmark
-the theorem-predicted contraction factors of both schemes against the observed
-contraction (Sec.~\ref{sec:rate}): the observed contraction is consistently
-faster than either formula predicts, and the KL formula is the more conservative
-of the two even at matched Riemannian-scale stepsizes, reinforcing that the KL
-disadvantage lies in the current proof rather than in the scheme.
+\emph{KL/Bregman} (rational inverse-covariance) step. An earlier analysis of the
+KL scheme carried a sufficient stepsize condition markedly smaller than that of
+the Riemannian scheme, through an obsolete cubic covariance-conditioning factor;
+the improved KL proof \emph{removes} this penalty. Both schemes now share the same
+theorem-safe stepsize scale
+$\Delta t\le 1/(\beta\lambda_{\max})$, and the only remaining theoretical
+difference between them is the per-step contraction factor, not the admissible
+stepsize. The numerical study therefore changes its question: how sharp is the
+improved (now shared) bound, how does the observed contraction compare against the
+theorem factors $q_{\mathrm{Riem}}$ and $q_{\mathrm{KL}}$, and how do the two
+schemes compare at matched stepsizes? On three deterministic two-dimensional
+targets---an exact Gaussian posterior, a non-separable quartic log-concave
+posterior, and a smooth strongly log-concave posterior---and a scalar diagnostic,
+we classify every $(\text{target},\lambda,\text{method},\Delta t)$ run as
+SPD-feasible, stable, monotone, or accurate. On the smooth targets the two schemes
+share the theorem-safe stepsize exactly, and both remain stable and monotone well
+beyond it, with comparable empirical/theory ratios---there is no KL-specific
+stepsize disadvantage from the theory. A scalar diagnostic isolates the failure
+mechanism: the KL covariance update is unconditionally well posed for log-concave
+targets, and the large-stepsize failures of \emph{both} schemes are driven by the
+shared explicit mean update, not by the covariance step. A convergence-speed study
+across all three targets, three conditionings $\lambda$, and every convergent
+stepsize (Sec.~\ref{app:speed}) shows that at fine stepsizes the two schemes
+converge at essentially the same rate in elapsed time $n\Delta t$, while at the
+coarsest convergent stepsizes the Riemannian update converges faster per step on
+the smooth targets and KL is faster on the non-smooth quartic. Finally, on the
+common theorem-safe reference stepsize
+$\Delta t_{\mathrm{ref}}=1/(\beta\lambda_{\max})$ we benchmark the theorem
+contraction factors of both schemes against the observed contraction
+(Sec.~\ref{sec:rate}): both are now genuine in-theorem rates, the observed
+contraction is faster than either, and $q_{\mathrm{KL}}$ is the more conservative
+of the two---a contraction-rate gap, not a stepsize gap.
 \end{abstract}
 
 \section{Introduction}
@@ -73,16 +74,25 @@ continuous flow to first order, but their finite-stepsize behavior, and in
 particular the sufficient stepsize conditions under which the current analysis
 proves descent, differ substantially.
 
-The central question is sharp. The Riemannian proof admits stepsizes up to
-$\Delta t_{\mathrm{Riem,theory}}=1/(\beta\lambda_{\max})$, whereas the KL proof
-admits only
-$\Delta t_{\mathrm{KL,theory}}=1/\big(\beta\lambda_{\max}\max\{1,\lambda_{\max}^3/(2\lambda_{\min}^3)\}\big)$.
-The extra factor is $1$ only when the relevant covariance eigenvalues are
-comparable; for the ill-conditioned states that arise from a poorly scaled
-initialization it is astronomically large, and the KL bound becomes vanishingly
-small. We ask whether the KL scheme actually \emph{needs} such tiny stepsizes, or
-whether the restriction is an artifact of the bounding argument---mirroring the
-dimension-artifact question studied for the local rate in the companion report.
+The earlier ``tiny KL stepsize'' question is now \emph{obsolete}. A previous KL
+analysis admitted only
+$\Delta t_{\mathrm{KL,theory}}=1/\big(\beta\lambda_{\max}\,\text{(an obsolete cubic factor)}\big)$,
+much smaller than the Riemannian
+$\Delta t_{\mathrm{Riem,theory}}=1/(\beta\lambda_{\max})$, and it was natural to
+ask whether the KL scheme truly needed such small stepsizes. The improved KL proof
+settles this on the theory side: it removes the cubic penalty, so the KL
+relative-smoothness constant is exactly $L_{\mathrm{KL}}=\beta\lambda_{\max}=L_{\mathrm{Riem}}$
+and the two schemes share the theorem-safe stepsize
+\begin{equation}\label{eq:shared-dt}
+\Delta t_{\mathrm{KL,theory}}=\Delta t_{\mathrm{Riem,theory}}=\frac1{\beta\lambda_{\max}},
+\qquad
+\lambda_{\max}=\max\{\lambda_{0,\max},1/\alpha\}.
+\end{equation}
+What remains genuinely different is the per-step \emph{contraction factor}
+(Sec.~\ref{sec:rate}), not the admissible stepsize. The study therefore now asks
+how sharp the improved (shared) bound is empirically, how the observed contraction
+compares against the theorem factors, and---at matched stepsizes---which scheme is
+more efficient on which target.
 
 All experiments here are one- or two-dimensional, fully deterministic (closed-form
 or Gauss--Hermite expectations, no Monte Carlo), and CPU-only, so that the
@@ -149,9 +159,9 @@ the energy minimized (the KL up to an $a$-independent constant) is
 whose gap $\mathcal{E}(a_n)-\mathcal{E}(a_\star)$ is the convergence diagnostic
 plotted throughout.
 The two-dimensional targets all use $\lambda\in\{0.01,0.1,1\}$ and the
-ill-conditioning is intentional: the proof factor
-$\lambda_{\max}^3/(2\lambda_{\min}^3)$ is largest exactly when the initial
-covariance and the target curvature span a wide range of scales.
+ill-conditioning is intentional: a wide range of covariance and curvature scales
+is exactly the regime in which the now-removed cubic KL penalty was largest, so it
+is where the equality of the two theorem-safe stepsizes is most informative.
 
 \paragraph{Gaussian posterior (target A).}
 $\Phi_R(\theta)=\tfrac12\theta^\top Q\theta$ with $Q=\mathrm{diag}(1,\lambda)$, so
@@ -262,22 +272,24 @@ is captured faithfully).
 For the globally smooth targets (A, C), set
 $\lambda_{\min}=\min\{\lambda_{0,\min},1/\beta\}$ and
 $\lambda_{\max}=\max\{\lambda_{0,\max},1/\alpha\}$ from the extreme eigenvalues of
-$C_0$. The proof Lipschitz constants and sufficient stepsizes are
+$C_0$. Under the improved KL proof both schemes share one relative-smoothness
+constant $L=\beta\lambda_{\max}$, hence one theorem-safe stepsize
 \begin{equation}
-\Delta t_{\mathrm{Riem,theory}}=\frac1{\beta\lambda_{\max}},
-\qquad
-\Delta t_{\mathrm{KL,theory}}=\frac1{\beta\lambda_{\max}\,
-\max\{1,\ \lambda_{\max}^3/(2\lambda_{\min}^3)\}} .
+\Delta t_{\mathrm{Riem,theory}}=\Delta t_{\mathrm{KL,theory}}
+=\frac1{\beta\lambda_{\max}} .
 \end{equation}
-For the non-smooth target B (no global smoothness constant) no such bound is reported.
+The KL stepsize carries no dependence on $\lambda_{\min}$: the formerly used cubic
+factor has been removed. For the non-smooth target B (no global smoothness
+constant) no such bound is reported.
 \end{definition}
 The diagnostic quantities are the ratios
 $\Delta t_{\max}^{\mathrm{stable}}/\Delta t_{\mathrm{theory}}$ and
 $\Delta t_{\max}^{\mathrm{monotone}}/\Delta t_{\mathrm{theory}}$: a ratio close to
-$1$ means the proof bound is tight; a ratio of many orders of magnitude means the
-bound is conservative. Because the KL theoretical stepsize carries the extra
-$\lambda_{\max}^3/(2\lambda_{\min}^3)$ factor, its ratio is the focus of the
-proof-artifact discussion.
+$1$ means the (shared) proof bound is tight; a larger ratio means the bound is
+conservative. Because the two schemes now share $\Delta t_{\mathrm{theory}}$, the
+comparison is direct: any difference in these ratios reflects how far each
+\emph{scheme} can be pushed in practice, not a difference in the theorem-safe
+scale.
 
 \section{Results}\label{sec:results}
 
@@ -314,41 +326,38 @@ magnitude below those of the smooth targets.
 Figures~\ref{fig:heat-gauss}--\ref{fig:heat-lit} are the stability heatmaps:
 for each $(\lambda,\Delta t)$ a cell is green (stable and monotone), amber (stable
 but non-monotone), or red (unstable). For the two smooth targets the dotted line
-marks the theoretical stepsize $\Delta t_{\mathrm{theory}}$ for that method. Two
-features are immediate. First, for the KL scheme the green/amber region extends
-\emph{orders of magnitude} to the right of the dotted theoretical line---the
-empirical stability boundary sits near $\Delta t\approx1$--$2$ while the proof
-admits only $\Delta t\approx10^{-5}$--$10^{-6}$. Second, the Riemannian theoretical
-line sits much closer to its empirical boundary. The same picture holds across all
-three $\lambda$ and both smooth targets.
+marks the (now common) theoretical stepsize $\Delta t_{\mathrm{theory}}=1/(\beta\lambda_{\max})$,
+which is identical for the two methods. Two features are immediate. First, for both
+schemes the green/amber region extends well to the right of the dotted theoretical
+line---the empirical stability boundary sits near $\Delta t\approx1$--$2$ while the
+shared sufficient bound is at $\Delta t\approx10^{-2}$--$10^{-1}$. Second, the two
+methods' boundaries sit at comparable stepsizes; the dotted line is the \emph{same}
+for both. The same picture holds across all three $\lambda$ and both smooth targets.
 
-\paragraph{Theory vs empirical (the proof-artifact figure).}
+\paragraph{Theory vs empirical at the shared theorem-safe scale.}
 Figure~\ref{fig:theory-vs-emp} and Table~\ref{tab:disc-step} compare, for the two
-smooth targets, the theoretical stepsize against the empirical stable, monotone,
-and accurate maxima. We emphasize the \emph{monotone} and \emph{accurate} classes
-over bare stability: monotonicity certifies genuine descent at every step, and
-accuracy certifies that the discrete trajectory still tracks the continuous flow
-to $10^{-2}$, so both are stronger evidence than non-divergence alone. The
-empirical KL monotone stepsize exceeds its theoretical bound by ratios from
-$6.4\times10^{1}$ (Gaussian, $\lambda=1$) up to $8\times10^{8}$ (Gaussian,
-$\lambda=0.01$), with the smooth target consistently around $1.4$--$2.0\times10^{5}$;
-the \emph{accurate} maximum is one to two grid steps smaller but still exceeds the
-KL bound by four to eight orders of magnitude, so the proof-artifact gap is not an
-artifact of the permissive stability criterion---it persists under the strict
-accuracy criterion. The Riemannian ratios, by contrast, range only from $2$ to
-$200$ (monotone) and are of the same order under accuracy. The KL bound is
-thus conservative by four to six extra orders of magnitude relative to the
-Riemannian bound---precisely the size of the
-$\lambda_{\max}^3/(2\lambda_{\min}^3)$ factor that separates the two theoretical
-stepsizes.
+smooth targets, the (shared) theoretical stepsize against the empirical stable,
+monotone, and accurate maxima. We emphasize the \emph{monotone} and \emph{accurate}
+classes over bare stability: monotonicity certifies genuine descent at every step,
+and accuracy certifies that the discrete trajectory still tracks the continuous
+flow to $10^{-2}$, so both are stronger evidence than non-divergence alone. Because
+the two schemes now share $\Delta t_{\mathrm{theory}}$, their empirical/theory
+ratios are directly comparable: both are modest factors of order
+$10^{0}$--$10^{2}$, of the same order for KL and Riemannian, and they persist under
+the strict accuracy criterion. There is no KL-specific blow-up of the ratio: the
+former four-to-six order separation was an artifact of the cubic penalty that the
+improved proof removes. The remaining gap---both schemes are stable a couple of
+orders of magnitude beyond the sufficient bound---measures how conservative the
+shared bound is, not any difference between the schemes.
 
 \begin{table}[t]
 \centering
 \caption{Empirical vs theoretical maximum stepsize by target/$\lambda$/method,
+against the shared theorem-safe stepsize $\Delta t_{\mathrm{theory}}=1/(\beta\lambda_{\max})$,
 reporting the largest stable, monotone, and accurate stepsizes and the
-monotone/theory and accurate/theory ratios. Both ratios are $10^{4}$--$10^{8}$ for
-KL but only $2$--$10^{2}$ for the Riemannian scheme; the gap survives the strict
-accuracy criterion, not just bare stability.}
+monotone/theory and accurate/theory ratios. The ratios are modest
+($10^{0}$--$10^{2}$) and of the same order for KL and Riemannian; the gap survives
+the strict accuracy criterion, not just bare stability.}
 \label{tab:disc-step}
 \inputtable{tab_disc_stepsize.tex}
 \end{table}
@@ -471,14 +480,16 @@ schemes can take, the geometrically faithful Riemannian update converges faster
 per step in the coarse-stepsize regime on smooth targets, while the two are
 interchangeable when $\Delta t$ is small.
 
-\section{Theoretical rate benchmark at Riemannian-scale stepsizes}\label{sec:rate}
+\section{Theorem contraction-rate benchmark at the shared theorem-safe scale}\label{sec:rate}
 
-The stability sections established that the KL proof stepsize is conservative,
-and the convergence-speed section compared the two schemes empirically at matched
-stepsizes. We now test a complementary question: do the theorem-predicted
-\emph{contraction factors} themselves predict the observed contraction, and how
-much slack do they carry at practically meaningful stepsizes? This isolates the
-quality of the rate bounds from the question of the maximal admissible stepsize.
+The stability sections established that the (now shared) theorem-safe stepsize is
+conservative, and the convergence-speed section compared the two schemes
+empirically at matched stepsizes. We now test the complementary question that
+carries the only remaining theoretical distinction: do the theorem-predicted
+\emph{contraction factors} predict the observed contraction, and how much slack do
+they carry? Under the improved KL proof both factors are valid on the same
+theorem-safe range $\Delta t\le1/(\beta\lambda_{\max})$, so this is a genuine
+in-theorem comparison, not a formal extrapolation.
 
 \paragraph{Why only the two globally smooth targets.}
 We restrict to the exact Gaussian posterior (target A) and the smooth strongly
@@ -487,8 +498,8 @@ log-concavity and $\beta$-smoothness, so a clean theorem contraction factor
 exists. We exclude the non-smooth quartic target B: it has no global $\beta$, so
 no theorem rate is available to benchmark against.
 
-\paragraph{A common Riemannian-scale reference stepsize.}
-We deliberately use the \emph{Riemannian-scale} reference stepsize
+\paragraph{The shared theorem-safe reference stepsize.}
+Both schemes share the theorem-safe reference stepsize
 \begin{equation}\label{eq:dtref}
 \Delta t_{\mathrm{ref}}=\frac1{\beta\lambda_{\max}},
 \qquad
@@ -496,14 +507,13 @@ We deliberately use the \emph{Riemannian-scale} reference stepsize
 \quad
 \lambda_{\max}=\max\{\lambda_{0,\max},1/\alpha\},
 \end{equation}
-for \emph{both} schemes, and sweep the fractions
+and we sweep the fractions
 $c\in\{0.05,0.1,0.25,0.5,0.75,1\}$ with $\Delta t=c\,\Delta t_{\mathrm{ref}}$, to
-the same terminal time $T=15$ ($N=\lceil T/\Delta t\rceil$ steps). We do
-\emph{not} use the tiny KL proof stepsize to size the grid; the stability study
-already showed it is orders of magnitude smaller than the practically usable
-range. The KL contraction formula is instead \emph{evaluated} on this common
-grid, as a \emph{formal KL rate benchmark at Riemannian-scale stepsizes}---not a
-claim that the current KL theorem has been proved for these stepsizes.
+the same terminal time $T=15$ ($N=\lceil T/\Delta t\rceil$ steps). Under the
+improved KL proof the grid $\Delta t\le\Delta t_{\mathrm{ref}}$ lies inside the
+theorem range for \emph{both} schemes, so $q_{\mathrm{Riem}}(\Delta t)$ and
+$q_{\mathrm{KL}}(\Delta t)$ are both genuine theorem contraction factors here---not
+a formal extrapolation onto an unproved range.
 
 \paragraph{Contraction factors.}
 For the Riemannian scheme the theorem per-step factor and per-unit-time rate are
@@ -513,27 +523,23 @@ q_{\mathrm{Riem}}(\Delta t)=1-\alpha\lambda_{\min}\Delta t\,(2-\beta\lambda_{\ma
 r_{\mathrm{Riem}}(\Delta t)=-\frac{\log q_{\mathrm{Riem}}(\Delta t)}{\Delta t}.
 \end{equation}
 On the grid $\Delta t\le\Delta t_{\mathrm{ref}}$ the bracket
-$(2-\beta\lambda_{\max}\Delta t)\ge1$, so $q_{\mathrm{Riem}}\in(0,1)$. The KL
-analysis gives, with
-\begin{equation}\label{eq:kappa}
-\kappa(\Delta t)=\lambda_{\min}\min\!\Big\{
-\frac{1+\Delta t\,\alpha\lambda_{\min}}{2(1+\Delta t)},\
-\frac1{4(1+\Delta t\,\beta\lambda_{\max})^2}\Big\},
-\end{equation}
-the factor and rate
+$(2-\beta\lambda_{\max}\Delta t)\ge1$, so $q_{\mathrm{Riem}}\in(0,1)$. The improved
+KL theorem gives the per-step factor and rate
 \begin{equation}\label{eq:qkl}
-q_{\mathrm{KL}}(\Delta t)=1-2\alpha\,\kappa(\Delta t)\,\Delta t,
+q_{\mathrm{KL}}(\Delta t)=1-\frac{\alpha\lambda_{\min}\Delta t}
+{2(1+\Delta t)(1+\Delta t\,\beta\lambda_{\max})},
 \qquad
 r_{\mathrm{KL}}(\Delta t)=-\frac{\log q_{\mathrm{KL}}(\Delta t)}{\Delta t}.
 \end{equation}
 For reference, the continuous-time lower-bound rate is
 $r_{\mathrm{cont}}=2\alpha\lambda_{\min}$. As $\Delta t\to0$ the Riemannian rate
-$r_{\mathrm{Riem}}\to r_{\mathrm{cont}}$, whereas the KL formula rate tends to
-$r_{\mathrm{cont}}/4$: at small $\Delta t$ the minimum in \eqref{eq:kappa} is
-attained by the second term, $\kappa(0)=\lambda_{\min}/4$, so
-$r_{\mathrm{KL}}\to\alpha\lambda_{\min}/2=r_{\mathrm{cont}}/4$. The KL formula is
-thus a factor $\approx4$ more conservative than the Riemannian one even in the
-small-stepsize limit, before any stepsize-dependent widening of the gap.
+$r_{\mathrm{Riem}}\to r_{\mathrm{cont}}$, whereas the KL rate tends to
+$r_{\mathrm{cont}}/4$: at small $\Delta t$ the denominator of \eqref{eq:qkl}
+tends to $2$, so the decrement is $\tfrac12\alpha\lambda_{\min}\Delta t$ and
+$r_{\mathrm{KL}}\to\alpha\lambda_{\min}/2=r_{\mathrm{cont}}/4$. The KL contraction
+factor is thus a factor $\approx4$ more conservative than the Riemannian one even
+in the small-stepsize limit---this is the contraction-rate gap that survives the
+removal of the stepsize penalty.
 
 \paragraph{Observed contraction.}
 For each run we record the full energy-gap trajectory and report a terminal
@@ -556,12 +562,11 @@ First, the observed contraction is \emph{faster than either formula predicts}: i
 the rate scatter (Fig.~\ref{fig:rate-scatter}) every point lies above the
 $y=x$ diagonal, and the terminal slack is positive by several orders of magnitude
 for every cell (Fig.~\ref{fig:rate-slack}, Table~\ref{tab:disc-rate}). Second,
-the KL formula is the \emph{more conservative} of the two: at every $\Delta t$ on
-the common grid $r_{\mathrm{KL}}(\Delta t)\le r_{\mathrm{Riem}}(\Delta t)$, so the
-KL rate envelope predicts slower contraction and sits higher above the observed
-curve, and the observed/theory rate ratio is correspondingly larger for KL
-(Table~\ref{tab:disc-rate}: $\sim\!80$--$300\times$ for KL against
-$\sim\!20$--$40\times$ for Riemannian). The terminal slack is large and positive
+the KL contraction factor is the \emph{more conservative} of the two: at every
+$\Delta t$ on the grid $r_{\mathrm{KL}}(\Delta t)\le r_{\mathrm{Riem}}(\Delta t)$,
+so the KL rate envelope predicts slower contraction and sits higher above the
+observed curve, and the observed/theory rate ratio is correspondingly larger for
+KL (Table~\ref{tab:disc-rate}). The terminal slack is large and positive
 for \emph{both} schemes (several orders of magnitude); it is largest for KL at the
 finer fractions, while at the coarsest fractions the Riemannian observed gap
 descends to near machine precision (deeper observed convergence), which inflates
@@ -570,29 +575,26 @@ the Riemannian slack into the KL range there. Third, at the finest fractions ($c
 value, consistent with both schemes being first-order discretizations of the same
 flow; the Riemannian theoretical rate also approaches $r_{\mathrm{cont}}$ there
 (from below), while the KL theoretical rate approaches only $r_{\mathrm{cont}}/4$
-(eq.~\eqref{eq:kappa}), so both theoretical rates sit well below the observed rate
+(eq.~\eqref{eq:qkl}), so both theoretical rates sit well below the observed rate
 and the KL one further still. The iteration-to-tolerance comparison
 (Fig.~\ref{fig:rate-itertol}) tells the same story from the cost side: where both
 the observed and the theoretical iteration counts to gap $\le10^{-6}$ are finite,
 $N_{\mathrm{theory}}$ exceeds $N_{\mathrm{obs}}$, and the KL theoretical count is
-the largest. This strengthens the paper's central reading: at the
-practically relevant Riemannian-scale stepsizes the KL disadvantage is in the
-current \emph{proof}---both its stepsize bound and its rate formula are
-conservative---not in the scheme's behavior. We are careful not to overclaim: the
-KL formula evaluated here is a formal benchmark on a stepsize range the present KL
-theorem does not establish, so the gap quantifies the conservativeness of the
-current analysis, not a proved KL rate at these stepsizes.
+the largest. The reading is now precise: both factors are genuine in-theorem
+contraction rates on this shared stepsize range, and the only theoretical
+distinction between the schemes is that the KL contraction factor is the more
+conservative of the two---a contraction-rate gap, not a stepsize gap.
 
 \begin{table}[t]
 \centering
-\caption{Theoretical rate benchmark on the common Riemannian-scale grid,
+\caption{Theorem contraction-rate benchmark on the shared theorem-safe grid,
 aggregated over $\lambda\in\{0.01,0.1,1\}$ (geometric means). For each
 target/method/$c$: the observed terminal rate $\bar r_{\mathrm{obs}}$, the
 method-specific theoretical rate $\bar r_{\mathrm{th}}$, their ratio (observed
 faster when $>1$), the terminal slack, the run count $n$, and the number of
 floor-limited runs. The observed/theory ratio is well above $1$ throughout and is
-larger for KL than for Riemannian at matched $c$ (the KL formula being the more
-conservative); the terminal slack is large for both schemes.}
+larger for KL than for Riemannian at matched $c$ (the KL contraction factor being
+the more conservative); the terminal slack is large for both schemes.}
 \label{tab:disc-rate}
 \inputtable{tab_discretization_rate_summary.tex}
 \end{table}
@@ -601,23 +603,23 @@ conservative); the terminal slack is large for both schemes.}
 
 The evidence supports a balanced reading, not a simple ranking.
 \begin{itemize}\itemsep4pt
+  \item \textbf{The improved KL proof removes the artificial cubic stepsize
+  penalty.} The KL relative-smoothness constant is now $\beta\lambda_{\max}$, equal
+  to the Riemannian one, so the two schemes share the theorem-safe stepsize
+  $\Delta t\le1/(\beta\lambda_{\max})$ \eqref{eq:shared-dt}. The KL scheme has no
+  inherent stepsize disadvantage from the theory.
   \item \textbf{The Riemannian discretization is the geometrically faithful one.}
   Its update \eqref{eq:riem} is exactly a geodesic step of the affine-invariant
-  geometry, with the cleanest interpretation as geodesic gradient descent, and its
-  theoretical stepsize bound is comparatively tight (empirical/theory ratio
-  $2$--$200$). Its cost is the matrix exponential, immaterial here but the more
-  expensive update in general.
-  \item \textbf{The KL discretization is computationally simpler and empirically
-  stable far beyond its proof bound.} The update \eqref{eq:kl} is a single
-  symmetric solve, and on the globally smooth targets it is stable and monotone for
-  stepsizes $10^{4}$--$10^{8}$ times larger than the current sufficient condition
-  permits (Table~\ref{tab:disc-step}, Fig.~\ref{fig:theory-vs-emp}).
-  \item \textbf{The KL stepsize restriction is conservative.} The large and
-  systematic gap between the empirical and theoretical KL limits---of the same
-  order as the $\lambda_{\max}^3/(2\lambda_{\min}^3)$ factor that distinguishes the
-  two proofs---indicates that this factor is an artifact of the bounding argument
-  rather than a genuine restriction on the scheme. It persists under the strict
-  accuracy criterion, not just bare stability (Table~\ref{tab:disc-step}).
+  geometry, with the cleanest interpretation as geodesic gradient descent. Its cost
+  is the matrix exponential, immaterial here but the more expensive update in
+  general.
+  \item \textbf{Both schemes are stable well beyond the (shared) sufficient
+  bound.} On the globally smooth targets each scheme is stable and monotone for
+  stepsizes a couple of orders of magnitude larger than the shared sufficient
+  condition $1/(\beta\lambda_{\max})$ permits, with comparable empirical/theory
+  ratios (Table~\ref{tab:disc-step}, Fig.~\ref{fig:theory-vs-emp}). The shared
+  bound is conservative on these deterministic targets; this persists under the
+  strict accuracy criterion, not just bare stability.
   \item \textbf{The KL covariance update is not the instability source.} For a
   log-concave target the KL precision $C^{-1}-\Delta t\,H$ is SPD for every
   $\Delta t>0$, so the covariance step never leaves the SPD cone; the scalar
@@ -638,24 +640,27 @@ The evidence supports a balanced reading, not a simple ranking.
   stepsize chosen as large as stability allows---the practical regime---the
   Riemannian update is typically the faster choice.
 \end{itemize}
-We are careful not to overclaim. At well-conditioned settings the absolute stable
-stepsize of the two schemes is comparable (indeed at $\lambda=1$ the Riemannian
-scheme tolerates a slightly larger stable $\Delta t$ than KL), and on the
-non-smooth quartic target both are restricted to small stepsizes, where KL is the
-faster of the two. The conclusions are specifically about the
-\emph{gap between the KL proof bound and KL practice} (large and systematic) and
-the \emph{matched-stepsize convergence-speed advantage of the Riemannian update on
-smooth targets}, not a blanket statement that one scheme dominates the other in
+We are careful not to overclaim. The two schemes now share one theorem-safe
+stepsize, and their absolute stable stepsizes are comparable (indeed at
+$\lambda=1$ the Riemannian scheme tolerates a slightly larger stable $\Delta t$
+than KL), while on the non-smooth quartic target both are restricted to small
+stepsizes, where KL is the faster of the two. The conclusions are specifically
+that the improved KL proof leaves \emph{no theoretical stepsize disadvantage} for
+the KL scheme, that the only remaining theoretical distinction is the
+\emph{contraction factor} (more conservative for KL), and that there is a
+\emph{matched-stepsize convergence-speed advantage of the Riemannian update on
+smooth targets}---not a blanket statement that one scheme dominates the other in
 every respect.
 
 \paragraph{Limitations.}
 This is numerical evidence on $d\le2$ deterministic targets, not a theorem. The
 stepsize grid is coarse (factors of $2$--$2.5$), so the reported empirical maxima
-are accurate only to within one grid step; the qualitative four-to-six order gap
-is far larger than this resolution. Establishing that the KL scheme admits
-Riemannian-sized stepsizes in general requires a revised proof; the present data
-indicate where to look (the $\lambda_{\max}^3/\lambda_{\min}^3$ factor) and that
-the shared mean step, not the covariance update, is the true stepsize bottleneck.
+are accurate only to within one grid step; the qualitative gap between empirical
+stability and the shared sufficient bound is larger than this resolution. The
+improved KL proof already establishes that the KL scheme admits the same
+theorem-safe stepsize as the Riemannian one; the present data show that this
+shared bound is conservative in practice and that the shared mean step, not the
+covariance update, is the true stepsize bottleneck.
 
 
 \appendix
@@ -702,18 +707,18 @@ stability heatmap, Fig.~\ref{fig:heat-lit}.)}
 \centering
 \includegraphics[width=\textwidth]{fig_heatmap_gaussian_posterior.pdf}
 \caption{Gaussian posterior stability classification. Green: stable \& monotone;
-amber: stable, non-monotone; red: unstable/diverged. Dotted line: theoretical
-$\Delta t$ for the method. The KL stable region extends far past its (tiny)
-theoretical stepsize.}
+amber: stable, non-monotone; red: unstable/diverged. Dotted line: the shared
+theoretical $\Delta t=1/(\beta\lambda_{\max})$ (identical for both methods). Both
+stable regions extend well past it.}
 \label{fig:heat-gauss}
 \end{figure}
 
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth]{fig_heatmap_smooth_logconcave.pdf}
-\caption{Smooth log-concave stability classification (same legend). The KL
-theoretical line ($\sim10^{-6}$) is far to the left of the empirical boundary
-($\sim1$).}
+\caption{Smooth log-concave stability classification (same legend). The shared
+theoretical line ($\sim10^{-1}$) sits well to the left of the empirical boundary
+($\sim1$) for both methods.}
 \label{fig:heat-smooth}
 \end{figure}
 
@@ -731,9 +736,9 @@ $\Delta t$.}
 \includegraphics[width=\textwidth]{fig_theory_vs_empirical.pdf}
 \caption{Theoretical (shaded bars) vs empirical maximum stepsize (markers:
 $\circ$ monotone, $\triangle$ stable) for the Gaussian and smooth targets,
-Riemannian (blue) vs KL (red), log scale. The gap between the KL theoretical bar
-and its empirical markers is enormous; the Riemannian gap is small. This is the
-central proof-artifact figure.}
+Riemannian (blue) vs KL (red), log scale. The theoretical bar is the \emph{same}
+$1/(\beta\lambda_{\max})$ for both methods, and each scheme's empirical markers sit
+a comparable, modest factor above it.}
 \label{fig:theory-vs-emp}
 \end{figure}
 

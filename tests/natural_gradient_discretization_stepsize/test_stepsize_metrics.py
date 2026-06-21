@@ -8,25 +8,37 @@ from src.natural_gradient_discretization_stepsize.metrics import (
 
 
 def test_theory_bounds_formula():
-    """dt_Riem = 1/(beta lam_max); dt_KL adds the lam_max^3/(2 lam_min^3) factor."""
+    """Improved KL proof: dt_Riem = dt_KL = 1/(beta lam_max), no cubic penalty."""
     alpha, beta = 0.1, 1.0
     C0 = np.diag([0.5, 2.0])
     b = theory_stepsize_bounds(alpha, beta, C0)
     # lam_min = min(0.5, 1/beta=1) = 0.5 ; lam_max = max(2.0, 1/alpha=10) = 10
     assert b["lambda_min"] == 0.5 and b["lambda_max"] == 10.0
     assert np.isclose(b["L_riem"], 1.0 * 10.0)
-    factor = 10.0 ** 3 / (2.0 * 0.5 ** 3)
-    assert np.isclose(b["L_kl"], 1.0 * 10.0 * factor)
+    # KL Lipschitz constant is now exactly beta*lambda_max (cubic factor removed).
+    assert np.isclose(b["L_kl"], 1.0 * 10.0)
     assert np.isclose(b["dt_theory_riem"], 1.0 / 10.0)
-    assert np.isclose(b["dt_theory_kl"], 1.0 / (10.0 * factor))
+    assert np.isclose(b["dt_theory_kl"], 1.0 / 10.0)
+    assert b["theory_version"] == "kl_beta_lambda_max_no_cubic_penalty"
 
 
-def test_kl_bound_at_most_riemann_bound():
-    """The KL theoretical stepsize never exceeds the Riemannian one."""
+def test_kl_and_riemann_share_theorem_safe_stepsize():
+    """For smooth log-concave targets the KL and Riemannian stepsizes are equal."""
     for lam in (0.01, 0.1, 1.0):
         T = GaussianPosteriorTarget(lam)
         b = theory_stepsize_bounds(T.alpha, T.beta, T.C0)
-        assert b["dt_theory_kl"] <= b["dt_theory_riem"] + 1e-15
+        assert np.isclose(b["dt_theory_kl"], b["dt_theory_riem"], rtol=0, atol=1e-15)
+
+
+def test_kl_stepsize_has_no_lambda_min_cubic_dependence():
+    """dt_KL = 1/(beta lam_max) is invariant to lambda0_min (no lam_min^3 term)."""
+    alpha, beta = 0.1, 1.0
+    # Same lambda0_max=2 but very different lambda0_min: the cubic penalty would
+    # have made dt_KL differ by orders of magnitude; the new bound is identical.
+    b_wide = theory_stepsize_bounds(alpha, beta, np.diag([1e-4, 2.0]))
+    b_narrow = theory_stepsize_bounds(alpha, beta, np.diag([1.0, 2.0]))
+    assert np.isclose(b_wide["dt_theory_kl"], b_narrow["dt_theory_kl"])
+    assert np.isclose(b_wide["dt_theory_kl"], b_wide["dt_theory_riem"])
 
 
 def test_theory_unavailable():

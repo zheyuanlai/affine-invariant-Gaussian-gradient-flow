@@ -28,22 +28,29 @@ wasserstein_fb:
   c0: 1.0
   max_iter: 20000
 
-# Projected KL scheme with covariance clipping (Theorem 2.18). Only
-# theorem-safe stepsizes are used: with beta=1 the Bregman smoothness constant
-# is L_clip = max(lambda_plus, lambda_plus^4 / lambda_minus^3) and
-# dt = dt_safety / L_clip with dt_safety < 1.
+# Projected KL scheme with covariance clipping. The current projected-KL theorem
+# uses the Bregman smoothness constant L_clip = 2*beta*lambda_plus and the
+# theorem-safe stepsize dt = safety / L_clip = safety / (2*beta*lambda_plus),
+# safety <= 1. The theorem-safe scale depends on lambda_plus and beta only, not
+# on lambda_minus.
 clipped_kl_stationarity:
   R_values: [20, 50, 100, 300, 1000]
   lambda_minus: 0.5
   lambda_plus: 2.0
   beta: 1.0
-  dt_safety: 0.9
+  dt_safety: 0.5            # primary safety used by the report figures
+  safety_values: [0.25, 0.5, 0.9]
   c0: 1.0
   num_steps: 300
-  # Also run the non-theorem-safe stepsize dt = 1/(beta*lambda_plus) for
-  # comparison. Here dt*L_clip = 64 > 1, so Theorem 2.18 does not apply; the
-  # study asks whether the stationarity envelope still follows empirically.
-  compare_riemannian_scale_dt: true
+  # Also run dt = 1/(beta*lambda_plus) = 2x the theorem edge 1/(2*beta*lambda_plus),
+  # so dt*L_clip = 2: outside the theorem. The study asks whether the stationarity
+  # envelope still follows empirically (it does, via single-step boundary clip).
+  compare_outside_theorem_2x: true
+  # Theory-only sweep showing dt_theory is independent of lambda_minus and scales
+  # like 1/lambda_plus.
+  theory_sweep:
+    lambda_minus_values: [0.1, 0.25, 0.5, 1.0]
+    lambda_plus_values: [1.0, 2.0, 4.0, 8.0]
 
 optimizer:
   maxiter: 300
@@ -75,10 +82,14 @@ smoke:
     lambda_minus: 0.5
     lambda_plus: 2.0
     beta: 1.0
-    dt_safety: 0.9
+    dt_safety: 0.5
+    safety_values: [0.25, 0.5, 0.9]
     c0: 1.0
     num_steps: 30
-    compare_riemannian_scale_dt: true
+    compare_outside_theorem_2x: true
+    theory_sweep:
+      lambda_minus_values: [0.25, 0.5, 1.0]
+      lambda_plus_values: [1.0, 2.0, 4.0]
   optimizer:
     maxiter: 80
     gtol: 1.0e-8

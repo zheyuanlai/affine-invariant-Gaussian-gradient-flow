@@ -83,12 +83,17 @@
       },
       "theory_bounds": {
         "theory_bound_available": true,
+        "alpha": 0.01,
+        "beta": 1.0,
+        "lambda0_min": 0.5,
+        "lambda0_max": 2.0,
         "lambda_min": 0.5,
         "lambda_max": 100.0,
         "L_riem": 100.0,
-        "L_kl": 400000000.0,
+        "L_kl": 100.0,
         "dt_theory_riem": 0.01,
-        "dt_theory_kl": 2.5e-09
+        "dt_theory_kl": 0.01,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
@@ -102,17 +107,17 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        6.118044538541751e-06,
-        0.00015294886766812306
+        6.11804453854173e-06,
+        0.000152948867668123
       ],
       "ode_terminal_C": [
         [
-          0.9999996940977732,
+          0.9999996940977731,
           0.0
         ],
         [
           0.0,
-          99.99850110109683
+          99.99850110109685
         ]
       ]
     },
@@ -167,18 +172,23 @@
       },
       "theory_bounds": {
         "theory_bound_available": true,
+        "alpha": 0.1,
+        "beta": 1.0,
+        "lambda0_min": 0.5,
+        "lambda0_max": 2.0,
         "lambda_min": 0.5,
         "lambda_max": 10.0,
         "L_riem": 10.0,
-        "L_kl": 40000.0,
+        "L_kl": 10.0,
         "dt_theory_riem": 0.1,
-        "dt_theory_kl": 2.5e-05
+        "dt_theory_kl": 0.1,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
         "status": 0,
         "message": "The solver successfully reached the end of the integration interval.",
-        "nfev": 6527,
+        "nfev": 6533,
         "njev": 5,
         "rtol": 1e-10,
         "atol": 1e-12,
@@ -186,8 +196,8 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        6.11804453888794e-06,
-        1.5295097310762267e-05
+        6.118044538855638e-06,
+        1.5295097310680207e-05
       ],
       "ode_terminal_C": [
         [
@@ -196,7 +206,7 @@
         ],
         [
           0.0,
-          9.99998776392215
+          9.999987763922153
         ]
       ]
     },
@@ -251,12 +261,17 @@
       },
       "theory_bounds": {
         "theory_bound_available": true,
+        "alpha": 1.0,
+        "beta": 1.0,
+        "lambda0_min": 0.5,
+        "lambda0_max": 2.0,
         "lambda_min": 0.5,
         "lambda_max": 2.0,
         "L_riem": 2.0,
-        "L_kl": 64.0,
+        "L_kl": 2.0,
         "dt_theory_riem": 0.5,
-        "dt_theory_kl": 0.015625
+        "dt_theory_kl": 0.5,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
@@ -270,17 +285,17 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        6.118044539656967e-06,
-        1.5295118367564678e-06
+        6.118044539657045e-06,
+        1.5295118367564645e-06
       ],
       "ode_terminal_C": [
         [
-          0.9999996940977731,
+          0.9999996940977732,
           0.0
         ],
         [
           0.0,
-          1.0000001529511837
+          1.0000001529511835
         ]
       ]
     },
@@ -307,39 +322,44 @@
       "beta": null,
       "description": "non-separable quartic V=(sqrt(lam)x-y)^2/20 + y^4/20",
       "m_star": [
-        0.0,
-        0.0
+        1.5760376746280284e-09,
+        4.0664310029297224e-10
       ],
       "C_star": [
         [
-          1129.0994257680309,
-          12.90994415767775
+          1129.0994443780137,
+          12.909944475036554
         ],
         [
-          12.90994415767775,
-          1.2909944401392668
+          12.909944475036554,
+          1.2909944478168986
         ]
       ],
       "F_star": -2.8315840454325665,
       "optimizer": {
         "method": "lbfgsb_cholesky",
         "converged": true,
-        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
-        "grad_norm": 1.883676022751567e-08,
-        "stationarity_g_norm": 0.0,
-        "stationarity_cov_residual": 7.877787327386428e-09,
+        "message": "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH",
+        "grad_norm": 1.3966858047173982e-09,
+        "stationarity_g_norm": 3.3989744766497656e-10,
+        "stationarity_cov_residual": 1.0882646443615363e-09,
         "n_restarts": 4,
         "n_converged_restarts": 4,
-        "nit": 17
+        "nit": 33
       },
       "theory_bounds": {
         "theory_bound_available": false,
+        "alpha": null,
+        "beta": null,
+        "lambda0_min": null,
+        "lambda0_max": null,
         "lambda_min": null,
         "lambda_max": null,
         "L_riem": null,
         "L_kl": null,
         "dt_theory_riem": null,
-        "dt_theory_kl": null
+        "dt_theory_kl": null,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
@@ -353,16 +373,16 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        0.001448861188912186,
-        6.842159562513408e-05
+        0.0014488611889121878,
+        6.842159562513388e-05
       ],
       "ode_terminal_C": [
         [
-          1129.0035320046024,
-          12.90895673286747
+          1129.0035320046031,
+          12.908956732867471
         ],
         [
-          12.90895673286747,
+          12.908956732867471,
           1.2909943953124423
         ]
       ]
@@ -390,39 +410,44 @@
       "beta": null,
       "description": "non-separable quartic V=(sqrt(lam)x-y)^2/20 + y^4/20",
       "m_star": [
-        1.5421746685487207e-11,
-        5.87559807558712e-12
+        0.0,
+        0.0
       ],
       "C_star": [
         [
-          112.90994448778119,
-          4.082482904645989
+          112.90994448777134,
+          4.082482904642642
         ],
         [
-          4.082482904645989,
-          1.2909944487343472
+          4.082482904642642,
+          1.290994448732258
         ]
       ],
       "F_star": -1.6802914989355435,
       "optimizer": {
         "method": "lbfgsb_cholesky",
         "converged": true,
-        "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
-        "grad_norm": 6.610456307359731e-12,
-        "stationarity_g_norm": 4.651207301741743e-12,
-        "stationarity_cov_residual": 1.9751030956579602e-12,
+        "message": "CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL",
+        "grad_norm": 6.875667333238611e-12,
+        "stationarity_g_norm": 0.0,
+        "stationarity_cov_residual": 4.65097796008729e-12,
         "n_restarts": 4,
         "n_converged_restarts": 4,
-        "nit": 26
+        "nit": 14
       },
       "theory_bounds": {
         "theory_bound_available": false,
+        "alpha": null,
+        "beta": null,
+        "lambda0_min": null,
+        "lambda0_max": null,
         "lambda_min": null,
         "lambda_max": null,
         "L_riem": null,
         "L_kl": null,
         "dt_theory_riem": null,
-        "dt_theory_kl": null
+        "dt_theory_kl": null,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
@@ -436,17 +461,17 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        0.0002980438290564251,
-        7.006674576233614e-05
+        0.0002980438290564224,
+        7.006674576233522e-05
       ],
       "ode_terminal_C": [
         [
-          112.9090123877755,
-          4.082451531259017
+          112.90901238777549,
+          4.082451531259015
         ],
         [
-          4.082451531259017,
-          1.2909944004841454
+          4.082451531259015,
+          1.2909944004841463
         ]
       ]
     },
@@ -478,34 +503,39 @@
       ],
       "C_star": [
         [
-          11.290994452916351,
-          1.2909944487792797
+          11.290994448726424,
+          1.2909944487349578
         ],
         [
-          1.2909944487792797,
-          1.290994448337738
+          1.2909944487349578,
+          1.2909944487368952
         ]
       ],
       "F_star": -0.5289989524385206,
       "optimizer": {
         "method": "lbfgsb_cholesky",
         "converged": true,
-        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
-        "grad_norm": 7.42965198428197e-10,
+        "message": "CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL",
+        "grad_norm": 1.9826153143614734e-12,
         "stationarity_g_norm": 0.0,
-        "stationarity_cov_residual": 5.10483592758604e-10,
+        "stationarity_cov_residual": 1.5476453297715085e-12,
         "n_restarts": 4,
         "n_converged_restarts": 4,
         "nit": 13
       },
       "theory_bounds": {
         "theory_bound_available": false,
+        "alpha": null,
+        "beta": null,
+        "lambda0_min": null,
+        "lambda0_max": null,
         "lambda_min": null,
         "lambda_max": null,
         "L_riem": null,
         "L_kl": null,
         "dt_theory_riem": null,
-        "dt_theory_kl": null
+        "dt_theory_kl": null,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
@@ -519,17 +549,17 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        7.957588696576976e-05,
-        7.192838746990186e-05
+        7.9575886965769e-05,
+        7.192838746990083e-05
       ],
       "ode_terminal_C": [
         [
           11.290987834936976,
-          1.2909934107639256
+          1.2909934107639258
         ],
         [
-          1.2909934107639256,
-          1.2909943980589278
+          1.2909934107639258,
+          1.2909943980589276
         ]
       ]
     },
@@ -559,39 +589,44 @@
       "beta": 1.151,
       "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
       "m_star": [
-        -1.197343810682855e-18,
-        8.21313248910411e-18
+        2.5986211925310933e-09,
+        -3.4697282482811354e-10
       ],
       "C_star": [
         [
-          19.664004847564943,
-          0.28642472263936497
+          19.664004863999033,
+          0.2864247254872409
         ],
         [
-          0.28642472263936497,
-          1.4607660855431215
+          0.2864247254872409,
+          1.4607660851342754
         ]
       ],
       "F_star": -0.5636773675007198,
       "optimizer": {
         "method": "lbfgsb_cholesky",
         "converged": true,
-        "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
-        "grad_norm": 2.8580188292252742e-12,
-        "stationarity_g_norm": 2.5939883082619414e-17,
-        "stationarity_cov_residual": 1.1360825280167707e-12,
+        "message": "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH",
+        "grad_norm": 9.876074234111195e-10,
+        "stationarity_g_norm": 2.971440574459063e-10,
+        "stationarity_cov_residual": 2.2718462226094935e-10,
         "n_restarts": 4,
         "n_converged_restarts": 4,
-        "nit": 10
+        "nit": 22
       },
       "theory_bounds": {
         "theory_bound_available": true,
+        "alpha": 0.05,
+        "beta": 1.151,
+        "lambda0_min": 4.0,
+        "lambda0_max": 4.0,
         "lambda_min": 0.8688097306689835,
         "lambda_max": 20.0,
         "L_riem": 23.02,
-        "L_kl": 140407.81516808,
+        "L_kl": 23.02,
         "dt_theory_riem": 0.043440486533449174,
-        "dt_theory_kl": 7.122110680256049e-06
+        "dt_theory_kl": 0.043440486533449174,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
@@ -605,16 +640,16 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        1.51378062368657e-05,
-        7.273240507230168e-07
+        1.5137806236862432e-05,
+        7.273240507068459e-07
       ],
       "ode_terminal_C": [
         [
-          19.66398312362782,
-          0.28643372175819104
+          19.663983123627826,
+          0.2864337217581912
         ],
         [
-          0.28643372175819104,
+          0.2864337217581912,
           1.4608141714859488
         ]
       ]
@@ -645,39 +680,44 @@
       "beta": 1.1600000000000001,
       "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
       "m_star": [
-        2.7065323224072817e-18,
-        1.1570179831934861e-17
+        2.3830360842755914e-18,
+        6.8068397597158945e-19
       ],
       "C_star": [
         [
-          17.084732250322432,
-          0.7932236734074727
+          17.08473225197467,
+          0.793223673241117
         ],
         [
-          0.7932236734074727,
-          1.5050361011595395
+          0.793223673241117,
+          1.5050361010777544
         ]
       ],
       "F_star": -0.4933196841663623,
       "optimizer": {
         "method": "lbfgsb_cholesky",
         "converged": true,
-        "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
-        "grad_norm": 4.0975001639984434e-14,
-        "stationarity_g_norm": 2.2313812776963747e-18,
-        "stationarity_cov_residual": 2.186649926809768e-14,
+        "message": "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH",
+        "grad_norm": 1.1469739935019001e-10,
+        "stationarity_g_norm": 6.913216536005477e-18,
+        "stationarity_cov_residual": 2.349862143008559e-11,
         "n_restarts": 4,
         "n_converged_restarts": 4,
-        "nit": 10
+        "nit": 9
       },
       "theory_bounds": {
         "theory_bound_available": true,
+        "alpha": 0.05,
+        "beta": 1.1600000000000001,
+        "lambda0_min": 4.0,
+        "lambda0_max": 4.0,
         "lambda_min": 0.8620689655172413,
         "lambda_max": 20.0,
         "L_riem": 23.200000000000003,
-        "L_kl": 144851.14880000002,
+        "L_kl": 23.200000000000003,
         "dt_theory_riem": 0.043103448275862065,
-        "dt_theory_kl": 6.903638723505932e-06
+        "dt_theory_kl": 0.043103448275862065,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
@@ -691,16 +731,16 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        1.32868620454585e-05,
-        1.0263710873124095e-06
+        1.3286862045461086e-05,
+        1.0263710873170917e-06
       ],
       "ode_terminal_C": [
         [
           17.084731735069184,
-          0.7932543395184339
+          0.7932543395184338
         ],
         [
-          0.7932543395184339,
+          0.7932543395184338,
           1.5050962043976912
         ]
       ]
@@ -731,39 +771,44 @@
       "beta": 1.25,
       "description": "smooth strongly log-concave V=(sqrt(lam)x-y)^2/20 + delta/2 |theta|^2 + gamma logcosh(y)",
       "m_star": [
-        -6.444652534762687e-18,
-        -1.2517984028724788e-17
+        4.6169859379311914e-18,
+        2.2342708222892476e-17
       ],
       "C_star": [
         [
-          7.414625175430351,
-          1.121937764092701
+          7.414625151447354,
+          1.1219377381889224
         ],
         [
-          1.121937764092701,
-          1.6829066475128809
+          1.1219377381889224,
+          1.682906638323678
         ]
       ],
       "F_star": -0.07492531811234793,
       "optimizer": {
         "method": "lbfgsb_cholesky",
         "converged": true,
-        "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
-        "grad_norm": 2.475343556286198e-10,
-        "stationarity_g_norm": 7.199440940272105e-19,
-        "stationarity_cov_residual": 1.1596943568740891e-10,
+        "message": "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH",
+        "grad_norm": 5.347179255357037e-09,
+        "stationarity_g_norm": 7.675073617749086e-18,
+        "stationarity_cov_residual": 2.752673889099994e-09,
         "n_restarts": 4,
         "n_converged_restarts": 4,
-        "nit": 10
+        "nit": 9
       },
       "theory_bounds": {
         "theory_bound_available": true,
+        "alpha": 0.05,
+        "beta": 1.25,
+        "lambda0_min": 4.0,
+        "lambda0_max": 4.0,
         "lambda_min": 0.8,
         "lambda_max": 20.0,
         "L_riem": 25.0,
-        "L_kl": 195312.49999999994,
+        "L_kl": 25.0,
         "dt_theory_riem": 0.04,
-        "dt_theory_kl": 5.120000000000002e-06
+        "dt_theory_kl": 0.04,
+        "theory_version": "kl_beta_lambda_max_no_cubic_penalty"
       },
       "ode_solver": {
         "success": true,
@@ -777,8 +822,8 @@
         "T": 15.0
       },
       "ode_terminal_m": [
-        5.822780584221786e-06,
-        1.0866149757258154e-06
+        5.822780584246788e-06,
+        1.0866149757632503e-06
       ],
       "ode_terminal_C": [
         [
@@ -787,7 +832,7 @@
         ],
         [
           1.122017779490328,
-          1.683027527305361
+          1.6830275273053614
         ]
       ]
     }

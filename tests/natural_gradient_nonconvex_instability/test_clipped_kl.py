@@ -32,9 +32,19 @@ def test_gaussian_kl_diagnostic_nonneg_and_zero_iff_equal():
             assert d > 0.0
 
 
+def test_clip_constant_is_2_beta_lambda_plus_and_independent_of_lambda_minus():
+    # New projected-KL constant: L_clip = 2 * beta * lambda_plus (no lambda_minus).
+    beta, lam_p = 1.0, 2.0
+    assert clip_smoothness_constant(beta, lam_p) == 2.0 * beta * lam_p == 4.0
+    # dt = safety / L_clip = safety / (2 beta lambda_plus).
+    for safety in (0.25, 0.5, 0.9):
+        dt = theorem_safe_dt(beta, lam_p, safety)
+        assert math.isclose(dt, safety / (2.0 * beta * lam_p), rel_tol=1e-15)
+
+
 def test_clipped_kl_update_always_in_feasible_interval():
     lam_m, lam_p = 0.5, 2.0
-    dt = theorem_safe_dt(beta=1.0, lambda_minus=lam_m, lambda_plus=lam_p, safety=0.9)
+    dt = theorem_safe_dt(beta=1.0, lambda_plus=lam_p, safety=0.9)
     rng = np.random.default_rng(1)
     for _ in range(500):
         c = float(rng.uniform(lam_m, lam_p))
@@ -46,8 +56,8 @@ def test_clipped_kl_update_always_in_feasible_interval():
 
 def test_theorem_safe_stepsize_keeps_denominator_positive():
     lam_m, lam_p, beta = 0.5, 2.0, 1.0
-    dt = theorem_safe_dt(beta=beta, lambda_minus=lam_m, lambda_plus=lam_p, safety=0.9)
-    L_clip = clip_smoothness_constant(beta, lam_m, lam_p)
+    dt = theorem_safe_dt(beta=beta, lambda_plus=lam_p, safety=0.9)
+    L_clip = clip_smoothness_constant(beta, lam_p)
     assert math.isclose(dt, 0.9 / L_clip, rel_tol=1e-15)
     # denom = 1 + dt c A >= 1 - dt beta lambda_plus, which must stay positive.
     assert 1.0 - dt * beta * lam_p > 0.0
@@ -63,9 +73,11 @@ def test_smoke_clipped_run_satisfies_theorem_envelope():
     target = NonconvexLogCoshTarget(R=1000.0, n_nodes=80)
     rows, summary = simulate_clipped_kl(
         target, lambda_minus=0.5, lambda_plus=2.0, beta=1.0,
-        dt_safety=0.9, c0=1.0, num_steps=60)
+        safety=0.9, c0=1.0, num_steps=60)
     assert summary["dt_rule"] == "theorem_safe"
-    assert summary["dt_times_L_clip"] < 1.0
+    assert math.isclose(summary["L_clip"], 4.0, rel_tol=1e-15)
+    assert math.isclose(summary["dt_projected_KL_theory"], 0.25, rel_tol=1e-15)
+    assert summary["dt_times_L_clip"] <= 1.0 + 1e-12
     assert summary["denominator_positive"] is True
     assert summary["max_violation"] <= 1e-6
     assert summary["theorem_check_pass"] is True
@@ -77,20 +89,22 @@ def test_smoke_clipped_run_satisfies_theorem_envelope():
     assert summary["max_violation"] <= CLIPPED_THEOREM_TOL or summary["theorem_check_pass"]
 
 
-def test_riemannian_scale_stepsize_is_outside_theorem_but_envelope_holds():
-    # dt = 1 / (beta * lambda_plus) exceeds 1 / L_clip, so the Theorem 2.18
-    # condition fails (dt * L_clip > 1), yet on this target the stationarity
-    # envelope is still satisfied empirically and the run stays SPD-feasible.
+def test_outside_theorem_2x_stepsize_is_outside_theorem_but_envelope_holds():
+    # dt = 1 / (beta * lambda_plus) is exactly twice the projected-KL theorem
+    # edge 1 / (2 beta lambda_plus), so dt * L_clip = 2 (outside the theorem),
+    # yet on this target the stationarity envelope is still satisfied empirically.
     lam_m, lam_p, beta = 0.5, 2.0, 1.0
     dt = 1.0 / (beta * lam_p)
-    L = clip_smoothness_constant(beta, lam_m, lam_p)
+    L = clip_smoothness_constant(beta, lam_p)
     target = NonconvexLogCoshTarget(R=1000.0, n_nodes=80)
     rows, summary = simulate_clipped_kl(
         target, lambda_minus=lam_m, lambda_plus=lam_p, beta=beta,
-        c0=1.0, num_steps=40, dt=dt, dt_rule="riemannian_scale")
-    assert summary["dt_rule"] == "riemannian_scale"
-    assert math.isclose(summary["dt"], dt, rel_tol=1e-15)
-    assert summary["dt_times_L_clip"] == dt * L > 1.0  # outside the theorem
+        c0=1.0, num_steps=40, dt=dt, dt_rule="outside_theorem_2x")
+    assert summary["dt_rule"] == "outside_theorem_2x"
+    assert math.isclose(summary["dt_used"], dt, rel_tol=1e-15)
+    # dt * L_clip = 2 exactly: outside the theorem by a factor of two.
+    assert math.isclose(summary["dt_times_L_clip"], 2.0, rel_tol=1e-15)
+    assert summary["dt_times_L_clip"] == dt * L > 1.0
     assert summary["denominator_positive"] is True     # clip masks the pole here
     assert 0.5 - 1e-12 <= summary["min_c"] <= summary["max_c"] <= 2.0 + 1e-12
     # Envelope still holds and the covariance reaches the upper bound at once.

@@ -63,11 +63,14 @@ SUMMARY_COLS = [
 ]
 
 STEPSIZE_COLS = [
-    "target_name", "lambda", "method", "theory_bound_available",
-    "dt_theory_riem", "dt_theory_kl", "dt_theory_for_method",
-    "dt_max_spd", "dt_max_stable", "dt_max_monotone", "dt_max_accurate",
-    "stable_over_theory_ratio", "monotone_over_theory_ratio",
-    "accurate_over_theory_ratio",
+    "target_name", "lambda", "method", "alpha", "beta",
+    "lambda0_min", "lambda0_max", "lambda_min", "lambda_max",
+    "L_Riem", "L_KL", "theory_bound_available",
+    "dt_riem_theory", "dt_kl_theory", "dt_theory_for_method",
+    "dt_spd_max", "dt_stable_max", "dt_monotone_max", "dt_accurate_max",
+    "stable_ratio_to_theory", "monotone_ratio_to_theory",
+    "accurate_ratio_to_theory", "q_riem_theory_at_dt", "q_kl_theory_at_dt",
+    "theory_version",
 ]
 
 SCALAR_COLS = ["experiment", "method", "C0", "dt", "n", "t", "C", "m"]

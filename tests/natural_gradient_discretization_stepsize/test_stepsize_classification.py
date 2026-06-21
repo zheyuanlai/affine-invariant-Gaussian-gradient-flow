@@ -93,19 +93,23 @@ def test_classification_nesting(method, dt):
         assert s["spd_feasible"]
 
 
-def test_kl_stable_far_above_theory_bound():
-    """Central observation: KL is empirically stable at dt >> dt_theory_kl.
+def test_kl_and_riem_share_theorem_safe_stepsize_and_kl_stable_beyond_it():
+    """Improved KL proof: KL and Riemannian share the theorem-safe stepsize, and
+    KL remains empirically stable beyond that shared (conservative) bound.
 
-    For the Gaussian posterior at lambda=0.1 the theoretical KL stepsize is
-    2.5e-5, yet a dt=1.0 KL run is SPD-feasible, stable and monotone.
+    For the Gaussian posterior at lambda=0.1 both schemes have the same
+    theorem-safe stepsize 1/(beta*lambda_max), and a dt=1.0 KL run is still
+    SPD-feasible, stable and monotone (the shared bound is conservative, with no
+    KL-specific cubic penalty).
     """
     T = GaussianPosteriorTarget(0.1)
     bounds = theory_stepsize_bounds(T.alpha, T.beta, T.C0)
-    assert bounds["dt_theory_kl"] < 1e-3        # very small theoretical bound
+    # The two theorem-safe stepsizes coincide (no lambda_max^3/lambda_min^3 factor).
+    assert bounds["dt_theory_kl"] == bounds["dt_theory_riem"]
     s = _run("kl", T, 1.0)
     assert s["spd_feasible"] and s["stable"] and s["monotone"]
-    # dt=1.0 is at least 1000x the theoretical KL stepsize.
-    assert 1.0 / bounds["dt_theory_kl"] > 1e3
+    # dt=1.0 is comfortably above the shared theorem-safe stepsize.
+    assert 1.0 / bounds["dt_theory_kl"] > 1.0
 
 
 def test_gaussian_run_converges_at_small_dt():

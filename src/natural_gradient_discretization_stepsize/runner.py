@@ -222,9 +222,17 @@ def stepsize_summary_rows(summaries, theory_by_key):
     ``(target_name, lambda, method)`` -> theory-bounds dict (see
     :func:`...metrics.theory_stepsize_bounds`) augmented with the per-method
     ``dt_theory_for_method``.
+
+    Columns reflect the improved KL proof: ``dt_riem_theory`` and ``dt_kl_theory``
+    are equal for smooth log-concave targets (both ``1/(beta*lambda_max)``), so the
+    empirical/theory ratios measure how conservative the shared bound is, not a
+    KL-specific penalty. ``theory_version`` tags every row.
     """
     from collections import defaultdict
-    from src.natural_gradient_discretization_stepsize.metrics import max_feasible_dt
+    from src.natural_gradient_discretization_stepsize.metrics import (
+        max_feasible_dt, q_riem_at, q_kl_at,
+    )
+    from src.common.theory_constants import THEORY_VERSION_LOGCONCAVE
 
     groups = defaultdict(list)
     for s in summaries:
@@ -241,22 +249,43 @@ def stepsize_summary_rows(summaries, theory_by_key):
         dt_mono = max_feasible_dt(dts, [r["monotone"] for r in runs])
         dt_acc = max_feasible_dt(dts, [r["accurate"] for r in runs])
         dt_theory = th.get("dt_theory_for_method")
+        available = bool(th.get("theory_bound_available"))
+        alpha = th.get("alpha")
+        beta = th.get("beta")
+        lam_min = th.get("lambda_min")
+        lam_max = th.get("lambda_max")
 
         def ratio(x):
             if dt_theory and dt_theory > 0 and math.isfinite(x):
                 return float(x / dt_theory)
             return float("nan")
 
+        # Contraction factors at the method's theorem-safe stepsize (when smooth).
+        if available and dt_theory:
+            q_riem_at_dt = q_riem_at(dt_theory, alpha, beta, lam_min, lam_max)
+            q_kl_at_dt = q_kl_at(dt_theory, alpha, beta, lam_min, lam_max)
+        else:
+            q_riem_at_dt = float("nan")
+            q_kl_at_dt = float("nan")
+
         rows.append({
             "target_name": target_name, "lambda": lam, "method": method,
-            "theory_bound_available": int(bool(th.get("theory_bound_available"))),
-            "dt_theory_riem": th.get("dt_theory_riem"),
-            "dt_theory_kl": th.get("dt_theory_kl"),
+            "alpha": alpha, "beta": beta,
+            "lambda0_min": th.get("lambda0_min"),
+            "lambda0_max": th.get("lambda0_max"),
+            "lambda_min": lam_min, "lambda_max": lam_max,
+            "L_Riem": th.get("L_riem"), "L_KL": th.get("L_kl"),
+            "theory_bound_available": int(available),
+            "dt_riem_theory": th.get("dt_theory_riem"),
+            "dt_kl_theory": th.get("dt_theory_kl"),
             "dt_theory_for_method": dt_theory,
-            "dt_max_spd": dt_spd, "dt_max_stable": dt_stable,
-            "dt_max_monotone": dt_mono, "dt_max_accurate": dt_acc,
-            "stable_over_theory_ratio": ratio(dt_stable),
-            "monotone_over_theory_ratio": ratio(dt_mono),
-            "accurate_over_theory_ratio": ratio(dt_acc),
+            "dt_spd_max": dt_spd, "dt_stable_max": dt_stable,
+            "dt_monotone_max": dt_mono, "dt_accurate_max": dt_acc,
+            "stable_ratio_to_theory": ratio(dt_stable),
+            "monotone_ratio_to_theory": ratio(dt_mono),
+            "accurate_ratio_to_theory": ratio(dt_acc),
+            "q_riem_theory_at_dt": float(q_riem_at_dt),
+            "q_kl_theory_at_dt": float(q_kl_at_dt),
+            "theory_version": THEORY_VERSION_LOGCONCAVE,
         })
     return rows

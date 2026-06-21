@@ -21,15 +21,19 @@ Riemannian-exponential covariance step undergoes a negative-curvature cascade
 from $c_0=1$, and the KL/Bregman covariance step has a rational pole near the
 loss of positive definiteness. Second, when the covariance is constrained to a
 prescribed spectral interval $[\lambda_-,\lambda_+]$, the \emph{projected} KL
-scheme of Section~2.4 (Theorem~2.18) of the manuscript has the correct
-constrained Bregman stationarity diagnostic: the running minimum of the Bregman
-displacement $\KL(\rho_{a_n}\|\rho_{a_{n+1}})$ satisfies the energy-drop envelope
+scheme of the manuscript has the correct constrained Bregman stationarity
+diagnostic: with the current projected-KL constant
+$L_{\mathrm{clip}}=2\beta\lambda_+$ and the theorem-safe stepsize
+$\Delta t\le 1/(2\beta\lambda_+)$, the running minimum of the Bregman displacement
+$\KL(\rho_{a_n}\|\rho_{a_{n+1}})$ satisfies the energy-drop envelope
 $\min_{0\le n<N}\KL(\rho_{a_n}\|\rho_{a_{n+1}})\le
-\frac{\Delta t}{N}\{\KL(\rho_{a_0}\|\rho_\post)-\KL(\rho_{a_N}\|\rho_\post)\}$
-in the theorem-safe stepsize regime. A small additional study probes the larger
-stepsize $\Delta t=1/(\beta\lambda_+)$, which violates the theorem's
-relative-smoothness condition ($\Delta t\,L_{\mathrm{clip}}=64\gg1$): the
-envelope still holds empirically, because the projected trajectory reaches the
+\frac{\Delta t}{N}\{\KL(\rho_{a_0}\|\rho_\post)-\KL(\rho_{a_N}\|\rho_\post)\}$.
+The theorem-safe scale depends on $\lambda_+$ and $\beta$ only, not on
+$\lambda_-$ (a sweep confirms it is flat in $\lambda_-$ and scales like
+$1/\lambda_+$). A small additional study probes the larger stepsize
+$\Delta t=1/(\beta\lambda_+)$, which is exactly twice the theorem edge
+$1/(2\beta\lambda_+)$ (so $\Delta t\,L_{\mathrm{clip}}=2$, outside the theorem):
+the envelope still holds empirically, because the projected trajectory reaches the
 active upper constraint --- a constrained-stationary point --- in a single step.
 We emphasize what is and is not shown: the clipped scheme certifies constrained
 Bregman stationarity over the covariance-truncated feasible set; it does not make
@@ -151,10 +155,10 @@ envelope.}
 \label{sec:clipped}
 
 Sections~\ref{sec:unprojected}--\ref{sec:bw} motivate \emph{constraining the
-covariance}. Following Section~2.4 of the manuscript, fix
+covariance}. Following the manuscript, fix
 $0<\lambda_-\le\lambda_+<\infty$ and the covariance-truncated feasible set
 $\Aspace'=\{a=(m,C):\lambda_-I\preceq C\preceq\lambda_+I\}$. Under the
-one-sided smoothness Assumption~2.17, $\|\nabla^2V\|\le\beta$, the projected KL
+global smoothness assumption $\|\nabla^2V\|\le\beta$, the projected KL
 scheme clips the unprojected KL update back into $[\lambda_-,\lambda_+]$. In the
 symmetric scalar case ($m=0$, $\nabla^2\log\rho_\post=-V_R''$ so
 $\E[\nabla^2\log\rho_\post]=-A_R(c)$) the update is
@@ -179,44 +183,54 @@ running minimum $D_{\min}(N)=\min_{0\le n<N}D_n$ and the energy-drop envelope
 \[
 B_N=\frac{\Delta t}{N}\bigl\{F_R(c_0)-F_R(c_N)\bigr\}.
 \]
-Theorem~2.18 gives the constrained Bregman stationarity guarantee
+The projected-KL theorem gives the constrained Bregman stationarity guarantee
 \[
 \min_{0\le n\le N-1}\KL(\rho_{a_n}\|\rho_{a_{n+1}})\le
 \frac{\Delta t}{N}\bigl\{\KL(\rho_{a_0}\|\rho_\post)-\KL(\rho_{a_N}\|\rho_\post)\bigr\},
 \qquad\text{i.e.}\qquad D_{\min}(N)\le B_N,
 \]
-valid for the theorem-safe stepsize. Since $\beta=1$, the Bregman smoothness
+valid for the theorem-safe stepsize. The current Bregman relative-smoothness
 constant and stepsize are
 \[
-L_{\mathrm{clip}}=\beta\max\!\left\{\lambda_+,\,\frac{\lambda_+^4}{\lambda_-^3}\right\},
+L_{\mathrm{clip}}=2\beta\lambda_+,
 \qquad
-\Delta t=\frac{\text{safety}}{L_{\mathrm{clip}}},\qquad \text{safety}<1 .
+\Delta t=\frac{\text{safety}}{L_{\mathrm{clip}}}=\frac{\text{safety}}{2\beta\lambda_+},
+\qquad \text{safety}\le1 ,
 \]
-With $\lambda_-=0.5$, $\lambda_+=2.0$, and $\text{safety}=0.9$ this gives
-$L_{\mathrm{clip}}=\max\{2,\,16/0.125\}=128$ and $\Delta t=0.9/128\approx
-7.0\times10^{-3}$. In this regime the denominator
-$1+\Delta t\,c_nA_R(c_n)\ge 1-\Delta t\,\beta\lambda_+\ge1-\text{safety}>0$ is
-positive for every feasible $c_n\in[\lambda_-,\lambda_+]$ and every
-$A_R\in[-\beta,\beta]$, so the pole of Section~\ref{sec:klpole} cannot occur.
+so the theorem-safe scale depends on $\lambda_+$ and $\beta$ only, \emph{not} on
+$\lambda_-$. With $\beta=1$, $\lambda_-=0.5$, $\lambda_+=2.0$ this gives
+$L_{\mathrm{clip}}=2\cdot1\cdot2=4$ and the theorem edge
+$\Delta t\le 1/(2\beta\lambda_+)=0.25$; at safety values
+$\{0.25,0.5,0.9\}$ the stepsize is $\{0.0625,0.125,0.225\}$. In this regime the
+denominator $1+\Delta t\,c_nA_R(c_n)\ge 1-\Delta t\,\beta\lambda_+
+=1-\tfrac{\text{safety}}{2}\ge\tfrac12>0$ is positive for every feasible
+$c_n\in[\lambda_-,\lambda_+]$ and every $A_R\in[-\beta,\beta]$, so the pole of
+Section~\ref{sec:klpole} cannot occur.
 
-\paragraph{A non-theorem-safe stepsize.}
+\paragraph{Stepsize scaling.}
+A direct consequence of $L_{\mathrm{clip}}=2\beta\lambda_+$ is that the
+theorem-safe stepsize $1/(2\beta\lambda_+)$ is \emph{independent of} $\lambda_-$
+and scales like $1/\lambda_+$. We verify both: varying $\lambda_-$ at fixed
+$\lambda_+$ leaves $\Delta t_{\mathrm{theory}}$ unchanged, while doubling
+$\lambda_+$ halves it (Table~\ref{tab:clip-sweep}, Fig.~\ref{fig:clip-sweep}).
+
+\paragraph{An outside-theorem stepsize.}
 \label{par:largestep}
-The Theorem~2.18 stepsize is sufficient but conservative, and it is natural to
-ask whether the stationarity envelope still follows when it is violated. We
-therefore also run the projected scheme at the larger Riemannian-scale stepsize
+The theorem stepsize is sufficient but conservative, and it is natural to ask
+whether the stationarity envelope still follows when it is violated. We therefore
+also run the projected scheme at the larger stepsize
 \[
-\Delta t=\frac{1}{\beta\lambda_+}=0.5,
+\Delta t=\frac{1}{\beta\lambda_+}=0.5
+=2\cdot\frac{1}{2\beta\lambda_+},
 \qquad\text{so}\qquad
-\Delta t\,L_{\mathrm{clip}}=\frac{\lambda_+^4}{\lambda_-^3}\cdot\frac{1}{\lambda_+}
-=\frac{\lambda_+^3}{\lambda_-^3}=64\gg1 ,
+\Delta t\,L_{\mathrm{clip}}=\frac{1}{\beta\lambda_+}\cdot 2\beta\lambda_+=2 ,
 \]
-which lies well outside the relative-smoothness condition $\Delta t\le1/L_{\mathrm{clip}}$
-that underlies the one-step descent inequality, so Theorem~2.18 gives no
-guarantee. The value $1/(\beta\lambda_+)$ is the largest stepsize for which the
-denominator bound $1+\Delta t\,c_nA_R(c_n)\ge1-\Delta t\,\beta\lambda_+=0$ is
-still (weakly) nonnegative over the feasible box; beyond it the unprojected KL
-covariance step can hit the genuine sign change of Section~\ref{sec:klpole} that
-the clip cannot mask.
+exactly twice the theorem edge, so the theorem gives no guarantee (we label this
+\texttt{outside\_theorem\_2x}). The value $1/(\beta\lambda_+)$ is the largest
+stepsize for which the denominator bound $1+\Delta t\,c_nA_R(c_n)\ge1-\Delta
+t\,\beta\lambda_+=0$ is still (weakly) nonnegative over the feasible box; beyond it
+the unprojected KL covariance step can hit the genuine sign change of
+Section~\ref{sec:klpole} that the clip cannot mask.
 
 \section{Results and interpretation}
 \label{sec:results}
@@ -234,10 +248,12 @@ the clip cannot mask.
 \label{fig:clip-cov}
 \end{subfigure}
 \caption{Projected KL scheme, $\lambda_-=0.5$, $\lambda_+=2.0$, $\beta=1$,
-$\Delta t=0.9/128$. The running-minimum Bregman displacement stays below the
-energy-drop envelope at every prefix; once the upper constraint binds (step
-$\approx41$) the projected step is stationary at the boundary, the covariance is
-pinned at $\lambda_+$, and $D_n$ (hence $D_{\min}$) collapses to zero.}
+$L_{\mathrm{clip}}=2\beta\lambda_+=4$, theorem-safe
+$\Delta t=0.5/L_{\mathrm{clip}}=0.125$. The running-minimum Bregman displacement
+stays below the energy-drop envelope at every prefix; once the upper constraint
+binds (within a few steps) the projected step is stationary at the boundary, the
+covariance is pinned at $\lambda_+$, and $D_n$ (hence $D_{\min}$) collapses to
+zero.}
 \label{fig:clipped}
 \end{figure}
 
@@ -271,16 +287,18 @@ roughness of $V_R$; it is the coupling of negative curvature to the covariance.
 
 \paragraph{Clipping removes the pole in the theorem-safe regime.}
 Restricting the covariance to $[\lambda_-,\lambda_+]$ and using the theorem-safe
-$\Delta t=0.9/L_{\mathrm{clip}}$ keeps the denominator bounded away from zero, so
-the projected KL trajectory is well defined for all $N$
-(Figure~\ref{fig:clip-cov}). From $c_0=1$ the negative curvature drives the
-covariance monotonically up to the upper bound $\lambda_+=2$, where it is pinned;
-the covariance never approaches the SPD boundary that produced the pole.
+$\Delta t=\text{safety}/L_{\mathrm{clip}}$ with $L_{\mathrm{clip}}=2\beta\lambda_+$
+keeps the denominator bounded away from zero, so the projected KL trajectory is
+well defined for all $N$ (Figure~\ref{fig:clip-cov}). From $c_0=1$ the negative
+curvature drives the covariance monotonically up to the upper bound $\lambda_+=2$,
+where it is pinned; the covariance never approaches the SPD boundary that produced
+the pole.
 
 \paragraph{The running-minimum Bregman displacement satisfies the envelope.}
-Figure~\ref{fig:clip-stat} and Table~\ref{tab:clipped} verify the Theorem~2.18
-check: at every prefix horizon $N$ the running minimum $D_{\min}(N)$ lies below
-the energy-drop envelope $B_N$, with maximum violation $0$ across all $R$. The
+Figure~\ref{fig:clip-stat} and Table~\ref{tab:clipped} verify the projected-KL
+stationarity check across the safety fractions $\{0.25,0.5,0.9\}$: at every prefix
+horizon $N$ the running minimum $D_{\min}(N)$ lies below the energy-drop envelope
+$B_N$, with maximum violation $0$ across all $R$. The
 energy $F_R(c_n)$ is monotonically nonincreasing along the trajectory (so
 $B_N\ge0$), and the diagnostic is essentially $R$-independent because the
 dynamics in $c\in[1,2]$ see $A_R(c)\approx-1$ for every $R$ in the grid.
@@ -302,7 +320,8 @@ feasible set, not unconstrained optimality.
 
 We repeat the projected scheme at the larger stepsize $\Delta t=1/(\beta\lambda_+)=0.5$
 introduced at the end of Section~\ref{sec:clipped}, for which
-$\Delta t\,L_{\mathrm{clip}}=64\gg1$ and Theorem~2.18 offers no guarantee.
+$\Delta t\,L_{\mathrm{clip}}=2$ (exactly twice the theorem edge, labelled
+\texttt{outside\_theorem\_2x}) and the theorem offers no guarantee.
 Figure~\ref{fig:largestep} and Table~\ref{tab:largestep} report the outcome.
 \emph{Empirically the stationarity envelope $D_{\min}(N)\le B_N$ still holds, with
 maximum violation $0$ for every $R$.} The mechanism is visible in the figure: the
@@ -331,24 +350,71 @@ the constraint set, not the stepsize bound, is what stabilizes the trajectory.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\linewidth]{fig_nonconvex_clipped_kl_largestep}
-\caption{Projected KL at the non-theorem-safe stepsize $\Delta t=1/(\beta\lambda_+)=0.5$
-($\Delta t\,L_{\mathrm{clip}}=64$). Left: the running minimum $D_{\min}(N)$
-(markers) versus the envelope $B_N$ (dashed); the only nonzero value is the
-transient $D_0$ at $N=1$, below $B_1$, after which $D_{\min}$ collapses to zero.
-Right: the covariance reaches $\lambda_+$ in a single step and is pinned there.}
+\caption{Projected KL at the outside-theorem stepsize $\Delta t=1/(\beta\lambda_+)=0.5$
+($\Delta t\,L_{\mathrm{clip}}=2$, twice the theorem edge). Left: the running
+minimum $D_{\min}(N)$ (markers) versus the envelope $B_N$ (dashed); the only
+nonzero value is the transient $D_0$ at $N=1$, below $B_1$, after which $D_{\min}$
+collapses to zero. Right: the covariance reaches $\lambda_+$ in a single step and
+is pinned there.}
 \label{fig:largestep}
 \end{figure}
 
 \begin{table}[t]
 \centering
 \inputtable{tab_nonconvex_clipped_kl_largestep.tex}
-\caption{Theorem-safe versus non-theorem-safe stepsize, by $R$: stepsize $\Delta
-t$, the relative-smoothness ratio $\Delta t\,L_{\mathrm{clip}}$ ($<1$ is
+\caption{Theorem-safe versus outside-theorem stepsize, by $R$: stepsize $\Delta
+t$, the relative-smoothness ratio $\Delta t\,L_{\mathrm{clip}}$ ($\le1$ is
 theorem-safe), the final running minimum $D_{\min}(N)$, the maximum violation,
 energy monotonicity, and the envelope check. The envelope holds in both regimes
-even though the larger stepsize has $\Delta t\,L_{\mathrm{clip}}=64\gg1$.}
+even though the larger stepsize has $\Delta t\,L_{\mathrm{clip}}=2$ (twice the
+theorem edge).}
 \label{tab:largestep}
 \end{table}
+
+\subsection{Theorem-safe stepsize scaling}
+\label{sec:sweep}
+
+The constant $L_{\mathrm{clip}}=2\beta\lambda_+$ makes two scalings explicit, and
+we verify both directly. Fixing $\lambda_+$ and varying $\lambda_-$ leaves the
+theorem-safe stepsize $1/(2\beta\lambda_+)$ unchanged: it is \emph{independent of}
+$\lambda_-$. Fixing $\lambda_-$ and varying $\lambda_+$ makes the theorem-safe
+stepsize scale like $1/\lambda_+$. Figure~\ref{fig:clip-sweep} and
+Table~\ref{tab:clip-sweep} confirm this---the theorem-safe scale is set by the
+upper covariance bound and the global smoothness constant alone, in contrast with
+the (now obsolete) clipped constant, which depended on the conditioning
+$\lambda_+/\lambda_-$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig_nonconvex_clipped_kl_theory_sweep}
+\caption{Projected-KL theorem-safe stepsize $\Delta t_{\mathrm{theory}}=1/(2\beta\lambda_+)$.
+Left: varying $\lambda_-$ at fixed $\lambda_+$ leaves it unchanged. Right: varying
+$\lambda_+$ at fixed $\lambda_-$ makes it follow the $1/\lambda_+$ reference.}
+\label{fig:clip-sweep}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_nonconvex_clipped_kl_sweep.tex}
+\caption{Projected-KL theorem-safe stepsize sweep. Varying $\lambda_-$ at fixed
+$\lambda_+$ leaves $\Delta t_{\mathrm{theory}}=1/(2\beta\lambda_+)$ unchanged;
+varying $\lambda_+$ at fixed $\lambda_-$ halves it whenever $\lambda_+$ doubles.}
+\label{tab:clip-sweep}
+\end{table}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+The projected KL scheme satisfies the constrained Bregman stationarity envelope
+$D_{\min}(N)\le B_N$ at theorem-safe stepsizes with the current constant
+$L_{\mathrm{clip}}=2\beta\lambda_+$, i.e.\ $\Delta t\le1/(2\beta\lambda_+)$. The
+theorem-safe scale is independent of $\lambda_-$ and scales like $1/\lambda_+$.
+This is a constrained stationarity result over the covariance-truncated feasible
+set $\Aspace'$, not an unconstrained Fisher--Rao gradient guarantee: once the
+upper constraint binds, the iterate is constrained-stationary on
+$\partial\Aspace'$ while the unconstrained Fisher--Rao gradient remains $O(1)$, and
+clipping does not imply convergence to the unconstrained Gaussian variational
+optimum.
 
 \section{Limitations}
 \label{sec:limitations}
@@ -364,7 +430,7 @@ plateau is constrained stationarity on $\partial\Aspace'$. We do \emph{not}
 claim that clipping makes the unconstrained Fisher--Rao gradient small, nor that
 the projected scheme converges to the unconstrained Gaussian variational optimum
 $a_\star$; indeed the optimum need not lie in $[\lambda_-,\lambda_+]$, and here
-the iterate is pinned at $\lambda_+$. The non-theorem-safe study of
+the iterate is pinned at $\lambda_+$. The outside-theorem study of
 Section~\ref{sec:largestep} is a single-example observation, not a relaxation of
 the theorem's hypotheses: the envelope holds there because the trajectory reaches
 a constrained-stationary boundary point in one step, while the denominator sits

@@ -199,16 +199,17 @@ def fig_clipped_covariance(clipped_df, figs_dir):
 
 
 def fig_clipped_kl_largestep(clipped_df, figs_dir):
-    """Non-theorem-safe stepsize ``dt = 1/(beta lambda_+)`` (``dt L_clip > 1``).
+    """Outside-theorem stepsize ``dt = 1/(beta lambda_+)`` (``dt L_clip = 2``).
 
-    Left: ``D_min(N)`` (solid) vs the envelope ``B_N`` (dashed) for the larger
-    stepsize; right: the covariance trajectory, which reaches the upper bound in
-    a single step. The Theorem 2.18 condition does not hold here, yet the
+    This stepsize is exactly twice the projected-KL theorem edge
+    ``1/(2 beta lambda_+)``, so ``dt L_clip = 2`` and the theorem gives no
+    guarantee. Left: ``D_min(N)`` (solid) vs the envelope ``B_N`` (dashed); right:
+    the covariance trajectory, which reaches the upper bound in a single step. The
     stationarity envelope is still satisfied empirically because the one large
     step makes a big energy drop and lands on the active upper constraint, where
     the projected step is stationary and ``D_n = 0``.
     """
-    rs = _by_rule(clipped_df, "riemannian_scale")
+    rs = _by_rule(clipped_df, "outside_theorem_2x")
     if rs.empty:
         return None
     fig, (axL, axR) = plt.subplots(1, 2, figsize=(9.6, 3.7))
@@ -239,13 +240,54 @@ def fig_clipped_kl_largestep(clipped_df, figs_dir):
     axR.legend(ncol=2, fontsize=8)
     axR.grid(True, alpha=0.25)
     fig.suptitle(r"Projected KL beyond the theorem-safe regime: "
-                 r"$\Delta t=1/(\beta\lambda_+)$, $\Delta t\,L_{\mathrm{clip}}=64$",
+                 r"$\Delta t=1/(\beta\lambda_+)$, $\Delta t\,L_{\mathrm{clip}}=2$ "
+                 r"(outside\_theorem\_2x)",
                  y=1.02, fontsize=11)
     fig.tight_layout()
     return _savefig(fig, figs_dir, "fig_nonconvex_clipped_kl_largestep")
 
 
-def build_all_figures(long_df, kl_df, bw_df, clipped_df, figs_dir):
+def fig_clipped_kl_theory_sweep(sweep_df, figs_dir):
+    """Projected-KL theorem-safe stepsize scaling under ``L_clip = 2 beta lambda_+``.
+
+    Left: vary ``lambda_-`` with ``lambda_+`` fixed -- ``dt_theory`` is flat (the
+    theorem-safe scale does not depend on ``lambda_-``). Right: vary ``lambda_+``
+    with ``lambda_-`` fixed -- ``dt_theory`` follows the ``1/lambda_+`` reference.
+    """
+    if sweep_df is None or sweep_df.empty:
+        return None
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(9.2, 3.6))
+
+    vm = sweep_df[sweep_df.sweep_kind == "vary_lambda_minus"].sort_values("lambda_minus")
+    axL.plot(vm.lambda_minus.values, vm.dt_projected_KL_theory.values,
+             "o-", color="#1f77b4", label=r"$dt_{\mathrm{theory}}$")
+    axL.set_xlabel(r"$\lambda_-$ (with $\lambda_+$ fixed)")
+    axL.set_ylabel(r"$dt_{\mathrm{theory}}=1/(2\beta\lambda_+)$")
+    axL.set_title(r"Independent of $\lambda_-$")
+    axL.set_ylim(0.0, max(1e-9, float(vm.dt_projected_KL_theory.max()) * 1.6))
+    axL.legend()
+    axL.grid(True, alpha=0.25)
+
+    vp = sweep_df[sweep_df.sweep_kind == "vary_lambda_plus"].sort_values("lambda_plus")
+    axR.loglog(vp.lambda_plus.values, vp.dt_projected_KL_theory.values,
+               "o-", color="#d62728", label=r"$dt_{\mathrm{theory}}$")
+    if len(vp):
+        lp = vp.lambda_plus.values.astype(float)
+        ref = float(vp.dt_projected_KL_theory.iloc[0]) * lp[0] / lp
+        axR.loglog(lp, ref, "k--", lw=1.1, label=r"$\propto 1/\lambda_+$")
+    axR.set_xlabel(r"$\lambda_+$ (with $\lambda_-$ fixed)")
+    axR.set_ylabel(r"$dt_{\mathrm{theory}}$")
+    axR.set_title(r"Scales like $1/\lambda_+$")
+    axR.legend()
+    axR.grid(True, which="both", alpha=0.25)
+
+    fig.suptitle(r"Projected-KL theorem-safe stepsize "
+                 r"$dt_{\mathrm{theory}}=1/(2\beta\lambda_+)$", y=1.02, fontsize=11)
+    fig.tight_layout()
+    return _savefig(fig, figs_dir, "fig_nonconvex_clipped_kl_theory_sweep")
+
+
+def build_all_figures(long_df, kl_df, bw_df, clipped_df, figs_dir, sweep_df=None):
     os.makedirs(figs_dir, exist_ok=True)
     fig_riemannian_cascade(long_df, figs_dir)
     fig_kl_pole(kl_df, figs_dir)
@@ -254,6 +296,7 @@ def build_all_figures(long_df, kl_df, bw_df, clipped_df, figs_dir):
     fig_clipped_kl_stationarity(clipped_df, figs_dir)
     fig_clipped_covariance(clipped_df, figs_dir)
     fig_clipped_kl_largestep(clipped_df, figs_dir)
+    fig_clipped_kl_theory_sweep(sweep_df, figs_dir)
 
 
 def _fmt_sci(x):
@@ -320,7 +363,11 @@ def summary_table_tex(summary_df, kl_df, bw_df):
 
 
 def clipped_kl_summary_table_tex(clipped_summary_df):
-    """Per-run projected-KL stationarity summary (Theorem 2.18 check)."""
+    """Per-run projected-KL stationarity summary (constrained Bregman check).
+
+    Uses the new projected-KL constant ``L_clip = 2 beta lambda_+`` and the
+    theorem-safe stepsize ``dt = safety / L_clip``.
+    """
     df = _by_rule(clipped_summary_df, "theorem_safe").sort_values("R")
     lines = [
         r"\begin{tabular}{lrrrrl}",
@@ -330,19 +377,20 @@ def clipped_kl_summary_table_tex(clipped_summary_df):
     ]
     for _, r in df.iterrows():
         lines.append(
-            f"{r.R:g} & {_fmt_sci(r['dt'])} & {_fmt_sci(r.final_running_min_D)}"
-            f" & {_fmt_sci(r.final_bound)} & {_fmt_sci(r.max_violation)}"
+            f"{r.R:g} & {_fmt_sci(r['dt_used'])} & {_fmt_sci(r.final_D_min)}"
+            f" & {_fmt_sci(r.final_B_N)} & {_fmt_sci(r.max_violation)}"
             f" & {_fmt_bool(r.theorem_check_pass)} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines)
 
 
 def clipped_kl_largestep_table_tex(clipped_summary_df):
-    """Compare the theorem-safe and non-theorem-safe (``dt=1/(beta lambda_+)``)
+    """Compare the theorem-safe and outside-theorem (``dt=1/(beta lambda_+)``)
     stepsize rules: stepsize, ``dt*L_clip``, energy monotonicity, max violation,
-    and the envelope check."""
+    and the envelope check. With ``L_clip = 2 beta lambda_+`` the outside rule has
+    ``dt*L_clip = 2`` (exactly twice the theorem edge)."""
     safe = _by_rule(clipped_summary_df, "theorem_safe").sort_values("R")
-    rs = _by_rule(clipped_summary_df, "riemannian_scale").sort_values("R")
+    rs = _by_rule(clipped_summary_df, "outside_theorem_2x").sort_values("R")
     lines = [
         r"\begin{tabular}{llrrrrll}",
         r"\toprule",
@@ -354,8 +402,8 @@ def clipped_kl_largestep_table_tex(clipped_summary_df):
     def _row(r, label, show_R):
         dtl = r["dt_times_L_clip"] if "dt_times_L_clip" in r else float("nan")
         rlab = f"{r.R:g}" if show_R else ""
-        return (f"{rlab} & {label} & {_fmt_sci(r['dt'])} & {_fmt_sci(dtl)}"
-                f" & {_fmt_sci(r.final_running_min_D)} & {_fmt_sci(r.max_violation)}"
+        return (f"{rlab} & {label} & {_fmt_sci(r['dt_used'])} & {_fmt_sci(dtl)}"
+                f" & {_fmt_sci(r.final_D_min)} & {_fmt_sci(r.max_violation)}"
                 f" & {_fmt_bool(r.energy_monotone)}"
                 f" & {_fmt_bool(r.theorem_check_pass)} \\\\")
 
@@ -368,5 +416,30 @@ def clipped_kl_largestep_table_tex(clipped_summary_df):
         lines.append(r"\midrule")
     if lines[-1] == r"\midrule":
         lines.pop()
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines)
+
+
+def clipped_kl_sweep_table_tex(sweep_df):
+    """Projected-KL theorem-safe stepsize sweep: ``dt_theory`` is independent of
+    ``lambda_-`` and scales like ``1/lambda_+`` (``L_clip = 2 beta lambda_+``)."""
+    lines = [
+        r"\begin{tabular}{llrrr}",
+        r"\toprule",
+        r"sweep & fixed & $\lambda_-$ & $\lambda_+$ & "
+        r"$dt_{\mathrm{theory}}=1/(2\beta\lambda_+)$ \\",
+        r"\midrule",
+    ]
+    vm = sweep_df[sweep_df.sweep_kind == "vary_lambda_minus"].sort_values("lambda_minus")
+    for _, r in vm.iterrows():
+        lines.append(
+            rf"vary $\lambda_-$ & $\lambda_+={r.lambda_plus:g}$ & {r.lambda_minus:g}"
+            f" & {r.lambda_plus:g} & {_fmt_sci(r.dt_projected_KL_theory)} \\\\")
+    lines.append(r"\midrule")
+    vp = sweep_df[sweep_df.sweep_kind == "vary_lambda_plus"].sort_values("lambda_plus")
+    for _, r in vp.iterrows():
+        lines.append(
+            rf"vary $\lambda_+$ & $\lambda_-={r.lambda_minus:g}$ & {r.lambda_minus:g}"
+            f" & {r.lambda_plus:g} & {_fmt_sci(r.dt_projected_KL_theory)} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines)

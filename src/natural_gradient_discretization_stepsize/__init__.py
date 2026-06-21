@@ -8,9 +8,12 @@ natural gradient flow for the variational problem
 * the **KL/Bregman** discretization (rational inverse-covariance step).
 
 Both schemes share the explicit mean update ``m_{n+1} = m_n + dt * C_n g_n`` and
-differ only in the covariance update. The central question is whether the
-stricter sufficient stepsize condition for the KL scheme in the current proof is
-a genuine restriction or a proof artifact. All experiments are one- or
+differ only in the covariance update. Under the improved KL proof both schemes
+share the SAME theorem-safe stepsize scale ``dt <= 1/(beta*lambda_max)`` (the KL
+proof no longer carries the obsolete ``lambda_max^3/lambda_min^3`` penalty); the
+experiments now compare how conservative that shared bound is, the observed
+contraction against ``q_riem``/``q_kl``, the large-step failure mechanism, and
+the per-step efficiency at matched stepsizes. All experiments are one- or
 two-dimensional, deterministic, and CPU-only.
 
 See ``reports/natural_gradient_discretization_stepsize_report.tex`` for the

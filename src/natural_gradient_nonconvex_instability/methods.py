@@ -4,6 +4,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 
+from src.common.theory_constants import (
+    projected_kl_theory_constants,
+    deprecated_old_projected_kl_smoothness_constant,
+)
+
 
 @dataclass(frozen=True)
 class ScalarStep:
@@ -65,8 +70,8 @@ def clipped_kl_next(c: float, A: float, dt: float,
     The unprojected KL covariance update is
     ``ctilde = (1 + dt) c / (1 + dt c A)``; the projected step clips the result
     back into the feasible interval ``[lambda_minus, lambda_plus]`` (the 1-D
-    eigenvalue clip of Theorem 2.18). ``ctilde`` is the unclipped update and
-    ``c_next`` the clipped covariance.
+    eigenvalue clip of the projected-KL theorem). ``ctilde`` is the unclipped
+    update and ``c_next`` the clipped covariance.
     """
     denom = 1.0 + float(dt) * float(c) * float(A)
     if denom <= 0.0 or not math.isfinite(denom):
@@ -88,20 +93,34 @@ def gaussian_kl_divergence(c_from: float, c_to: float) -> float:
     return 0.5 * (r - 1.0 - math.log(r))
 
 
-def clip_smoothness_constant(beta: float, lambda_minus: float,
-                             lambda_plus: float) -> float:
-    """Theorem 2.18 Bregman smoothness constant ``L_clip``.
+def clip_smoothness_constant(beta: float, lambda_plus: float) -> float:
+    """Projected-KL Bregman smoothness constant ``L_clip = 2 * beta * lambda_plus``.
 
-    ``L_clip = beta * max(lambda_plus, lambda_plus^4 / lambda_minus^3)``.
+    This is the current projected-KL theorem constant. It depends on
+    ``lambda_plus`` and ``beta`` only -- not on ``lambda_minus``. Centralized in
+    :func:`src.common.theory_constants.projected_kl_theory_constants`.
     """
-    beta = float(beta)
-    lam_m = float(lambda_minus)
-    lam_p = float(lambda_plus)
-    return beta * max(lam_p, lam_p ** 4 / lam_m ** 3)
+    return projected_kl_theory_constants(beta, lambda_plus)["L_clip"]
 
 
-def theorem_safe_dt(beta: float, lambda_minus: float, lambda_plus: float,
-                    safety: float = 0.9) -> float:
-    """Theorem-safe stepsize ``dt = safety / L_clip`` for the clipped KL scheme."""
-    return float(safety) / clip_smoothness_constant(beta, lambda_minus, lambda_plus)
+def theorem_safe_dt(beta: float, lambda_plus: float,
+                    safety: float = 0.5) -> float:
+    """Theorem-safe stepsize ``dt = safety / L_clip = safety / (2 beta lambda_plus)``.
+
+    ``safety < 1`` keeps ``dt`` strictly inside the projected-KL theorem condition
+    ``dt <= 1 / (2 beta lambda_plus)``; the scale is independent of ``lambda_minus``.
+    """
+    consts = projected_kl_theory_constants(beta, lambda_plus)
+    return float(safety) * consts["dt_projected_KL_theory"]
+
+
+def deprecated_old_clip_smoothness_constant(beta: float, lambda_minus: float,
+                                            lambda_plus: float) -> float:
+    """OBSOLETE clipped constant ``beta * max(lambda_plus, lambda_plus^4/lambda_minus^3)``.
+
+    Superseded by :func:`clip_smoothness_constant` (``2 * beta * lambda_plus``).
+    Retained for historical comparison only; never used as current theory.
+    """
+    return deprecated_old_projected_kl_smoothness_constant(
+        beta, lambda_minus, lambda_plus)
 

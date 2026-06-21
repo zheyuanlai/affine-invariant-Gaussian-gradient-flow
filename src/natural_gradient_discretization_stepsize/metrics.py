@@ -22,6 +22,15 @@ import math
 
 import numpy as np
 
+from src.common.theory_constants import (
+    THEORY_VERSION_LOGCONCAVE,
+    natural_gradient_spectral_bounds,
+    riemannian_theory_constants,
+    kl_theory_constants,
+    q_riem as _q_riem,
+    q_kl as _q_kl,
+)
+
 SPD_TOL = 1e-12
 EXPLOSION_FACTOR = 1e3
 MONOTONE_TOL = 1e-10
@@ -96,41 +105,65 @@ def classify_run(F, energy_gap, min_eig_C, *, F0, F_star,
 def theory_stepsize_bounds(alpha, beta, C0):
     """Theoretical sufficient stepsize bounds for the two schemes.
 
-    With ``lambda_0_min/max`` the extreme eigenvalues of ``C0`` and
+    Under the improved KL proof both discretizations share the SAME theorem-safe
+    scale. With ``lambda_0_min/max`` the extreme eigenvalues of ``C0`` and
 
         lambda_min = min(lambda_0_min, 1/beta),
         lambda_max = max(lambda_0_max, 1/alpha),
 
     the proof Lipschitz constants and stepsizes are
 
-        L_Riem = beta lambda_max,                       dt_Riem = 1 / L_Riem,
-        L_KL   = beta lambda_max max{1, lambda_max^3 / (2 lambda_min^3)},
-                                                        dt_KL   = 1 / L_KL.
+        L_Riem = beta lambda_max,   dt_Riem = 1 / (beta lambda_max),
+        L_KL   = beta lambda_max,   dt_KL   = 1 / (beta lambda_max).
 
-    Returns ``None`` for both stepsizes when ``alpha``/``beta`` are unavailable
+    The KL constant no longer carries the obsolete cubic penalty
+    ``max{1, lambda_max^3/(2 lambda_min^3)}``; the only remaining theoretical
+    difference between the schemes is the per-step contraction factor (q_riem vs
+    q_kl), not the admissible stepsize. All constants come from the centralized
+    :mod:`src.common.theory_constants` module (single source of truth).
+
+    Returns ``None`` for the stepsizes when ``alpha``/``beta`` are unavailable
     (non-globally-smooth target).
     """
     if alpha is None or beta is None:
         return {
             "theory_bound_available": False,
+            "alpha": None, "beta": None,
+            "lambda0_min": None, "lambda0_max": None,
             "lambda_min": None, "lambda_max": None,
             "L_riem": None, "L_kl": None,
             "dt_theory_riem": None, "dt_theory_kl": None,
+            "theory_version": THEORY_VERSION_LOGCONCAVE,
         }
     w0 = np.linalg.eigvalsh(0.5 * (np.asarray(C0) + np.asarray(C0).T))
     lam0_min, lam0_max = float(w0[0]), float(w0[-1])
-    lam_min = min(lam0_min, 1.0 / beta)
-    lam_max = max(lam0_max, 1.0 / alpha)
-    L_riem = beta * lam_max
-    kl_factor = max(1.0, lam_max ** 3 / (2.0 * lam_min ** 3))
-    L_kl = beta * lam_max * kl_factor
+    lam_min, lam_max = natural_gradient_spectral_bounds(lam0_min, lam0_max, alpha, beta)
+    riem = riemannian_theory_constants(alpha, beta, lam0_min, lam0_max)
+    kl = kl_theory_constants(alpha, beta, lam0_min, lam0_max)
     return {
         "theory_bound_available": True,
+        "alpha": float(alpha), "beta": float(beta),
+        "lambda0_min": lam0_min, "lambda0_max": lam0_max,
         "lambda_min": lam_min, "lambda_max": lam_max,
-        "L_riem": float(L_riem), "L_kl": float(L_kl),
-        "dt_theory_riem": float(1.0 / L_riem),
-        "dt_theory_kl": float(1.0 / L_kl),
+        "L_riem": riem["L_Riem"], "L_kl": kl["L_KL"],
+        "dt_theory_riem": riem["dt_Riem_theory"],
+        "dt_theory_kl": kl["dt_KL_theory"],
+        "theory_version": THEORY_VERSION_LOGCONCAVE,
     }
+
+
+def q_riem_at(dt, alpha, beta, lambda_min, lambda_max):
+    """Riemannian theorem contraction factor at ``dt`` (centralized formula)."""
+    if alpha is None or beta is None or lambda_min is None or lambda_max is None:
+        return float("nan")
+    return float(_q_riem(dt, alpha, beta, lambda_min, lambda_max))
+
+
+def q_kl_at(dt, alpha, beta, lambda_min, lambda_max):
+    """KL theorem contraction factor at ``dt`` (centralized formula)."""
+    if alpha is None or beta is None or lambda_min is None or lambda_max is None:
+        return float("nan")
+    return float(_q_kl(dt, alpha, beta, lambda_min, lambda_max))
 
 
 def dt_theory_for_method(bounds, method):

@@ -19,6 +19,7 @@ import math
 import numpy as np
 
 from src.common.spd import symmetrize
+from src.common.theory_constants import THEORY_VERSION_LOGCONCAVE
 from src.natural_gradient_discretization_stepsize.methods import discretization_step
 from src.natural_gradient_discretization_stepsize import rate_metrics as rm
 
@@ -45,7 +46,7 @@ def simulate_rate_run(method, target, c, dt_ref, alpha, beta,
 
     # Method-specific theoretical contraction factor at this dt (state-free).
     q_riem = rm.q_riem_theory(dt, alpha, beta, lambda_min, lambda_max)
-    q_kl = rm.q_kl_formula(dt, alpha, beta, lambda_min, lambda_max)
+    q_kl = rm.q_kl_theory(dt, alpha, beta, lambda_min, lambda_max)
     r_riem = rm.per_unit_rate(q_riem, dt)
     r_kl = rm.per_unit_rate(q_kl, dt)
     q_theory = q_riem if method == "riemannian" else q_kl
@@ -68,8 +69,8 @@ def simulate_rate_run(method, target, c, dt_ref, alpha, beta,
             "n": n, "time": t,
             "gap": gap_floored, "gap_raw": gap_raw,
             "is_floor_limited": int(math.isfinite(gap_raw) and gap_raw <= gap_floor),
-            "q_riem_theory": q_riem, "q_kl_formula": q_kl,
-            "r_riem_theory": r_riem, "r_kl_formula": r_kl,
+            "q_riem_theory": q_riem, "q_kl_theory": q_kl,
+            "r_riem_theory": r_riem, "r_kl_theory": r_kl,
         })
 
     record_step(0, 0.0, gap0)
@@ -136,6 +137,16 @@ def _summarize_rate_run(target, method, c, dt, dt_ref, alpha, beta,
         log10_slack = float("nan")
 
     status = "ok" if failed_n is None else "failed"
+    # Both theorem contraction factors evaluated at this dt (state-free); under the
+    # improved KL proof dt = c*dt_ref (c<=1) is inside the theorem range for both.
+    q_riem_at_dt = rm.q_riem_theory(dt, alpha, beta, lambda_min, lambda_max)
+    q_kl_at_dt = rm.q_kl_theory(dt, alpha, beta, lambda_min, lambda_max)
+    obs_q = term["q_hat_terminal"]
+    obs_r = term["r_hat_terminal"]
+    if math.isfinite(obs_r) and math.isfinite(r_theory) and r_theory > 0.0:
+        obs_over_theory = float(obs_r / r_theory)
+    else:
+        obs_over_theory = float("nan")
     return {
         "target": target.name, "lambda": getattr(target, "lam", float("nan")),
         "method": method, "alpha": alpha, "beta": beta,
@@ -145,8 +156,14 @@ def _summarize_rate_run(target, method, c, dt, dt_ref, alpha, beta,
         "final_gap_raw": final_gap_raw,
         "final_gap_for_logs": final_for_logs,
         "q_theory": float(q_theory), "r_theory": float(r_theory),
+        "q_riem_theory_at_dt": float(q_riem_at_dt),
+        "q_kl_theory_at_dt": float(q_kl_at_dt),
         "q_hat_terminal": term["q_hat_terminal"],
         "r_hat_terminal": term["r_hat_terminal"],
+        "observed_contraction": float(obs_q),
+        "observed_rate": float(obs_r),
+        "theory_rate": float(r_theory),
+        "observed_over_theory_rate_ratio": obs_over_theory,
         "q_hat_fit": fit["q_hat_fit"], "r_hat_fit": fit["r_hat_fit"],
         "fit_num_points": fit["fit_num_points"],
         "fit_window_status": fit["fit_window_status"],
@@ -155,6 +172,7 @@ def _summarize_rate_run(target, method, c, dt, dt_ref, alpha, beta,
         "log10_terminal_slack": float(log10_slack),
         "floor_limited_final": term["floor_limited_final"],
         "r_continuous": rm.r_continuous(alpha, lambda_min),
+        "theory_version": THEORY_VERSION_LOGCONCAVE,
         "status": status,
     }
 

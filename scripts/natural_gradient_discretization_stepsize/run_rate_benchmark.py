@@ -45,16 +45,19 @@ DEFAULT_CONFIG = os.path.join(
 LONG_COLS = [
     "target", "lambda", "method", "alpha", "beta", "lambda_min", "lambda_max",
     "dt_ref", "c", "dt", "n", "time", "gap", "gap_raw", "is_floor_limited",
-    "q_riem_theory", "q_kl_formula", "r_riem_theory", "r_kl_formula",
+    "q_riem_theory", "q_kl_theory", "r_riem_theory", "r_kl_theory",
 ]
 
 SUMMARY_COLS = [
     "target", "lambda", "method", "alpha", "beta", "lambda_min", "lambda_max",
     "dt_ref", "c", "dt", "N", "T_actual", "initial_gap", "final_gap_raw",
-    "final_gap_for_logs", "q_theory", "r_theory", "q_hat_terminal",
-    "r_hat_terminal", "q_hat_fit", "r_hat_fit", "fit_num_points",
-    "fit_window_status", "theory_terminal_bound", "terminal_slack",
-    "log10_terminal_slack", "floor_limited_final", "r_continuous", "status",
+    "final_gap_for_logs", "q_theory", "r_theory",
+    "q_riem_theory_at_dt", "q_kl_theory_at_dt", "q_hat_terminal",
+    "r_hat_terminal", "observed_contraction", "observed_rate", "theory_rate",
+    "observed_over_theory_rate_ratio", "q_hat_fit", "r_hat_fit",
+    "fit_num_points", "fit_window_status", "theory_terminal_bound",
+    "terminal_slack", "log10_terminal_slack", "floor_limited_final",
+    "r_continuous", "theory_version", "status",
 ]
 
 TOL_COLS = [
@@ -95,10 +98,10 @@ def run_rate_grid(cfg, outdir):
         "config": {k: cfg[k] for k in
                    ("targets", "lambdas", "methods", "c_grid", "T",
                     "eps_values", "gap_floor")},
-        "note": ("Common Riemannian-scale reference dt_ref=1/(beta*lambda_max) "
-                 "for BOTH schemes; the KL contraction formula is a formal "
-                 "benchmark evaluated on this grid, not a proof that the KL "
-                 "theorem holds at these stepsizes."),
+        "note": ("Common theorem-safe reference dt_ref=1/(beta*lambda_max) for "
+                 "BOTH schemes. Under the improved KL proof both schemes are "
+                 "admitted on dt<=dt_ref, so q_riem(dt) and q_kl(dt) on this grid "
+                 "are genuine theorem contraction rates (no cubic KL penalty)."),
         "targets": {},
     }
 

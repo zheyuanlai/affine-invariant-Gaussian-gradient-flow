@@ -9,7 +9,7 @@ Figures
 -------
 1-3  energy gap vs elapsed time n*dt (Gaussian / literature / smooth), 3 lambda panels
 4-6  stepsize stability heatmaps (one figure per target, Riemannian + KL panels)
-7    theory vs empirical stepsize (Gaussian + smooth; the main proof-artifact figure)
+7    theory vs empirical stepsize (Gaussian + smooth; shared theorem-safe scale)
 8    scalar covariance diagnostic
 9    wall-clock / time-to-tolerance summary
 
@@ -144,7 +144,7 @@ def fig_stability_heatmap(summary, step_df, target_name, figs_dir):
 
 
 # ---------------------------------------------------------------------------
-# Figure 7: theory vs empirical stepsize (the proof-artifact figure)
+# Figure 7: theory vs empirical stepsize (shared theorem-safe scale)
 # ---------------------------------------------------------------------------
 
 def fig_theory_vs_empirical(step_df, figs_dir):
@@ -162,8 +162,8 @@ def fig_theory_vs_empirical(step_df, figs_dir):
             st = METHOD_STYLE[method]
             ms = sub[sub.method == method].set_index("lambda")
             theory = [ms.loc[l, "dt_theory_for_method"] for l in lambdas]
-            mono = [ms.loc[l, "dt_max_monotone"] for l in lambdas]
-            stab = [ms.loc[l, "dt_max_stable"] for l in lambdas]
+            mono = [ms.loc[l, "dt_monotone_max"] for l in lambdas]
+            stab = [ms.loc[l, "dt_stable_max"] for l in lambdas]
             off = (k - 0.5) * width
             ax.bar(x + off, theory, width * 0.9, color=st["color"], alpha=0.35,
                    label=f"{st['label']} theory", edgecolor=st["color"])
@@ -408,7 +408,7 @@ def fig_rate_theory_envelope(rate_long, target_name, figs_dir, c_values=(0.25, 1
                                  color=st["color"], ls=st["ls"], lw=1.5,
                                  label=f"{st['label']} obs")
                 gap0 = float(run.gap_raw.iloc[0])
-                qcol = "q_riem_theory" if method == "riemannian" else "q_kl_formula"
+                qcol = "q_riem_theory" if method == "riemannian" else "q_kl_theory"
                 q = float(run[qcol].iloc[0])
                 env = (q ** run.n.values) * gap0
                 semilogy_clipped(ax, run.time.values, env, color=st["color"],

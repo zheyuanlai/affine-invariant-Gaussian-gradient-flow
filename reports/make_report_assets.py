@@ -492,8 +492,9 @@ def _tab_disc_stepsize(step_df):
     """Empirical vs theoretical maximum stepsize, by target/lambda/method.
 
     Reports the largest stable, monotone, and accurate stepsizes together with
-    the monotone/theory and accurate/theory ratios, so the proof-artifact gap is
-    visible in both the monotone and the (stricter) accurate class.
+    the monotone/theory and accurate/theory ratios against the shared theorem-safe
+    stepsize ``1/(beta*lambda_max)``, so the conservativeness of the (now common)
+    bound is visible in both the monotone and the (stricter) accurate class.
     """
     tt = {"gaussian_posterior": "Gaussian", "literature_logconcave": "non-smooth",
           "smooth_logconcave": "smooth"}
@@ -514,13 +515,13 @@ def _tab_disc_stepsize(step_df):
     for _, r in step_df.iterrows():
         avail = r["theory_bound_available"]
         theory_s = _fmt_sci(r["dt_theory_for_method"]) if avail else "--"
-        mono_ratio_s = _fmt_sci(r["monotone_over_theory_ratio"]) if avail else "--"
-        acc_ratio_s = _fmt_sci(r["accurate_over_theory_ratio"]) if avail else "--"
+        mono_ratio_s = _fmt_sci(r["monotone_ratio_to_theory"]) if avail else "--"
+        acc_ratio_s = _fmt_sci(r["accurate_ratio_to_theory"]) if avail else "--"
         ratio_s = f"{mono_ratio_s} / {acc_ratio_s}" if avail else "--"
         lines.append(
             f"{tt.get(r['target_name'], r['target_name'])} & {r['lambda']:g} & "
-            f"{r['method']} & {theory_s} & {_fmt(r['dt_max_stable'], 3)} & "
-            f"{_fmt(r['dt_max_monotone'], 3)} & {_fmt(r['dt_max_accurate'], 3)} & "
+            f"{r['method']} & {theory_s} & {_fmt(r['dt_stable_max'], 3)} & "
+            f"{_fmt(r['dt_monotone_max'], 3)} & {_fmt(r['dt_accurate_max'], 3)} & "
             f"{ratio_s} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     _write_table("tab_disc_stepsize.tex", "\n".join(lines))
@@ -1120,6 +1121,7 @@ def build_nonconvex_instability_assets():
         build_all_figures,
         clipped_kl_largestep_table_tex,
         clipped_kl_summary_table_tex,
+        clipped_kl_sweep_table_tex,
         summary_table_tex,
     )
 
@@ -1129,13 +1131,16 @@ def build_nonconvex_instability_assets():
     bw_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "wasserstein_bound_summary.csv"))
     clipped_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "clipped_kl_stationarity.csv"))
     clipped_summary_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "clipped_kl_summary.csv"))
-    build_all_figures(long_df, kl_df, bw_df, clipped_df, FIGS)
+    sweep_df = pd.read_csv(os.path.join(NONCONVEX_DIR, "clipped_kl_sweep.csv"))
+    build_all_figures(long_df, kl_df, bw_df, clipped_df, FIGS, sweep_df=sweep_df)
     _write_table("tab_nonconvex_summary.tex",
                  summary_table_tex(summary_df, kl_df, bw_df))
     _write_table("tab_nonconvex_clipped_kl_summary.tex",
                  clipped_kl_summary_table_tex(clipped_summary_df))
     _write_table("tab_nonconvex_clipped_kl_largestep.tex",
                  clipped_kl_largestep_table_tex(clipped_summary_df))
+    _write_table("tab_nonconvex_clipped_kl_sweep.tex",
+                 clipped_kl_sweep_table_tex(sweep_df))
 
 
 def main():
