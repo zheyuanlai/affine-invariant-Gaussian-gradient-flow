@@ -1,0 +1,41 @@
+# Smoke configuration for the STL variance experiment (fast, CPU-friendly).
+#
+# One target family per experiment, d=2, kappa=10, two seeds, a small sample
+# count and a short trajectory. Used to validate the scripts end to end before
+# launching the production grid.
+
+output_dir: outputs/natural_gradient_stl_variance_smoke
+
+seeds: [0, 1]
+base_seed: 7
+
+gaussian:
+  d: [2]
+  kappa: [10.0]
+
+log_cosh:
+  d: [2]
+  kappa: [10.0]
+  tau: [1.0]
+  gh_nodes: 40
+
+estimator:
+  M: 2000
+  chunk_size: 2000
+  states:
+    rho_near: 0.25
+    rho_medium: 1.0
+    rho_far: 4.0
+    under_scale: 0.25
+    over_scale: 4.0
+
+algorithm:
+  dt: 0.1
+  gaussian_n_steps: 50
+  log_cosh_n_steps: 50
+  batch_sizes: [1]
+  init_mean_rho: 3.0
+  init_cov_scale: 0.5
+  n_saved: 25
+  tail_frac: 0.2
+  gh_nodes: 20

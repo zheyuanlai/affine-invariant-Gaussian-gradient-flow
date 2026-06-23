@@ -10,11 +10,13 @@ Final inputs
                      ``outputs/logconcave_grid/{summary,results_long}.csv``
 * local rate      :  ``outputs/natural_gradient_local_rate/operator_grid/results_long.csv``
 * nonconvex instab:  ``outputs/natural_gradient_nonconvex_instability/*.csv``
+* STL variance    :  ``outputs/natural_gradient_stl_variance/*.csv``
 
 Usage
 -----
     python reports/make_report_assets.py [--repo-root .]
     python reports/make_report_assets.py --only nonconvex_instability
+    python reports/make_report_assets.py --only stl_variance
 
 Outputs
 -------
@@ -1143,13 +1145,195 @@ def build_nonconvex_instability_assets():
                  clipped_kl_sweep_table_tex(sweep_df))
 
 
+# ===========================================================================
+# STL variance reduction (natural_gradient_stl_variance)
+# ===========================================================================
+
+STL_DIR = os.path.join(_ROOT, "outputs", "natural_gradient_stl_variance")
+STL_KIND_FILE = {"gaussian": "gaussian", "log_cosh": "logcosh"}
+STL_KIND_TEX = {"gaussian": "Gaussian", "log_cosh": "log-cosh"}
+# Estimator-summary states and their short table labels.
+STL_STATE_TEX = {"optimum": "opt", "near": "near", "medium": "med", "far": "far",
+                 "underdispersed": "under", "overdispersed": "over"}
+
+
+def _stl_ratio_fmt(x):
+    if x is None or (isinstance(x, float) and not np.isfinite(x)):
+        return "--"
+    if x <= 0 or x < 1e-12:
+        return r"$<\!10^{-12}$"
+    exp = int(np.floor(np.log10(abs(x))))
+    if -2 <= exp <= 2:
+        return f"{x:.2g}"
+    mant = x / 10.0 ** exp
+    return rf"${mant:.1f}\times10^{{{exp}}}$"
+
+
+def _tab_stl_estimator_summary(est_sum):
+    """Median FR variance ratio (stl/base) at four states, per target config.
+
+    Highlights the three regimes: ratio ~0 at the optimum (and at any mean
+    perturbation with ``C=C_star`` for the Gaussian target), reduction when
+    over-dispersed, inflation when under-dispersed.
+    """
+    states = ["optimum", "near", "underdispersed", "overdispersed"]
+    piv = est_sum.pivot_table(index=["kind", "d", "kappa", "tau"],
+                              columns="state", values="ratio_fr_median",
+                              aggfunc="median")
+    lines = [
+        r"\begin{tabular}{llll cccc}", r"\toprule",
+        r"target & $d$ & $\kappa$ & $\tau$ & "
+        + " & ".join(rf"$r_{{\mathrm{{{STL_STATE_TEX[s]}}}}}$" for s in states)
+        + r" \\", r"\midrule",
+    ]
+    prev_kind = None
+    for (kind, d, kappa, tau) in sorted(piv.index):
+        if prev_kind is not None and kind != prev_kind:
+            lines.append(r"\midrule")
+        show = STL_KIND_TEX.get(kind, kind) if kind != prev_kind else ""
+        row = piv.loc[(kind, d, kappa, tau)]
+        cells = " & ".join(_stl_ratio_fmt(row.get(s, np.nan)) for s in states)
+        tau_s = "--" if kind == "gaussian" else f"{tau:g}"
+        lines.append(f"{show} & {int(d)} & {kappa:g} & {tau_s} & {cells} \\\\")
+        prev_kind = kind
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_stl_estimator_summary.tex", "\n".join(lines))
+
+
+_FLOOR_DISP = 1e-12   # display floor: STL floors below this are reported as "< 1e-12"
+
+
+def _stl_factor_tex(x):
+    """Bare LaTeX (no surrounding ``$``) for a reduction factor ``x``."""
+    if x is None or (isinstance(x, float) and not np.isfinite(x)) or x <= 0:
+        return "--"
+    if x >= 100:
+        exp = int(np.floor(np.log10(x)))
+        return rf"{x / 10.0 ** exp:.1f}\times10^{{{exp}}}"
+    return f"{x:.1f}"
+
+
+def _tab_stl_algorithm_noise_floor(tail_df):
+    """Tail (noise-floor) gap, baseline vs STL, by kind/scheme/batch size.
+
+    Median over all configs and seeds of the per-run tail median gap, with the
+    STL reduction factor ``base/stl``. For the well-specified Gaussian target the
+    STL floor reaches machine zero (the deterministic Hessian makes the covariance
+    deterministic and STL removes all mean noise), reported as ``< 10^{-12}``.
+    """
+    lines = [
+        r"\begin{tabular}{lll ccc}", r"\toprule",
+        r"target & scheme & $B$ & base floor & STL floor & reduction \\",
+        r"\midrule",
+    ]
+    prev = None
+    for kind in ["gaussian", "log_cosh"]:
+        for scheme in ["riemannian", "kl"]:
+            for bs in sorted(tail_df.batch_size.unique()):
+                cell = tail_df[(tail_df.kind == kind) & (tail_df.scheme == scheme)
+                               & (tail_df.batch_size == bs)]
+                if cell.empty:
+                    continue
+                base = cell[cell.stl == 0].tail_median_gap
+                stl = cell[cell.stl == 1].tail_median_gap
+                if base.empty or stl.empty:
+                    continue
+                b = max(float(np.median(base)), 0.0)
+                s = float(np.median(stl))
+                if s < _FLOOR_DISP:                  # machine-zero STL floor
+                    s_disp = r"$<\!10^{-12}$"
+                    p = int(np.floor(np.log10(b / _FLOOR_DISP))) if b > 0 else 12
+                    fac_disp = rf"$>\!10^{{{p}}}\times$"
+                else:
+                    s_disp = _wfr_fmt_sci(s)
+                    fac_disp = rf"${_stl_factor_tex(b / s)}\times$"
+                key = (kind, scheme)
+                show_k = STL_KIND_TEX.get(kind, kind) if key[0] != (prev or (None,))[0] else ""
+                show_s = scheme if key != prev else ""
+                if prev is not None and key != prev:
+                    lines.append(r"\midrule")
+                lines.append(
+                    f"{show_k} & {show_s} & {int(bs)} & {_wfr_fmt_sci(b)} & "
+                    f"{s_disp} & {fac_disp} \\\\")
+                prev = key
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_stl_algorithm_noise_floor.tex", "\n".join(lines))
+
+
+def _tab_stl_runtime(alg_summary, est_meta, alg_meta):
+    """Runtime / environment summary for both experiments."""
+    dev = alg_meta.get("torch_info", {}).get("device_name") or alg_meta.get("device")
+    backend = alg_meta.get("backend", "--")
+    est_wall = est_meta.get("wall_time_total", float("nan")) if est_meta else float("nan")
+    alg_wall = alg_meta.get("wall_time_total", float("nan"))
+    gpu_workers = alg_meta.get("gpu_workers", 1)
+    cell_r = alg_summary[alg_summary.scheme == "riemannian"].wall_time_cell
+    cell_k = alg_summary[alg_summary.scheme == "kl"].wall_time_cell
+    n_cells = (alg_summary.groupby(["kind", "d", "kappa", "tau", "method",
+                                    "batch_size"]).ngroups)
+    lines = [
+        r"\begin{tabular}{ll}", r"\toprule",
+        r"quantity & value \\", r"\midrule",
+        rf"backend / device & {backend} / {dev} \\",
+        rf"GPU workers (cap 2) & {int(gpu_workers)} \\",
+        rf"estimator wall time & {_fmt(est_wall, 1)}\,s \\",
+        rf"algorithm wall time & {_fmt(alg_wall, 1)}\,s \\",
+        rf"algorithm cells & {int(n_cells)} \\",
+        rf"mean Riemannian cell & {_fmt(float(np.mean(cell_r)) if len(cell_r) else float('nan'), 2)}\,s \\",
+        rf"mean KL cell & {_fmt(float(np.mean(cell_k)) if len(cell_k) else float('nan'), 2)}\,s \\",
+        r"\bottomrule", r"\end{tabular}",
+    ]
+    _write_table("tab_stl_runtime.tex", "\n".join(lines))
+
+
+def build_stl_variance_assets():
+    """Figures + tables for the STL variance-reduction report."""
+    print("STL variance reduction:")
+    import json
+    import importlib
+    P = importlib.import_module("src.natural_gradient_stl_variance.plotting")
+
+    est_df = pd.read_csv(os.path.join(STL_DIR, "estimator_variance.csv"))
+    est_sum = pd.read_csv(os.path.join(STL_DIR, "estimator_variance_summary.csv"))
+    long_df = pd.read_csv(os.path.join(STL_DIR, "algorithm_results_long.csv"))
+    tail_df = pd.read_csv(os.path.join(STL_DIR, "tail_noise_floor.csv"))
+    alg_sum = pd.read_csv(os.path.join(STL_DIR, "algorithm_summary.csv"))
+    with open(os.path.join(STL_DIR, "run_metadata.json")) as fh:
+        alg_meta = json.load(fh)
+    est_meta = None
+    est_meta_path = os.path.join(STL_DIR, "estimator_run_metadata.json")
+    if os.path.exists(est_meta_path):
+        with open(est_meta_path) as fh:
+            est_meta = json.load(fh)
+
+    for kind in ["gaussian", "log_cosh"]:
+        if kind in set(est_df.kind.unique()):
+            _savefig(P.fig_estimator_variance_ratio(est_df, kind),
+                     f"fig_stl_estimator_variance_ratio_{STL_KIND_FILE[kind]}")
+        if kind in set(long_df.kind.unique()):
+            fig = P.fig_algorithm_gap(long_df, kind)
+            if fig is not None:
+                _savefig(fig, f"fig_stl_algorithm_gap_{STL_KIND_FILE[kind]}")
+    _savefig(P.fig_noise_floor(tail_df), "fig_stl_noise_floor")
+    _savefig(P.fig_batchsize_effect(tail_df), "fig_stl_batchsize_effect")
+    # Optional supplementary figure (log-cosh distance dependence is the
+    # informative one; the Gaussian ratio is ~0 for any C=C_star mean state).
+    if "log_cosh" in set(est_df.kind.unique()):
+        _savefig(P.fig_variance_by_distance(est_df, "log_cosh"),
+                 "fig_stl_variance_by_distance_to_optimum")
+
+    _tab_stl_estimator_summary(est_sum)
+    _tab_stl_algorithm_noise_floor(tail_df)
+    _tab_stl_runtime(alg_sum, est_meta, alg_meta)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--repo-root", default=_ROOT)
     p.add_argument("--only",
                    choices=[
                        "omega_tau", "local_rate", "discretization", "wfr",
-                       "nonconvex_instability",
+                       "nonconvex_instability", "stl_variance",
                    ],
                    default=None, help="Build only one group's assets.")
     args = p.parse_args()
@@ -1161,6 +1345,7 @@ def main():
         "discretization": build_discretization_assets,
         "wfr": build_wfr_assets,
         "nonconvex_instability": build_nonconvex_instability_assets,
+        "stl_variance": build_stl_variance_assets,
     }
     selected = [args.only] if args.only else list(builders)
     failures = []

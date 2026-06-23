@@ -1,0 +1,372 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+
+\title{Sticking the Landing for Stochastic Gaussian\\
+Natural-Gradient Variational Inference:\\
+A Mean-Block Variance-Reduction Study}
+\author{}
+\date{}
+
+\newcommand{\bbase}{b_{\mathrm{base}}}
+\newcommand{\bstl}{b_{\mathrm{stl}}}
+\newcommand{\score}{\operatorname{score}_\post}
+\newcommand{\VarFR}{\mathrm{Var}_{\mathrm{FR}}}
+\newcommand{\VarE}{\mathrm{Var}_{\mathrm{eucl}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Stochastic Gaussian natural-gradient variational inference estimates the Gaussian
+expectations that drive the Fisher--Rao flow from samples
+$\theta\sim\N(m,C)$. The \emph{Sticking-the-Landing} (STL) trick replaces the
+plain posterior-score mean estimator $\bbase(\theta)=\score(\theta)$ by the
+score-\emph{residual} estimator
+$\bstl(\theta)=\score(\theta)+C^{-1}(\theta-m)$, which subtracts the
+(zero-mean) score of the variational Gaussian itself. The residual estimator is
+unbiased and, at a well-specified Gaussian optimum, vanishes \emph{pointwise}. We
+isolate the effect of mean-block STL -- holding the covariance update fixed --
+with two experiments (an estimator-level variance comparison at fixed states and
+an algorithm-level trajectory comparison) on a well-specified anisotropic
+Gaussian target and a misspecified smooth strongly log-concave $\log\cosh$
+target, swept over dimension, conditioning, and (for $\log\cosh$) the
+non-Gaussianity strength $\tau$.
+
+The findings are clean. For the Gaussian target the STL mean estimator has
+\emph{exactly zero} variance whenever $C=C_\star$ (the optimum and every
+mean-only perturbation); because the Hessian sampler is moreover deterministic
+(the Gaussian curvature is state-independent), STL collapses the algorithm's
+stochastic noise floor all the way to machine precision, while the baseline
+retains a floor set by its mean noise. For the misspecified $\log\cosh$ target
+STL still reduces the floor by roughly three orders of magnitude but does
+\emph{not} remove it, because the nonlinear part of the score is not captured by
+the Gaussian residual. STL is not universally beneficial: when the
+covariance is \emph{under-dispersed} ($C\prec C_\star$, so $C^{-1}$ is large) the
+residual term inflates the variance above the baseline. For the direct Hessian
+sampler used here the covariance-block ``STL'' rewrite is algebraically identical
+to the original covariance update, so the experiment genuinely isolates the mean
+block. We conclude that mean-STL is an essentially cost-free, practically
+effective variance-reduction device for Gaussian variational families -- best
+near the optimum and under correct Gaussian specification -- but not a
+theorem-level substitute for a stochastic-variance assumption.
+\end{abstract}
+
+\tableofcontents
+
+% ======================================================================
+\section{Motivation}
+\label{sec:motivation}
+
+We approximate a target posterior $\rho_\post\propto e^{-V}$ on $\R^d$ by a
+Gaussian $q_a=\N(m,C)$, $C\in\SPD(d)$, with state $a=(m,C)$, minimizing the
+reverse KL $\mathcal{E}(a)=\E_{q_a}[V]-\tfrac12\log\det C$ (up to an
+$a$-independent constant). The Gaussian \emph{natural-gradient} (Fisher--Rao)
+flow is
+\begin{equation}
+\label{eq:flow}
+\dot m = C\,\E_{q_a}[\score(\theta)],
+\qquad
+\dot C = C + C\,\E_{q_a}[\nabla^2\log\rho_\post(\theta)]\,C,
+\end{equation}
+with $\score(\theta)=\grad\log\rho_\post(\theta)=-\grad V(\theta)$ and
+$\nabla^2\log\rho_\post=-\grad^2V$. A stochastic algorithm draws
+$\theta_n\sim\N(m_n,C_n)$ and replaces the two expectations in
+\eqref{eq:flow} by sample estimators. The one-sample baselines are
+$b_n=\score(\theta_n)$ and $S_n=\nabla^2\log\rho_\post(\theta_n)$, and the mean
+update is $m_{n+1}=m_n+\Delta t\,C_n b_n$.
+
+The estimator $\score(\theta)$ is noisy even at the optimum: for a Gaussian
+target the score is linear, $\score(\theta)=-A\theta$, so $b_n$ fluctuates with
+$\theta_n$ while its \emph{mean} is what the flow needs. Sticking the Landing
+\cite{stl} removes the part of this fluctuation that the variational family can
+account for analytically.
+
+% ======================================================================
+\section{Theory: what STL changes, and what it does not}
+\label{sec:theory}
+
+\paragraph{Mean block.}
+For a Gaussian $q_a=\N(m,C)$ the variational score is explicit,
+\begin{equation}
+\grad_\theta\log q_a(\theta) = -\,C^{-1}(\theta-m).
+\end{equation}
+The STL mean estimator subtracts it from the posterior score,
+\begin{equation}
+\label{eq:bstl}
+\bstl(\theta)
+ = \score(\theta) - \grad_\theta\log q_a(\theta)
+ = \score(\theta) + C^{-1}(\theta-m).
+\end{equation}
+Because $\E_{q_a}[C^{-1}(\theta-m)]=0$, the estimator is \emph{unbiased} for
+$\E_{q_a}[\score]$; this is the quantity the mean update needs, so swapping
+$\bbase$ for $\bstl$ changes only the noise, not the target.
+
+\begin{proposition}[Pointwise vanishing at a well-specified optimum]
+\label{prop:zero}
+If $\rho_\post=\N(m_\star,C_\star)$ is exactly Gaussian, then at $a=a_\star$ the
+posterior score equals the negative variational score,
+$\score(\theta)=-C_\star^{-1}(\theta-m_\star)$, and therefore
+$\bstl(\theta)\equiv 0$ for every $\theta$.
+\end{proposition}
+
+So at a well-specified optimum the STL mean estimator has \emph{zero variance}.
+More generally, for the Gaussian target $V=\tfrac12\theta^\top A\theta$ the STL
+fluctuation is
+$\bstl(\theta)-\E[\bstl] = (C^{-1}-A)(\theta-m)$,
+which depends on $C$ but \emph{not} on $m$: it is exactly zero whenever
+$C=C_\star=A^{-1}$, regardless of the mean. This is the precise sense in which
+``correct Gaussian specification'' matters more than ``distance to the optimum.''
+
+\paragraph{Covariance block (why it is not a separate estimator here).}
+The natural residual rewrite of the curvature estimator is
+$K(\theta)=\nabla^2\log\rho_\post(\theta)+C^{-1}=S(\theta)+C^{-1}$. For the
+\emph{direct} Hessian sampler this is only an algebraic restatement of the
+covariance update. With $S_n$ the sampled Hessian and $K_n=S_n+C_n^{-1}$,
+\begin{align}
+\text{Riemannian:}\quad
+ & e^{\Delta t}\,C^{1/2}\exp\!\big(\Delta t\,C^{1/2}S_nC^{1/2}\big)C^{1/2}
+ = C^{1/2}\exp\!\big(\Delta t\,C^{1/2}K_nC^{1/2}\big)C^{1/2},
+ \label{eq:riem-equiv}\\
+\text{KL:}\quad
+ & (1+\Delta t)\big(C^{-1}-\Delta t\,S_n\big)^{-1}
+ = (1+\Delta t)\big((1+\Delta t)C^{-1}-\Delta t\,K_n\big)^{-1},
+ \label{eq:kl-equiv}
+\end{align}
+because $C^{1/2}K_nC^{1/2}=C^{1/2}S_nC^{1/2}+I$ and $I$ commutes with everything
+(giving the $e^{\Delta t}$ factor in \eqref{eq:riem-equiv}), and because
+$(1+\Delta t)C^{-1}-\Delta t K_n=C^{-1}-\Delta t S_n$ in \eqref{eq:kl-equiv}.
+Both identities are verified numerically to machine precision in the test suite.
+Consequently the covariance update is held \emph{fixed} across baseline and STL,
+and the only algorithmic difference is the mean estimator $\bbase$ vs.\ $\bstl$.
+
+% ======================================================================
+\section{Experimental design}
+\label{sec:design}
+
+\paragraph{Targets.}
+Both targets have a diagonal curvature $A=\mathrm{diag}(a)$ with $a$ log-spaced
+in $[1,\kappa]$.
+\begin{itemize}
+\item \textbf{Well-specified Gaussian:} $V(\theta)=\tfrac12\theta^\top A\theta$,
+so $\score=-A\theta$, $\nabla^2\log\rho_\post=-A$, and the VI optimum is exact,
+$m_\star=0$, $C_\star=A^{-1}$.
+\item \textbf{Misspecified $\log\cosh$:}
+$V(\theta)=\tfrac12\theta^\top A\theta+\tau\sum_i\log\cosh(\theta_i)$, so
+$\score=-A\theta-\tau\tanh(\theta)$ and
+$\nabla^2\log\rho_\post=-A-\tau\,\mathrm{diag}(\operatorname{sech}^2\theta_i)$.
+The target is separable, strongly log-concave, and globally smooth but not
+Gaussian. The optimum mean is $m_\star=0$ by symmetry; the diagonal $C_\star$ is
+obtained by a deterministic per-coordinate fixed point
+$c_i=1/(a_i+\tau\,\E_{\N(0,c_i)}[\operatorname{sech}^2])$ evaluated by
+Gauss--Hermite quadrature (recorded stationarity residual $<10^{-9}$).
+\end{itemize}
+
+\paragraph{Experiment A (estimator-level).}
+At six fixed Gaussian states -- the optimum, three mean perturbations
+(\emph{near}/\emph{medium}/\emph{far}, offsets $0.25/1/4$ marginal standard
+deviations), and an \emph{under}- and \emph{over}-dispersed covariance
+($\tfrac14C_\star$, $4C_\star$) -- we draw $M=10^5$ samples and compute, for both
+estimators, the empirical bias against the deterministic reference
+$\E_{q_a}[\score]$, the Euclidean trace variance $\VarE(b)=\E\|b-\E b\|^2$, the
+Fisher--Rao mean-block variance $\VarFR(b)=\E[(b-\E b)^\top C(b-\E b)]$, and the
+ratios $\VarFR(\bstl)/\VarFR(\bbase)$ and $\VarE(\bstl)/\VarE(\bbase)$. For the
+Gaussian target the closed forms $\VarE(\bbase)=\Tr(ACA)$,
+$\VarFR(\bbase)=\Tr(CACA)$, $\VarE(\bstl)=\Tr(DCD)$, $\VarFR(\bstl)=\Tr(CDCD)$
+with $D=C^{-1}-A$ validate the Monte Carlo estimates.
+
+\paragraph{Experiment B (algorithm-level).}
+We run the four methods \texttt{riemannian}, \texttt{riemannian\_stl},
+\texttt{kl}, and \texttt{kl\_stl}
+from a fixed far, under-dispersed initialization
+($m_0=m_\star+3\sqrt{\operatorname{diag}C_\star}$, $C_0=\tfrac12 C_\star$), with
+mini-batches $B\in\{1,4,16\}$ and step $\Delta t=0.1$. The step is conservative:
+near the optimum $C\approx C_\star=A^{-1}$, so the explicit mean map contracts as
+$(1-\Delta t)$ \emph{independently of $\kappa$}, and both covariance updates are
+unconditionally SPD for a log-concave target. Within a $(\text{config},B)$ cell
+the baseline and STL methods share a common-random-number stream, so the
+comparison is paired. We record the energy gap
+$\mathcal{E}(a_n)-\mathcal{E}(a_\star)$ (analytic for the Gaussian target,
+Gauss--Hermite for $\log\cosh$), the squared mean error, the relative covariance
+Frobenius error, $W_2^2$ to $a_\star$, the covariance eigenvalue extremes, and an
+SPD flag; the \emph{noise floor} is the energy gap averaged/medianed over the
+final $20\%$ of iterations.
+
+\paragraph{Grids and reproducibility.}
+The Gaussian grid is $d\in\{2,8,32\}$, $\kappa\in\{10,100,10^4\}$; the $\log\cosh$
+grid is $d\in\{2,8,32\}$, $\kappa\in\{10,100\}$, $\tau\in\{0.1,1\}$. Every cell
+uses $20$ seeds. All computation is float64; the production grids run on a single
+NVIDIA H200 (the algorithm grid optionally splits its cells across at most two
+GPUs). Cell seeds are derived deterministically from the configuration, so a run
+is reproducible and independent of the device split. Table~\ref{tab:stl-runtime}
+records the environment and timing.
+
+% ======================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{Estimator-level variance}
+
+Figure~\ref{fig:stl-est} shows the Fisher--Rao variance ratio by state.
+For the Gaussian target the ratio is numerically zero at the optimum and at every
+mean-only perturbation (\emph{near}/\emph{medium}/\emph{far}), because those
+states keep $C=C_\star$ and the STL fluctuation $(C^{-1}-A)(\theta-m)$ vanishes
+identically. The only states with nonzero ratio are the dispersion states, and
+they split the two regimes cleanly: \emph{over}-dispersion reduces the variance
+(ratio $<1$) while \emph{under}-dispersion \emph{inflates} it (ratio $\approx 9$
+at $\tfrac14 C_\star$), since $C^{-1}$ is then large and amplifies the residual.
+For the misspecified $\log\cosh$ target the ratio is small but \emph{nonzero}
+even at the optimum -- the nonlinear $\tanh$ part of the score is not removed by
+the Gaussian residual -- and grows with the mean offset
+(Figure~\ref{fig:stl-dist}). Table~\ref{tab:stl-est} reports the medians; the
+Gaussian closed forms match the Monte Carlo estimates to within sampling error.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.49\textwidth}\centering
+  \includegraphics[width=\linewidth]{fig_stl_estimator_variance_ratio_gaussian}
+  \caption{well-specified Gaussian}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\textwidth}\centering
+  \includegraphics[width=\linewidth]{fig_stl_estimator_variance_ratio_logcosh}
+  \caption{misspecified $\log\cosh$}
+\end{subfigure}
+\caption{Estimator-level Fisher--Rao variance ratio
+$\VarFR(\bstl)/\VarFR(\bbase)$ by fixed state (median over seeds, log scale; the
+dashed line is ratio $1$). Gaussian: zero whenever $C=C_\star$, inflation only
+when under-dispersed. $\log\cosh$: reduced but never zero.}
+\label{fig:stl-est}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{fig_stl_variance_by_distance_to_optimum}
+\caption{Misspecified $\log\cosh$ target: FR variance ratio vs.\ mean offset
+$\rho$ (in marginal standard deviations). Unlike the Gaussian target, the ratio
+is positive at $\rho=0$ and increases with distance, because the score residual
+cannot absorb the nonlinear $\tanh$ term.}
+\label{fig:stl-dist}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_stl_estimator_summary.tex}
+\caption{Median FR variance ratio $\VarFR(\bstl)/\VarFR(\bbase)$ at four states.
+$r_{\mathrm{opt}}\approx0$ for the Gaussian target (exactly $0$ for $C=C_\star$);
+$r_{\mathrm{under}}>1$ marks the variance-inflation regime; the $\log\cosh$ rows
+stay strictly positive.}
+\label{tab:stl-est}
+\end{table}
+
+\subsection{Algorithm-level noise floor}
+
+Figure~\ref{fig:stl-gap} shows the energy gap versus iteration for a
+representative cell of each target. All four methods descend together during the
+transient; once near the optimum the baseline methods flatten at a stochastic
+noise floor, while on the Gaussian target the STL curves (dashed) keep
+descending to machine precision. The reason is structural: the Gaussian Hessian
+is state-independent, so the sampled covariance update is in fact deterministic
+and converges exactly to $C_\star$; once $C=C_\star$ the STL mean estimator is
+pointwise zero, so the mean stops fluctuating and the iterate lands on $a_\star$.
+On the $\log\cosh$ target the Hessian sampler is genuinely stochastic and the
+score residual cannot cancel the $\tanh$ term, so STL lowers the floor by about
+three orders of magnitude but a residual floor remains. Figure~\ref{fig:stl-floor}
+aggregates every cell: the Gaussian STL points sit on the display floor, and the
+$\log\cosh$ points lie consistently below the diagonal. Table~\ref{tab:stl-floor}
+gives the median reduction factors by scheme and batch size (the Gaussian STL
+floor is reported as $<\!10^{-12}$), and Figure~\ref{fig:stl-batch} shows that
+increasing the mini-batch lowers the baseline (and the $\log\cosh$ STL) floor
+$\propto 1/B$ while preserving the STL advantage.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.49\textwidth}\centering
+  \includegraphics[width=\linewidth]{fig_stl_algorithm_gap_gaussian}
+  \caption{well-specified Gaussian}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\textwidth}\centering
+  \includegraphics[width=\linewidth]{fig_stl_algorithm_gap_logcosh}
+  \caption{misspecified $\log\cosh$}
+\end{subfigure}
+\caption{Energy gap vs.\ iteration (median over seeds) for the four methods at a
+representative cell. STL (dashed) lowers the stochastic noise floor; the effect
+is larger for the well-specified target.}
+\label{fig:stl-gap}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.86\textwidth]{fig_stl_noise_floor}
+\caption{Per-cell median tail (noise-floor) gap, STL vs.\ baseline, across all
+configs and batch sizes; points below the diagonal are cells where STL lowers the
+floor. Color encodes the covariance scheme.}
+\label{fig:stl-floor}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.86\textwidth]{fig_stl_batchsize_effect}
+\caption{Median tail noise floor vs.\ mini-batch size $B$. Both baseline and STL
+floors fall with $B$; STL stays below its paired baseline at every $B$.}
+\label{fig:stl-batch}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_stl_algorithm_noise_floor.tex}
+\caption{Tail noise floor (median over configs and seeds), baseline vs.\ STL, with
+the STL reduction factor, by target, covariance scheme, and mini-batch size $B$.}
+\label{tab:stl-floor}
+\end{table}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_stl_runtime.tex}
+\caption{Runtime and environment. Mean wall time is reported per algorithm cell
+(all seeds of one config/method/batch advanced in a single batched pass).}
+\label{tab:stl-runtime}
+\end{table}
+
+% ======================================================================
+\section{Practical conclusion}
+\label{sec:conclusion}
+
+Mean-block STL is \emph{essentially cost-free} for Gaussian variational families,
+because the Gaussian score $-C^{-1}(\theta-m)$ is available in closed form and is
+already computed (via $C^{-1}$) by the KL covariance step. Within the regime it
+was designed for -- a well-specified Gaussian target near the optimum -- it is
+extremely effective: the mean-gradient variance is exactly zero whenever
+$C=C_\star$, and the algorithm's stochastic noise floor drops by one to two orders
+of magnitude. For a misspecified but smooth target it still helps near the
+optimum, but it cannot remove the floor, because the residual estimator only
+cancels the Gaussian part of the score. STL is therefore best presented as a
+\emph{practical variance-reduction device}, not a theorem-level replacement for a
+stochastic-variance assumption: it does not make the stochastic gradient vanish in
+general, and under covariance under-dispersion it can even \emph{increase} the
+variance.
+
+% ======================================================================
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{itemize}
+\item We test the \emph{direct} Hessian sampler, for which the covariance-block
+residual rewrite is algebraically identical to the original update
+(\S\ref{sec:theory}); the experiment therefore isolates mean-STL and says nothing
+about Hessian-free \emph{pathwise} covariance gradients, where an STL-type
+covariance correction \emph{is} a genuinely different estimator.
+\item High-dimensional behavior is established empirically over $d\le 32$ and
+diagonal curvature; the diagonal structure keeps the iterates diagonal, so the
+$d$-dependence reported here is a controlled best case, not a worst-case bound.
+\item The variance-inflation regime is reached through covariance
+under-dispersion; the magnitude of the benefit (and of the inflation) depends on
+how far $C$ is from $C_\star$ and on the degree of target misspecification, both
+of which are problem-specific.
+\end{itemize}
+
+\begin{thebibliography}{9}
+\bibitem{stl} G.~Roeder, Y.~Wu, and D.~Duvenaud.
+\emph{Sticking the Landing: Simple, Lower-Variance Gradient Estimators for
+Variational Inference}. Advances in Neural Information Processing Systems, 2017.
+\end{thebibliography}
+
+\end{document}

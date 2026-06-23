@@ -1,0 +1,68 @@
+# Production configuration for the STL variance experiment
+# (natural_gradient_stl_variance).
+#
+# Two targets:
+#   * gaussian  -- well-specified anisotropic Gaussian V = 0.5 theta^T A theta,
+#                  A = diag log-spaced in [1, kappa].  Optimum exact (m=0, C=A^{-1}).
+#   * log_cosh  -- misspecified smooth strongly log-concave separable target
+#                  V = 0.5 theta^T A theta + tau sum log cosh(theta_i).
+#                  Optimum m=0; diagonal C_star from a deterministic fixed point.
+#
+# Experiment A (estimator-level) compares the baseline mean estimator
+# b_base = score_post(theta) with the STL estimator
+# b_stl  = score_post(theta) + C^{-1}(theta - m) at six fixed Gaussian states.
+# Experiment B (algorithm-level) runs the four methods
+# {riemannian, riemannian_stl, kl, kl_stl} from a fixed initialization.
+#
+# float64 throughout; GPU path uses a single CUDA device by default (the algorithm
+# grid may use at most two via --max-gpus 2).
+
+output_dir: outputs/natural_gradient_stl_variance
+
+# Replicate seeds (also the row count S per algorithm cell). 20 seeds.
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+base_seed: 20260623
+
+# ---------------------------------------------------------------------------
+# Target grids
+# ---------------------------------------------------------------------------
+gaussian:
+  d: [2, 8, 32]
+  kappa: [10.0, 100.0, 10000.0]
+
+log_cosh:
+  d: [2, 8, 32]
+  kappa: [10.0, 100.0]
+  tau: [0.1, 1.0]
+  gh_nodes: 80          # Gauss--Hermite order for a_star / reference expectations
+
+# ---------------------------------------------------------------------------
+# Experiment A: estimator-level variance
+# ---------------------------------------------------------------------------
+estimator:
+  M: 100000             # samples per (state, seed); >= 10000 as required
+  chunk_size: 200000    # sample chunk for the backend accumulation
+  states:               # mean-offset (in marginal std) and dispersion scales
+    rho_near: 0.25
+    rho_medium: 1.0
+    rho_far: 4.0
+    under_scale: 0.25
+    over_scale: 4.0
+
+# ---------------------------------------------------------------------------
+# Experiment B: algorithm-level trajectories
+# ---------------------------------------------------------------------------
+algorithm:
+  # dt is conservative: near the optimum C ~ C_star = A^{-1}, so the explicit mean
+  # map contracts as (1 - dt) independently of kappa, and both covariance updates
+  # are unconditionally SPD for a log-concave target. dt = 0.1 is stable for every
+  # kappa in the grid (including 1e4) and resolves the stochastic noise floor.
+  dt: 0.1
+  gaussian_n_steps: 2000
+  log_cosh_n_steps: 3000
+  batch_sizes: [1, 4, 16]
+  init_mean_rho: 3.0     # initial mean offset in units of the marginal std
+  init_cov_scale: 0.5    # initial covariance = init_cov_scale * C_star
+  n_saved: 160           # decimated steps persisted per trajectory
+  tail_frac: 0.2         # last 20% of iterations define the noise floor
+  gh_nodes: 40           # Gauss--Hermite order for the per-step log-cosh energy gap

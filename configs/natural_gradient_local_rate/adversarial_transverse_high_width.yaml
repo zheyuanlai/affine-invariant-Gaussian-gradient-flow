@@ -1,0 +1,44 @@
+# Narrow high-width transverse-coupling probe for the logarithmic local-rate
+# question. This is intentionally small enough for a single H200 dense run.
+experiment:
+  name: natural_gradient_local_rate_adversarial_transverse_high_width
+
+grid:
+  N_theta: [64]
+  kappa_target: [100, 1000]
+  potential_family: ["product_feature", "random_feature", "additive_index"]
+  seeds: [0, 1]
+
+monte_carlo:
+  M_mc: 131072
+  antithetic: true
+  chunk_size: 262144
+
+eigsh:
+  tol: 1.0e-6
+  maxiter: 1000
+
+operator:
+  estimator: "symmetrized"
+  diagonal_benchmark: true
+  separable_exact_benchmark: true
+  compute_gamma_loc: true
+  backend: "torch"
+  device: "cuda"
+  dtype: "float64"
+  chunk_size: 262144
+  explicit_dense_max_N_theta: 64
+  eigsh_tol: 1.0e-6
+  eigsh_maxiter: 1000
+  quadrature_nodes: 80
+
+potential:
+  feature_multiplier: 8
+  phi: "log_cosh"
+  empirical_LA_safety_factor: 2.0
+
+linearized_rate:
+  save_eigenvectors: true
+
+outputs:
+  base_dir: outputs/natural_gradient_local_rate

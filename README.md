@@ -2,7 +2,7 @@
 
 Numerical experiments for Gaussian variational inference, where the variational
 family is the non-degenerate Gaussians `N(m, C)` and the objective is
-`KL(N(m, C) || target)`. The repository contains five self-contained experiment
+`KL(N(m, C) || target)`. The repository contains six self-contained experiment
 groups, each with its own configs, source modules, scripts, tests, and outputs.
 
 The polished write-ups for these groups are the LaTeX reports in
@@ -143,6 +143,33 @@ norm, matching the nonconvex stationarity theory, not a pointwise Fisher-Rao
 norm. See
 [`reports/natural_gradient_nonconvex_instability_report.tex`](reports/natural_gradient_nonconvex_instability_report.tex).
 
+### 6. `natural_gradient_stl_variance` — Sticking-the-Landing variance reduction for stochastic Gaussian natural-gradient schemes
+
+Stochastic Gaussian natural-gradient schemes estimate the Gaussian expectations
+`g = E_q[score_post]` and `H = E_q[Hess_log_post]` from samples `theta ~ N(m, C)`.
+The **Sticking-the-Landing** (STL) trick replaces the plain posterior-score mean
+estimator `b_base = score_post(theta)` by the score-residual estimator
+`b_stl = score_post(theta) + C^{-1}(theta - m)`, which subtracts the (zero-mean)
+score of the variational Gaussian itself. It is unbiased and, at a well-specified
+Gaussian optimum, vanishes pointwise. We isolate mean-block STL (the covariance
+update is held fixed: for the direct Hessian sampler the covariance "residual"
+rewrite `K = S + C^{-1}` is algebraically identical to the original update) with
+an estimator-level variance study at six fixed states and an algorithm-level
+trajectory study over `{riemannian, riemannian_stl, kl, kl_stl}`, on a
+well-specified anisotropic Gaussian target and a misspecified smooth strongly
+log-concave `log cosh` target. float64; single-GPU by default (the algorithm grid
+may split across at most two GPUs).
+
+**Finding.** For the Gaussian target the STL mean estimator has *exactly zero*
+variance whenever `C = C_star` (the optimum and every mean-only perturbation), and
+STL drops the algorithm's stochastic noise floor one-to-two orders of magnitude.
+For the misspecified `log cosh` target STL still helps near the optimum but cannot
+remove the floor (the nonlinear `tanh` part of the score is not captured by the
+Gaussian residual). STL is not universally beneficial: under covariance
+under-dispersion (`C` too concentrated, so `C^{-1}` is large) it *inflates* the
+variance above the baseline. See
+[`reports/natural_gradient_stl_variance_report.tex`](reports/natural_gradient_stl_variance_report.tex).
+
 ## Which outputs are final
 
 Only these directories are interpreted as evidence in the reports:
@@ -155,6 +182,7 @@ outputs/natural_gradient_local_rate/linearized_rate_grid/ local rate: gamma_loc 
 outputs/natural_gradient_discretization_stepsize/         Riemannian vs KL stepsize stability
 outputs/wfr_gradient_flow/                                WFR splitting: phase separation + schedules
 outputs/natural_gradient_nonconvex_instability/           nonconvex FR instability + BW bound
+outputs/natural_gradient_stl_variance/                   STL estimator + algorithm variance reduction
 ```
 
 The local-rate final run is a single GPU production grid (`N_theta = 1..16`,
@@ -327,6 +355,57 @@ cd reports
 tectonic natural_gradient_nonconvex_instability_report.tex
 ```
 
+## Reproducing the STL variance experiments
+
+Two experiments share the output directory `outputs/natural_gradient_stl_variance/`:
+an estimator-level variance comparison and an algorithm-level trajectory grid.
+Each script's `--overwrite` clears only its own outputs, so the estimator and the
+algorithm runs coexist. The smoke grids (CPU, fast) validate the scripts first:
+
+```bash
+# smoke (CPU): estimator then algorithm into the smoke directory
+python scripts/natural_gradient_stl_variance/run_estimator_variance.py \
+    --config configs/natural_gradient_stl_variance/stl_variance_smoke.yaml \
+    --outdir outputs/natural_gradient_stl_variance_smoke --device cpu --overwrite
+
+python scripts/natural_gradient_stl_variance/run_algorithm_grid.py \
+    --config configs/natural_gradient_stl_variance/stl_variance_smoke.yaml \
+    --outdir outputs/natural_gradient_stl_variance_smoke --device cpu --overwrite
+```
+
+The production grids run on a single CUDA GPU by default (developed on an NVIDIA
+H200). The algorithm grid accepts `--max-gpus 2` to split its cells across at
+most two GPUs (it never launches more than two GPU jobs):
+
+```bash
+# production (GPU)
+python scripts/natural_gradient_stl_variance/run_estimator_variance.py \
+    --config configs/natural_gradient_stl_variance/stl_variance.yaml \
+    --outdir outputs/natural_gradient_stl_variance --device cuda --overwrite
+
+python scripts/natural_gradient_stl_variance/run_algorithm_grid.py \
+    --config configs/natural_gradient_stl_variance/stl_variance.yaml \
+    --outdir outputs/natural_gradient_stl_variance --device cuda --max-gpus 2 --overwrite
+```
+
+The estimator runner writes `estimator_variance.csv`,
+`estimator_variance_summary.csv`, `estimator_target_metadata.json`, and
+`estimator_run_metadata.json`. The algorithm runner writes
+`algorithm_results_long.csv`, `algorithm_summary.csv`, `tail_noise_floor.csv`,
+`target_metadata.json`, and `run_metadata.json`. Per-group figures (written to
+`outputs/natural_gradient_stl_variance/figures/`), the report figures, and the
+report itself are produced by:
+
+```bash
+python scripts/natural_gradient_stl_variance/plot_results.py \
+    --outdir outputs/natural_gradient_stl_variance
+
+python reports/make_report_assets.py --only stl_variance
+
+cd reports
+tectonic natural_gradient_stl_variance_report.tex
+```
+
 ## Reproducing the natural-gradient local-rate production run
 
 The production grid runs on a CUDA GPU (developed on an NVIDIA H200). The joint
@@ -370,8 +449,8 @@ the speed, not the meaning, of the estimates. Potential centering and the
 # 1. regenerate every report figure (PDF + PNG) and LaTeX table fragment
 python reports/make_report_assets.py
 #    -> reports/assets/figs/*.pdf, *.png  and  reports/assets/tab_*.tex
-#    (use --only {omega_tau,local_rate,discretization,wfr,nonconvex_instability}
-#     to build one group)
+#    (use --only {omega_tau,local_rate,discretization,wfr,nonconvex_instability,
+#     stl_variance} to build one group)
 
 # 2. compile the reports (tectonic resolves preamble.tex and assets/)
 cd reports
@@ -380,6 +459,7 @@ tectonic natural_gradient_local_rate_report.tex
 tectonic natural_gradient_discretization_stepsize_report.tex
 tectonic wfr_gradient_flow_report.tex
 tectonic natural_gradient_nonconvex_instability_report.tex
+tectonic natural_gradient_stl_variance_report.tex
 ```
 
 `make_report_assets.py` only reads the final CSVs and writes figures/tables; it
@@ -396,6 +476,7 @@ configs/
   natural_gradient_discretization_stepsize/  stepsize_grid config
   wfr_gradient_flow/              wfr_smoke + wfr_grid configs
   natural_gradient_nonconvex_instability/  nonconvex_instability config
+  natural_gradient_stl_variance/  stl_variance + stl_variance_smoke configs
 src/
   common/                         spd, symspace, monte_carlo, io, plotting style,
                                   torch backend helpers
@@ -406,16 +487,19 @@ src/
   wfr_gradient_flow/              targets, methods (W/FR half-steps), schedules,
                                   runner, metrics, plotting
   natural_gradient_nonconvex_instability/  target, scalar methods, runner, plotting
+  natural_gradient_stl_variance/  targets, estimators, linalg backend, states,
+                                  estimator_variance, algorithm, grid, metrics, plotting
 scripts/
   omega_tau_modes/                grid runners + plotting
   natural_gradient_local_rate/    operator/rate/flow runners, plotting, patch tool
   natural_gradient_discretization_stepsize/  stepsize grid runner + plotting
   wfr_gradient_flow/              WFR grid runner
   natural_gradient_nonconvex_instability/  nonconvex runner + plotting
+  natural_gradient_stl_variance/  estimator + algorithm runners, plotting
 tests/
   common/  omega_tau_modes/  natural_gradient_local_rate/
   natural_gradient_discretization_stepsize/  wfr_gradient_flow/
-  natural_gradient_nonconvex_instability/
+  natural_gradient_nonconvex_instability/  natural_gradient_stl_variance/
 reports/                          LaTeX reports, shared preamble, asset generator, assets/
 docs/specs/                       tracked implementation specs (source of truth)
 outputs/                          experiment outputs (final CSVs committed)
