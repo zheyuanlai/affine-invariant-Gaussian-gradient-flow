@@ -1,0 +1,50 @@
+# Fast smoke configuration for the covariance-bootstrap experiment. Reduced grids
+# for CI / scripts validation; NOT evidence. Runs on CPU in a few seconds.
+
+output_dir: outputs/natural_gradient_covariance_bootstrap_smoke
+
+base_seed: 20260701
+init_mean_rho: 3.0
+max_saved_rows: 120
+
+scaling:
+  d: [10]
+  kappa: [10.0, 100.0]
+  lambda0: [1.0e-8, 1.0e-4, 1.0e-2]
+  schemes: [riemannian, kl]
+  dt: 0.5
+  n_steps: 80
+
+contraction:
+  d: [10]
+  kappa: [10.0]
+  lambda0: [1.0e-6]
+  schemes: [riemannian, kl]
+  dt_safety: 0.5
+  n_steps: 800
+
+wasserstein:
+  targets:
+    - {name: gaussian, d: 6, kappa: 50.0}
+    - {name: log_cosh, d: 6, kappa: 50.0, gamma: 1.0, gh_nodes: 24}
+  lambda0: [1.0e-8, 1.0e-4]
+  c: [0.5]
+  schemes: [riemannian, kl]
+  dt: 0.5
+  n_steps: 600
+
+stl_floor:
+  targets:
+    - {name: gaussian, d: 4, kappa: 10.0}
+    - {name: log_cosh, d: 4, kappa: 10.0, gamma: 1.0, gh_nodes: 24}
+  methods: [kl_raw, kl_stl]
+  dt_list: [0.0625, 0.015625]
+  n_seeds: 3
+  batch_size: 1
+  horizon: 10.0
+  min_steps: 200
+  max_steps: 400
+  tail_frac: 0.25
+  init_mean_rho: 2.0
+  init_cov_scale: 0.5
+  gh_nodes: 20

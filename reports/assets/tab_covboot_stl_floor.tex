@@ -1,0 +1,12 @@
+\begin{tabular}{ll ccc c}
+\toprule
+target & method & floor$_{2^{-4}}$ & floor$_{2^{-8}}$ & raw/STL$_{2^{-8}}$ & log-log slope \\
+\midrule
+Gaussian & kl\_raw & 0.12 & $7.1\times10^{-3}$ & -- & 1.03 \\
+Gaussian & kl\_stl & 0 & 0 & $>\!10^{9}$ & -- \\
+Gaussian & riemannian\_stl & 0 & 0 & $>\!10^{9}$ & -- \\
+log-cosh & kl\_raw & 0.12 & $7.0\times10^{-3}$ & -- & 1.04 \\
+log-cosh & kl\_stl & $5.9\times10^{-4}$ & $3.8\times10^{-5}$ & $185\times$ & 1.00 \\
+log-cosh & riemannian\_stl & $6.1\times10^{-4}$ & $3.5\times10^{-5}$ & $206\times$ & 1.02 \\
+\bottomrule
+\end{tabular}

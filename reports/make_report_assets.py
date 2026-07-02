@@ -1327,6 +1327,181 @@ def build_stl_variance_assets():
     _tab_stl_runtime(alg_sum, est_meta, alg_meta)
 
 
+# ===========================================================================
+# covariance bootstrap (natural_gradient_covariance_bootstrap)
+# ===========================================================================
+
+COVBOOT_DIR = os.path.join(_ROOT, "outputs", "natural_gradient_covariance_bootstrap")
+COVBOOT_TARGET_TEX = {"gaussian": "Gaussian", "log_cosh": "log-cosh"}
+
+
+def _covboot_fmt_int(x):
+    if x is None or (isinstance(x, float) and not np.isfinite(x)) or int(x) < 0:
+        return r"$\infty$"
+    return f"{int(x)}"
+
+
+def _covboot_fit(x, y):
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    ok = np.isfinite(x) & np.isfinite(y)
+    if ok.sum() < 2:
+        return float("nan"), float("nan"), float("nan")
+    a, b = np.polyfit(x[ok], y[ok], 1)
+    yhat = a * x[ok] + b
+    ss = float(np.sum((y[ok] - yhat) ** 2))
+    st = float(np.sum((y[ok] - y[ok].mean()) ** 2))
+    return float(a), float(b), (1.0 - ss / st if st > 0 else float("nan"))
+
+
+def _tab_covboot_metadata(meta):
+    """Target constants: alpha, beta, kappa, gamma, Psi_star."""
+    lines = [
+        r"\begin{tabular}{llccccc}", r"\toprule",
+        r"target & $d$ & $\kappa$ & $\alpha$ & $\beta$ & $\gamma$ & $\Psi_\star$ \\",
+        r"\midrule",
+    ]
+    seen = set()
+    for key, md in meta["targets"].items():
+        sig = (md["target_name"], md["d"], md["kappa"], md.get("gamma", 0.0))
+        if sig in seen:
+            continue
+        seen.add(sig)
+        lines.append(
+            f"{COVBOOT_TARGET_TEX.get(md['target_name'], md['target_name'])} & "
+            f"{int(md['d'])} & {md['kappa']:g} & {_fmt(md['alpha'], 3)} & "
+            f"{_fmt(md['beta'], 3)} & {_fmt(md.get('gamma', 0.0), 3)} & "
+            f"{_wfr_fmt_sci(md.get('Psi_star', 0.0))} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_covboot_metadata.tex", "\n".join(lines))
+
+
+def _tab_covboot_scaling(summary):
+    """Burn-in fit slope vs the theory slope 1/log(1+dt), per scheme."""
+    lines = [
+        r"\begin{tabular}{lccccc}", r"\toprule",
+        r"scheme & $\Delta t$ & fit slope & theory $1/\log(1+\Delta t)$ & "
+        r"$R^2$ & $N_{\mathrm{cov}}$ range \\", r"\midrule",
+    ]
+    for scheme in ("kl", "riemannian"):
+        s = summary[(summary.scheme == scheme) & (summary.N_cov >= 0)]
+        if s.empty:
+            continue
+        a, _, r2 = _covboot_fit(s.log_inv_beta_lambda0, s.N_cov)
+        dt = float(s.dt.iloc[0])
+        th = float(s.N_cov_theory_slope.iloc[0])
+        lines.append(
+            f"{scheme} & {dt:g} & {_fmt(a, 3)} & {_fmt(th, 3)} & {_fmt(r2, 4)} & "
+            f"{int(s.N_cov.min())}--{int(s.N_cov.max())} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_covboot_scaling.tex", "\n".join(lines))
+
+
+def _tab_covboot_wasserstein(wboot):
+    """Pure FR vs W-boot warm-up at the smallest lambda0: iterations and covariance lift."""
+    lam0 = float(wboot.lambda0.min())
+    sub = wboot[np.abs(wboot.lambda0 - lam0) <= 1e-6 * lam0]
+    lines = [
+        r"\begin{tabular}{ll rr rr}", r"\toprule",
+        r" & & \multicolumn{2}{c}{$n$ to gap $<10^{-1}$} & "
+        r"\multicolumn{2}{c}{$\lambda_{\min}(C)$ after step 1} \\",
+        r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
+        r"target & scheme & pure & W-boot & pure & W-boot \\", r"\midrule",
+    ]
+    for target in ("gaussian", "log_cosh"):
+        for scheme in ("kl", "riemannian"):
+            pure = sub[(sub.target == target) & (sub.method == scheme)]
+            wb = sub[(sub.target == target) & (sub.method == f"wboot_{scheme}")
+                     & np.isclose(sub.c, 0.5)]
+            if pure.empty or wb.empty:
+                continue
+            lines.append(
+                f"{COVBOOT_TARGET_TEX.get(target, target)} & {scheme} & "
+                f"{_covboot_fmt_int(pure.iter_to_1e_minus_1.iloc[0])} & "
+                f"{_covboot_fmt_int(wb.iter_to_1e_minus_1.iloc[0])} & "
+                f"{_wfr_fmt_sci(pure.lambda_min_after.iloc[0])} & "
+                f"{_wfr_fmt_sci(wb.lambda_min_after.iloc[0])} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_covboot_wasserstein.tex", "\n".join(lines))
+
+
+def _tab_covboot_stl_floor(floor):
+    """STL noise floor: coarse/fine dt floor, raw-vs-STL reduction, and the dt-slope."""
+    lines = [
+        r"\begin{tabular}{ll ccc c}", r"\toprule",
+        r"target & method & floor$_{2^{-4}}$ & floor$_{2^{-8}}$ & "
+        r"raw/STL$_{2^{-8}}$ & log-log slope \\", r"\midrule",
+    ]
+    for target in ("gaussian", "log_cosh"):
+        sub = floor[floor.target == target]
+        dt_hi, dt_lo = 2.0 ** -4, 2.0 ** -8
+        for method in ("kl_raw", "kl_stl", "riemannian_stl"):
+            s = sub[sub.method == method].sort_values("dt")
+            if s.empty:
+                continue
+            f_hi = s[np.isclose(s.dt, dt_hi)].tail_median_gap
+            f_lo = s[np.isclose(s.dt, dt_lo)].tail_median_gap
+            f_hi = float(f_hi.iloc[0]) if len(f_hi) else float("nan")
+            f_lo = float(f_lo.iloc[0]) if len(f_lo) else float("nan")
+            # raw/STL reduction at the finest dt.
+            raw = sub[(sub.method == method.split("_")[0] + "_raw")
+                      & np.isclose(sub.dt, dt_lo)].tail_median_gap
+            red = (float(raw.iloc[0]) / f_lo) if (len(raw) and f_lo > 0) else float("nan")
+            if "raw" in method:
+                red_s = "--"
+            elif f_lo <= 0 or (np.isfinite(red) and red > 1e9):
+                red_s = r"$>\!10^{9}$"
+            elif np.isfinite(red) and red >= 1e4:
+                red_s = _wfr_fmt_sci(red)
+            elif np.isfinite(red):
+                red_s = rf"${red:.0f}\times$"
+            else:
+                red_s = "--"
+            pos = s[s.tail_median_gap > 0]
+            slope = (_covboot_fit(np.log(pos.dt), np.log(pos.tail_median_gap))[0]
+                     if len(pos) >= 2 else float("nan"))
+            lines.append(
+                f"{COVBOOT_TARGET_TEX.get(target, target)} & "
+                f"{method.replace('_', chr(92) + '_')} & "
+                f"{_wfr_fmt_sci(f_hi)} & {_wfr_fmt_sci(f_lo)} & {red_s} & "
+                f"{_fmt(slope, 2)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_covboot_stl_floor.tex", "\n".join(lines))
+
+
+def build_covariance_bootstrap_assets():
+    """Figures + tables for the covariance-bootstrap report."""
+    print("covariance bootstrap assets:")
+    import json
+    from src.natural_gradient_covariance_bootstrap import plotting as P
+
+    long_df = pd.read_csv(os.path.join(COVBOOT_DIR, "results_long.csv"))
+    scaling = pd.read_csv(os.path.join(COVBOOT_DIR, "covariance_bootstrap_summary.csv"))
+    bench = pd.read_csv(os.path.join(COVBOOT_DIR, "contraction_benchmark.csv"))
+    wboot = pd.read_csv(os.path.join(COVBOOT_DIR, "wasserstein_bootstrap_summary.csv"))
+    with open(os.path.join(COVBOOT_DIR, "target_metadata.json")) as fh:
+        meta = json.load(fh)
+
+    _savefig(P.fig_covariance_envelope(long_df, scheme="kl"), "fig_covboot_covariance_envelope")
+    _savefig(P.fig_warmup_scaling(scaling), "fig_covboot_warmup_scaling")
+    _savefig(P.fig_dynamic_contraction(bench), "fig_covboot_dynamic_contraction")
+    _savefig(P.fig_contraction_factors(bench), "fig_covboot_contraction_factors")
+    _savefig(P.fig_wasserstein_bootstrap(wboot), "fig_covboot_wasserstein_bootstrap")
+    fig3 = P.fig_three_stage(long_df, scheme="kl")
+    if fig3 is not None:
+        _savefig(fig3, "fig_covboot_three_stage")
+
+    floor_path = os.path.join(COVBOOT_DIR, "stl_floor_summary.csv")
+    if os.path.exists(floor_path):
+        floor = pd.read_csv(floor_path)
+        _savefig(P.fig_stl_noise_floor(floor), "fig_covboot_stl_noise_floor")
+        _tab_covboot_stl_floor(floor)
+
+    _tab_covboot_metadata(meta)
+    _tab_covboot_scaling(scaling)
+    _tab_covboot_wasserstein(wboot)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--repo-root", default=_ROOT)
@@ -1334,6 +1509,7 @@ def main():
                    choices=[
                        "omega_tau", "local_rate", "discretization", "wfr",
                        "nonconvex_instability", "stl_variance",
+                       "covariance_bootstrap", "natural_gradient_covariance_bootstrap",
                    ],
                    default=None, help="Build only one group's assets.")
     args = p.parse_args()
@@ -1346,8 +1522,13 @@ def main():
         "wfr": build_wfr_assets,
         "nonconvex_instability": build_nonconvex_instability_assets,
         "stl_variance": build_stl_variance_assets,
+        "covariance_bootstrap": build_covariance_bootstrap_assets,
+        "natural_gradient_covariance_bootstrap": build_covariance_bootstrap_assets,
     }
-    selected = [args.only] if args.only else list(builders)
+    # The covariance-bootstrap group has two alias keys pointing at one builder;
+    # on a full run keep only one so it is not built twice.
+    all_names = [n for n in builders if n != "natural_gradient_covariance_bootstrap"]
+    selected = [args.only] if args.only else all_names
     failures = []
     for name in selected:
         try:

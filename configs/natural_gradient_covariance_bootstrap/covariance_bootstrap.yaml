@@ -1,0 +1,71 @@
+# Production configuration for the covariance-bootstrap experiment
+# (natural_gradient_covariance_bootstrap).
+#
+# Four experiments (all targets diagonal; curvature convention A = E[grad^2 V]):
+#   1. scaling      -- Gaussian covariance burn-in N_cov vs log(1/(beta lambda0)).
+#   2. contraction  -- dynamic (growing L_n) vs frozen energy-gap contraction.
+#   3. wasserstein  -- one Bures bootstrap then Fisher-Rao tail vs pure FR.
+#   4. stl_floor    -- stochastic STL noise floor vs dt (Gaussian & log-cosh).
+#
+# Experiments 1-3 are deterministic (closed-form / Gauss-Hermite; CPU/NumPy only).
+# Experiment 4 is stochastic (float64; single CUDA device optional).
+
+output_dir: outputs/natural_gradient_covariance_bootstrap
+
+base_seed: 20260701
+init_mean_rho: 3.0          # initial mean offset (in marginal std of C_star)
+max_saved_rows: 250         # decimation cap for results_long.csv per trajectory
+
+# ---------------------------------------------------------------------------
+# Experiment 1: covariance_bootstrap_scaling  (Gaussian target)
+# ---------------------------------------------------------------------------
+scaling:
+  d: [10, 20]
+  kappa: [10.0, 100.0, 1000.0]
+  lambda0: [1.0e-10, 1.0e-8, 1.0e-6, 1.0e-4, 1.0e-2]
+  schemes: [riemannian, kl]
+  dt: 0.5
+  n_steps: 200
+
+# ---------------------------------------------------------------------------
+# Experiment 2: dynamic_contraction_benchmark  (Gaussian, theorem-safe dt)
+# ---------------------------------------------------------------------------
+contraction:
+  d: [20]
+  kappa: [10.0, 100.0]
+  lambda0: [1.0e-6]
+  schemes: [riemannian, kl]
+  dt_safety: 0.5             # dt = dt_safety / (beta * lambda_max_bound)
+  n_steps: 8000
+
+# ---------------------------------------------------------------------------
+# Experiment 3: wasserstein_bootstrap_then_fr  (Gaussian & log-cosh)
+# ---------------------------------------------------------------------------
+wasserstein:
+  targets:
+    - {name: gaussian, d: 20, kappa: 50.0}
+    - {name: log_cosh, d: 20, kappa: 50.0, gamma: 1.0, gh_nodes: 80}
+  lambda0: [1.0e-8, 1.0e-6, 1.0e-4]
+  c: [0.25, 0.5, 1.0]
+  schemes: [riemannian, kl]
+  dt: 0.5
+  n_steps: 6000
+
+# ---------------------------------------------------------------------------
+# Experiment 4: stl_noise_floor  (Gaussian & log-cosh; stochastic)
+# ---------------------------------------------------------------------------
+stl_floor:
+  targets:
+    - {name: gaussian, d: 8, kappa: 10.0}
+    - {name: log_cosh, d: 8, kappa: 10.0, gamma: 1.0, gh_nodes: 80}
+  methods: [kl_raw, kl_stl, riemannian_raw, riemannian_stl]
+  dt_list: [0.0625, 0.03125, 0.015625, 0.0078125, 0.00390625]   # 2^-4 .. 2^-8
+  n_seeds: 30
+  batch_size: 1
+  horizon: 30.0             # n_steps ~ horizon / dt (so the tail is asymptotic)
+  min_steps: 400
+  max_steps: 8000
+  tail_frac: 0.25
+  init_mean_rho: 2.0
+  init_cov_scale: 0.5
+  gh_nodes: 40

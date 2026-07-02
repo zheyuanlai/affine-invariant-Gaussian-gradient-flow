@@ -2,7 +2,7 @@
 
 Numerical experiments for Gaussian variational inference, where the variational
 family is the non-degenerate Gaussians `N(m, C)` and the objective is
-`KL(N(m, C) || target)`. The repository contains six self-contained experiment
+`KL(N(m, C) || target)`. The repository contains seven self-contained experiment
 groups, each with its own configs, source modules, scripts, tests, and outputs.
 
 The polished write-ups for these groups are the LaTeX reports in
@@ -170,6 +170,38 @@ under-dispersion (`C` too concentrated, so `C^{-1}` is large) it *inflates* the
 variance above the baseline. See
 [`reports/natural_gradient_stl_variance_report.tex`](reports/natural_gradient_stl_variance_report.tex).
 
+### 7. `natural_gradient_covariance_bootstrap` — covariance bootstrap and enhanced global rates
+
+Numerical characterization of the manuscript note on enhanced global rates for the
+Gaussian natural-gradient (Fisher–Rao) flow, in the curvature convention
+`G = E[grad V]`, `A = E[grad^2 V]` with covariance updates
+`C' = C^{1/2} exp(dt (I - C^{1/2} A C^{1/2})) C^{1/2}` (Riemannian) and
+`C' = (1 + dt)(C^{-1} + dt A)^{-1}` (KL). Four experiments on an exact diagonal
+Gaussian target and a smooth strongly log-concave `log cosh` target: (1) the
+Fisher–Rao covariance burn-in `N_cov` to reach the curvature scale `1/(2 beta)`;
+(2) dynamic (growing covariance lower envelope `L_n`) versus frozen energy-gap
+contraction; (3) one Wasserstein/Bures bootstrap step
+`C_b = 1/2 (Ctilde + 2 eta I + [Ctilde(Ctilde + 4 eta I)]^{1/2})`, `eta = c/beta`,
+followed by a permanent Fisher–Rao tail; (4) the stochastic Sticking-the-Landing
+(STL) noise floor and the intrinsic Hessian fluctuation
+`Psi = E||C^{1/2}(hess V(X) - A) C^{1/2}||_F^2`. Experiments 1–3 are deterministic
+(closed-form / Gauss–Hermite, CPU only); experiment 4 is stochastic (float64,
+optional single CUDA device).
+
+**Finding.** The old frozen covariance lower bound `min(lambda0, 1/beta)` is
+pessimistic. The observed covariance burn-in is **logarithmic** in `1/(beta
+lambda0)` with slope `1/log(1+dt)` (measured 2.39 vs. theory 2.47 for KL,
+`R^2 > 0.99`) and flat against `1/lambda0` — not a `1/lambda0` law. The dynamic
+`L_n`-based energy-gap contraction certifies progress that the frozen envelope
+cannot (both remain valid, conservative upper bounds; the observed rate is
+faster). One Wasserstein/Bures bootstrap step lifts `lambda_min(C)` to the
+curvature scale `c/beta` in a single iteration and removes the
+`lambda0`-dependent warm-up (40–50 pure-FR iterations vs. 13–17 with the
+bootstrap at `lambda0 = 1e-8`, independent of `lambda0`). STL has **no**
+asymptotic noise floor for the Gaussian target (machine zero) and an
+`O(dt Psi)` floor for the non-Gaussian target (log–log slope ≈ 1.0). See
+[`reports/natural_gradient_covariance_bootstrap_report.tex`](reports/natural_gradient_covariance_bootstrap_report.tex).
+
 ## Which outputs are final
 
 Only these directories are interpreted as evidence in the reports:
@@ -183,6 +215,7 @@ outputs/natural_gradient_discretization_stepsize/         Riemannian vs KL steps
 outputs/wfr_gradient_flow/                                WFR splitting: phase separation + schedules
 outputs/natural_gradient_nonconvex_instability/           nonconvex FR instability + BW bound
 outputs/natural_gradient_stl_variance/                   STL estimator + algorithm variance reduction
+outputs/natural_gradient_covariance_bootstrap/           covariance bootstrap: burn-in, contraction, W-boot, STL floor
 ```
 
 The local-rate final run is a single GPU production grid (`N_theta = 1..16`,
@@ -406,6 +439,68 @@ cd reports
 tectonic natural_gradient_stl_variance_report.tex
 ```
 
+## Reproducing the covariance-bootstrap experiments
+
+Four experiments share the output directory
+`outputs/natural_gradient_covariance_bootstrap/`. Experiments 1–3 are
+deterministic (closed-form / Gauss–Hermite, CPU/NumPy only); experiment 4 is the
+stochastic STL noise floor (float64). The single runner drives all four and is
+resumable at block granularity (the deterministic block and the stochastic block
+are each skipped if their outputs exist, unless `--overwrite` is passed):
+
+```bash
+# smoke (CPU, seconds): reduced grids into a separate directory
+python scripts/natural_gradient_covariance_bootstrap/run_experiments.py \
+    --config configs/natural_gradient_covariance_bootstrap/covariance_bootstrap_smoke.yaml \
+    --outdir outputs/natural_gradient_covariance_bootstrap_smoke --overwrite
+
+# production (CPU): ~1.5 min end to end on a workstation
+python scripts/natural_gradient_covariance_bootstrap/run_experiments.py \
+    --config configs/natural_gradient_covariance_bootstrap/covariance_bootstrap.yaml \
+    --outdir outputs/natural_gradient_covariance_bootstrap --overwrite --backend auto
+```
+
+The runner writes `results_long.csv`, `covariance_bootstrap_summary.csv`,
+`contraction_benchmark.csv`, `wasserstein_bootstrap_summary.csv`,
+`stl_floor_summary.csv`, `target_metadata.json`, and `run_metadata.json`. The
+`--smoke` flag also shrinks any config in place. Per-group figures are written by:
+
+```bash
+python scripts/natural_gradient_covariance_bootstrap/plot_results.py \
+    --outdir outputs/natural_gradient_covariance_bootstrap
+```
+
+**Stochastic STL on a GPU (optional).** The deterministic experiments are always
+CPU/NumPy. Experiment 4 accepts a single CUDA device, but for these small diagonal
+problems the CPU path is faster (per-step kernel-launch/sync overhead dominates on
+the GPU), so the committed evidence is the CPU run. To run the stochastic block on
+one allowed GPU (physical index `>= 4`, never GPUs 0–3), first inspect
+`nvidia-smi`, pick one idle GPU, and export its physical id:
+
+```bash
+nvidia-smi
+export CUDA_VISIBLE_DEVICES=6      # one idle physical GPU with index >= 4
+python scripts/natural_gradient_covariance_bootstrap/run_experiments.py \
+    --config configs/natural_gradient_covariance_bootstrap/covariance_bootstrap.yaml \
+    --outdir outputs/natural_gradient_covariance_bootstrap \
+    --backend torch --device cuda --overwrite
+```
+
+Inside Python that GPU appears as `cuda:0`; the chosen physical id and
+`CUDA_VISIBLE_DEVICES` are recorded in `run_metadata.json`. The report assets
+(seven figures and four `tab_covboot_*` tables) are regenerated by:
+
+```bash
+python reports/make_report_assets.py --only covariance_bootstrap
+```
+
+and the report compiled by:
+
+```bash
+cd reports
+tectonic natural_gradient_covariance_bootstrap_report.tex
+```
+
 ## Reproducing the natural-gradient local-rate production run
 
 The production grid runs on a CUDA GPU (developed on an NVIDIA H200). The joint
@@ -450,7 +545,7 @@ the speed, not the meaning, of the estimates. Potential centering and the
 python reports/make_report_assets.py
 #    -> reports/assets/figs/*.pdf, *.png  and  reports/assets/tab_*.tex
 #    (use --only {omega_tau,local_rate,discretization,wfr,nonconvex_instability,
-#     stl_variance} to build one group)
+#     stl_variance,covariance_bootstrap} to build one group)
 
 # 2. compile the reports (tectonic resolves preamble.tex and assets/)
 cd reports
@@ -460,6 +555,7 @@ tectonic natural_gradient_discretization_stepsize_report.tex
 tectonic wfr_gradient_flow_report.tex
 tectonic natural_gradient_nonconvex_instability_report.tex
 tectonic natural_gradient_stl_variance_report.tex
+tectonic natural_gradient_covariance_bootstrap_report.tex
 ```
 
 `make_report_assets.py` only reads the final CSVs and writes figures/tables; it
@@ -477,6 +573,7 @@ configs/
   wfr_gradient_flow/              wfr_smoke + wfr_grid configs
   natural_gradient_nonconvex_instability/  nonconvex_instability config
   natural_gradient_stl_variance/  stl_variance + stl_variance_smoke configs
+  natural_gradient_covariance_bootstrap/  covariance_bootstrap + _smoke configs
 src/
   common/                         spd, symspace, monte_carlo, io, plotting style,
                                   torch backend helpers
@@ -489,6 +586,8 @@ src/
   natural_gradient_nonconvex_instability/  target, scalar methods, runner, plotting
   natural_gradient_stl_variance/  targets, estimators, linalg backend, states,
                                   estimator_variance, algorithm, grid, metrics, plotting
+  natural_gradient_covariance_bootstrap/  targets, methods, envelopes, metrics,
+                                  runner (det.), stochastic (STL), plotting
 scripts/
   omega_tau_modes/                grid runners + plotting
   natural_gradient_local_rate/    operator/rate/flow runners, plotting, patch tool
@@ -496,10 +595,12 @@ scripts/
   wfr_gradient_flow/              WFR grid runner
   natural_gradient_nonconvex_instability/  nonconvex runner + plotting
   natural_gradient_stl_variance/  estimator + algorithm runners, plotting
+  natural_gradient_covariance_bootstrap/  run_experiments + plot_results
 tests/
   common/  omega_tau_modes/  natural_gradient_local_rate/
   natural_gradient_discretization_stepsize/  wfr_gradient_flow/
   natural_gradient_nonconvex_instability/  natural_gradient_stl_variance/
+  natural_gradient_covariance_bootstrap/
 reports/                          LaTeX reports, shared preamble, asset generator, assets/
 docs/specs/                       tracked implementation specs (source of truth)
 outputs/                          experiment outputs (final CSVs committed)
@@ -512,4 +613,7 @@ The tracked implementation source of truth lives in
 [`affine_invariant_gradient_flow.md`](docs/specs/affine_invariant_gradient_flow.md)
 (the `(omega, tau)` flow family) and
 [`natural_gradient_local_rate_spec.md`](docs/specs/natural_gradient_local_rate_spec.md)
-(the local-rate operators and bounds). The code is kept consistent with these.
+(the local-rate operators and bounds), and
+[`natural_gradient_covariance_bootstrap.md`](docs/specs/natural_gradient_covariance_bootstrap.md)
+(the covariance envelopes, dynamic contraction, Bures bootstrap, and STL floor).
+The code is kept consistent with these.

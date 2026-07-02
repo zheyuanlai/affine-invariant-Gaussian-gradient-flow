@@ -1,0 +1,382 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+
+\title{Covariance Bootstrap and Enhanced Global Rates for the\\
+Gaussian Natural-Gradient Flow:\\
+A Numerical Characterization}
+\author{}
+\date{}
+
+\newcommand{\Delt}{\Delta t}
+\newcommand{\lammin}{\lambda_{\min}}
+\newcommand{\lammax}{\lambda_{\max}}
+\newcommand{\Ncov}{N_{\mathrm{cov}}}
+\newcommand{\Psis}{\Psi_\star}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The Gaussian natural-gradient (Fisher--Rao) flow contracts the reverse-KL
+objective at a rate that the classical analysis controls through a \emph{frozen}
+lower bound on the covariance, $\lambda_{\mathrm{frozen}}=\min(\lambda_0,1/\beta)$.
+When the variational family is initialized with a tiny covariance
+$C_0=\lambda_0 I$ this frozen bound is pessimistic: it predicts a warm-up cost
+that scales like $1/\lambda_0$ and a contraction factor that is essentially $1$.
+A recent manuscript note replaces the frozen bound by a \emph{growing} covariance
+lower envelope $L_n$, yielding a covariance burn-in that is \emph{logarithmic} in
+$1/\lambda_0$ and a \emph{dynamic} energy-gap contraction. We make these claims
+visible numerically on an exact diagonal Gaussian target and a smooth strongly
+log-concave $\log\cosh$ target, with four experiments. (1) The Fisher--Rao
+covariance burn-in $\Ncov$ to reach the curvature scale $1/(2\beta)$ is linear in
+$\log(1/(\beta\lambda_0))$ with slope $1/\log(1+\Delt)$ (measured $2.39$ vs.\
+theory $2.47$ for KL, $R^2>0.99$), and is \emph{flat} against $1/\lambda_0$ --
+decisively not a $1/\lambda_0$ law. (2) The observed energy-gap decay tracks the
+dynamic (growing-$L_n$) contraction envelope and vastly outruns the frozen one,
+which predicts no progress. (3) A single Wasserstein/Bures bootstrap step lifts
+the covariance to the curvature scale $c/\beta$ in one iteration and removes the
+$\lambda_0$-dependent warm-up entirely (pure-FR warm-up $40$--$50$ iterations at
+$\lambda_0=10^{-8}$ versus $13$--$17$ with the bootstrap, independent of
+$\lambda_0$). (4) The stochastic Sticking-the-Landing (STL) scheme has \emph{no}
+asymptotic noise floor for the Gaussian target (floor at machine zero) and an
+$O(\Delt\,\Psi)$ floor for the non-Gaussian target, with the measured floor
+scaling linearly in $\Delt$ (log--log slope $\approx1.0$). We are explicit
+throughout about which curves are direct numerical evidence and which are
+theorem-motivated diagnostics plotted for comparison; the theorem envelopes are
+valid but conservative, and the observed rates are typically faster.
+\end{abstract}
+
+\tableofcontents
+
+% ======================================================================
+\section{Setup}
+\label{sec:setup}
+
+We approximate a target $\rho_\post\propto e^{-V}$ on $\R^d$ by a Gaussian
+$q_a=\N(m,C)$, $C\in\SPD(d)$, with state $a=(m,C)$, minimizing the reverse KL
+$\mathcal E(a)=\E_{q_a}[V]-\tfrac12\log\det C$ (up to an $a$-independent constant).
+Writing the \emph{curvature} fields
+\begin{equation}
+G(a)=\E_{q_a}[\grad V],\qquad A(a)=\E_{q_a}[\grad^2 V]\ (\succeq 0\text{ for
+log-concave }V),
+\end{equation}
+the Gaussian natural-gradient flow is $\dot m=-C\,G$, $\dot C=C-C A C$. We
+discretize the covariance by either the Riemannian/geodesic map or the KL/Bregman
+map and share the explicit mean step,
+\begin{align}
+m_{n+1}&=m_n-\Delt\,C_n G_n, \label{eq:mean}\\
+C_{n+1}^{\mathrm{Riem}}&=C_n^{1/2}\exp\!\big(\Delt(I-C_n^{1/2}A_n C_n^{1/2})\big)C_n^{1/2},
+\label{eq:riem}\\
+C_{n+1}^{\mathrm{KL}}&=(1+\Delt)\big(C_n^{-1}+\Delt\,A_n\big)^{-1}. \label{eq:kl}
+\end{align}
+This is the same flow used by the discretization, WFR, and STL experiment groups
+written with $H_{\mathrm{disc}}=\E[\grad^2\log\rho_\post]=-A$; the two conventions
+give identical updates (asserted in the test suite). All targets are diagonal, so
+a diagonal state stays diagonal and the exact expectations are one-dimensional
+Gauss--Hermite quadratures.
+
+\paragraph{Targets (Table~\ref{tab:covboot-meta}).}
+The \emph{Gaussian} target $V(x)=\tfrac12 x^\top H x$, $H=\mathrm{diag}(h)$ with
+$h$ log-spaced in $[\alpha,\beta]$ (so $\kappa=\beta/\alpha$), has exact oracles
+$G=Hm$, $A=H$, optimum $(0,H^{-1})$, and the analytic gap
+$\Delta(m,C)=\tfrac12(m^\top Hm+\Tr(HC)-\log\det(HC)-d)$. The \emph{$\log\cosh$}
+target $V(x)=\tfrac12 x^\top Hx+\gamma\sum_i\log\cosh(x_i)$ is separable, smooth,
+strongly log-concave ($\alpha=\min h$, $\beta=\max h+\gamma$), non-Gaussian; its
+optimum is a deterministic diagonal fixed point.
+
+% ======================================================================
+\section{What the note claims}
+\label{sec:theory}
+
+\paragraph{Covariance lower envelope (Prop.-level, verified numerically).}
+The classical bound freezes the covariance floor at
+$\lambda_{\mathrm{frozen}}=\min(\lambda_0,1/\beta)$. The note instead tracks a
+growing envelope $L_n\le\lammin(C_n)$. For KL,
+\begin{equation}
+\label{eq:kl-env}
+L_0=\min\!\big(\lambda_0,\tfrac1{2\beta}\big),\quad
+L_{n+1}=\frac{(1+\Delt)L_n}{1+\Delt\,\beta L_n},\quad
+L_n=\frac1{\beta\big(1+(\tfrac1{\beta L_0}-1)(1+\Delt)^{-n}\big)},
+\end{equation}
+and for Riemannian
+$L_{n+1}=e^{\Delt}L_n/\big(1+(e-1)\Delt\,\beta L_n\big)$. The KL bound
+$\lammin(C_n)\ge L_n$ holds for \emph{every} $\Delt>0$ (per coordinate,
+$x\mapsto x/(1+\Delt\beta x)$ is increasing and $h_i\le\beta$); this is checked
+directly in the test suite. Since $L_n\to1/\beta$ geometrically, the burn-in to
+the curvature scale is $O(\log(1/(\beta\lambda_0)))$.
+
+\paragraph{Dynamic vs.\ frozen contraction (theorem-motivated diagnostic).}
+The per-step energy-gap contraction factor, with covariance lower bound
+$\ell$ and upper bound $\lammax^{\mathrm b}=\max(\lambda_0^{\max},1/\alpha)$, is
+$q_{\mathrm{Riem}}(\ell)=1-\alpha\ell\Delt(2-\beta\lammax^{\mathrm b}\Delt)$ and
+$q_{\mathrm{KL}}(\ell)=1-\alpha\ell\Delt/\big(2(1+\Delt)(1+\Delt\beta
+\lammax^{\mathrm b})\big)$ (the same constants used by the discretization group).
+The \emph{dynamic} factor uses $\ell=L_n$, the \emph{frozen} factor uses
+$\ell=\lambda_{\mathrm{frozen}}$. These are valid upper bounds on
+$\Delta_{n+1}/\Delta_n$ only in the theorem-safe range
+$\Delt<2/(\beta\lammax^{\mathrm b})$; Exp.~2 uses such a $\Delt$. We plot the
+resulting envelopes \emph{as diagnostics}, not as fitted curves.
+
+\paragraph{Wasserstein/Bures bootstrap (verified numerically).}
+For $\eta=c/\beta$, one Bures transport step
+$m_b=m-\eta G$, $C_b=\tfrac12(\tilde C+2\eta I+[\tilde C(\tilde C+4\eta I)]^{1/2})$
+with $\tilde C=(I-\eta A)C(I-\eta A)$ satisfies $\lammin(C_b)\ge\eta=c/\beta$
+(each mapped eigenvalue is $\ge\tfrac12\cdot2\eta$). We apply it \emph{once} when
+$\lammin(C_0)<c/\beta$ and then switch permanently to the Fisher--Rao tail; this
+is deliberately narrower than the full adaptive WFR schedule (covered by the WFR
+group).
+
+\paragraph{STL stochastic floor (numerical evidence).}
+The stochastic scheme draws $X_n=m_n+C_n^{1/2}\xi_n$ and uses the raw mean
+estimator $b_{\mathrm{raw}}=-\grad V(X_n)$ or the STL estimator
+$b_{\mathrm{stl}}=-\grad V(X_n)+C_n^{-1}(X_n-m_n)$; the covariance update uses the
+\emph{sampled} Hessian $\grad^2 V(X_n)$ for both. The intrinsic Hessian
+fluctuation is $\Psi(a)=\E\|C^{1/2}(\grad^2V(X)-A(a))C^{1/2}\|_F^2$, which is
+exactly $0$ for the Gaussian target (deterministic curvature) and positive for
+$\log\cosh$. The note predicts no asymptotic floor for the Gaussian target and an
+$O(\Delt\,\Psi)$ floor otherwise. The evaluation energy gap is the \emph{exact}
+$\Delta(m_n,C_n)$ of the state, never an estimate reusing the update sample.
+
+% ======================================================================
+\section{Experiments and results}
+\label{sec:results}
+
+All deterministic experiments are CPU/NumPy (closed-form / Gauss--Hermite, no
+Monte Carlo). The stochastic STL experiment is float64 and runs on NumPy (CPU) or
+a single CUDA device; for these small diagonal problems the CPU path is the faster
+one. Constants are in Table~\ref{tab:covboot-meta}.
+
+\begin{table}[t]
+\centering
+\inputtable{tab_covboot_metadata.tex}
+\caption{Target constants. The Gaussian curvature is $H=\mathrm{diag}$(log-spaced
+in $[\alpha,\beta]$), $\kappa=\beta/\alpha$; the $\log\cosh$ target adds
+$\gamma\sum_i\log\cosh(x_i)$ (so $\beta=\max h+\gamma$). $\Psis$ is the intrinsic
+Hessian-fluctuation intensity at the optimum: exactly zero for the Gaussian
+target.}
+\label{tab:covboot-meta}
+\end{table}
+
+\subsection{Logarithmic covariance burn-in}
+\label{sec:scaling}
+
+Figure~\ref{fig:covboot-envelope} shows, for the KL scheme at $\kappa=100$, the
+actual $\lammin(C_n)$ (solid) and the envelope $L_n$ (dashed) for five initial
+scales $\lambda_0\in\{10^{-10},\dots,10^{-2}\}$. The envelope hugs the actual
+minimum eigenvalue tightly from below and both rise geometrically to $1/\beta$;
+each factor-$100$ reduction in $\lambda_0$ shifts the burn-in by a \emph{constant}
+number of iterations -- the signature of a logarithmic law.
+
+Making this quantitative, define $\Ncov$ as the first iteration with
+$\lammin(C_n)\ge1/(2\beta)$. Figure~\ref{fig:covboot-warmup} (left) plots $\Ncov$
+against $\log(1/(\beta\lambda_0))$ across all $\kappa$ and both schemes: the
+relation is linear with fitted slope close to the predicted $1/\log(1+\Delt)$
+(Table~\ref{tab:covboot-scaling}: KL slope $2.39$ vs.\ theory $2.47$,
+Riemannian $1.92$, both $R^2>0.99$; the Riemannian envelope grows faster through
+its $e^{\Delt}$ factor, giving a smaller slope). The right panel plots the same
+$\Ncov$ against $1/\lambda_0$ on a log axis: the points are flat -- a genuine
+$1/\lambda_0$ warm-up would span ten orders of magnitude, which is decisively not
+observed. This is direct numerical evidence for the logarithmic bootstrap
+envelope over the old $1/\lambda_0$ reading.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.66\textwidth]{fig_covboot_covariance_envelope}
+\caption{Actual $\lammin(C_n)$ (solid) vs.\ the theoretical envelope $L_n$
+(dashed) for the KL covariance update at $\kappa=100$, $d=20$. The envelope is a
+tight lower bound; each decade of $\lambda_0$ shifts the burn-in by a constant
+number of iterations.}
+\label{fig:covboot-envelope}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_covboot_warmup_scaling}
+\caption{Covariance burn-in $\Ncov$. \emph{Left:} linear in
+$\log(1/(\beta\lambda_0))$, hugging the theory slope $1/\log(1+\Delt)$ (dashed).
+\emph{Right:} the same $\Ncov$ against $1/\lambda_0$ (log axis) is flat -- not a
+$1/\lambda_0$ law.}
+\label{fig:covboot-warmup}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_covboot_scaling.tex}
+\caption{Burn-in scaling fit. The measured slope of $\Ncov$ vs.\
+$\log(1/(\beta\lambda_0))$ matches the theory slope $1/\log(1+\Delt)$; $R^2>0.99$
+for both schemes.}
+\label{tab:covboot-scaling}
+\end{table}
+
+\subsection{Dynamic vs.\ frozen contraction}
+\label{sec:contraction}
+
+Figure~\ref{fig:covboot-dyn} runs the flow at a theorem-safe stepsize
+$\Delt=\text{safety}/(\beta\lammax^{\mathrm b})$ and overlays the observed energy
+gap with the dynamic (growing-$L_n$) and frozen contraction envelopes. At
+$\kappa=10$ the frozen envelope is essentially flat -- the old analysis certifies
+\emph{no} progress while the covariance is small -- whereas the dynamic envelope
+decays as $L_n$ grows, and the observed gap decays faster still. At $\kappa=100$
+both theorem envelopes are conservative and the observed contraction outruns them
+by a wide margin, consistent with the proof constants being loose at high
+conditioning. Figure~\ref{fig:covboot-qfac} shows the same story at the level of
+per-step factors $\Delta_{n+1}/\Delta_n$. We stress that the two envelopes are
+theorem-motivated diagnostics (valid upper bounds), not fits: the dynamic
+envelope is the more informative of the two, and the observed rate is a separate,
+faster curve.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_covboot_dynamic_contraction}
+\caption{Observed energy gap (black) vs.\ the dynamic (growing-$L_n$, green
+dashed) and frozen (purple dotted) contraction envelopes. The frozen envelope
+predicts no progress during the covariance burn-in; the dynamic envelope decays;
+the observed gap is faster than either theorem bound.}
+\label{fig:covboot-dyn}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_covboot_contraction_factors}
+\caption{Per-step contraction $\Delta_{n+1}/\Delta_n$ (observed) vs.\ the dynamic
+$q_{\mathrm{dyn}}(L_n)$ and frozen $q_{\mathrm{frozen}}$ theorem factors.}
+\label{fig:covboot-qfac}
+\end{figure}
+
+Figure~\ref{fig:covboot-three} isolates the mechanism on a single hard run
+($\kappa=1000$, $\lambda_0=10^{-10}$): a covariance burn-in phase (the minimum
+eigenvalue climbs the envelope to $1/(2\beta)$ at $\Ncov$), followed by rapid
+energy-gap contraction once the covariance is calibrated, followed by the
+Fisher--Rao mean-drift collapsing to the numerical floor.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{fig_covboot_three_stage}
+\caption{Three stages of one KL run: covariance burn-in ($\lammin(C_n)$ climbing
+$L_n$ to $1/(2\beta)$ at $\Ncov$, orange), energy-gap contraction (gap crossing
+$10^{-3}$, brown), and Fisher--Rao mean-drift collapse.}
+\label{fig:covboot-three}
+\end{figure}
+
+\subsection{One Wasserstein bootstrap removes the warm-up}
+\label{sec:wboot}
+
+Figure~\ref{fig:covboot-wboot} and Table~\ref{tab:covboot-wboot} compare the pure
+Fisher--Rao schemes against ``one Bures bootstrap, then Fisher--Rao'' at
+$c=\tfrac12$. The pure schemes pay a warm-up cost that grows as $\lambda_0$
+shrinks (from $\sim27$ iterations at $\lambda_0=10^{-4}$ to $\sim46$ at
+$10^{-8}$ for KL), and their covariance after one step is still $\approx\lambda_0$.
+The single bootstrap step lifts $\lammin(C)$ to the curvature scale $c/\beta$ in
+\emph{one} iteration -- independent of $\lambda_0$ -- and the subsequent warm-up
+is flat in $\lambda_0$ ($13$--$17$ iterations). This holds for both the Gaussian
+and the $\log\cosh$ target and both tails. It is the intended, narrow claim: a
+single transport step removes the small-covariance warm-up before the permanent
+switch to Fisher--Rao.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_covboot_wasserstein_bootstrap}
+\caption{Pure Fisher--Rao (solid) vs.\ one Bures bootstrap then Fisher--Rao
+(dashed), $c=\tfrac12$. \emph{Top:} warm-up iterations to gap $<10^{-1}$ grow with
+$\log(1/\lambda_0)$ for pure FR but are flat for the bootstrap. \emph{Bottom:}
+$\lammin(C)$ after one step is $\approx\lambda_0$ for pure FR and pinned at
+$c/\beta$ (dotted) for the bootstrap.}
+\label{fig:covboot-wboot}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_covboot_wasserstein.tex}
+\caption{Warm-up at $\lambda_0=10^{-8}$: pure Fisher--Rao vs.\ one Bures bootstrap
+($c=\tfrac12$). The bootstrap cuts the warm-up roughly threefold and lifts
+$\lammin(C)$ from $\lambda_0$ to $c/\beta$ in one step.}
+\label{tab:covboot-wboot}
+\end{table}
+
+\subsection{STL stochastic noise floor}
+\label{sec:stl}
+
+Figure~\ref{fig:covboot-floor} and Table~\ref{tab:covboot-floor} report the tail
+energy-gap floor of the stochastic schemes as a function of $\Delt$
+($30$ seeds per cell). For the Gaussian target the sampled Hessian equals $H$
+exactly (deterministic curvature), so the covariance update is noiseless and, once
+$C=C_\star$, the STL mean estimator is pointwise $-Hm$: the STL floor collapses to
+machine zero at every $\Delt$ (reported as $0$; raw-to-STL reduction $>10^{9}$),
+while the raw floor persists and scales as $\Delt$. For the $\log\cosh$ target the
+sampled Hessian genuinely fluctuates ($\Psis>0$), and STL cannot remove the
+covariance-block noise: the STL floor is positive and scales \emph{linearly} in
+$\Delt$ (log--log slope $\approx1.0$), tracking the $\Delt\,\Psis$ reference line
+(a constant factor below it), while still lowering the raw floor by $\sim200\times$
+at the finest $\Delt$. This is the predicted dichotomy: no asymptotic floor for a
+correctly specified Gaussian target, an $O(\Delt\,\Psi)$ floor otherwise.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_covboot_stl_noise_floor}
+\caption{Tail energy-gap floor vs.\ $\Delt$ (median over $30$ seeds).
+\emph{Left, Gaussian ($\Psis=0$):} STL floors (dashed) sit at machine zero; raw
+floors (solid) persist. \emph{Right, $\log\cosh$ ($\Psis>0$):} STL floors scale
+linearly in $\Delt$, parallel to and below $\Delt\,\Psis$ (dash-dot).}
+\label{fig:covboot-floor}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\inputtable{tab_covboot_stl_floor.tex}
+\caption{STL noise floor at the coarsest and finest $\Delt=2^{-4},2^{-8}$, the
+raw-to-STL reduction at $2^{-8}$, and the log--log slope of floor vs.\ $\Delt$.
+Gaussian STL floors are machine zero; $\log\cosh$ STL floors scale like $\Delt$
+(slope $\approx1$).}
+\label{tab:covboot-floor}
+\end{table}
+
+% ======================================================================
+\section{Findings}
+\label{sec:findings}
+
+\begin{itemize}
+\item \textbf{The frozen-covariance bound is pessimistic.} The old lower bound
+$\min(\lambda_0,1/\beta)$ predicts a $1/\lambda_0$ warm-up and a contraction
+factor $\approx1$; neither is observed (Figs.~\ref{fig:covboot-warmup},
+\ref{fig:covboot-dyn}).
+\item \textbf{The covariance burn-in is logarithmic.} $\Ncov$ is linear in
+$\log(1/(\beta\lambda_0))$ with the predicted slope $1/\log(1+\Delt)$
+($R^2>0.99$), and flat in $1/\lambda_0$.
+\item \textbf{Dynamic contractions are more informative than frozen ones.} The
+growing-$L_n$ envelope certifies progress that the frozen envelope cannot; both
+remain valid (conservative) upper bounds, and the observed rate is faster than
+either.
+\item \textbf{One Bures bootstrap removes the tiny-covariance warm-up.} It lifts
+$\lammin(C)$ to $c/\beta$ in a single step and makes the warm-up independent of
+$\lambda_0$, before the permanent switch to Fisher--Rao.
+\item \textbf{STL eliminates the Gaussian stochastic floor.} For a correctly
+specified Gaussian target the STL floor is machine zero; for a non-Gaussian target
+it is controlled by $\Psi$ and scales like $\Delt\,\Psi$.
+\end{itemize}
+
+% ======================================================================
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{itemize}
+\item All targets are diagonal, so the iterates stay diagonal and the
+$d$-dependence reported here is a controlled best case, not a worst-case bound;
+the envelope and bootstrap arguments are eigenvalue-wise and would need the full
+matrix theory for a non-diagonal $A$.
+\item The contraction envelopes are theorem-motivated diagnostics evaluated at a
+theorem-safe stepsize; at high conditioning both the dynamic and frozen constants
+are loose, and the observed rate is the faster, separate curve. We do not claim
+the dynamic envelope is tight -- only that it is more informative than the frozen
+one and that both are valid upper bounds.
+\item The Bures bootstrap is deliberately a single step followed by a fixed
+Fisher--Rao tail; the full adaptive Wasserstein--Fisher--Rao schedule is the
+subject of the separate WFR experiment group.
+\item The STL floor claim is numerical evidence on two targets; the linear-in-%
+$\Delt$ scaling and the $\Delt\,\Psi$ reference are established empirically, and
+the proportionality constant (measured $\approx0.16$) is problem-specific.
+\item $\Psi$ is evaluated deterministically by Gauss--Hermite quadrature on the
+diagonal marginals; it is exact here but would require the full Frobenius norm for
+a non-diagonal state.
+\end{itemize}
+
+\end{document}
