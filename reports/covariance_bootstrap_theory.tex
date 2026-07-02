@@ -1,0 +1,2848 @@
+% Theory of the covariance-bootstrap / transport warm-start / global stochastic STL
+% note, inlined so the STL variance report is self-contained. Body only (no
+% preamble): the parent report supplies packages, theorem environments, macros,
+% and the bibliography. Citations use \cite (manual thebibliography in the parent).
+
+\part{Theoretical framework: covariance bootstrap, transport warm-start, and global stochastic STL bounds}
+\label{part:theory}
+
+\section{Purpose of the note}
+
+This part records two refinements of the convergence analysis for the Gaussian natural
+gradient flow and its two deterministic discretizations (the Riemannian/geodesic scheme
+and the KL/Bregman scheme), together with their single-sample stochastic counterparts.
+
+\paragraph{Deterministic refinement: covariance bootstrap.}
+The previous global proofs use the fixed lower covariance bound
+\[
+    C_t\succeq \lambda_{\min}\Id,
+    \qquad
+    \lambda_{\min}
+    =
+    \min\left\{
+        \lambda_{0,\min},\tfrac1\beta
+    \right\},
+\]
+for the entire global phase. This gives a valid but pessimistic warm-up time
+proportional to $1/\lambda_{0,\min}$. When the covariance is too small it grows; tracking
+this growth through a covariance bootstrap improves the dependence on the initial lower
+covariance from inverse to logarithmic,
+\[
+    \frac1{\lambda_{0,\min}}
+    \quad\leadsto\quad
+    \logp\frac1{\lambda_{0,\min}}.
+\]
+After this refinement, the iteration complexity is a three-stage phenomenon:
+\[
+    \boxed{
+    \text{covariance burn-in}
+    \;\;+\;\;
+    \text{global localization}
+    \;\;+\;\;
+    \text{local convergence}.
+    }
+\]
+
+\paragraph{Transport-bootstrap refinement: Wasserstein warm-start.}
+The logarithmic covariance burn-in is intrinsic to pure Fisher--Rao dynamics when the
+initial covariance is severely underdispersed. However, it can be removed algorithmically
+by using Wasserstein transport only as a short warm-start. The reason is that, in the
+small-covariance regime, Fisher--Rao covariance growth is multiplicative, whereas
+Bures--Wasserstein covariance growth is additive and scale-independent. We therefore add a
+standalone deterministic section proving a two-stage transport-bootstrap natural-gradient
+principle: first lift the covariance to a fixed curvature-scale floor, then switch permanently
+to Fisher--Rao for global localization and local convergence. This avoids tuning an adaptive
+Wasserstein--Fisher--Rao schedule and avoids paying the cost of a transport step at every
+iteration.
+
+\paragraph{Stochastic refinement: intrinsic STL variance.}
+The same covariance bootstrap holds \emph{pathwise} for the stochastic schemes, because
+the sampled Hessian still obeys the almost-sure spectral bound
+$\alpha\Id\preceq\nabla^2V(X_n)\preceq\beta\Id$. The remaining obstacle is the stochastic
+variance term. The existing global stochastic bounds use raw Euclidean/Frobenius
+variance estimates, which propagate large powers of $\beta$, $\alpha$, and
+$\lambda_{\max}$. We instead analyze the single-sample sticking-the-landing (STL)
+estimator in the intrinsic Fisher--Rao norm. The key quantity is the intrinsic Hessian
+fluctuation
+\[
+    \Psi(a)
+    :=
+    \E_{X\sim\rho_a}
+    \left[
+        \norm{
+            C^{1/2}\bigl(\nabla^2V(X)-A(a)\bigr)C^{1/2}
+        }_{\Frob}^2
+    \right],
+    \qquad
+    A(a):=\E_{\rho_a}[\nabla^2V(X)].
+\]
+We show that the intrinsic STL noise is bounded by the squared Fisher--Rao gradient norm
+plus a multiple of $\Psi(a)$. Since $\Psi\equiv0$ for a Gaussian target after whitening,
+the single-sample STL schemes then have no asymptotic noise floor for Gaussian targets,
+and a $\kappa$-controlled floor for general strongly log-concave targets. Finally, under
+\Cref{assump:global-Hess-Lip}, we add the missing first-stage stochastic estimate: during
+covariance burn-in, the energy gap is controlled in expectation with an explicit accumulated
+error proportional to $\Delta t^2 N_{\cov}\beta N_\theta^2\Hg^2\lambda_{\max}^4$. Thus the
+stochastic theory becomes a closed three-stage statement rather than a post-burn-in statement
+with the quantity $\E\Delta_{N_{\cov}}$ left uncontrolled.
+
+\paragraph{Status of the constants.}
+All constants below are explicit. The deterministic constants and the Gaussian-target
+and Riemannian-STL stochastic constants are sharp up to the stated elementary
+inequalities. The constants in the general KL-STL stochastic floor are honest but
+\emph{not optimized}: the covariance perturbation of the KL scheme is intrinsically a
+matrix-inverse perturbation, and the explicit bound we give carries extra factors of
+$\kappa$ that we do not attempt to remove. We flag this explicitly where it occurs
+(\Cref{rem:KL-constants}). The qualitative conclusions---logarithmic covariance
+dependence, three-stage complexity, vanishing stochastic floor for Gaussian targets, and
+condition-number-only floor for general targets---do not depend on optimizing these
+constants.
+
+\section{Setup and notation}
+\label{sec:note-setup}
+
+We consider the Gaussian variational family
+\[
+    \PG
+    :=
+    \left\{
+        \rho_a=\N(m,C):
+        a=(m,C)\in\Aspace:=\R^{N_\theta}\times\SPD(N_\theta)
+    \right\},
+\]
+and the objective
+\[
+    \calE(a)
+    :=
+    \KL(\rho_a\,\|\,\rho_{\post}),
+    \qquad
+    \rho_{\post}(\theta)\propto \exp(-V(\theta)),
+    \qquad
+    a_\star=(m_\star,C_\star)
+    \in
+    \operatorname*{argmin}_{a\in\Aspace}\calE(a).
+\]
+We write the energy gap as
+\[
+    \Delta(a):=\calE(a)-\calE(a_\star),
+    \qquad
+    \Delta_0:=\Delta(a_0),
+    \qquad
+    \Delta_n:=\Delta(a_n).
+\]
+The stepsize is denoted $\Delta t>0$, and $N_\theta$ is the parameter dimension. Throughout,
+$\Delta t$ always appears with the differential $t$ attached, so there is no clash with the
+energy gap $\Delta(\cdot)$.
+
+\begin{assumption}[Strong log-concavity and smoothness]
+\label{assump:logconcave-smooth}
+There exist constants $0<\alpha\leq \beta<\infty$ such that
+\[
+    \alpha\Id
+    \preceq
+    \nabla^2V(\theta)
+    \preceq
+    \beta\Id,
+    \qquad
+    \forall \theta\in\R^{N_\theta}.
+\]
+Equivalently, $\alpha\Id\preceq -\nabla_\theta\nabla_\theta\log\rho_{\post}(\theta)\preceq\beta\Id$.
+We write the condition number
+\[
+    \kappa:=\frac{\beta}{\alpha}\geq 1.
+\]
+\end{assumption}
+
+\begin{assumption}[Global Hessian-Lipschitzness for stochastic burn-in]
+\label{assump:global-Hess-Lip}
+For the stochastic burn-in energy estimates we additionally assume that $V$ has a
+globally Lipschitz Hessian: there exists a finite constant $\Hg\geq0$ such that
+\[
+    \norm{\nabla^2V(x)-\nabla^2V(y)}_{\op}
+    \leq
+    \Hg\norm{x-y},
+    \qquad
+    \forall x,y\in\R^{N_\theta}.
+\]
+This assumption is used only in the stochastic burn-in energy-control results
+\Cref{lem:Psi-Hg,lem:Riem-STL-burnin-descent,thm:Riem-STL-burnin-energy,lem:KL-STL-burnin-descent,thm:KL-STL-burnin-energy}.
+It is not needed for the deterministic covariance bootstrap or for the post-burn-in
+global STL estimates.
+\end{assumption}
+
+For a Gaussian parameter $a=(m,C)$ we abbreviate
+\[
+    g(a):=\E_{\rho_a}[\nabla_\theta\log\rho_{\post}(X)]
+    =-\E_{\rho_a}[\nabla V(X)],
+    \qquad
+    A(a):=\E_{\rho_a}[\nabla^2V(X)],
+\]
+and the \emph{precision residual}
+\[
+    R(a):=C^{-1}-A(a).
+\]
+\Cref{assump:logconcave-smooth} gives $\alpha\Id\preceq A(a)\preceq\beta\Id$.
+
+\subsection{Continuous flow and deterministic schemes}
+
+The Gaussian natural gradient flow is
+\begin{equation}
+\label{eq:NG-flow}
+    \frac{\dd m_t}{\dd t}
+    =
+    C_tg(a_t),
+    \qquad
+    \frac{\dd C_t}{\dd t}
+    =
+    C_t-C_tA(a_t)C_t.
+\end{equation}
+The deterministic Riemannian (geodesic) scheme is
+\begin{equation}
+\label{eq:Riem-det}
+    m_{n+1}=m_n+\Delta t\,C_ng(a_n),
+    \qquad
+    C_{n+1}
+    =
+    C_n^{1/2}
+    \exp\bigl(\Delta t(\Id-C_n^{1/2}A(a_n)C_n^{1/2})\bigr)
+    C_n^{1/2}.
+\end{equation}
+The deterministic KL/Bregman scheme is
+\begin{equation}
+\label{eq:KL-det}
+    m_{n+1}=m_n+\Delta t\,C_ng(a_n),
+    \qquad
+    C_{n+1}
+    =(1+\Delta t)\bigl(C_n^{-1}+\Delta t\,A(a_n)\bigr)^{-1},
+\end{equation}
+or equivalently $C_{n+1}^{-1}=\tfrac1{1+\Delta t}\bigl(C_n^{-1}+\Delta t\,A(a_n)\bigr)$.
+We use the energy splitting $\calE=\calE_1+\calE_2$ with
+\[
+    \calE_1(a)=\E_{\rho_a}[\log\rho_a]=-\tfrac12\log\det C+\text{const.},
+    \qquad
+    \calE_2(a)=-\E_{\rho_a}[\log\rho_{\post}].
+\]
+
+\subsection{Single-sample stochastic schemes}
+
+Let
+\[
+    \Fil_n:=\sigma(a_0,\ldots,a_n),
+    \qquad
+    X_n\mid\Fil_n\sim\N(m_n,C_n),
+    \qquad
+    H_n:=\nabla^2V(X_n).
+\]
+The \emph{raw} one-sample estimators are
+$b_n=\nabla\log\rho_{\post}(X_n)=-\nabla V(X_n)$ and $S_n=-H_n$, and the raw stochastic
+schemes replace $g(a_n)$ and $A(a_n)$ by $b_n$ and $H_n$ in \eqref{eq:Riem-det} and
+\eqref{eq:KL-det}. We instead use the sticking-the-landing (STL) estimators. The STL
+score estimator is
+\begin{equation}
+\label{eq:STL-score}
+    \widehat b_n
+    :=
+    \nabla\log\rho_{\post}(X_n)-\nabla\log\rho_{a_n}(X_n)
+    =
+    -\nabla V(X_n)+C_n^{-1}(X_n-m_n),
+\end{equation}
+and the STL residual-Hessian estimator is
+\begin{equation}
+\label{eq:STL-residual}
+    \widehat K_n
+    :=
+    C_n^{-1}+\nabla^2\log\rho_{\post}(X_n)
+    =
+    C_n^{-1}-H_n.
+\end{equation}
+They are conditionally unbiased for the deterministic gradient and residual:
+\begin{equation}
+\label{eq:STL-unbiased}
+    \E[\widehat b_n\mid\Fil_n]=g(a_n),
+    \qquad
+    \E[\widehat K_n\mid\Fil_n]=R(a_n).
+\end{equation}
+The first identity uses $\E_{\rho_{a_n}}[C_n^{-1}(X_n-m_n)]=0$; the second uses the
+definition of $A(a_n)$. The \emph{STL Riemannian scheme} is
+\begin{equation}
+\label{eq:Riem-STL}
+    m_{n+1}=m_n+\Delta t\,C_n\widehat b_n,
+    \qquad
+    C_{n+1}
+    =
+    C_n^{1/2}\exp\bigl(\Delta t\,C_n^{1/2}\widehat K_nC_n^{1/2}\bigr)C_n^{1/2},
+\end{equation}
+and the \emph{STL KL scheme} is
+\begin{equation}
+\label{eq:KL-STL}
+    m_{n+1}=m_n+\Delta t\,C_n\widehat b_n,
+    \qquad
+    C_{n+1}
+    =
+    (1+\Delta t)\bigl((1+\Delta t)C_n^{-1}-\Delta t\,\widehat K_n\bigr)^{-1}.
+\end{equation}
+Because $\widehat K_n=C_n^{-1}-H_n$, the covariance updates in \eqref{eq:Riem-STL} and
+\eqref{eq:KL-STL} simplify to
+\begin{equation}
+\label{eq:STL-cov-simplify}
+    C_{n+1}
+    =
+    C_n^{1/2}\exp\bigl(\Delta t(\Id-C_n^{1/2}H_nC_n^{1/2})\bigr)C_n^{1/2},
+    \qquad
+    C_{n+1}
+    =
+    (1+\Delta t)\bigl(C_n^{-1}+\Delta t\,H_n\bigr)^{-1},
+\end{equation}
+respectively. Thus the STL covariance updates coincide with the raw Hessian-sampling
+updates; the improvement comes entirely from the STL score estimator and from analyzing
+the covariance noise in the intrinsic residual norm. In particular, since
+$\alpha\Id\preceq H_n\preceq\beta\Id$ almost surely, the covariance bounds proved below
+hold pathwise for the stochastic schemes.
+
+\subsection{Initial covariance and shorthands}
+
+We assume the initial covariance satisfies
+\[
+    \lambda_{0,\min}\Id\preceq C_0\preceq \lambda_{0,\max}\Id,
+\]
+and we set, as in the global theory,
+\[
+    \lambda_0:=\lambda_{0,\min},
+    \qquad
+    \lambda_{\max}:=
+    \max\left\{
+        \lambda_{0,\max},\frac1\alpha
+    \right\},
+    \qquad
+    \logp x:=\max\{\log x,0\}.
+\]
+
+\subsection{Fisher--Rao gradient-norm convention}
+
+We use the Fisher--Rao gradient-norm convention
+\begin{equation}
+\label{eq:G-norm}
+    \Gradnorm(a)^2
+    :=
+    g(a)^\top Cg(a)
+    +
+    \norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2 .
+\end{equation}
+This is the convention under which the Fisher--Rao/Wasserstein comparison and the global
+descent estimates are stated in the base manuscript; it absorbs harmless factors of two
+in the covariance component. The corresponding tangent-noise norm at $a=(m,C)$, for a
+tangent vector $(u,U)\in\R^{N_\theta}\times\Sym(N_\theta)$, is
+\begin{equation}
+\label{eq:tangent-norm}
+    \norm{(u,U)}_a^2
+    :=
+    u^\top C^{-1}u+\norm{C^{-1/2}UC^{-1/2}}_{\Frob}^2 .
+\end{equation}
+
+\section{Two basic inequalities}
+
+\begin{lemma}[Wasserstein PL inequality on Gaussians]
+\label{lem:W2-PL}
+Under \Cref{assump:logconcave-smooth}, for every Gaussian parameter $a\in\Aspace$,
+\[
+    \norm{\grad^{W_2}\calE(a)}_{W_2}^2
+    \geq
+    2\alpha\,\Delta(a).
+\]
+\end{lemma}
+
+This is the Wasserstein Polyak--{\L}ojasiewicz inequality induced by the
+$\alpha$-strong convexity of $V$, restricted to the Gaussian family; see the base
+manuscript and \cite{lambert2022variational}.
+
+\begin{lemma}[Fisher--Rao/Wasserstein comparison]
+\label{lem:FR-W2}
+Suppose $a=(m,C)$ with $C\succeq\ell\Id$ for some $\ell>0$. Then, with the convention
+\eqref{eq:G-norm},
+\[
+    \Gradnorm(a)^2
+    \geq
+    \ell\,\norm{\grad^{W_2}\calE(a)}_{W_2}^2
+    \geq
+    2\alpha\ell\,\Delta(a).
+\]
+Moreover,
+\[
+    \Gradnorm(a)^2
+    \leq
+    \norm{C}_{\op}\,\norm{\grad^{W_2}\calE(a)}_{W_2}^2 .
+\]
+\end{lemma}
+
+\begin{proof}
+The Wasserstein Gaussian gradient norm is
+\[
+    \norm{\grad^{W_2}\calE(a)}_{W_2}^2
+    =
+    \norm{g(a)}^2+\Tr\bigl(R(a)CR(a)\bigr),
+\]
+and the convention \eqref{eq:G-norm} reads
+\[
+    \Gradnorm(a)^2
+    =
+    g(a)^\top Cg(a)+\Tr\bigl(CR(a)CR(a)\bigr),
+\]
+where we used $\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2=\Tr(CR(a)CR(a))$. If $C\succeq\ell\Id$,
+then $g(a)^\top Cg(a)\geq\ell\norm{g(a)}^2$, and since $R(a)CR(a)\succeq0$,
+\[
+    \Tr\bigl(CR(a)CR(a)\bigr)
+    =
+    \Tr\bigl(C\,[R(a)CR(a)]\bigr)
+    \geq
+    \ell\,\Tr\bigl(R(a)CR(a)\bigr).
+\]
+Adding the two estimates gives
+$\Gradnorm(a)^2\geq\ell\norm{\grad^{W_2}\calE(a)}_{W_2}^2$, and combining with
+\Cref{lem:W2-PL} gives the second inequality. For the upper bound, with
+$L_C:=\norm{C}_{\op}$,
+\[
+    g(a)^\top Cg(a)\leq L_C\norm{g(a)}^2,
+    \qquad
+    \Tr\bigl(CR(a)CR(a)\bigr)=\Tr\bigl(C\,[R(a)CR(a)]\bigr)\leq L_C\Tr\bigl(R(a)CR(a)\bigr),
+\]
+and adding gives $\Gradnorm(a)^2\leq L_C\norm{\grad^{W_2}\calE(a)}_{W_2}^2$.
+\end{proof}
+
+\section{Continuous-time covariance bootstrap}
+
+The continuous covariance bootstrap is cleanest in precision variables.
+
+\begin{lemma}[Precision Duhamel formula]
+\label{lem:precision-duhamel}
+Let $P_t:=C_t^{-1}$. Along \eqref{eq:NG-flow},
+\[
+    \dot P_t=A(a_t)-P_t,
+    \qquad\text{hence}\qquad
+    P_t
+    =
+    e^{-t}P_0
+    +
+    \int_0^t e^{-(t-s)}A(a_s)\,\dd s.
+\]
+\end{lemma}
+
+\begin{proof}
+Since $P_t=C_t^{-1}$, $\dot P_t=-P_t\dot C_tP_t$. Using $\dot C_t=C_t-C_tA(a_t)C_t$,
+\[
+    \dot P_t
+    =
+    -P_t(C_t-C_tA(a_t)C_t)P_t
+    =
+    -P_t+A(a_t).
+\]
+Multiplying $\dot P_t+P_t=A(a_t)$ by the integrating factor $e^t$ and integrating gives
+the stated formula.
+\end{proof}
+
+\begin{lemma}[Continuous covariance burn-in]
+\label{lem:cont-cov}
+Under \Cref{assump:logconcave-smooth}, along \eqref{eq:NG-flow},
+\[
+    C_t\succeq \ell(t)\Id,
+    \qquad
+    \ell(t)
+    =
+    \frac{\lambda_0e^t}{1+\beta\lambda_0(e^t-1)},
+    \qquad\text{and}\qquad
+    C_t\preceq\lambda_{\max}\Id .
+\]
+In particular $C_t\succeq\tfrac1{2\beta}\Id$ for all
+\[
+    t\geq T_{\cov}^{\mathrm c}
+    :=
+    \logp\frac1{\beta\lambda_0}.
+\]
+\end{lemma}
+
+\begin{proof}
+By \Cref{lem:precision-duhamel} and $A(a_s)\preceq\beta\Id$, $P_0\preceq\lambda_0^{-1}\Id$,
+\[
+    P_t
+    \preceq
+    \bigl(e^{-t}\lambda_0^{-1}+\beta(1-e^{-t})\bigr)\Id,
+\]
+and taking inverses yields $C_t\succeq\ell(t)\Id$ with $\ell(t)$ as stated. For the upper
+bound, $A(a_s)\succeq\alpha\Id$ gives $P_t\succeq e^{-t}P_0+\alpha(1-e^{-t})\Id$; since no
+eigenvalue of $C_t$ crosses $1/\alpha$ from below (where $\dot C_t\preceq0$) and
+$C_0\preceq\lambda_{0,\max}\Id$, we get $C_t\preceq\lambda_{\max}\Id$. Finally, if
+$e^{-t}\lambda_0^{-1}\leq\beta$, i.e.\ $t\geq\logp(1/(\beta\lambda_0))$, then
+$e^{-t}\lambda_0^{-1}+\beta(1-e^{-t})\leq2\beta$, hence $C_t\succeq\tfrac1{2\beta}\Id$.
+\end{proof}
+
+\begin{theorem}[Improved continuous-time global convergence]
+\label{thm:cont-global}
+Under \Cref{assump:logconcave-smooth}, the flow \eqref{eq:NG-flow} satisfies
+\[
+    \boxed{\;
+    \Delta(a_t)
+    \leq
+    \Delta_0
+    \bigl(1+\beta\lambda_0(e^t-1)\bigr)^{-2/\kappa}.
+    \;}
+\]
+Consequently, for any threshold $\delta\in(0,\Delta_0)$, the hitting time
+$T_{\mathrm c}^{\glob}(\delta):=\inf\{t\geq0:\Delta(a_t)\leq\delta\}$ obeys
+\[
+    T_{\mathrm c}^{\glob}(\delta)
+    =
+    \log\!\left(
+        1+\frac{(\Delta_0/\delta)^{\kappa/2}-1}{\beta\lambda_0}
+    \right)
+    =
+    O\!\left(
+        \logp\frac1{\beta\lambda_0}
+        +
+        \kappa\logp\frac{\Delta_0}{\delta}
+    \right).
+\]
+\end{theorem}
+
+\begin{proof}
+Along the Fisher--Rao gradient flow,
+$\tfrac{\dd}{\dd t}\Delta(a_t)=-\Gradnorm(a_t)^2$. By \Cref{lem:cont-cov},
+$C_t\succeq\ell(t)\Id$, so \Cref{lem:FR-W2} gives
+$\tfrac{\dd}{\dd t}\Delta(a_t)\leq-2\alpha\ell(t)\Delta(a_t)$, hence by Gr\"onwall
+\[
+    \Delta(a_t)\leq\Delta_0\exp\!\left(-2\alpha\int_0^t\ell(s)\,\dd s\right).
+\]
+A direct computation gives
+$\int_0^t\ell(s)\,\dd s=\tfrac1\beta\log(1+\beta\lambda_0(e^t-1))$, so
+\[
+    \Delta(a_t)
+    \leq
+    \Delta_0\bigl(1+\beta\lambda_0(e^t-1)\bigr)^{-2\alpha/\beta}
+    =
+    \Delta_0\bigl(1+\beta\lambda_0(e^t-1)\bigr)^{-2/\kappa}.
+\]
+Solving $\Delta_0(1+\beta\lambda_0(e^t-1))^{-2/\kappa}=\delta$ for $t$ gives the displayed
+hitting time, and the big-$O$ form follows from $\log(1+xy)\le\logp x+\logp y+\log 2$ for
+$x,y\ge0$ together with $\log((\Delta_0/\delta)^{\kappa/2})=\tfrac\kappa2\log(\Delta_0/\delta)$.
+\end{proof}
+
+\section{Riemannian scheme: spectral bounds and two-sided covariance bootstrap}
+
+\begin{lemma}[Riemannian covariance bootstrap]
+\label{lem:Riem-cov}
+Assume \Cref{assump:logconcave-smooth}, $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$,
+and
+\[
+    0<\Delta t\leq\min\left\{1,\frac1{\beta\lambda_{\max}}\right\}.
+\]
+Then $C_n\preceq\lambda_{\max}\Id$ for all $n\geq0$. Define
+\[
+    L_0:=\min\left\{\lambda_0,\frac1{2\beta}\right\},
+    \qquad
+    L_{n+1}:=\frac{e^{\Delta t}L_n}{1+(e-1)\Delta t\,\beta L_n}.
+\]
+Then $C_n\succeq L_n\Id$ for all $n\geq0$, and with
+\[
+    y_0:=\frac1{\beta L_0},
+    \qquad
+    y_\infty:=\frac{(e-1)\Delta t}{e^{\Delta t}-1}\in[1,e-1)\subset[1,2),
+\]
+one has $y_n:=(\beta L_n)^{-1}=y_\infty+(y_0-y_\infty)e^{-n\Delta t}$. Hence
+$C_n\succeq\tfrac1{2\beta}\Id$ for all
+\[
+    n\geq
+    N_{\cov,-}^{\Riem}
+    :=
+    \left\lceil
+        \frac1{\Delta t}
+        \logp\frac{y_0-y_\infty}{2-y_\infty}
+    \right\rceil
+    =
+    O\!\left(\frac1{\Delta t}\logp\frac1{\beta\lambda_0}\right).
+\]
+Moreover, with $z_0:=\tfrac1{\alpha\lambda_{0,\max}}$ and
+$z_\infty:=\tfrac{\Delta t}{e^{\Delta t}-1}\in(\tfrac1{e-1},1]$, one has
+$z_n:=\lambda_{\min}(C_n^{-1})/\alpha\geq z_\infty+(z_0-z_\infty)e^{-n\Delta t}$, hence
+$C_n\preceq\tfrac2\alpha\Id$ for all
+\[
+    n\geq
+    N_{\cov,+}^{\Riem}
+    :=
+    \left\lceil
+        \frac1{\Delta t}
+        \logp\frac{z_\infty-z_0}{z_\infty-1/2}
+    \right\rceil
+    =
+    O\!\left(\frac1{\Delta t}\logp(\alpha\lambda_{0,\max})\right).
+\]
+\end{lemma}
+
+\begin{proof}
+Write $B_n:=C_n^{1/2}A(a_n)C_n^{1/2}$, so that the covariance update reads
+$C_{n+1}=C_n^{1/2}\exp(\Delta t(\Id-B_n))C_n^{1/2}$ and
+$C_{n+1}^{-1}=C_n^{-1/2}\exp(\Delta t(B_n-\Id))C_n^{-1/2}$.
+
+\emph{Upper bound.} Using $e^X\succeq\Id+X$ for symmetric $X$,
+\[
+    C_{n+1}^{-1}
+    \succeq
+    C_n^{-1/2}\bigl[\Id+\Delta t(B_n-\Id)\bigr]C_n^{-1/2}
+    =
+    (1-\Delta t)C_n^{-1}+\Delta t\,A(a_n),
+\]
+using $C_n^{-1/2}B_nC_n^{-1/2}=A(a_n)$. Inductively assume $C_n\preceq\lambda_{\max}\Id$;
+then $C_n^{-1}\succeq\lambda_{\max}^{-1}\Id$ and $A(a_n)\succeq\alpha\Id\succeq\lambda_{\max}^{-1}\Id$
+(since $\lambda_{\max}\geq1/\alpha$). As $\Delta t\leq1$,
+\[
+    C_{n+1}^{-1}
+    \succeq
+    \bigl[(1-\Delta t)\lambda_{\max}^{-1}+\Delta t\,\alpha\bigr]\Id
+    \succeq
+    \lambda_{\max}^{-1}\Id,
+\]
+hence $C_{n+1}\preceq\lambda_{\max}\Id$; the base case is the hypothesis on $C_0$.
+
+\emph{Lower envelope.} Since $A(a_n)\preceq\beta\Id$ and $C_n\preceq\lambda_{\max}\Id$,
+$0\preceq B_n\preceq\beta\lambda_{\max}\Id$, so $0\preceq\Delta t\,B_n\preceq\Id$ (because
+$\Delta t\leq1/(\beta\lambda_{\max})$). The scalar inequality $e^x\leq1+(e-1)x$ on $[0,1]$
+gives, by functional calculus, $\exp(\Delta t\,B_n)\preceq\Id+(e-1)\Delta t\,B_n$, hence
+\[
+    C_{n+1}^{-1}
+    =
+    e^{-\Delta t}C_n^{-1/2}\exp(\Delta t\,B_n)C_n^{-1/2}
+    \preceq
+    e^{-\Delta t}\bigl[C_n^{-1}+(e-1)\Delta t\,A(a_n)\bigr].
+\]
+If $C_n\succeq L_n\Id$ then $C_n^{-1}\preceq L_n^{-1}\Id$ and $A(a_n)\preceq\beta\Id$, so
+\[
+    C_{n+1}^{-1}
+    \preceq
+    e^{-\Delta t}\bigl(L_n^{-1}+(e-1)\Delta t\,\beta\bigr)\Id,
+\]
+i.e.\ $C_{n+1}\succeq L_{n+1}\Id$. With $y_n=(\beta L_n)^{-1}$ the recurrence becomes the
+affine recursion $y_{n+1}=e^{-\Delta t}(y_n+(e-1)\Delta t)$, whose solution is
+$y_n=y_\infty+(y_0-y_\infty)e^{-n\Delta t}$ with $y_\infty=(e-1)\Delta t/(e^{\Delta t}-1)$.
+For $\Delta t\in(0,1]$ the map $\Delta t\mapsto y_\infty$ is continuous with limit $e-1$ as
+$\Delta t\to0$ and value $1$ at $\Delta t=1$, and is monotone, so $y_\infty\in[1,e-1)\subset[1,2)$.
+The condition $C_n\succeq\tfrac1{2\beta}\Id$ is $y_n\leq2$, i.e.\
+$(y_0-y_\infty)e^{-n\Delta t}\leq2-y_\infty$, giving $N_{\cov,-}^{\Riem}$. Since $L_0=\min\{\lambda_0,1/(2\beta)\}$, this is
+$O(\Delta t^{-1}\logp(1/(\beta\lambda_0)))$.
+
+\emph{Upper envelope.} Using $e^X\succeq\Id+X$ again,
+$C_{n+1}^{-1}\succeq e^{-\Delta t}(C_n^{-1}+\Delta t\,A(a_n))\succeq e^{-\Delta t}(C_n^{-1}+\Delta t\,\alpha\Id)$.
+Hence $p_n:=\lambda_{\min}(C_n^{-1})$ obeys $p_{n+1}\geq e^{-\Delta t}(p_n+\Delta t\,\alpha)$, and with
+$z_n=p_n/\alpha$ the equality recursion has solution
+$z_n=z_\infty+(z_0-z_\infty)e^{-n\Delta t}$ with $z_\infty=\Delta t/(e^{\Delta t}-1)$. For
+$\Delta t\in(0,1]$, $z_\infty\in(\tfrac1{e-1},1]$, in particular $z_\infty>1/2$. The
+condition $C_n\preceq\tfrac2\alpha\Id$ is $z_n\geq1/2$, giving $N_{\cov,+}^{\Riem}$, which is
+$O(\Delta t^{-1}\logp(\alpha\lambda_{0,\max}))$.
+\end{proof}
+
+\begin{theorem}[Improved global hitting time, Riemannian scheme]
+\label{thm:Riem-global}
+Under \Cref{assump:logconcave-smooth}, with
+$0<\Delta t\leq\min\{1,1/(\beta\lambda_{\max})\}$, the hitting time
+$N_{\Riem}^{\glob}(\delta):=\inf\{n\geq0:\Delta(a_n)\leq\delta\}$ of \eqref{eq:Riem-det}
+satisfies, for any $\delta\in(0,\Delta_0)$,
+\[
+    \boxed{\;
+    N_{\Riem}^{\glob}(\delta)
+    =
+    O\!\left(
+        \frac1{\Delta t}\logp\frac1{\beta\lambda_0}
+        +
+        \frac\kappa{\Delta t}\logp\frac{\Delta_0}{\delta}
+    \right).
+    \;}
+\]
+\end{theorem}
+
+\begin{proof}
+The Riemannian smoothness estimate of the base manuscript (with geodesic smoothness
+constant $L=\beta\lambda_{\max}$) gives
+\[
+    \Delta(a_{n+1})
+    \leq
+    \Delta(a_n)
+    -
+    \Delta t\Bigl(1-\tfrac{\beta\lambda_{\max}\Delta t}{2}\Bigr)\Gradnorm(a_n)^2 .
+\]
+If $C_n\succeq L_n\Id$, \Cref{lem:FR-W2} gives $\Gradnorm(a_n)^2\geq2\alpha L_n\Delta(a_n)$, hence
+\[
+    \Delta(a_{n+1})
+    \leq
+    \bigl(1-\alpha L_n\Delta t(2-\beta\lambda_{\max}\Delta t)\bigr)\Delta(a_n)
+    \leq
+    (1-\alpha L_n\Delta t)\Delta(a_n),
+\]
+using $2-\beta\lambda_{\max}\Delta t\geq1$. After $N_{\cov,-}^{\Riem}$ iterations,
+\Cref{lem:Riem-cov} gives $L_n\geq1/(2\beta)$, so the per-step factor becomes
+$1-\tfrac{\Delta t}{2\kappa}$, and reducing the gap from $\Delta_0$ to $\delta$ needs
+$O(\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}{\delta})$ further iterations.
+\end{proof}
+
+\section{KL/Bregman scheme: spectral bounds and exact two-sided covariance bootstrap}
+
+\begin{lemma}[KL covariance bootstrap]
+\label{lem:KL-cov}
+Assume \Cref{assump:logconcave-smooth} and $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$.
+Along \eqref{eq:KL-det} (and, pathwise, along the stochastic KL update with $A(a_n)$
+replaced by $H_n$), $C_n\preceq\lambda_{\max}\Id$ for all $n\geq0$. Define
+\[
+    L_0:=\min\left\{\lambda_0,\frac1{2\beta}\right\},
+    \qquad
+    L_{n+1}=\frac{(1+\Delta t)L_n}{1+\Delta t\,\beta L_n},
+\]
+so that $C_n\succeq L_n\Id$, with the explicit solution
+\[
+    L_n
+    =
+    \frac1{\beta\bigl[1+(\tfrac1{\beta L_0}-1)(1+\Delta t)^{-n}\bigr]} .
+\]
+Hence $C_n\succeq\tfrac1{2\beta}\Id$ for all
+\[
+    n\geq
+    N_{\cov,-}^{\KL}
+    :=
+    \left\lceil
+        \frac{\logp\bigl(\tfrac1{\beta L_0}-1\bigr)}{\log(1+\Delta t)}
+    \right\rceil
+    =
+    O\!\left(\frac1{\Delta t}\logp\frac1{\beta\lambda_0}\right),
+\]
+and $C_n\preceq\tfrac2\alpha\Id$ for all
+\[
+    n\geq
+    N_{\cov,+}^{\KL}
+    :=
+    \left\lceil\frac{\log2}{\log(1+\Delta t)}\right\rceil
+    =
+    O\!\left(\frac1{\Delta t}\right).
+\]
+\end{lemma}
+
+\begin{proof}
+The update is $C_{n+1}^{-1}=\tfrac1{1+\Delta t}(C_n^{-1}+\Delta t\,A(a_n))$ with
+$\alpha\Id\preceq A(a_n)\preceq\beta\Id$ (the same bound holds pathwise for $H_n$).
+
+\emph{Upper bound.} If $C_n\preceq\lambda_{\max}\Id$ then $C_n^{-1}\succeq\lambda_{\max}^{-1}\Id$
+and $A(a_n)\succeq\alpha\Id\succeq\lambda_{\max}^{-1}\Id$, so
+$C_{n+1}^{-1}\succeq\tfrac1{1+\Delta t}(\lambda_{\max}^{-1}+\Delta t\lambda_{\max}^{-1})\Id=\lambda_{\max}^{-1}\Id$,
+i.e.\ $C_{n+1}\preceq\lambda_{\max}\Id$.
+
+\emph{Lower envelope.} If $C_n\succeq L_n\Id$ then $C_n^{-1}\preceq L_n^{-1}\Id$,
+$A(a_n)\preceq\beta\Id$, so $C_{n+1}^{-1}\preceq\tfrac1{1+\Delta t}(L_n^{-1}+\Delta t\beta)\Id$,
+i.e.\ $C_{n+1}\succeq L_{n+1}\Id$. With $y_n=(\beta L_n)^{-1}$ the recursion is
+$y_{n+1}=\tfrac{y_n+\Delta t}{1+\Delta t}=1+\tfrac{y_n-1}{1+\Delta t}$, so
+$y_n=1+(y_0-1)(1+\Delta t)^{-n}$, which is the stated closed form. The condition
+$C_n\succeq\tfrac1{2\beta}\Id$ is $y_n\leq2$, i.e.\
+$(y_0-1)(1+\Delta t)^{-n}\leq1$, giving $N_{\cov,-}^{\KL}$ (here $y_0=1/(\beta L_0)$,
+and $\logp(y_0-1)$ covers the case $y_0\le2$).
+
+\emph{Upper envelope.} With $A(a_n)\succeq\alpha\Id$, $p_n:=\lambda_{\min}(C_n^{-1})$ obeys
+$p_{n+1}\geq\tfrac{p_n+\Delta t\,\alpha}{1+\Delta t}$, and with $z_n=p_n/\alpha$ the equality
+recursion is $z_{n+1}=1+\tfrac{z_n-1}{1+\Delta t}$, so $z_n=1+(z_0-1)(1+\Delta t)^{-n}$. If
+$z_0\geq1$ then $z_n\geq1\geq\tfrac12$ for all $n$. If $0\leq z_0<1$ then $z_n\geq\tfrac12$
+once $(1-z_0)(1+\Delta t)^{-n}\leq\tfrac12$, for which $(1+\Delta t)^{-n}\leq\tfrac12$ (i.e.\
+$n\geq N_{\cov,+}^{\KL}$) suffices since $1-z_0\leq1$. In either case $C_n\preceq\tfrac2\alpha\Id$
+for $n\geq N_{\cov,+}^{\KL}$.
+\end{proof}
+
+\begin{theorem}[Improved global hitting time, KL scheme]
+\label{thm:KL-global}
+Under \Cref{assump:logconcave-smooth}, with $0<\Delta t\leq1/(\beta\lambda_{\max})$, the
+hitting time $N_{\KL}^{\glob}(\delta):=\inf\{n\geq0:\Delta(a_n)\leq\delta\}$ of
+\eqref{eq:KL-det} satisfies, for any $\delta\in(0,\Delta_0)$,
+\[
+    \boxed{\;
+    N_{\KL}^{\glob}(\delta)
+    =
+    O\!\left(
+        \frac1{\Delta t}\logp\frac1{\beta\lambda_0}
+        +
+        \frac\kappa{\Delta t}\logp\frac{\Delta_0}{\delta}
+    \right).
+    \;}
+\]
+\end{theorem}
+
+\begin{proof}
+The KL one-step estimate of the base manuscript gives
+$\calE(a_{n+1})\leq\calE(a_n)-\tfrac1{\Delta t}\KL(\rho_{a_n}\|\rho_{a_{n+1}})$ and, with the
+dynamic lower bound $C_n\succeq L_n\Id$ in place of the frozen one,
+\[
+    \KL(\rho_{a_n}\|\rho_{a_{n+1}})
+    \geq
+    \frac{L_n\Delta t^2}{4(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+    \norm{\grad^{W_2}\calE(a_n)}_{W_2}^2 .
+\]
+By \Cref{lem:W2-PL}, $\norm{\grad^{W_2}\calE(a_n)}_{W_2}^2\geq2\alpha\Delta(a_n)$, hence
+\[
+    \Delta(a_{n+1})
+    \leq
+    \left(
+        1-\frac{\alpha L_n\Delta t}{2(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+    \right)\Delta(a_n).
+\]
+After $N_{\cov,-}^{\KL}$ iterations, \Cref{lem:KL-cov} gives $L_n\geq1/(2\beta)$; and since
+$\Delta t\leq1/(\beta\lambda_{\max})$ we have $\Delta t\leq1$ and $\Delta t\beta\lambda_{\max}\leq1$, so
+$(1+\Delta t)(1+\Delta t\beta\lambda_{\max})\leq4$. Thus the per-step factor is at most
+$1-\tfrac{\Delta t}{16\kappa}$, and reducing the gap to $\delta$ needs
+$O(\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}{\delta})$ further iterations.
+\end{proof}
+
+\section{Local input and deterministic three-stage complexity}
+
+The local convergence theory is proved after equilibrium whitening in the base
+manuscript. We record it here in original coordinates, through intrinsic equilibrium
+norms, so that it can be chained to the global estimates.
+
+Define the equilibrium-normalized variables associated with $a=(m,C)$ by
+$\widehat m:=C_\star^{-1/2}(m-m_\star)$, $\widehat C:=C_\star^{-1/2}CC_\star^{-1/2}$, so that
+$a_\star$ corresponds to $(0,\Id)$. The original-coordinate local norms are
+\begin{equation}
+\label{eq:local-norms}
+    \norm{a-a_\star}_\star^2
+    :=
+    \norm{\widehat m}^2+\tfrac12\norm{\widehat C-\Id}_{\Frob}^2,
+    \qquad
+    \norm{a-a_\star}_{\star,\Delta t}^2
+    :=
+    \norm{\widehat m}^2+\tfrac{1+\Delta t}2\norm{\widehat C-\Id}_{\Frob}^2 .
+\end{equation}
+Let $\widehat V(z):=V(m_\star+C_\star^{1/2}z)$, let $0<\alpha_\star\leq1\leq\beta_\star$ satisfy
+$\alpha_\star\Id\preceq\nabla^2\widehat V(z)\preceq\beta_\star\Id$ for all $z$, and set
+$\kappa_\star:=\beta_\star/\alpha_\star$ and
+\begin{equation}
+\label{eq:Gamma}
+    \Gamma
+    :=
+    \min\left\{
+        \beta_\star-1,\,
+        N_\theta\Bigl(3+\tfrac4{\sqrt\pi}(1+\log\kappa_\star)\Bigr)
+    \right\}.
+\end{equation}
+
+\begin{assumption}[Deterministic local convergence, original coordinates]
+\label{assump:local-input}
+With \eqref{eq:local-norms}--\eqref{eq:Gamma}, the base manuscript provides local radii
+\[
+    r_{\mathrm c}
+    :=
+    \min\Bigl\{\tfrac1{2\sqrt2},\tfrac1{135\beta_\star N_\theta^{5/2}(4+\Gamma)}\Bigr\},
+    \quad
+    r_{\Riem}
+    :=
+    \min\Bigl\{\tfrac1{2\sqrt2},\tfrac1{(4+\Gamma)\,148\beta_\star^2N_\theta^{5/2}}\Bigr\},
+\]
+\[
+    r_{\KL}
+    :=
+    \min\Bigl\{\tfrac1{2\sqrt2},\tfrac1{(4+2\Delta t+\Gamma)\,216\beta_\star^2N_\theta^{5/2}}\Bigr\},
+\]
+such that the following hold. If $\norm{a_0-a_\star}_\star\leq r_{\mathrm c}$, then along
+\eqref{eq:NG-flow},
+\[
+    \norm{a_t-a_\star}_\star^2
+    \leq
+    e^{-t/(4+\Gamma)}\norm{a_0-a_\star}_\star^2 .
+\]
+If $0<\Delta t\leq\tfrac2{4+\Gamma}$ and $\norm{a_0-a_\star}_\star\leq r_{\Riem}$, then along
+\eqref{eq:Riem-det},
+\[
+    \norm{a_n-a_\star}_\star
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2(4+\Gamma)}\Bigr)^n\norm{a_0-a_\star}_\star .
+\]
+If $0<\Delta t\leq\tfrac2{4+\Gamma}$ and $\norm{a_0-a_\star}_{\star,\Delta t}\leq r_{\KL}$, then
+along \eqref{eq:KL-det},
+\[
+    \norm{a_n-a_\star}_{\star,\Delta t}
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2(4+2\Delta t+\Gamma)}\Bigr)^n\norm{a_0-a_\star}_{\star,\Delta t} .
+\]
+\end{assumption}
+
+\paragraph{Energy-to-local-norm conversion.}
+Let $\chi_\star:=\norm{C_\star^{-1}}_{\op}$; since $C_\star^{-1}=\E_{\rho_{a_\star}}[\nabla^2V]$,
+\Cref{assump:logconcave-smooth} gives $\chi_\star\leq\beta$. If $C\preceq\lambda_{\max}\Id$,
+then $\widehat C\preceq\widehat\lambda_{\max}\Id$ with $\widehat\lambda_{\max}:=\chi_\star\lambda_{\max}$,
+and $\norm{\widehat C-\Id}_{\Frob}^2\leq(1+\sqrt{\widehat\lambda_{\max}})^2\norm{\widehat C^{1/2}-\Id}_{\Frob}^2$.
+Define
+\[
+    A_0:=\max\Bigl\{1,\tfrac{(1+\sqrt{\widehat\lambda_{\max}})^2}2\Bigr\},
+    \qquad
+    A_{\Delta t}:=\max\Bigl\{1,\tfrac{(1+\Delta t)(1+\sqrt{\widehat\lambda_{\max}})^2}2\Bigr\}.
+\]
+Writing $\widehat\rho_a$ for the pushforward of $\rho_a$ under
+$\theta\mapsto C_\star^{-1/2}(\theta-m_\star)$, one has
+$W_2^2(\widehat\rho_a,\widehat\rho_{a_\star})=\norm{\widehat m}^2+\norm{\widehat C^{1/2}-\Id}_{\Frob}^2$, and
+$W_2^2(\widehat\rho_a,\widehat\rho_{a_\star})\leq\chi_\star W_2^2(\rho_a,\rho_{a_\star})$
+since $\norm{C_\star^{-1/2}}_{\op}=\sqrt{\chi_\star}$. Together with the Wasserstein strong
+convexity $\Delta(a)\geq\tfrac\alpha2W_2^2(\rho_a,\rho_{a_\star})$, this yields
+\[
+    \norm{a-a_\star}_\star^2\leq\frac{2\chi_\star A_0}\alpha\Delta(a),
+    \qquad
+    \norm{a-a_\star}_{\star,\Delta t}^2\leq\frac{2\chi_\star A_{\Delta t}}\alpha\Delta(a).
+\]
+Define the local energy thresholds
+\begin{equation}
+\label{eq:local-thresholds}
+    \Delta_{\mathrm c}:=\frac{\alpha r_{\mathrm c}^2}{2\chi_\star A_0},
+    \qquad
+    \Delta_{\Riem}:=\frac{\alpha r_{\Riem}^2}{2\chi_\star A_0},
+    \qquad
+    \Delta_{\KL}:=\frac{\alpha r_{\KL}^2}{2\chi_\star A_{\Delta t}},
+\end{equation}
+so that $\Delta(a)\leq\Delta_{\mathrm c}\Rightarrow\norm{a-a_\star}_\star\leq r_{\mathrm c}$, and
+similarly for the Riemannian and KL thresholds.
+
+\begin{theorem}[Deterministic three-stage complexity]
+\label{thm:det-three-stage}
+Assume \Cref{assump:logconcave-smooth,assump:local-input} and
+$\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$. Let $\Delta_{\mathrm c}$,
+$\Delta_{\Riem}$, $\Delta_{\KL}$ be as in \eqref{eq:local-thresholds}. For sufficiently
+small $\epsilon>0$:
+\begin{enumerate}
+\item Continuous-time flow \eqref{eq:NG-flow}:
+\[
+    T_{\mathrm c}(\epsilon)
+    =
+    O\!\left(
+        \logp\frac1{\beta\lambda_0}
+        +
+        \kappa\logp\frac{\Delta_0}{\Delta_{\mathrm c}}
+        +
+        (4+\Gamma)\log\frac1\epsilon
+    \right)
+\]
+suffices for $\norm{a_T-a_\star}_\star^2\leq\epsilon$.
+\item Riemannian scheme \eqref{eq:Riem-det}, with
+$0<\Delta t\leq\min\{1/(\beta\lambda_{\max}),\,2/(4+\Gamma)\}$:
+\[
+    N_{\Riem}(\epsilon)
+    =
+    O\!\left(
+        \frac1{\Delta t}\logp\frac1{\beta\lambda_0}
+        +
+        \frac\kappa{\Delta t}\logp\frac{\Delta_0}{\Delta_{\Riem}}
+        +
+        \frac{4+\Gamma}{\Delta t}\log\frac1\epsilon
+    \right)
+\]
+suffices for $\norm{a_N-a_\star}_\star^2\leq\epsilon$.
+\item KL scheme \eqref{eq:KL-det}, with
+$0<\Delta t\leq\min\{1/(\beta\lambda_{\max}),\,2/(4+\Gamma)\}$:
+\[
+    N_{\KL}(\epsilon)
+    =
+    O\!\left(
+        \frac1{\Delta t}\logp\frac1{\beta\lambda_0}
+        +
+        \frac\kappa{\Delta t}\logp\frac{\Delta_0}{\Delta_{\KL}}
+        +
+        \frac{4+2\Delta t+\Gamma}{\Delta t}\log\frac1\epsilon
+    \right)
+\]
+suffices for $\norm{a_N-a_\star}_{\star,\Delta t}^2\leq\epsilon$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\emph{Continuous time.} By \Cref{thm:cont-global} with $\delta=\Delta_{\mathrm c}$, after time
+$O(\logp\tfrac1{\beta\lambda_0}+\kappa\logp\tfrac{\Delta_0}{\Delta_{\mathrm c}})$ one has
+$\Delta(a_t)\leq\Delta_{\mathrm c}$, hence $\norm{a_t-a_\star}_\star\leq r_{\mathrm c}$ by
+\eqref{eq:local-thresholds}. The local estimate of \Cref{assump:local-input} then needs
+$O((4+\Gamma)\log\tfrac1\epsilon)$ further time to reach
+$\norm{a_t-a_\star}_\star^2\leq\epsilon$ (since $r_{\mathrm c}$ is independent of $\epsilon$).
+
+\emph{Riemannian.} By \Cref{thm:Riem-global} with $\delta=\Delta_{\Riem}$, after
+$O(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}+\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}{\Delta_{\Riem}})$
+iterations one has $\Delta(a_n)\leq\Delta_{\Riem}$, hence
+$\norm{a_n-a_\star}_\star\leq r_{\Riem}$. The local estimate then needs
+$O(\tfrac{4+\Gamma}{\Delta t}\log\tfrac1\epsilon)$ further iterations. The KL case is identical
+using \Cref{thm:KL-global} and the KL local estimate. The big-$O$ forms use
+$-\log(1-x)\geq x$.
+\end{proof}
+
+\section{Transport bootstrap: Wasserstein burn-in followed by Fisher--Rao tail}
+\label{sec:transport-bootstrap}
+
+The deterministic covariance bootstrap in the preceding sections shows that pure
+Fisher--Rao/natural-gradient dynamics has only logarithmic dependence on the initial lower
+covariance. This is already a substantial improvement over the frozen-bound analysis. However,
+when $C_0$ is severely underdispersed, even the logarithmic term
+$\logp(1/(\beta\lambda_0))$ is a genuine Fisher--Rao warm-up cost. This section records a
+clean way to remove that term: use Wasserstein transport only to lift the covariance to the
+curvature scale, and then switch permanently to Fisher--Rao.
+
+The main point is not to run a Wasserstein--Fisher--Rao splitting at every iteration. Instead, we
+separate the roles of the two geometries:
+\[
+    \boxed{
+    \text{Wasserstein transport lifts an underdispersed covariance;} \qquad
+    \text{Fisher--Rao performs the global-to-local and local descent.}
+    }
+\]
+This avoids an adaptive transport schedule and avoids the cost of re-evaluating a Fisher--Rao
+step after a Wasserstein half-step at every iteration.
+
+\subsection{Covariance-scale comparison}
+
+Let
+\[
+    A(a):=\E_{\rho_a}[\nabla^2V(X)]
+    =-\E_{\rho_a}[\nabla_\theta^2\log\rho_{\post}(X)],
+    \qquad
+    \alpha\Id\preceq A(a)\preceq\beta\Id.
+\]
+For the Fisher--Rao covariance equation,
+\[
+    \dot C=C-CAC,
+\]
+if $\mu_i(t)$ is an eigenvalue of $C_t$ with normalized eigenvector $u_i(t)$, then
+\[
+    \dot\mu_i(t)
+    =\mu_i(t)-\mu_i(t)^2h_i(t)
+    =\mu_i(t)(1-\mu_i(t)h_i(t)),
+    \qquad
+    h_i(t):=u_i(t)^\top A(a_t)u_i(t)\in[\alpha,\beta].
+\]
+Thus, in the underdispersed regime $\mu_i\ll1/\beta$,
+\[
+    \dot\mu_i(t)\approx \mu_i(t),
+\]
+so the Fisher--Rao covariance growth is multiplicative. Starting from
+$\mu_i(0)=\lambda_0\ll1/\beta$, reaching the scale $1/\beta$ necessarily takes time of order
+$\log(1/(\beta\lambda_0))$.
+
+By contrast, the unit-strength Gaussian Bures--Wasserstein flow is
+\begin{equation}
+\label{eq:W-flow}
+    \dot m_t=g(a_t),
+    \qquad
+    \dot C_t=2\Id-C_tA(a_t)-A(a_t)C_t.
+\end{equation}
+For the same eigenpair,
+\[
+    \dot\mu_i(t)=2(1-\mu_i(t)h_i(t)).
+\]
+Thus, when $\mu_i\ll1/\beta$,
+\[
+    \dot\mu_i(t)\approx2,
+\]
+so Wasserstein covariance growth is additive and scale-independent. This is the precise
+reason transport is better suited to the covariance warm-up.
+
+The same comparison also explains why transport should not be kept forever. In a flat direction
+with curvature $h_i=\alpha$, growing from $1/\beta$ to the target scale $1/\alpha$ takes
+Wasserstein time of order
+\[
+    \frac1\alpha-\frac1\beta=O\!\left(\frac1\alpha\right),
+\]
+whereas Fisher--Rao, whose growth is approximately multiplicative until the target scale, takes
+only
+\[
+    O\!\left(\log\frac\beta\alpha\right)=O(\log\kappa).
+\]
+Thus the clean covariance-scale picture is
+\[
+    \boxed{
+    \text{Wasserstein is best for }0\to O(1/\beta),
+    \qquad
+    \text{Fisher--Rao is best for shape calibration }1/\beta\to1/\alpha.
+    }
+\]
+This comparison is a covariance-scale dominance statement, not a pointwise claim that one
+energy-dissipation rate dominates the other at every state.
+
+\subsection{Continuous-time Wasserstein bootstrap}
+
+\begin{lemma}[Wasserstein covariance bootstrap]
+\label{lem:W-cov-bootstrap}
+Assume \Cref{assump:logconcave-smooth} and
+$\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$. Let
+$\lambda_0:=\lambda_{0,\min}$ and
+$\lambda_{\max}:=\max\{\lambda_{0,\max},1/\alpha\}$. Along the Gaussian Wasserstein flow
+\eqref{eq:W-flow},
+\[
+    C_t\succeq \ell_W(t)\Id,
+    \qquad
+    \ell_W(t):=\frac1\beta+\left(\lambda_0-\frac1\beta\right)e^{-2\beta t},
+\]
+while $C_t\preceq\lambda_{\max}\Id$. Consequently, for any fixed $c\in(0,1)$, if
+\[
+    T_W^{\mathrm c}(c)
+    :=
+    \begin{cases}
+    0,
+    & \lambda_0\ge c/\beta,\\[3pt]
+    \dfrac1{2\beta}\log\dfrac{1-\beta\lambda_0}{1-c},
+    & \lambda_0<c/\beta,
+    \end{cases}
+\]
+then
+\[
+    C_{T_W^{\mathrm c}(c)}\succeq \frac c\beta\Id.
+\]
+In particular, for fixed $c$, the Wasserstein covariance warm-up time is bounded by a constant
+multiple of $1/\beta$ and has no logarithmic dependence on $\lambda_0$.
+\end{lemma}
+
+\begin{proof}
+Let $\mu_i(t)$ be an eigenvalue of $C_t$ with normalized eigenvector $u_i(t)$. Along
+\eqref{eq:W-flow},
+\[
+    \dot\mu_i(t)
+    =u_i(t)^\top(2\Id-C_tA(a_t)-A(a_t)C_t)u_i(t)
+    =2\bigl(1-\mu_i(t)h_i(t)\bigr),
+\]
+where $h_i(t):=u_i(t)^\top A(a_t)u_i(t)\in[\alpha,\beta]$. Hence
+\[
+    \dot\mu_i(t)\ge 2(1-\beta\mu_i(t)).
+\]
+Let $\ell_W$ solve
+\[
+    \dot\ell_W(t)=2(1-\beta\ell_W(t)),
+    \qquad
+    \ell_W(0)=\lambda_0.
+\]
+The solution is
+\[
+    \ell_W(t)=\frac1\beta+\left(\lambda_0-\frac1\beta\right)e^{-2\beta t}.
+\]
+The scalar comparison argument gives $\mu_i(t)\ge\ell_W(t)$ for every $i$, and hence
+$C_t\succeq\ell_W(t)\Id$.
+
+For the upper bound, if $\mu_i(t)\ge1/\alpha$, then
+\[
+    \dot\mu_i(t)=2(1-\mu_i(t)h_i(t))\le 2(1-\alpha\mu_i(t))\le0.
+\]
+Therefore no eigenvalue can cross the barrier $1/\alpha$ from below, and any eigenvalue that
+starts above $1/\alpha$ is pushed downward. Since $C_0\preceq\lambda_{0,\max}\Id$, this gives
+$C_t\preceq\lambda_{\max}\Id$.
+
+Finally, if $\lambda_0<c/\beta$, the condition $\ell_W(t)\ge c/\beta$ is equivalent to
+\[
+    e^{-2\beta t}\le \frac{1-c}{1-\beta\lambda_0},
+\]
+which gives the stated expression for $T_W^{\mathrm c}(c)$. If $\lambda_0\ge c/\beta$, no
+Wasserstein warm-up time is needed.
+\end{proof}
+
+\begin{theorem}[Continuous transport-bootstrap natural gradient]
+\label{thm:cont-W-to-FR}
+Assume \Cref{assump:logconcave-smooth,assump:local-input}. Fix $c\in(0,1)$. Run the
+Gaussian Wasserstein flow \eqref{eq:W-flow} until time $T_W^{\mathrm c}(c)$ from
+\Cref{lem:W-cov-bootstrap}, and then switch permanently to the Fisher--Rao flow
+\eqref{eq:NG-flow}. Let $\Delta_{\mathrm c}$ be the local energy threshold in
+\eqref{eq:local-thresholds}. Then, for sufficiently small $\epsilon>0$,
+\[
+    T_{W\to\FR}^{\mathrm c}(\epsilon;c)
+    \le
+    T_W^{\mathrm c}(c)
+    +\frac{\kappa}{2c}\logp\frac{\Delta_0}{\Delta_{\mathrm c}}
+    +(4+\Gamma)\log\frac{r_{\mathrm c}^2}{\epsilon}.
+\]
+In particular, for any fixed $c\in(0,1)$,
+\[
+    \boxed{
+    T_{W\to\FR}^{\mathrm c}(\epsilon;c)
+    =
+    O\!\left(
+        \frac1\beta
+        +\kappa\logp\frac{\Delta_0}{\Delta_{\mathrm c}}
+        +(4+\Gamma)\log\frac1\epsilon
+    \right).
+    }
+\]
+Thus the pure-Fisher--Rao covariance-burn-in term
+$\logp(1/(\beta\lambda_0))$ is replaced by a Wasserstein warm-start time of order $1/\beta$.
+\end{theorem}
+
+\begin{proof}
+During the Wasserstein stage, $\calE$ is decreasing because \eqref{eq:W-flow} is the
+Bures--Wasserstein gradient flow of $\calE$ on the Gaussian manifold. Hence, at the switching
+state $a_{\mathrm b}$,
+\[
+    \Delta(a_{\mathrm b})\le\Delta_0,
+    \qquad
+    C_{\mathrm b}\succeq \frac c\beta\Id.
+\]
+After the switch, the Fisher--Rao/Wasserstein comparison in \Cref{lem:FR-W2} gives
+\[
+    \Gradnorm(a_t)^2
+    \ge
+    \frac c\beta\norm{\grad^{W_2}\calE(a_t)}_{W_2}^2
+    \ge
+    \frac{2\alpha c}{\beta}\Delta(a_t)
+    =
+    \frac{2c}{\kappa}\Delta(a_t),
+\]
+as long as the Fisher--Rao trajectory is in the global phase. Since
+$\dot\Delta(t)=-\Gradnorm(a_t)^2$ along Fisher--Rao,
+\[
+    \dot\Delta(t)
+    \le
+    -\frac{2c}{\kappa}\Delta(t).
+\]
+Therefore, after an additional time
+\[
+    \frac{\kappa}{2c}\logp\frac{\Delta_0}{\Delta_{\mathrm c}},
+\]
+we have $\Delta(a_t)\le\Delta_{\mathrm c}$. By \eqref{eq:local-thresholds}, this implies
+$\norm{a_t-a_\star}_\star\le r_{\mathrm c}$. The local continuous-time estimate in
+\Cref{assump:local-input} then gives
+\[
+    \norm{a_{t+s}-a_\star}_\star^2
+    \le
+    e^{-s/(4+\Gamma)}r_{\mathrm c}^2.
+\]
+Taking $s=(4+\Gamma)\log(r_{\mathrm c}^2/\epsilon)$ proves the explicit bound. The big-$O$
+form follows from \Cref{lem:W-cov-bootstrap}, which gives
+$T_W^{\mathrm c}(c)\le (2\beta)^{-1}\log(1/(1-c))$ when $c$ is fixed.
+\end{proof}
+
+\subsection{One-step discrete transport bootstrap}
+
+The discrete version is even cleaner. A single Bures--Wasserstein forward--backward step creates
+a covariance floor of size equal to the transport stepsize.
+
+Given $a=(m,C)$ and a transport stepsize $\eta>0$, define
+\begin{equation}
+\label{eq:W-FB-step}
+    g:=g(a),
+    \qquad
+    H:=\E_{\rho_a}[\nabla_\theta^2\log\rho_{\post}(X)]=-A(a),
+    \qquad
+    M:=\Id+\eta H=\Id-\eta A(a),
+\end{equation}
+\[
+    m^+:=m+\eta g,
+    \qquad
+    \widetilde C:=MCM,
+\]
+\begin{equation}
+\label{eq:W-FB-cov}
+    C^+
+    :=
+    \frac12
+    \left(
+        \widetilde C+2\eta\Id+\bigl[\widetilde C(\widetilde C+4\eta\Id)\bigr]^{1/2}
+    \right).
+\end{equation}
+The matrix square root is well-defined because $\widetilde C$ commutes with
+$\widetilde C+4\eta\Id$.
+
+\begin{lemma}[One-step Wasserstein covariance floor]
+\label{lem:one-step-W-bootstrap}
+Assume \Cref{assump:logconcave-smooth}, $C\preceq\lambda_{\max}\Id$ with
+$\lambda_{\max}\ge1/\alpha$, and $0<\eta\le1/\beta$. Then the Wasserstein step
+\eqref{eq:W-FB-step}--\eqref{eq:W-FB-cov} satisfies
+\[
+    C^+\succeq\eta\Id,
+    \qquad
+    C^+\preceq\lambda_{\max}\Id.
+\]
+Moreover, the standard Bures--Wasserstein forward--backward descent inequality gives
+\[
+    \calE(m^+,C^+)\le\calE(m,C).
+\]
+\end{lemma}
+
+\begin{proof}
+Let
+\[
+    \psi_\eta(x)
+    :=
+    \frac12\left(x+2\eta+\sqrt{x(x+4\eta)}\right),
+    \qquad x\ge0.
+\]
+The covariance update \eqref{eq:W-FB-cov} applies $\psi_\eta$ to the eigenvalues of
+$\widetilde C$. Since $\psi_\eta$ is increasing and $\psi_\eta(0)=\eta$, every eigenvalue of
+$C^+$ is at least $\eta$. Thus $C^+\succeq\eta\Id$.
+
+For the upper bound, since $0<\eta\le1/\beta$ and $\alpha\Id\preceq A(a)\preceq\beta\Id$,
+\[
+    0\preceq M=\Id-\eta A(a)\preceq(1-\eta\alpha)\Id.
+\]
+Therefore
+\[
+    \widetilde C=MCM\preceq (1-\eta\alpha)^2\lambda_{\max}\Id.
+\]
+Because $\lambda_{\max}\ge1/\alpha$, we have $\eta\alpha\ge\eta/\lambda_{\max}$, hence
+\[
+    (1-\eta\alpha)^2\lambda_{\max}
+    \le
+    \left(1-\frac\eta{\lambda_{\max}}\right)^2\lambda_{\max}.
+\]
+The scalar identity
+\[
+    \psi_\eta\!\left(\left(1-\frac\eta L\right)^2L\right)=L,
+    \qquad 0\le\eta\le L,
+\]
+with $L=\lambda_{\max}$ gives $C^+\preceq\lambda_{\max}\Id$.
+
+Finally, \eqref{eq:W-FB-step}--\eqref{eq:W-FB-cov} is exactly the Bures--Wasserstein
+forward--backward step for the splitting $\calE=\calE_1+\calE_2$, with the entropy part treated
+backward. Under $\eta\le1/\beta$, the standard forward--backward descent inequality yields
+$\calE(m^+,C^+)\le\calE(m,C)$.
+\end{proof}
+
+\begin{theorem}[Discrete transport-bootstrap natural gradient]
+\label{thm:disc-W-to-FR}
+Assume \Cref{assump:logconcave-smooth,assump:local-input} and
+$\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$. Fix $c\in(0,1]$ and set
+\[
+    \eta:=\frac c\beta.
+\]
+If $\lambda_0<c/\beta$, first perform one Wasserstein forward--backward step
+\eqref{eq:W-FB-step}--\eqref{eq:W-FB-cov}; otherwise skip this step. Then run either the
+Riemannian scheme \eqref{eq:Riem-det} or the KL scheme \eqref{eq:KL-det} with Fisher--Rao
+stepsize $\Delta t$.
+
+For the Riemannian scheme, if
+\[
+    0<\Delta t\le\min\left\{\frac1{\beta\lambda_{\max}},\frac2{4+\Gamma}\right\},
+\]
+then, for sufficiently small $\epsilon>0$,
+\[
+    \boxed{
+    N_{W\to\Riem}(\epsilon;c)
+    =
+    \mathbf 1_{\{\lambda_0<c/\beta\}}
+    +
+    O\!\left(
+        \frac{\kappa}{c\Delta t}\logp\frac{\Delta_0}{\Delta_{\Riem}}
+        +
+        \frac{4+\Gamma}{\Delta t}\log\frac1\epsilon
+    \right).
+    }
+\]
+For the KL scheme, under the same stepsize condition,
+\[
+    \boxed{
+    N_{W\to\KL}(\epsilon;c)
+    =
+    \mathbf 1_{\{\lambda_0<c/\beta\}}
+    +
+    O\!\left(
+        \frac{\kappa}{c\Delta t}\logp\frac{\Delta_0}{\Delta_{\KL}}
+        +
+        \frac{4+2\Delta t+\Gamma}{\Delta t}\log\frac1\epsilon
+    \right).
+    }
+\]
+Thus, for fixed $c$, the discrete covariance-burn-in term
+$\Delta t^{-1}\logp(1/(\beta\lambda_0))$ is replaced by one Wasserstein bootstrap step.
+\end{theorem}
+
+\begin{proof}
+If the Wasserstein step is skipped, then $C_0\succeq(c/\beta)\Id$ already. If the step is taken,
+\Cref{lem:one-step-W-bootstrap} gives
+\[
+    C_{\mathrm b}\succeq\frac c\beta\Id,
+    \qquad
+    C_{\mathrm b}\preceq\lambda_{\max}\Id,
+    \qquad
+    \Delta(a_{\mathrm b})\le\Delta_0.
+\]
+Here $a_{\mathrm b}$ denotes the post-bootstrap state. Hence the subsequent Fisher--Rao stage
+starts with the fixed covariance floor $c/\beta$ and the same upper bound $\lambda_{\max}$.
+
+For the Riemannian scheme, the one-step descent estimate used in \Cref{thm:Riem-global}, now
+with the lower covariance floor $c/\beta$, gives
+\[
+    \Delta_{n+1}
+    \le
+    \left(1-\frac{\alpha c}{\beta}\Delta t(2-\beta\lambda_{\max}\Delta t)\right)\Delta_n.
+\]
+Since $\Delta t\le1/(\beta\lambda_{\max})$, we have $2-\beta\lambda_{\max}\Delta t\ge1$, so
+\[
+    \Delta_{n+1}
+    \le
+    \left(1-\frac{c\Delta t}{\kappa}\right)\Delta_n.
+\]
+Thus reaching $\Delta_{\Riem}$ from a gap at most $\Delta_0$ requires
+$O((\kappa/(c\Delta t))\logp(\Delta_0/\Delta_{\Riem}))$ Riemannian iterations. Once
+$\Delta\le\Delta_{\Riem}$, \eqref{eq:local-thresholds} places the iterate in the local ball, and
+\Cref{assump:local-input} gives an additional
+$O(((4+\Gamma)/\Delta t)\log(1/\epsilon))$ iterations.
+
+For the KL scheme, the one-step estimate used in \Cref{thm:KL-global} gives
+\[
+    \Delta_{n+1}
+    \le
+    \left(
+        1-
+        \frac{\alpha (c/\beta)\Delta t}
+        {2(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+    \right)\Delta_n.
+\]
+Under $\Delta t\le1$ and $\Delta t\beta\lambda_{\max}\le1$, the denominator is bounded by $8$,
+so the global localization phase takes
+$O((\kappa/(c\Delta t))\logp(\Delta_0/\Delta_{\KL}))$ iterations. The KL local theorem in
+\Cref{assump:local-input} then gives the stated local term.
+\end{proof}
+
+\begin{remark}[What the transport bootstrap does and does not solve]
+\label{rem:transport-bootstrap-caveat}
+The transport bootstrap removes the small-initial-covariance burn-in from the deterministic
+global theory. It does not, by itself, improve the explicit local discretization factor
+$(4+\Gamma)/\Delta t$ for the Riemannian scheme or $(4+2\Delta t+\Gamma)/\Delta t$ for the KL
+scheme. Thus the discrete local stiffness issue is separate from the global covariance warm-up
+issue. To obtain a fully ideal discrete local term of order $\Gamma\log(1/\epsilon)$, one would
+need an additional locally implicit, proximal, or exponential-stabilized Fisher--Rao discretization.
+\end{remark}
+
+\begin{remark}[Practical switching rule]
+The theorem suggests a particularly simple deterministic implementation. Pick a constant
+$c\in(0,1]$, for example $c=1/2$, perform one Wasserstein step with
+$\eta=c/\beta$ if $\beta\lambda_{\min}(C_0)<c$, and then switch permanently to the preferred
+Fisher--Rao discretization. Equivalently, one may monitor
+\[
+    r_n:=\beta\lambda_{\min}(C_n)
+\]
+and switch once $r_n\ge c$. With the forward--backward Wasserstein bootstrap, this typically
+happens after one step by \Cref{lem:one-step-W-bootstrap}.
+\end{remark}
+
+\section{Intrinsic sticking-the-landing variance}
+
+We now turn to the stochastic schemes \eqref{eq:Riem-STL} and \eqref{eq:KL-STL}. The
+deterministic gradient and its single-sample STL estimate are
+\[
+    \grad\calE(a)=\bigl(-Cg(a),\,-CR(a)C\bigr),
+    \qquad
+    \widehat\grad\calE(a;X)=\bigl(-C\widehat b,\,-C\widehat KC\bigr),
+\]
+where $\widehat b=-\nabla V(X)+C^{-1}(X-m)$ and $\widehat K=C^{-1}-\nabla^2V(X)$. The induced
+STL tangent noise is
+\begin{equation}
+\label{eq:STL-tangent-noise}
+    \xi(a;X)
+    :=
+    \widehat\grad\calE(a;X)-\grad\calE(a)
+    =
+    \bigl(-C\varepsilon_b(a;X),\,-C\varepsilon_R(a;X)C\bigr),
+\end{equation}
+with the centered noises
+\[
+    \varepsilon_b(a;X):=\widehat b-g(a),
+    \qquad
+    \varepsilon_R(a;X):=\widehat K-R(a)=-\bigl(\nabla^2V(X)-A(a)\bigr).
+\]
+Recall the intrinsic Hessian fluctuation
+\begin{equation}
+\label{eq:Psi}
+    \Psi(a)
+    :=
+    \E_{X\sim\rho_a}
+    \left[
+        \norm{C^{1/2}\bigl(\nabla^2V(X)-A(a)\bigr)C^{1/2}}_{\Frob}^2
+    \right]
+    =
+    \E_{X\sim\rho_a}
+    \left[
+        \norm{C^{1/2}\varepsilon_R(a;X)C^{1/2}}_{\Frob}^2
+    \right].
+\end{equation}
+
+\begin{lemma}[Intrinsic STL variance bound]
+\label{lem:intrinsic-STL}
+Under \Cref{assump:logconcave-smooth}, for every $a=(m,C)\in\Aspace$ the STL noises are
+conditionally centered, $\E[\varepsilon_b(a;X)]=0$ and $\E[\varepsilon_R(a;X)]=0$, and
+\begin{equation}
+\label{eq:intrinsic-mean}
+    \E\bigl[\varepsilon_b(a;X)^\top C\,\varepsilon_b(a;X)\bigr]
+    \leq
+    \norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2+\Psi(a).
+\end{equation}
+Consequently, with the tangent norm \eqref{eq:tangent-norm} and the gradient-norm
+convention \eqref{eq:G-norm},
+\begin{equation}
+\label{eq:intrinsic-STL}
+    \boxed{\;
+    \E\bigl[\norm{\xi(a;X)}_a^2\bigr]
+    \leq
+    \Gradnorm(a)^2+2\Psi(a).
+    \;}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\emph{Centering.} $\E[\widehat b]=-\E[\nabla V(X)]+C^{-1}\E[X-m]=g(a)$ and
+$\E[\widehat K]=C^{-1}-A(a)=R(a)$, so both noises are centered.
+
+\emph{Covariance component.} Directly from \eqref{eq:Psi},
+$\E[\norm{C^{1/2}\varepsilon_R(a;X)C^{1/2}}_{\Frob}^2]=\Psi(a)$.
+
+\emph{Mean component.} Let $F(X):=-\nabla V(X)+C^{-1}(X-m)$, so
+$\varepsilon_b=F(X)-\E F(X)$ and the Jacobian $\nabla F(X)=C^{-1}-\nabla^2V(X)$ is symmetric.
+We use the scalar Gaussian Poincar\'e inequality: for $X\sim\N(m,C)$ and $\phi\in C^1$,
+$\operatorname{Var}(\phi(X))\leq\E[\nabla\phi(X)^\top C\nabla\phi(X)]$. Writing
+$\phi_i(X):=(C^{1/2}F(X))_i$, so that $C^{1/2}\varepsilon_b$ has components
+$\phi_i(X)-\E\phi_i(X)$, we have $\nabla\phi_i(X)=(C^{1/2}\nabla F(X))_{i\cdot}^\top$ (the
+$i$-th row of $C^{1/2}\nabla F(X)$, transposed). Summing the scalar Poincar\'e bound over
+$i$,
+\begin{align*}
+    \E[\varepsilon_b^\top C\varepsilon_b]
+    =
+    \sum_i\operatorname{Var}(\phi_i(X))
+    &\leq
+    \sum_i\E[\nabla\phi_i^\top C\nabla\phi_i]
+    =
+    \E\bigl[\Tr\bigl(C^{1/2}\nabla F(X)\,C\,\nabla F(X)C^{1/2}\bigr)\bigr]\\
+    &=
+    \E\bigl[\norm{C^{1/2}\nabla F(X)C^{1/2}}_{\Frob}^2\bigr],
+\end{align*}
+where the last equality uses the symmetry of $\nabla F(X)$. Now
+$C^{1/2}\nabla F(X)C^{1/2}=C^{1/2}(C^{-1}-\nabla^2V(X))C^{1/2}=C^{1/2}R(a)C^{1/2}-C^{1/2}(\nabla^2V(X)-A(a))C^{1/2}$,
+since $C^{-1}-\nabla^2V(X)=R(a)-(\nabla^2V(X)-A(a))$. Expanding the squared Frobenius
+norm and taking expectation, the cross term vanishes because
+$\E[\nabla^2V(X)-A(a)]=0$ and $C^{1/2}R(a)C^{1/2}$ is deterministic. Hence
+\[
+    \E[\varepsilon_b^\top C\varepsilon_b]
+    \leq
+    \norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2
+    +
+    \E\bigl[\norm{C^{1/2}(\nabla^2V(X)-A(a))C^{1/2}}_{\Frob}^2\bigr]
+    =
+    \norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2+\Psi(a),
+\]
+which is \eqref{eq:intrinsic-mean}.
+
+\emph{Assembly.} With the tangent noise \eqref{eq:STL-tangent-noise} and the norm
+\eqref{eq:tangent-norm}, a direct computation (as in \Cref{rem:setup-noise-id} of the
+displayed identity below) gives
+\[
+    \norm{\xi(a;X)}_a^2
+    =
+    \varepsilon_b^\top C\varepsilon_b
+    +
+    \norm{C^{1/2}\varepsilon_R C^{1/2}}_{\Frob}^2 .
+\]
+Taking expectations and inserting \eqref{eq:intrinsic-mean} and the covariance component,
+\[
+    \E\bigl[\norm{\xi(a;X)}_a^2\bigr]
+    \leq
+    \norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2+\Psi(a)+\Psi(a)
+    \leq
+    \Gradnorm(a)^2+2\Psi(a),
+\]
+using $\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2\leq\Gradnorm(a)^2$ from \eqref{eq:G-norm}.
+\end{proof}
+
+\begin{remark}[The tangent-noise identity]
+\label{rem:setup-noise-id}
+With $u=-C\varepsilon_b$ and $U=-C\varepsilon_RC$ in \eqref{eq:tangent-norm},
+$u^\top C^{-1}u=\varepsilon_b^\top C\varepsilon_b$ and
+$\norm{C^{-1/2}UC^{-1/2}}_{\Frob}^2=\norm{C^{1/2}\varepsilon_RC^{1/2}}_{\Frob}^2$, which is the
+identity used above.
+\end{remark}
+
+\begin{lemma}[Global bound for $\Psi$ after two-sided burn-in]
+\label{lem:Psi-bound}
+Under \Cref{assump:logconcave-smooth}, if $\tfrac1{2\beta}\Id\preceq C\preceq\tfrac2\alpha\Id$, then
+\[
+    \boxed{\;
+    \Psi(a)\leq 4N_\theta(\kappa-1)^2 .
+    \;}
+\]
+\end{lemma}
+
+\begin{proof}
+Since $\alpha\Id\preceq\nabla^2V(X)\preceq\beta\Id$ and $\alpha\Id\preceq A(a)\preceq\beta\Id$,
+$\norm{\nabla^2V(X)-A(a)}_{\op}\leq\beta-\alpha$, hence
+$\norm{\nabla^2V(X)-A(a)}_{\Frob}\leq\sqrt{N_\theta}(\beta-\alpha)$. Therefore
+\[
+    \norm{C^{1/2}(\nabla^2V(X)-A(a))C^{1/2}}_{\Frob}
+    \leq
+    \norm{C}_{\op}\norm{\nabla^2V(X)-A(a)}_{\Frob}
+    \leq
+    \frac2\alpha\sqrt{N_\theta}(\beta-\alpha).
+\]
+Squaring gives $\Psi(a)\leq\tfrac4{\alpha^2}N_\theta(\beta-\alpha)^2=4N_\theta(\kappa-1)^2$.
+\end{proof}
+
+\begin{lemma}[Hessian-Lipschitz control of intrinsic Hessian fluctuation]
+\label{lem:Psi-Hg}
+Assume \Cref{assump:global-Hess-Lip}. Let $X\sim\N(m,C)$ and let $B\succeq0$ be any
+deterministic symmetric positive semidefinite matrix. Then
+\[
+    \E\left[
+        \norm{B^{1/2}\bigl(\nabla^2V(X)-\E\nabla^2V(X)\bigr)B^{1/2}}_{\Frob}^2
+    \right]
+    \leq
+    \Hg^2\,\norm{B}_{\op}\,\Tr(B)\,\Tr(C).
+\]
+In particular, taking $B=C$ gives the covariance-dependent intrinsic bound
+\begin{equation}
+\label{eq:Psi-Hg}
+    \boxed{\;
+    \Psi(a)
+    \leq
+    \Hg^2\,\norm{C}_{\op}\,\bigl(\Tr C\bigr)^2 .
+    \;}
+\end{equation}
+Consequently, if $C\preceq\Lambda\Id$, then
+\begin{equation}
+\label{eq:Psi-Hg-Lambda}
+    \boxed{\;
+    \Psi(a)\leq N_\theta^2\Hg^2\Lambda^3 .
+    \;}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write $X=m+C^{1/2}Z$ with $Z\sim\N(0,\Id)$ and define the matrix-valued function
+\[
+    F(Z):=B^{1/2}\nabla^2V(m+C^{1/2}Z)B^{1/2}.
+\]
+The Gaussian Poincar\'e inequality applied componentwise to $F$ gives
+\[
+    \E\norm{F(Z)-\E F(Z)}_{\Frob}^2
+    \leq
+    \E\norm{D_ZF(Z)}_{\mathrm{HS}}^2,
+\]
+where the Hilbert--Schmidt norm on the right is taken for the linear map
+$D_ZF(Z):\R^{N_\theta}\to\Sym(N_\theta)$ with the Frobenius norm on matrices.
+For any unit vector $u$,
+\[
+    D_ZF(Z)[u]
+    =
+    B^{1/2}\,D(\nabla^2V)(X)[C^{1/2}u]\,B^{1/2}.
+\]
+By \Cref{assump:global-Hess-Lip},
+\[
+    \norm{D(\nabla^2V)(X)[C^{1/2}u]}_{\op}
+    \leq
+    \Hg\norm{C^{1/2}u}.
+\]
+Therefore
+\[
+    \norm{D_ZF(Z)[u]}_{\Frob}
+    \leq
+    \norm{B^{1/2}}_{\op}\,
+    \Hg\norm{C^{1/2}u}\,
+    \norm{B^{1/2}}_{\Frob}
+    =
+    \Hg\,\norm{B}_{\op}^{1/2}\,\Tr(B)^{1/2}\,\norm{C^{1/2}u}.
+\]
+Summing the square of this bound over an orthonormal basis $\{e_i\}_{i=1}^{N_\theta}$ gives
+\[
+    \norm{D_ZF(Z)}_{\mathrm{HS}}^2
+    \leq
+    \Hg^2\norm{B}_{\op}\Tr(B)\sum_{i=1}^{N_\theta}\norm{C^{1/2}e_i}^2
+    =
+    \Hg^2\norm{B}_{\op}\Tr(B)\Tr(C).
+\]
+This proves the first claim. The special case $B=C$ gives \eqref{eq:Psi-Hg}. If
+$C\preceq\Lambda\Id$, then $\norm{C}_{\op}\leq\Lambda$ and $\Tr C\leq N_\theta\Lambda$,
+which gives \eqref{eq:Psi-Hg-Lambda}.
+\end{proof}
+
+\begin{remark}[Pathwise covariance bootstrap]
+\label{rem:pathwise-bootstrap}
+The covariance updates of the STL schemes \eqref{eq:STL-cov-simplify} are the
+deterministic updates with $A(a_n)$ replaced by the sampled Hessian $H_n=\nabla^2V(X_n)$,
+which satisfies $\alpha\Id\preceq H_n\preceq\beta\Id$ almost surely. Therefore the lower
+and upper covariance envelopes of \Cref{lem:Riem-cov} (Riemannian) and \Cref{lem:KL-cov}
+(KL) hold \emph{pathwise} for the stochastic schemes. In particular, defining the
+two-sided burn-in times
+\[
+    N_{\cov}^{\Riem}:=\max\{N_{\cov,-}^{\Riem},N_{\cov,+}^{\Riem}\}
+    =O\!\left(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}+\tfrac1{\Delta t}\logp(\alpha\lambda_{0,\max})\right),
+\]
+\[
+    N_{\cov}^{\KL}:=\max\{N_{\cov,-}^{\KL},N_{\cov,+}^{\KL}\}
+    =O\!\left(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}\right),
+\]
+we have, for the respective scheme,
+\[
+    \tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac2\alpha\Id
+    \qquad\text{for all }n\geq N_{\cov}^{\bullet},\ \bullet\in\{\Riem,\KL\},
+\]
+almost surely. By \Cref{lem:Psi-bound}, the post-burn-in fluctuation levels
+\[
+    \Psi_\star^{\Riem}:=\sup_{n\geq N_{\cov}^{\Riem}}\Psi(a_n),
+    \qquad
+    \Psi_\star^{\KL}:=\sup_{n\geq N_{\cov}^{\KL}}\Psi(a_n)
+\]
+satisfy $\Psi_\star^{\Riem},\Psi_\star^{\KL}\leq4N_\theta(\kappa-1)^2$.
+\end{remark}
+
+\section{Stochastic energy control during covariance burn-in}
+\label{sec:stochastic-burnin-energy}
+
+The pathwise covariance bootstrap in \Cref{rem:pathwise-bootstrap} controls the covariance
+of the stochastic STL schemes during the first stage, but it does not by itself control the
+energy gap. This section supplies the missing estimate. The key new input is the global
+Hessian-Lipschitz bound in \Cref{assump:global-Hess-Lip}, which converts the intrinsic
+Hessian fluctuation into a covariance-dependent quantity through \Cref{lem:Psi-Hg}. As a
+result, the stochastic error accumulated during covariance burn-in is of order
+\[
+    \Delta t^2 N_{\cov}\,\beta N_\theta^2\Hg^2\lambda_{\max}^4,
+\]
+with every constant explicit.
+
+\subsection{Riemannian STL burn-in energy estimate}
+
+Let $L_n^{\Riem}$ denote the deterministic lower covariance envelope from
+\Cref{lem:Riem-cov}, and let $N_{\cov}^{\Riem}$ be the two-sided pathwise covariance
+burn-in time from \Cref{rem:pathwise-bootstrap}. Define
+\[
+    B_{\burn}^{\Riem}
+    :=
+    \beta N_\theta^2\Hg^2\lambda_{\max}^4 .
+\]
+
+\begin{lemma}[Riemannian STL burn-in one-step estimate]
+\label{lem:Riem-STL-burnin-descent}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip} and
+\[
+    0<\Delta t\leq \frac1{2\beta\lambda_{\max}}.
+\]
+Along the STL Riemannian scheme \eqref{eq:Riem-STL}, for every
+$0\leq n<N_{\cov}^{\Riem}$,
+\[
+    \boxed{\;
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \bigl(1-\alpha L_n^{\Riem}\Delta t\bigr)\Delta_n
+    +
+    B_{\burn}^{\Riem}\Delta t^2 .
+    \;}
+\]
+The same bound is valid for all $n\geq0$ as long as
+$C_n\succeq L_n^{\Riem}\Id$ and $C_n\preceq\lambda_{\max}\Id$.
+\end{lemma}
+
+\begin{proof}
+The stochastic Riemannian step is the geodesic step
+\[
+    a_{n+1}
+    =
+    \operatorname{Exp}_{a_n}\bigl(-\Delta t\,\widehat\grad\calE(a_n)\bigr),
+\]
+as in \Cref{prop:upd-map-Riem-import}. Since $H_n$ satisfies
+$\alpha\Id\preceq H_n\preceq\beta\Id$ almost surely, the same upper covariance envelope as
+in \Cref{lem:Riem-cov} holds pathwise; the geodesic segment generated by any partial step
+$s\Delta t$, $s\in[0,1]$, also satisfies the upper bound $C\preceq\lambda_{\max}\Id$. Hence
+the geodesic smoothness constant of $\calE$ along the step is
+\[
+    L_{\mathrm{sm}}=\beta\lambda_{\max}.
+\]
+Writing $\xi_n:=\widehat\grad\calE(a_n)-\grad\calE(a_n)$ and using geodesic smoothness,
+\[
+\begin{aligned}
+    \E[\Delta_{n+1}\mid\Fil_n]
+    &\leq
+    \Delta_n
+    -\Delta t\Gradnorm(a_n)^2
+    +
+    \frac{\beta\lambda_{\max}\Delta t^2}{2}
+    \E\bigl[
+        \norm{\grad\calE(a_n)+\xi_n}_{a_n}^2
+        \mid\Fil_n
+    \bigr].
+\end{aligned}
+\]
+The STL estimator is conditionally unbiased, so the cross term vanishes:
+\[
+    \E\bigl[
+        \norm{\grad\calE(a_n)+\xi_n}_{a_n}^2
+        \mid\Fil_n
+    \bigr]
+    =
+    \Gradnorm(a_n)^2+\E[\norm{\xi_n}_{a_n}^2\mid\Fil_n].
+\]
+By \Cref{lem:intrinsic-STL},
+\[
+    \E[\norm{\xi_n}_{a_n}^2\mid\Fil_n]
+    \leq
+    \Gradnorm(a_n)^2+2\Psi(a_n).
+\]
+Therefore
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \Delta_n
+    -
+    \Delta t(1-\beta\lambda_{\max}\Delta t)\Gradnorm(a_n)^2
+    +
+    \beta\lambda_{\max}\Delta t^2\Psi(a_n).
+\]
+Since $\Delta t\leq1/(2\beta\lambda_{\max})$,
+$1-\beta\lambda_{\max}\Delta t\geq1/2$. By
+\Cref{lem:FR-W2} and $C_n\succeq L_n^{\Riem}\Id$,
+\[
+    \Gradnorm(a_n)^2
+    \geq
+    2\alpha L_n^{\Riem}\Delta_n .
+\]
+Thus
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \Delta_n-\alpha L_n^{\Riem}\Delta t\,\Delta_n
+    +
+    \beta\lambda_{\max}\Delta t^2\Psi(a_n).
+\]
+Finally, since $C_n\preceq\lambda_{\max}\Id$, \Cref{lem:Psi-Hg} gives
+$\Psi(a_n)\leq N_\theta^2\Hg^2\lambda_{\max}^3$, and hence
+$\beta\lambda_{\max}\Delta t^2\Psi(a_n)\leq\beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2=B_{\burn}^{\Riem}\Delta t^2$.
+This proves the claim.
+\end{proof}
+
+\begin{theorem}[Riemannian STL energy at covariance burn-in]
+\label{thm:Riem-STL-burnin-energy}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip} and
+$0<\Delta t\leq \frac1{2\beta\lambda_{\max}}$.
+Define, for $0\leq j\leq N$,
+$\Pi_{j,N}^{\Riem}:=\prod_{i=j}^{N-1}(1-\alpha L_i^{\Riem}\Delta t)$, $\Pi_{N,N}^{\Riem}:=1$.
+Then
+\begin{equation}
+\label{eq:Riem-burnin-product}
+    \boxed{\;
+    \E\Delta_{N_{\cov}^{\Riem}}
+    \leq
+    \Pi_{0,N_{\cov}^{\Riem}}^{\Riem}\Delta_0
+    +
+    B_{\burn}^{\Riem}\Delta t^2
+    \sum_{j=0}^{N_{\cov}^{\Riem}-1}
+    \Pi_{j+1,N_{\cov}^{\Riem}}^{\Riem}.
+    \;}
+\end{equation}
+In particular,
+\begin{equation}
+\label{eq:Riem-burnin-simple}
+    \boxed{\;
+    \E\Delta_{N_{\cov}^{\Riem}}
+    \leq
+    \Delta_0
+    +
+    \beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2
+    N_{\cov}^{\Riem}.
+    \;}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+By \Cref{lem:Riem-STL-burnin-descent}, for $0\leq n<N_{\cov}^{\Riem}$,
+$\E\Delta_{n+1}\leq(1-\alpha L_n^{\Riem}\Delta t)\E\Delta_n+B_{\burn}^{\Riem}\Delta t^2$.
+Iterating this scalar recursion gives \eqref{eq:Riem-burnin-product}. Since every factor in
+$\Pi_{j,N}^{\Riem}$ lies in $[0,1]$, the product term is at most $\Delta_0$ and the sum is at
+most $N_{\cov}^{\Riem}$, which gives \eqref{eq:Riem-burnin-simple}.
+\end{proof}
+
+\subsection{KL STL burn-in energy estimate}
+
+Let $L_n^{\KL}$ denote the lower covariance envelope from \Cref{lem:KL-cov}, and let
+$N_{\cov}^{\KL}$ be the two-sided pathwise covariance burn-in time from
+\Cref{rem:pathwise-bootstrap}. Define
+$B_{\burn}^{\KL}:=3\beta N_\theta^2\Hg^2\lambda_{\max}^4$.
+For the KL proof we need one deterministic lower bound that controls the Fisher--Rao
+gradient norm directly.
+
+\begin{lemma}[KL deterministic step controls the Fisher--Rao norm]
+\label{lem:KL-FR-D-lower}
+Let $\bar a_{n+1}$ be the deterministic KL update \eqref{eq:KL-det} from $a_n$, and assume
+$C_n\preceq\lambda_{\max}\Id$. Then
+\[
+    D(a_n,\bar a_{n+1})
+    =
+    \KL(\rho_{a_n}\,\|\,\rho_{\bar a_{n+1}})
+    \geq
+    \frac{\Delta t^2}{4(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+    \Gradnorm(a_n)^2 .
+\]
+\end{lemma}
+
+\begin{proof}
+Let $B_n:=C_n^{1/2}A(a_n)C_n^{1/2}$ and let $b_{i,n}$ be its eigenvalues. Since
+$A(a_n)\preceq\beta\Id$ and $C_n\preceq\lambda_{\max}\Id$, we have
+$0\leq b_{i,n}\leq\beta\lambda_{\max}$. The deterministic covariance update gives
+$\bar C_{n+1}^{-1}C_n\sim\tfrac{\Id+\Delta t B_n}{1+\Delta t}$,
+so its eigenvalues are $r_{i,n}=(1+\Delta t b_{i,n})/(1+\Delta t)$. The covariance part of
+$D(a_n,\bar a_{n+1})$ is $D^C=\tfrac12\sum_i(r_{i,n}-\log r_{i,n}-1)$.
+Using $x-\log x-1\geq (x-1)^2/(2\max\{x,1\})$ and
+$\max_i r_{i,n}\leq (1+\Delta t\beta\lambda_{\max})/(1+\Delta t)$,
+\[
+    D^C
+    \geq
+    \frac{\Delta t^2}{4(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+    \sum_i(b_{i,n}-1)^2
+    =
+    \frac{\Delta t^2}{4(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+    \norm{C_n^{1/2}R(a_n)C_n^{1/2}}_{\Frob}^2 .
+\]
+The mean part is
+\[
+\begin{aligned}
+    D^m
+    &=
+    \frac12(\Delta t\,C_ng(a_n))^\top
+    \bar C_{n+1}^{-1}
+    (\Delta t\,C_ng(a_n))
+    =
+    \frac{\Delta t^2}{2(1+\Delta t)}
+    g(a_n)^\top\bigl(C_n+\Delta t\,C_nA(a_n)C_n\bigr)g(a_n)\\
+    &\geq
+    \frac{\Delta t^2}{2(1+\Delta t)}\,g(a_n)^\top C_ng(a_n)
+    \geq
+    \frac{\Delta t^2}{4(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}\,
+    g(a_n)^\top C_ng(a_n).
+\end{aligned}
+\]
+Adding the mean and covariance lower bounds gives the claim by the definition
+\eqref{eq:G-norm} of $\Gradnorm(a_n)^2$.
+\end{proof}
+
+\begin{lemma}[KL STL burn-in one-step estimate]
+\label{lem:KL-STL-burnin-descent}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip} and
+$0<\Delta t\leq\frac1{32\beta\lambda_{\max}}$.
+Along the STL KL scheme \eqref{eq:KL-STL}, for every $0\leq n<N_{\cov}^{\KL}$,
+\[
+    \boxed{\;
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \bigl(1-\tfrac{\alpha L_n^{\KL}\Delta t}{16}\bigr)\Delta_n
+    +
+    B_{\burn}^{\KL}\Delta t^2 .
+    \;}
+\]
+The same bound is valid for all $n\geq0$ as long as
+$C_n\succeq L_n^{\KL}\Id$ and $C_n\preceq\lambda_{\max}\Id$.
+\end{lemma}
+
+\begin{proof}
+Let $\bar a_{n+1}$ be the deterministic KL update from $a_n$. We first bound the stochastic
+excess $\E[\calE(a_{n+1})-\calE(\bar a_{n+1})\mid\Fil_n]$.
+
+The entropy term is nonpositive in expectation. Indeed, with $P_{n+1}=C_{n+1}^{-1}$ and
+$\bar P_{n+1}=\bar C_{n+1}^{-1}$, the STL covariance update gives
+$\E[P_{n+1}\mid\Fil_n]=\bar P_{n+1}$, and concavity of $\log\det$ yields
+$\E[\calE_1(a_{n+1})-\calE_1(\bar a_{n+1})\mid\Fil_n]\leq0$.
+
+For the potential term, relative smoothness of $\calE_2$ on the covariance range
+$C\preceq\lambda_{\max}\Id$ gives
+\[
+    \calE_2(a_{n+1})
+    \leq
+    \calE_2(\bar a_{n+1})
+    +
+    \inner{\nabla\calE_2(\bar a_{n+1})}{a_{n+1}-\bar a_{n+1}}
+    +
+    \beta\lambda_{\max}D(a_{n+1},\bar a_{n+1}).
+\]
+The mean part of the linear term is centered because
+$m_{n+1}-\bar m_{n+1}=\Delta t\,C_n\varepsilon_b$ and
+$\E[\varepsilon_b\mid\Fil_n]=0$. For the covariance part, set
+$W_n:=C_{n+1}^{-1}-\bar C_{n+1}^{-1}=-\tfrac{\Delta t}{1+\Delta t}\varepsilon_R$ and
+$Y_n:=\bar C_{n+1}^{1/2}W_n\bar C_{n+1}^{1/2}$, so
+$\bar C_{n+1}^{-1/2}C_{n+1}\bar C_{n+1}^{-1/2}=(\Id+Y_n)^{-1}$.
+Since $\norm{\bar C_{n+1}}_{\op}\leq\lambda_{\max}$ and
+$\norm{\varepsilon_R}_{\op}\leq\beta-\alpha\leq\beta$, the stepsize condition gives
+$\norm{Y_n}_{\op}\leq\tfrac{\Delta t}{1+\Delta t}\lambda_{\max}\beta\leq\tfrac1{32}\leq\tfrac12$.
+Moreover, by \Cref{lem:Psi-Hg} with $B=\bar C_{n+1}$ and $C=C_n$,
+\[
+    \E[\norm{Y_n}_{\Frob}^2\mid\Fil_n]
+    \leq
+    \Delta t^2
+    \Hg^2\norm{\bar C_{n+1}}_{\op}\Tr(\bar C_{n+1})\Tr(C_n)
+    \leq
+    N_\theta^2\Hg^2\lambda_{\max}^3\Delta t^2 .
+\]
+Writing
+$C_{n+1}-\bar C_{n+1}=\bar C_{n+1}^{1/2}(-Y_n+Y_n^2(\Id+Y_n)^{-1})\bar C_{n+1}^{1/2}$,
+the term linear in $Y_n$ vanishes after conditioning. Since
+$\norm{\bar C_{n+1}^{1/2}A(\bar a_{n+1})\bar C_{n+1}^{1/2}}_{\op}\leq\beta\lambda_{\max}$ and
+$\norm{(\Id+Y_n)^{-1}}_{\op}\leq2$, the covariance part of the linear potential term is bounded by
+$\beta\lambda_{\max}\E[\norm{Y_n}_{\Frob}^2\mid\Fil_n]\leq\beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2$.
+
+It remains to bound $D(a_{n+1},\bar a_{n+1})$. Its mean part is
+$D^m=\tfrac{\Delta t^2}{2}\varepsilon_b^\top C_n\bar C_{n+1}^{-1}C_n\varepsilon_b\leq\Delta t^2\varepsilon_b^\top C_n\varepsilon_b$,
+because
+$C_n\bar C_{n+1}^{-1}C_n=\tfrac1{1+\Delta t}(C_n+\Delta t\,C_nA(a_n)C_n)\preceq\tfrac{1+\Delta t\beta\lambda_{\max}}{1+\Delta t}C_n\preceq C_n$
+under $\Delta t\beta\lambda_{\max}\leq1$. By \Cref{lem:intrinsic-STL} and \Cref{lem:Psi-Hg},
+$\E[D^m\mid\Fil_n]\leq\Delta t^2(\Gradnorm(a_n)^2+\Psi(a_n))\leq\Delta t^2\Gradnorm(a_n)^2+N_\theta^2\Hg^2\lambda_{\max}^3\Delta t^2$.
+The covariance part satisfies $D^C\leq\norm{Y_n}_{\Frob}^2$ for $\norm{Y_n}_{\op}\leq1/2$, hence
+$\E[D^C\mid\Fil_n]\leq N_\theta^2\Hg^2\lambda_{\max}^3\Delta t^2$. Therefore
+$\E[D(a_{n+1},\bar a_{n+1})\mid\Fil_n]\leq\Delta t^2\Gradnorm(a_n)^2+2N_\theta^2\Hg^2\lambda_{\max}^3\Delta t^2$.
+
+Combining the entropy, linear potential, and relative-smoothness terms,
+\begin{equation}
+\label{eq:KL-burnin-excess}
+    \E[\calE(a_{n+1})-\calE(\bar a_{n+1})\mid\Fil_n]
+    \leq
+    \beta\lambda_{\max}\Delta t^2\Gradnorm(a_n)^2
+    +
+    3\beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2 .
+\end{equation}
+
+Now use deterministic KL descent. By the three-point argument for the deterministic KL step,
+$\Delta(\bar a_{n+1})\leq\Delta_n-\tfrac1{\Delta t}D(a_n,\bar a_{n+1})$.
+By \Cref{lem:KL-FR-D-lower},
+$\tfrac1{\Delta t}D(a_n,\bar a_{n+1})\geq c_{\KL}\Delta t\,\Gradnorm(a_n)^2$ with
+$c_{\KL}:=\tfrac1{4(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}$.
+The stepsize condition gives $\Delta t\leq1$ and $\Delta t\beta\lambda_{\max}\leq1/32$, hence
+$c_{\KL}\geq1/9$, and $\beta\lambda_{\max}\Delta t^2\leq\tfrac1{32}\Delta t\leq\tfrac12 c_{\KL}\Delta t$.
+Adding \eqref{eq:KL-burnin-excess} to the deterministic descent leaves at least
+$\tfrac12c_{\KL}\Delta t\Gradnorm(a_n)^2$ of descent:
+$\E[\Delta_{n+1}\mid\Fil_n]\leq\Delta_n-\tfrac12c_{\KL}\Delta t\Gradnorm(a_n)^2+B_{\burn}^{\KL}\Delta t^2$.
+Since $c_{\KL}\geq1/9$ and \Cref{lem:FR-W2} gives $\Gradnorm(a_n)^2\geq2\alpha L_n^{\KL}\Delta_n$,
+$\tfrac12c_{\KL}\Delta t\Gradnorm(a_n)^2\geq\tfrac1{16}\Delta t\,\alpha L_n^{\KL}\Delta_n$.
+This proves the stated one-step estimate.
+\end{proof}
+
+\begin{theorem}[KL STL energy at covariance burn-in]
+\label{thm:KL-STL-burnin-energy}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip} and
+$0<\Delta t\leq\frac1{32\beta\lambda_{\max}}$.
+Define, for $0\leq j\leq N$,
+$\Pi_{j,N}^{\KL}:=\prod_{i=j}^{N-1}(1-\tfrac{\alpha L_i^{\KL}\Delta t}{16})$, $\Pi_{N,N}^{\KL}:=1$.
+Then
+\begin{equation}
+\label{eq:KL-burnin-product}
+    \boxed{\;
+    \E\Delta_{N_{\cov}^{\KL}}
+    \leq
+    \Pi_{0,N_{\cov}^{\KL}}^{\KL}\Delta_0
+    +
+    B_{\burn}^{\KL}\Delta t^2
+    \sum_{j=0}^{N_{\cov}^{\KL}-1}
+    \Pi_{j+1,N_{\cov}^{\KL}}^{\KL}.
+    \;}
+\end{equation}
+In particular,
+\begin{equation}
+\label{eq:KL-burnin-simple}
+    \boxed{\;
+    \E\Delta_{N_{\cov}^{\KL}}
+    \leq
+    \Delta_0
+    +
+    3\beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2
+    N_{\cov}^{\KL}.
+    \;}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+By \Cref{lem:KL-STL-burnin-descent}, for $0\leq n<N_{\cov}^{\KL}$,
+$\E\Delta_{n+1}\leq(1-\tfrac{\alpha L_n^{\KL}\Delta t}{16})\E\Delta_n+B_{\burn}^{\KL}\Delta t^2$.
+Iterating gives \eqref{eq:KL-burnin-product}. Since every product factor is in $[0,1]$, the
+simple estimate \eqref{eq:KL-burnin-simple} follows.
+\end{proof}
+
+\section{Gaussian target: global single-sample STL convergence with no floor}
+
+When the target is Gaussian, the STL covariance estimator is deterministic and the STL
+mean noise is multiplied by a factor that vanishes as the covariance reaches the target.
+This yields a global single-sample theorem with no asymptotic stochastic floor.
+
+Throughout this section assume $\rho_{\post}=\N(m_\star,C_\star)$ and apply the affine
+change of variables $z=C_\star^{-1/2}(\theta-m_\star)$, after which $\rho_{\post}=\N(0,\Id)$
+and $\nabla V(x)=x$, $\nabla^2V(x)=\Id$. In these coordinates $\alpha=\beta=1$, $\kappa=1$,
+$\lambda_{\max}=\max\{\lambda_{0,\max},1\}$, and the energy gap is
+\[
+    \Delta_n
+    =
+    \tfrac12\bigl(\norm{m_n}^2+\Tr(C_n)-\log\det C_n-N_\theta\bigr).
+\]
+
+\begin{lemma}[Energy equivalence on the band]
+\label{lem:energy-equiv}
+If $\tfrac12\Id\preceq C\preceq2\Id$ and $\rho_{\post}=\N(0,\Id)$, then
+\[
+    \tfrac1{16}\bigl(\norm{m}^2+\norm{C-\Id}_{\Frob}^2\bigr)
+    \leq
+    \Delta(a)
+    \leq
+    \norm{m}^2+\norm{C-\Id}_{\Frob}^2 .
+\]
+\end{lemma}
+
+\begin{proof}
+Write $\Delta(a)=\tfrac12\norm{m}^2+\tfrac12\sum_i(\lambda_i-1-\log\lambda_i)$, where
+$\lambda_i\in[\tfrac12,2]$ are the eigenvalues of $C$. By Taylor's theorem with the
+second derivative $\tfrac{\dd^2}{\dd\lambda^2}(\lambda-1-\log\lambda)=\lambda^{-2}$, for
+$\lambda\in[\tfrac12,2]$ there is $\xi\in[\tfrac12,2]$ with
+$\lambda-1-\log\lambda=\tfrac{(\lambda-1)^2}{2\xi^2}\in[\tfrac18(\lambda-1)^2,2(\lambda-1)^2]$.
+Summing, $\tfrac1{16}\norm{C-\Id}_{\Frob}^2\leq\tfrac12\sum_i(\lambda_i-1-\log\lambda_i)\leq\norm{C-\Id}_{\Frob}^2$.
+Combining with $\tfrac12\norm{m}^2$ and using $\tfrac1{16}\leq\tfrac12\leq1$ gives the claim.
+\end{proof}
+
+\begin{theorem}[Gaussian target, no stochastic floor]
+\label{thm:Gaussian-STL}
+Assume $\rho_{\post}=\N(0,\Id)$ (after target whitening) and consider either the STL
+Riemannian scheme \eqref{eq:Riem-STL} or the STL KL scheme \eqref{eq:KL-STL} with
+\[
+    0<\Delta t\leq\min\left\{\tfrac12,\tfrac1{\lambda_{\max}}\right\}.
+\]
+Then the covariance evolves deterministically and reaches the band
+$\tfrac12\Id\preceq C_n\preceq2\Id$ for all $n\geq N_{\cov}$, where
+$N_{\cov}=O(\tfrac1{\Delta t}\logp\tfrac1{\lambda_{0,\min}}+\tfrac1{\Delta t}\logp\lambda_{0,\max})$.
+For all $n\geq N_{\cov}$,
+\[
+    \boxed{\;
+    \E\Delta_n
+    \leq
+    320\Bigl(1-\tfrac{\Delta t}2\Bigr)^{\,n-N_{\cov}}\,\E\Delta_{N_{\cov}}.
+    \;}
+\]
+In particular, neither scheme has an asymptotic stochastic noise floor. For the KL scheme
+the covariance convergence is exactly geometric:
+$C_n^{-1}-\Id=(1+\Delta t)^{-n}(C_0^{-1}-\Id)$.
+\end{theorem}
+
+\begin{proof}
+In whitened coordinates $H_n=\nabla^2V(X_n)=\Id$, so the STL residual estimator
+$\widehat K_n=C_n^{-1}-\Id$ is deterministic and the covariance updates
+\eqref{eq:STL-cov-simplify} are deterministic and autonomous.
+
+\emph{Covariance, KL scheme.} The update is $C_{n+1}^{-1}=\tfrac1{1+\Delta t}(C_n^{-1}+\Delta t\Id)$,
+so $C_{n+1}^{-1}-\Id=\tfrac1{1+\Delta t}(C_n^{-1}-\Id)$ and
+$C_n^{-1}-\Id=(1+\Delta t)^{-n}(C_0^{-1}-\Id)$. Hence
+$C_n-\Id=-C_n(C_n^{-1}-\Id)$ gives, once $C_n\preceq2\Id$,
+$\norm{C_n-\Id}_{\Frob}\leq2(1+\Delta t)^{-(n-N_{\cov})}\norm{C_{N_{\cov}}-\Id}_{\Frob}$.
+
+\emph{Covariance, Riemannian scheme.} Since $\Id$ commutes with $C_n$, the update is
+$C_{n+1}=C_ne^{\Delta t(\Id-C_n)}$, diagonal in the fixed eigenbasis of $C_0$, with
+eigenvalue map $\lambda_{i,n+1}=\lambda_{i,n}e^{\Delta t(1-\lambda_{i,n})}$. In
+log-coordinates $\mu_{i,n}=\log\lambda_{i,n}$, the map is
+$\mu\mapsto\mu+\Delta t(1-e^\mu)$ with derivative $1-\Delta t e^\mu$. On the band
+$\mu\in[\log\tfrac12,\log2]$, i.e.\ $e^\mu\in[\tfrac12,2]$, and for $\Delta t\leq\tfrac12$,
+\[
+    |1-\Delta t e^\mu|
+    \leq
+    \max\{|1-2\Delta t|,|1-\tfrac{\Delta t}2|\}
+    =
+    1-\tfrac{\Delta t}2 ,
+\]
+so $|\mu_{i,n+1}|\leq(1-\tfrac{\Delta t}2)|\mu_{i,n}|$ once in the band. Since on the band
+$\tfrac12|\lambda-1|\leq|\mu|=|\log\lambda|\leq2|\lambda-1|$, we get
+$\norm{C_n-\Id}_{\Frob}\leq2(1-\tfrac{\Delta t}2)^{\,n-N_{\cov}}\norm{C_{N_{\cov}}-\Id}_{\Frob}$
+(the factor $2$ from $|\lambda-1|\le e^{|\mu|}|\mu|\le 2|\mu|$). The two-sided pathwise
+bootstrap (\Cref{rem:pathwise-bootstrap}, here with $\alpha=\beta=1$) gives the band after
+$N_{\cov}$ iterations. In both cases, with $\rho:=e^{-\Delta t/2}\geq\max\{(1+\Delta t)^{-1},1-\tfrac{\Delta t}2\}$,
+\begin{equation}
+\label{eq:Gauss-cov-decay}
+    \norm{C_n-\Id}_{\Frob}^2
+    \leq
+    4\,\rho^{2(n-N_{\cov})}\,\Sigma_0,
+    \qquad
+    \Sigma_0:=\norm{C_{N_{\cov}}-\Id}_{\Frob}^2 .
+\end{equation}
+
+\emph{Mean recursion.} For both schemes the mean update is $m_{n+1}=m_n+\Delta t\,C_n\widehat b_n$
+with, in whitened coordinates and $X_n=m_n+C_n^{1/2}Z_n$, $Z_n\sim\N(0,\Id)$,
+\[
+    \widehat b_n=-X_n+C_n^{-1}(X_n-m_n)=-m_n+(C_n^{-1}-\Id)C_n^{1/2}Z_n,
+\]
+so $m_{n+1}=(\Id-\Delta t\,C_n)m_n+\Delta t(\Id-C_n)C_n^{1/2}Z_n$. Taking the conditional
+second moment, $\E[Z_nZ_n^\top]=\Id$ gives
+\[
+    \E[\norm{m_{n+1}}^2\mid\Fil_n]
+    =
+    \norm{(\Id-\Delta t\,C_n)m_n}^2
+    +
+    \Delta t^2\Tr\bigl((\Id-C_n)C_n(\Id-C_n)\bigr).
+\]
+On the band, the eigenvalues of $\Id-\Delta t\,C_n$ lie in $[1-2\Delta t,1-\tfrac{\Delta t}2]\subset[0,1)$
+(using $\Delta t\leq\tfrac12$), so $\norm{(\Id-\Delta t\,C_n)m_n}^2\leq(1-\tfrac{\Delta t}2)^2\norm{m_n}^2\leq(1-\tfrac{\Delta t}2)\norm{m_n}^2$;
+and $\Tr((\Id-C_n)C_n(\Id-C_n))\leq\norm{C_n}_{\op}\norm{C_n-\Id}_{\Frob}^2\leq2\norm{C_n-\Id}_{\Frob}^2$.
+With \eqref{eq:Gauss-cov-decay},
+\[
+    \E[\norm{m_{n+1}}^2\mid\Fil_n]
+    \leq
+    \bigl(1-\tfrac{\Delta t}2\bigr)\norm{m_n}^2
+    +
+    8\Delta t^2\rho^{2(n-N_{\cov})}\Sigma_0 .
+\]
+Set $\rho_1:=1-\tfrac{\Delta t}2$ and $\rho_2:=\rho^2=e^{-\Delta t}$. For $\Delta t\leq\tfrac12$ one has
+$\rho_2\leq\rho_1$ and $\rho_1-\rho_2\geq\tfrac{\Delta t}4$ (since
+$e^{-\Delta t}\leq1-\Delta t+\tfrac{\Delta t^2}2$ and $(1-\tfrac{\Delta t}2)-(1-\Delta t+\tfrac{\Delta t^2}2)=\tfrac{\Delta t}2(1-\Delta t)\geq\tfrac{\Delta t}4$).
+Unrolling the linear recursion from $N_{\cov}$,
+\[
+    \E\norm{m_n}^2
+    \leq
+    \rho_1^{\,n-N_{\cov}}\E\norm{m_{N_{\cov}}}^2
+    +
+    8\Delta t^2\Sigma_0\sum_{k=0}^{n-N_{\cov}-1}\rho_1^{\,n-N_{\cov}-1-k}\rho_2^{k}
+    \leq
+    \rho_1^{\,n-N_{\cov}}\Bigl(\E\norm{m_{N_{\cov}}}^2+\tfrac{8\Delta t^2\Sigma_0}{\rho_1-\rho_2}\Bigr).
+\]
+Since $\tfrac{8\Delta t^2}{\rho_1-\rho_2}\leq\tfrac{8\Delta t^2}{\Delta t/4}=32\Delta t\leq16$,
+$\E\norm{m_n}^2\leq\rho_1^{\,n-N_{\cov}}(\E\norm{m_{N_{\cov}}}^2+16\,\E\Sigma_0)$.
+
+\emph{Assembly.} Combining with \eqref{eq:Gauss-cov-decay} (and $\rho^2\leq\rho_1$),
+\[
+    \E\bigl[\norm{m_n}^2+\norm{C_n-\Id}_{\Frob}^2\bigr]
+    \leq
+    \rho_1^{\,n-N_{\cov}}\bigl(\E\norm{m_{N_{\cov}}}^2+16\,\E\Sigma_0+4\,\E\Sigma_0\bigr)
+    \leq
+    20\,\rho_1^{\,n-N_{\cov}}\,\E\bigl[\norm{m_{N_{\cov}}}^2+\Sigma_0\bigr].
+\]
+By \Cref{lem:energy-equiv}, $\E\Delta_n\leq\E[\norm{m_n}^2+\norm{C_n-\Id}_{\Frob}^2]$ and
+$\E[\norm{m_{N_{\cov}}}^2+\Sigma_0]\leq16\,\E\Delta_{N_{\cov}}$, so
+$\E\Delta_n\leq20\cdot16\,\rho_1^{\,n-N_{\cov}}\E\Delta_{N_{\cov}}=320(1-\tfrac{\Delta t}2)^{\,n-N_{\cov}}\E\Delta_{N_{\cov}}$.
+\end{proof}
+
+\section{General target: global stochastic STL rates}
+
+We now treat a general $\alpha$-strongly-log-concave, $\beta$-smooth target. After two-sided
+burn-in the iterates lie in the band $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac2\alpha\Id$
+(\Cref{rem:pathwise-bootstrap}), on which we run the stochastic descent.
+
+\subsection{Riemannian STL scheme}
+
+\begin{lemma}[Riemannian STL one-step descent]
+\label{lem:Riem-STL-descent}
+Under \Cref{assump:logconcave-smooth}, suppose $a_n$ lies in the band
+$\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac2\alpha\Id$ and
+$0<\Delta t\leq\frac1{4\kappa}$.
+Then the STL Riemannian scheme \eqref{eq:Riem-STL} satisfies
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)\Delta_n
+    +
+    2\kappa\Delta t^2\Psi(a_n).
+\]
+\end{lemma}
+
+\begin{proof}
+By \Cref{prop:upd-map-Riem-import} below, the stochastic update is the geodesic step
+$a_{n+1}=\operatorname{Exp}_{a_n}(-\Delta t\,\widehat\grad\calE(a_n))$,
+whose covariance eigenvalues move monotonically from those of $C_n$ to those of
+$C_{n+1}$, so the geodesic stays in the band. The geodesic $L$-smoothness
+of $\calE$ on the band, with $L=\beta\cdot\tfrac2\alpha=2\kappa$ (the base-manuscript
+constant $L=\beta\Lambda$ with covariance bound $\Lambda=\tfrac2\alpha$), gives
+\[
+    \calE(a_{n+1})
+    \leq
+    \calE(a_n)
+    +
+    \inner{\grad\calE(a_n)}{-\Delta t\,\widehat\grad\calE(a_n)}_{a_n}
+    +
+    \frac{L\Delta t^2}{2}\norm{\widehat\grad\calE(a_n)}_{a_n}^2 .
+\]
+Write $\xi_n:=\widehat\grad\calE(a_n)-\grad\calE(a_n)=\xi(a_n;X_n)$. Subtracting
+$\calE(a_\star)$, taking $\E[\,\cdot\mid\Fil_n]$, and using $\E[\xi_n\mid\Fil_n]=0$,
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \Delta_n
+    -
+    \Delta t\Bigl(1-\tfrac{L\Delta t}2\Bigr)\norm{\grad\calE(a_n)}_{a_n}^2
+    +
+    \tfrac{L\Delta t^2}2\,\E[\norm{\xi_n}_{a_n}^2\mid\Fil_n].
+\]
+With the convention \eqref{eq:G-norm}, $\norm{\grad\calE(a_n)}_{a_n}^2=\Gradnorm(a_n)^2$,
+and by \Cref{lem:intrinsic-STL}, $\E[\norm{\xi_n}_{a_n}^2\mid\Fil_n]\leq\Gradnorm(a_n)^2+2\Psi(a_n)$.
+Hence
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \Delta_n
+    -
+    \Delta t(1-L\Delta t)\Gradnorm(a_n)^2
+    +
+    L\Delta t^2\Psi(a_n).
+\]
+Since $\Delta t\leq\tfrac1{4\kappa}$ gives $L\Delta t=2\kappa\Delta t\leq\tfrac12$, the coefficient
+$1-L\Delta t\geq\tfrac12$. By \Cref{lem:FR-W2} with $\ell=\tfrac1{2\beta}$,
+$\Gradnorm(a_n)^2\geq\tfrac1{2\beta}\cdot2\alpha\Delta_n=\tfrac1\kappa\Delta_n$. Therefore
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \Delta_n-\tfrac{\Delta t}2\Gradnorm(a_n)^2+2\kappa\Delta t^2\Psi(a_n)
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)\Delta_n+2\kappa\Delta t^2\Psi(a_n).
+    \qedhere
+\]
+\end{proof}
+
+\begin{proposition}[Geodesic form of the stochastic step]
+\label{prop:upd-map-Riem-import}
+The STL Riemannian update \eqref{eq:Riem-STL} is
+$a_{n+1}=\operatorname{Exp}_{a_n}(-\Delta t\,\widehat\grad\calE(a_n))$ with
+$\widehat\grad\calE(a_n)=(-C_n\widehat b_n,\,-C_n\widehat K_nC_n)$, where
+$\operatorname{Exp}_{(m,C)}(u,U)=(m+u,\,C^{1/2}\exp(C^{-1/2}UC^{-1/2})C^{1/2})$.
+\end{proposition}
+
+\begin{proof}
+The mean component is immediate. For the covariance, with $U=\Delta t\,C_n\widehat K_nC_n$,
+$C_n^{-1/2}(-\Delta t\,(-C_n\widehat K_nC_n))C_n^{-1/2}=\Delta t\,C_n^{1/2}\widehat K_nC_n^{1/2}$, so the
+exponential-map covariance component equals
+$C_n^{1/2}\exp(\Delta t\,C_n^{1/2}\widehat K_nC_n^{1/2})C_n^{1/2}$, which is \eqref{eq:Riem-STL}.
+\end{proof}
+
+\begin{theorem}[Riemannian STL global stochastic rate]
+\label{thm:Riem-STL-global}
+Under \Cref{assump:logconcave-smooth}, suppose
+\[
+    0<\Delta t\leq\min\left\{1,\frac1{\beta\lambda_{\max}},\frac1{4\kappa}\right\}.
+\]
+Then the STL Riemannian scheme \eqref{eq:Riem-STL} satisfies, for all $N\geq N_{\cov}^{\Riem}$,
+\[
+    \boxed{\;
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)^{N-N_{\cov}^{\Riem}}\E\Delta_{N_{\cov}^{\Riem}}
+    +
+    4\kappa^2\Delta t\,\Psi_\star^{\Riem}.
+    \;}
+\]
+In particular, using $\Psi_\star^{\Riem}\leq4N_\theta(\kappa-1)^2$ (\Cref{lem:Psi-bound}),
+\[
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)^{N-N_{\cov}^{\Riem}}\E\Delta_{N_{\cov}^{\Riem}}
+    +
+    16\kappa^2(\kappa-1)^2N_\theta\,\Delta t,
+\]
+and $\limsup_{N\to\infty}\E\Delta_N\leq16\kappa^2(\kappa-1)^2N_\theta\,\Delta t$.
+\end{theorem}
+
+\begin{proof}
+By \Cref{rem:pathwise-bootstrap}, $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac2\alpha\Id$ for
+all $n\geq N_{\cov}^{\Riem}$. \Cref{lem:Riem-STL-descent} and $\Psi(a_n)\leq\Psi_\star^{\Riem}$
+give, for $n\geq N_{\cov}^{\Riem}$,
+$\E[\Delta_{n+1}\mid\Fil_n]\leq(1-\tfrac{\Delta t}{2\kappa})\Delta_n+2\kappa\Delta t^2\Psi_\star^{\Riem}$.
+Taking total expectations and unrolling from $N_{\cov}^{\Riem}$, the geometric series sums to
+\[
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)^{N-N_{\cov}^{\Riem}}\E\Delta_{N_{\cov}^{\Riem}}
+    +
+    2\kappa\Delta t^2\Psi_\star^{\Riem}\cdot\frac{1}{\Delta t/(2\kappa)}
+    =
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)^{N-N_{\cov}^{\Riem}}\E\Delta_{N_{\cov}^{\Riem}}
+    +
+    4\kappa^2\Delta t\,\Psi_\star^{\Riem}.
+\]
+The crude form and the $\limsup$ follow from \Cref{lem:Psi-bound}.
+\end{proof}
+
+\begin{corollary}[Closed Riemannian STL global rate including burn-in]
+\label{cor:Riem-STL-closed-global}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip} and
+$0<\Delta t\leq\min\{\tfrac1{2\beta\lambda_{\max}},\tfrac1{4\kappa}\}$.
+Then, for all $N\geq N_{\cov}^{\Riem}$,
+\[
+    \boxed{\;
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)^{N-N_{\cov}^{\Riem}}
+    \mathcal B_{\burn}^{\Riem}
+    +
+    4\kappa^2\Delta t\,\Psi_\star^{\Riem},
+    \;}
+\]
+where the fully explicit burn-in energy bound is
+$\mathcal B_{\burn}^{\Riem}:=\Pi_{0,N_{\cov}^{\Riem}}^{\Riem}\Delta_0+B_{\burn}^{\Riem}\Delta t^2\sum_{j=0}^{N_{\cov}^{\Riem}-1}\Pi_{j+1,N_{\cov}^{\Riem}}^{\Riem}$.
+In particular,
+\[
+    \boxed{\;
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)^{N-N_{\cov}^{\Riem}}
+    \left(
+        \Delta_0+
+        \beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2N_{\cov}^{\Riem}
+    \right)
+    +
+    4\kappa^2\Delta t\,\Psi_\star^{\Riem}.
+    \;}
+\]
+Using $\Psi_\star^{\Riem}\leq4N_\theta(\kappa-1)^2$ further gives the explicit floor
+$16\kappa^2(\kappa-1)^2N_\theta\Delta t$.
+\end{corollary}
+
+\begin{proof}
+Combine the post-burn-in estimate of \Cref{thm:Riem-STL-global} with
+\Cref{thm:Riem-STL-burnin-energy}, which bounds
+$\E\Delta_{N_{\cov}^{\Riem}}$ by $\mathcal B_{\burn}^{\Riem}$. The simplified version uses
+\eqref{eq:Riem-burnin-simple}, and the final floor uses \Cref{lem:Psi-bound}.
+\end{proof}
+
+\subsection{KL STL scheme}
+
+For the KL scheme we compare the stochastic update $a_{n+1}$ to the deterministic update
+$\bar a_{n+1}$ (the right-hand side of \eqref{eq:KL-det} evaluated at $a_n$). Recall
+$D(a,a')=\KL(\rho_a\,\|\,\rho_{a'})$, and write $\bar P:=\bar C_{n+1}^{-1}$, $P:=C_{n+1}^{-1}$,
+\[
+    W:=P-\bar P=-\frac{\Delta t}{1+\Delta t}\,\varepsilon_R,
+    \qquad
+    Y_n:=\bar C_{n+1}^{1/2}W\bar C_{n+1}^{1/2},
+\]
+so that $\E[W\mid\Fil_n]=0$ and $\bar C_{n+1}^{-1/2}C_{n+1}\bar C_{n+1}^{-1/2}=(\Id+Y_n)^{-1}$.
+
+\begin{lemma}[KL STL covariance perturbation]
+\label{lem:KL-pert}
+Under \Cref{assump:logconcave-smooth}, if $a_n$ lies in the band
+$\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac2\alpha\Id$ and $0<\Delta t\leq\tfrac1{4\kappa}$, then
+$a_{n+1},\bar a_{n+1}$ also lie in the band, $\norm{Y_n}_{\op}\leq\tfrac12$, and
+\[
+    \E[\norm{Y_n}_{\Frob}^2\mid\Fil_n]\leq16\kappa^2\Delta t^2\,\Psi(a_n),
+    \qquad
+    \E[\varepsilon_b^\top C_n\varepsilon_b\mid\Fil_n]\leq\Gradnorm(a_n)^2+\Psi(a_n).
+\]
+\end{lemma}
+
+\begin{proof}
+The band membership of $a_{n+1},\bar a_{n+1}$ is the pathwise bootstrap
+(\Cref{rem:pathwise-bootstrap}). Since $\norm{\varepsilon_R}_{\op}\leq\beta-\alpha$ and
+$\tfrac{\Delta t}{1+\Delta t}\leq\Delta t$, $\norm{W}_{\op}\leq\Delta t(\beta-\alpha)$, hence
+$\norm{Y_n}_{\op}\leq\norm{\bar C_{n+1}}_{\op}\norm{W}_{\op}\leq\tfrac2\alpha\Delta t(\beta-\alpha)=2\Delta t(\kappa-1)\leq\tfrac{\kappa-1}{2\kappa}\leq\tfrac12$,
+using $\Delta t\leq\tfrac1{4\kappa}$. For the Frobenius bound,
+$\E[\norm{Y_n}_{\Frob}^2\mid\Fil_n]\leq\norm{\bar C_{n+1}}_{\op}^2\E[\norm{W}_{\Frob}^2\mid\Fil_n]\leq\tfrac4{\alpha^2}\Delta t^2\E[\norm{\varepsilon_R}_{\Frob}^2\mid\Fil_n]$,
+and since $\Psi(a_n)=\E[\norm{C_n^{1/2}\varepsilon_RC_n^{1/2}}_{\Frob}^2\mid\Fil_n]\geq\lambda_{\min}(C_n)^2\E[\norm{\varepsilon_R}_{\Frob}^2\mid\Fil_n]\geq\tfrac1{4\beta^2}\E[\norm{\varepsilon_R}_{\Frob}^2\mid\Fil_n]$,
+we get $\E[\norm{\varepsilon_R}_{\Frob}^2\mid\Fil_n]\leq4\beta^2\Psi(a_n)$ and hence
+$\E[\norm{Y_n}_{\Frob}^2\mid\Fil_n]\leq\tfrac4{\alpha^2}\Delta t^2\cdot4\beta^2\Psi(a_n)=16\kappa^2\Delta t^2\Psi(a_n)$.
+The last bound is \eqref{eq:intrinsic-mean} together with
+$\norm{C_n^{1/2}R(a_n)C_n^{1/2}}_{\Frob}^2\leq\Gradnorm(a_n)^2$.
+\end{proof}
+
+\begin{lemma}[KL STL one-step descent]
+\label{lem:KL-STL-descent}
+Under \Cref{assump:logconcave-smooth}, if $a_n$ lies in the band
+$\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac2\alpha\Id$ and
+$0<\Delta t\leq\frac1{288\kappa^3}$,
+then the STL KL scheme \eqref{eq:KL-STL} satisfies
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{18\kappa}\Bigr)\Delta_n
+    +
+    68\kappa^3\Delta t^2\Psi(a_n).
+\]
+\end{lemma}
+
+\begin{proof}
+Throughout, all conditional expectations are given $\Fil_n$, and we use
+$\Delta t\leq\tfrac1{288\kappa^3}\leq\tfrac1{4\kappa}\leq\tfrac1{2\kappa}\leq\tfrac12$.
+
+\emph{Step 1: entropy term.} $\calE_1=\tfrac12\log\det C^{-1}+\text{const.}$, and
+$\E[C_{n+1}^{-1}\mid\Fil_n]=\tfrac1{1+\Delta t}(C_n^{-1}+\Delta t\,A(a_n))=\bar C_{n+1}^{-1}$. By
+concavity of $P\mapsto\log\det P$ and Jensen,
+$\E[\log\det C_{n+1}^{-1}]\leq\log\det\bar C_{n+1}^{-1}$, hence
+$\E[\calE_1(a_{n+1})-\calE_1(\bar a_{n+1})]\leq0$.
+
+\emph{Step 2: potential term via relative smoothness.} By the relative smoothness of
+$\calE_2$ on the band (base-manuscript constant $L=\beta\cdot\tfrac2\alpha=2\kappa$),
+\[
+    \calE_2(a_{n+1})
+    \leq
+    \calE_2(\bar a_{n+1})
+    +
+    \inner{\nabla\calE_2(\bar a_{n+1})}{a_{n+1}-\bar a_{n+1}}
+    +
+    2\kappa\,D(a_{n+1},\bar a_{n+1}).
+\]
+The mean part of the inner product is conditionally centered, since
+$m_{n+1}-\bar m_{n+1}=\Delta t\,C_n\varepsilon_b$ and $\E[\varepsilon_b\mid\Fil_n]=0$. For the
+covariance part, $\nabla_C\calE_2(\bar a_{n+1})=\tfrac12A(\bar a_{n+1})$ and
+\[
+    C_{n+1}-\bar C_{n+1}
+    =
+    \bar C_{n+1}^{1/2}\bigl((\Id+Y_n)^{-1}-\Id\bigr)\bar C_{n+1}^{1/2}
+    =
+    \bar C_{n+1}^{1/2}\bigl(-Y_n+Y_n^2(\Id+Y_n)^{-1}\bigr)\bar C_{n+1}^{1/2}.
+\]
+Taking $\E[\,\cdot\mid\Fil_n]$ and using $\E[Y_n\mid\Fil_n]=0$,
+\[
+    \E\bigl[\inner{\nabla_C\calE_2(\bar a_{n+1})}{C_{n+1}-\bar C_{n+1}}\bigr]
+    =
+    \tfrac12\E\bigl[\Tr\bigl(\widetilde A_n\,Y_n^2(\Id+Y_n)^{-1}\bigr)\bigr],
+    \quad
+    \widetilde A_n:=\bar C_{n+1}^{1/2}A(\bar a_{n+1})\bar C_{n+1}^{1/2},
+\]
+where $\widetilde A_n\succeq0$ with $\norm{\widetilde A_n}_{\op}\leq\beta\cdot\tfrac2\alpha=2\kappa$.
+The matrix $Y_n^2(\Id+Y_n)^{-1}$ is symmetric with eigenvalues $y_i^2/(1+y_i)$,
+$|y_i|\leq\tfrac12$, so $\Tr|Y_n^2(\Id+Y_n)^{-1}|\leq2\norm{Y_n}_{\Frob}^2$. Hence
+\[
+    \bigl|\E[\inner{\nabla_C\calE_2(\bar a_{n+1})}{C_{n+1}-\bar C_{n+1}}]\bigr|
+    \leq
+    \tfrac12\cdot2\kappa\cdot2\,\E\norm{Y_n}_{\Frob}^2
+    =
+    2\kappa\,\E\norm{Y_n}_{\Frob}^2
+    \leq
+    32\kappa^3\Delta t^2\Psi(a_n),
+\]
+using \Cref{lem:KL-pert}.
+
+\emph{Step 3: the divergence $D(a_{n+1},\bar a_{n+1})$.}
+The mean part is $D^m=\tfrac{\Delta t^2}2\varepsilon_b^\top C_n\bar C_{n+1}^{-1}C_n\varepsilon_b$;
+since $C_n\bar C_{n+1}^{-1}C_n\preceq\norm{\bar C_{n+1}^{-1}}_{\op}\norm{C_n}_{\op}C_n\preceq2\beta\cdot\tfrac2\alpha\,C_n=4\kappa C_n$,
+\[
+    \E[D^m]\leq2\kappa\Delta t^2\,\E[\varepsilon_b^\top C_n\varepsilon_b]\leq2\kappa\Delta t^2(\Gradnorm(a_n)^2+\Psi(a_n)).
+\]
+The covariance part is $D^C=\tfrac12\Tr((\Id+Y_n)^{-1}+\log(\Id+Y_n)-\Id)$; the scalar
+inequality $\tfrac1{1+y}+\log(1+y)-1\leq\tfrac{y^2}{2(1-\rho)^2}$ for $|y|\leq\rho\leq\tfrac12$
+gives, with $\rho=\norm{Y_n}_{\op}\leq\tfrac12$, $D^C\leq\norm{Y_n}_{\Frob}^2$, so
+$\E[D^C]\leq16\kappa^2\Delta t^2\Psi(a_n)$. Therefore
+\[
+    \E[D(a_{n+1},\bar a_{n+1})]
+    \leq
+    2\kappa\Delta t^2\Gradnorm(a_n)^2+(2\kappa+16\kappa^2)\Delta t^2\Psi(a_n)
+    \leq
+    2\kappa\Delta t^2\Gradnorm(a_n)^2+18\kappa^2\Delta t^2\Psi(a_n).
+\]
+
+\emph{Step 4: collecting the stochastic excess.} Combining Steps 1--3,
+\[
+    \E[\calE(a_{n+1})-\calE(\bar a_{n+1})]
+    \leq
+    32\kappa^3\Delta t^2\Psi+2\kappa\bigl(2\kappa\Delta t^2\Gradnorm^2+18\kappa^2\Delta t^2\Psi\bigr)
+    =
+    4\kappa^2\Delta t^2\Gradnorm(a_n)^2+68\kappa^3\Delta t^2\Psi(a_n),
+\]
+writing $\Gradnorm=\Gradnorm(a_n)$, $\Psi=\Psi(a_n)$.
+
+\emph{Step 5: deterministic descent with a gradient margin.} The base-manuscript KL
+one-step estimate is $\Delta(\bar a_{n+1})\leq\Delta_n-\tfrac1{\Delta t}D(a_n,\bar a_{n+1})$
+with, on the band ($\lambda_{\min}(C_n)\geq\tfrac1{2\beta}$, $\lambda_{\max}=\tfrac2\alpha$),
+\[
+    D(a_n,\bar a_{n+1})
+    \geq
+    \frac{\lambda_{\min}(C_n)\Delta t^2}{4(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+    \norm{\grad^{W_2}\calE(a_n)}_{W_2}^2
+    \geq
+    \frac{\Delta t^2}{18\beta}\norm{\grad^{W_2}\calE(a_n)}_{W_2}^2,
+\]
+using $(1+\Delta t)(1+2\kappa\Delta t)\leq\tfrac94$ (as $\Delta t\leq\tfrac1{2\kappa}$). By
+\Cref{lem:W2-PL}, $\norm{\grad^{W_2}\calE(a_n)}_{W_2}^2\geq2\alpha\Delta_n$, and by the
+upper bound in \Cref{lem:FR-W2}, $\norm{\grad^{W_2}\calE(a_n)}_{W_2}^2\geq\tfrac\alpha2\Gradnorm(a_n)^2$.
+Hence $\tfrac1{\Delta t}D(a_n,\bar a_{n+1})\geq\max\{\tfrac{\Delta t}{9\kappa}\Delta_n,\tfrac{\Delta t}{36\kappa}\Gradnorm^2\}\geq\tfrac{\Delta t}{18\kappa}\Delta_n+\tfrac{\Delta t}{72\kappa}\Gradnorm^2$,
+so that
+$\Delta(\bar a_{n+1})\leq(1-\tfrac{\Delta t}{18\kappa})\Delta_n-\tfrac{\Delta t}{72\kappa}\Gradnorm(a_n)^2$.
+
+\emph{Step 6: combine.} Adding the excess of Step 4 to the descent of Step 5,
+\[
+    \E[\Delta_{n+1}]
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{18\kappa}\Bigr)\Delta_n
+    -\tfrac{\Delta t}{72\kappa}\Gradnorm(a_n)^2
+    +4\kappa^2\Delta t^2\Gradnorm(a_n)^2
+    +68\kappa^3\Delta t^2\Psi(a_n).
+\]
+Since $\Delta t\leq\tfrac1{288\kappa^3}$ gives $4\kappa^2\Delta t^2\leq\tfrac{\Delta t}{72\kappa}$,
+the two $\Gradnorm^2$ terms cancel (in sign), yielding the claim.
+\end{proof}
+
+\begin{theorem}[KL STL global stochastic rate]
+\label{thm:KL-STL-global}
+Under \Cref{assump:logconcave-smooth}, suppose
+$0<\Delta t\leq\min\{\frac1{\beta\lambda_{\max}},\frac1{288\kappa^3}\}$.
+Then the STL KL scheme \eqref{eq:KL-STL} satisfies, for all $N\geq N_{\cov}^{\KL}$,
+\[
+    \boxed{\;
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{18\kappa}\Bigr)^{N-N_{\cov}^{\KL}}\E\Delta_{N_{\cov}^{\KL}}
+    +
+    1224\kappa^4\Delta t\,\Psi_\star^{\KL}.
+    \;}
+\]
+In particular, using $\Psi_\star^{\KL}\leq4N_\theta(\kappa-1)^2$,
+\[
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{18\kappa}\Bigr)^{N-N_{\cov}^{\KL}}\E\Delta_{N_{\cov}^{\KL}}
+    +
+    4896\kappa^4(\kappa-1)^2N_\theta\,\Delta t,
+\]
+and $\limsup_{N\to\infty}\E\Delta_N\leq4896\kappa^4(\kappa-1)^2N_\theta\,\Delta t$.
+\end{theorem}
+
+\begin{proof}
+By \Cref{rem:pathwise-bootstrap}, the band holds for all $n\geq N_{\cov}^{\KL}$.
+\Cref{lem:KL-STL-descent} and $\Psi(a_n)\leq\Psi_\star^{\KL}$ give, for $n\geq N_{\cov}^{\KL}$,
+$\E[\Delta_{n+1}\mid\Fil_n]\leq(1-\tfrac{\Delta t}{18\kappa})\Delta_n+68\kappa^3\Delta t^2\Psi_\star^{\KL}$.
+Unrolling, the floor is $68\kappa^3\Delta t^2\Psi_\star^{\KL}\cdot\tfrac{18\kappa}{\Delta t}=1224\kappa^4\Delta t\Psi_\star^{\KL}$;
+the crude form follows from \Cref{lem:Psi-bound}.
+\end{proof}
+
+\begin{corollary}[Closed KL STL global rate including burn-in]
+\label{cor:KL-STL-closed-global}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip} and
+$0<\Delta t\leq\min\{\frac1{32\beta\lambda_{\max}},\frac1{288\kappa^3}\}$.
+Then, for all $N\geq N_{\cov}^{\KL}$,
+\[
+    \boxed{\;
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{18\kappa}\Bigr)^{N-N_{\cov}^{\KL}}
+    \mathcal B_{\burn}^{\KL}
+    +
+    1224\kappa^4\Delta t\,\Psi_\star^{\KL},
+    \;}
+\]
+where
+$\mathcal B_{\burn}^{\KL}:=\Pi_{0,N_{\cov}^{\KL}}^{\KL}\Delta_0+B_{\burn}^{\KL}\Delta t^2\sum_{j=0}^{N_{\cov}^{\KL}-1}\Pi_{j+1,N_{\cov}^{\KL}}^{\KL}$.
+In particular,
+\[
+    \boxed{\;
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{18\kappa}\Bigr)^{N-N_{\cov}^{\KL}}
+    \left(
+        \Delta_0+
+        3\beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2N_{\cov}^{\KL}
+    \right)
+    +
+    1224\kappa^4\Delta t\,\Psi_\star^{\KL}.
+    \;}
+\]
+Using $\Psi_\star^{\KL}\leq4N_\theta(\kappa-1)^2$ further gives the explicit floor
+$4896\kappa^4(\kappa-1)^2N_\theta\Delta t$.
+\end{corollary}
+
+\begin{proof}
+Combine \Cref{thm:KL-STL-global} with \Cref{thm:KL-STL-burnin-energy}. The simplified
+version uses \eqref{eq:KL-burnin-simple}, and the final floor uses \Cref{lem:Psi-bound}.
+\end{proof}
+
+\begin{remark}[On the KL constants]
+\label{rem:KL-constants}
+The constants $1224$, $4896$ and the powers $\kappa^4$ (floor) and $\kappa^{-3}$ (stepsize)
+in \Cref{thm:KL-STL-global} are honest but \emph{not optimized}. They arise because the
+covariance update of the KL scheme is a matrix-inverse perturbation: the natural object
+$Y_n=\bar C_{n+1}^{1/2}W\bar C_{n+1}^{1/2}$ is measured at $\bar C_{n+1}$ rather than at
+$C_n$, and converting between the two intrinsic scales (\Cref{lem:KL-pert}) and passing
+through relative smoothness each cost a factor of $\kappa$. The Riemannian scheme avoids
+the inverse and yields the cleaner $\kappa^2$ floor of \Cref{thm:Riem-STL-global}. The
+qualitative conclusions---a floor proportional to $\Delta t\,\Psi_\star^{\KL}$, hence
+\emph{zero} for a Gaussian target (where $\Psi\equiv0$, recovering \Cref{thm:Gaussian-STL}),
+and otherwise controlled by the condition number rather than by raw powers of
+$\beta,\alpha,\lambda_{\max}$---do not depend on optimizing these constants.
+\end{remark}
+
+\section{Stochastic global-to-local complexity}
+
+The global stochastic estimates of \Cref{thm:Riem-STL-global,thm:KL-STL-global} are energy
+estimates with a $\kappa$-controlled floor. To reach the sharper local floor we chain them
+to the local STL theorems of the base manuscript, which require the whitened Hessian to be
+Lipschitz.
+
+\begin{assumption}[Whitened-Hessian Lipschitzness]
+\label{assump:Hess-smooth}
+The whitened Hessian is $L_H$-Lipschitz on the relevant local region:
+$\norm{\nabla^2\widehat V(x)-\nabla^2\widehat V(y)}_{\op}\leq L_H\norm{x-y}$, where
+$\widehat V(z)=V(m_\star+C_\star^{1/2}z)$.
+\end{assumption}
+
+\begin{assumption}[Local STL theorems, original coordinates]
+\label{assump:local-STL}
+Under \Cref{assump:logconcave-smooth,assump:Hess-smooth}, with $r_{\Riem},r_{\KL},\Gamma$ as
+in \Cref{assump:local-input}, the base manuscript provides the following. If the STL
+Riemannian iterates remain in $\{a:\norm{a-a_\star}_\star\leq r_{\Riem}\}$ and
+$0<\Delta t\leq\tfrac1{256(4+\Gamma)(48+12N_\theta L_H^2)}$, then
+\[
+    \E\norm{a_N-a_\star}_\star^2
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2(4+\Gamma)}\Bigr)^N\norm{a_0-a_\star}_\star^2
+    +
+    672\,\Delta t(4+\Gamma)N_\theta^2L_H^2 .
+\]
+If the STL KL iterates remain in $\{a:\norm{a-a_\star}_{\star,\Delta t}\leq r_{\KL}\}$ and
+$0<\Delta t\leq\tfrac1{272(6+\Gamma)(48+12N_\theta L_H^2)}$, then
+\[
+    \E\norm{a_N-a_\star}_{\star,\Delta t}^2
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2(4+2\Delta t+\Gamma)}\Bigr)^N\norm{a_0-a_\star}_{\star,\Delta t}^2
+    +
+    714\,\Delta t(4+2\Delta t+\Gamma)N_\theta^2L_H^2 .
+\]
+\end{assumption}
+
+\begin{theorem}[Riemannian STL global-to-local]
+\label{thm:Riem-STL-global-local}
+Assume \Cref{assump:logconcave-smooth,assump:Hess-smooth,assump:local-STL}, the
+energy-to-local conversion of \Cref{rem:setup-noise-id} (i.e.\
+$\norm{a-a_\star}_\star^2\leq\tfrac{2\chi_\star A_0}\alpha\Delta(a)$ with threshold
+$\Delta_{\Riem}$ from \eqref{eq:local-thresholds}), and that the STL Riemannian iterates
+remain in $\{a:\norm{a-a_\star}_\star\leq r_{\Riem}\}$ once they enter it. Suppose
+\[
+    0<\Delta t\leq
+    \min\left\{
+        1,\frac1{\beta\lambda_{\max}},\frac1{4\kappa},
+        \frac1{256(4+\Gamma)(48+12N_\theta L_H^2)}
+    \right\}
+    \quad\text{and}\quad
+    4\kappa^2\Delta t\,\Psi_\star^{\Riem}\leq\tfrac12\Delta_{\Riem}.
+\]
+Then $\E\Delta_N\leq\Delta_{\Riem}$ after
+\[
+    N_{\mathrm{entry}}^{\Riem}
+    =
+    N_{\cov}^{\Riem}
+    +
+    \left\lceil
+        \frac{\log\bigl(2\,\E\Delta_{N_{\cov}^{\Riem}}/\Delta_{\Riem}\bigr)}
+             {-\log(1-\Delta t/(2\kappa))}
+    \right\rceil
+\]
+iterations, and a further
+$N_{\loc}^{\Riem}(\epsilon)=\bigl\lceil\log(r_{\Riem}^2/\epsilon)/(-\log(1-\Delta t/[2(4+\Gamma)]))\bigr\rceil$
+iterations guarantee
+\[
+    \E\norm{a_N-a_\star}_\star^2\leq\epsilon+672\,\Delta t(4+\Gamma)N_\theta^2L_H^2 .
+\]
+\end{theorem}
+
+\begin{proof}
+By \Cref{thm:Riem-STL-global}, for $N\geq N_{\cov}^{\Riem}$,
+$\E\Delta_N\leq(1-\tfrac{\Delta t}{2\kappa})^{N-N_{\cov}^{\Riem}}\E\Delta_{N_{\cov}^{\Riem}}+4\kappa^2\Delta t\Psi_\star^{\Riem}$.
+The floor condition makes the additive term $\leq\tfrac12\Delta_{\Riem}$, and the displayed
+entry time makes the geometric term $\leq\tfrac12\Delta_{\Riem}$, so $\E\Delta_N\leq\Delta_{\Riem}$,
+hence (by the energy-to-local conversion) $\norm{a_N-a_\star}_\star\leq r_{\Riem}$. The local
+count solves $(1-\tfrac{\Delta t}{2(4+\Gamma)})^n r_{\Riem}^2\leq\epsilon$ in
+\Cref{assump:local-STL}.
+\end{proof}
+
+\begin{theorem}[KL STL global-to-local]
+\label{thm:KL-STL-global-local}
+Assume \Cref{assump:logconcave-smooth,assump:Hess-smooth,assump:local-STL}, the
+energy-to-local conversion with threshold $\Delta_{\KL}$, and that the STL KL iterates
+remain in $\{a:\norm{a-a_\star}_{\star,\Delta t}\leq r_{\KL}\}$ once they enter it. Suppose
+\[
+    0<\Delta t\leq
+    \min\left\{
+        \frac1{\beta\lambda_{\max}},\frac1{288\kappa^3},
+        \frac1{272(6+\Gamma)(48+12N_\theta L_H^2)}
+    \right\}
+    \quad\text{and}\quad
+    1224\kappa^4\Delta t\,\Psi_\star^{\KL}\leq\tfrac12\Delta_{\KL}.
+\]
+Then $\E\Delta_N\leq\Delta_{\KL}$ after
+\[
+    N_{\mathrm{entry}}^{\KL}
+    =
+    N_{\cov}^{\KL}
+    +
+    \left\lceil
+        \frac{\log\bigl(2\,\E\Delta_{N_{\cov}^{\KL}}/\Delta_{\KL}\bigr)}
+             {-\log(1-\Delta t/(18\kappa))}
+    \right\rceil
+\]
+iterations, and a further
+$N_{\loc}^{\KL}(\epsilon)=\bigl\lceil\log(r_{\KL}^2/\epsilon)/(-\log(1-\Delta t/[2(4+2\Delta t+\Gamma)]))\bigr\rceil$
+iterations guarantee
+\[
+    \E\norm{a_N-a_\star}_{\star,\Delta t}^2\leq\epsilon+714\,\Delta t(4+2\Delta t+\Gamma)N_\theta^2L_H^2 .
+\]
+\end{theorem}
+
+\begin{proof}
+Identical to the proof of \Cref{thm:Riem-STL-global-local}, using \Cref{thm:KL-STL-global}
+in place of \Cref{thm:Riem-STL-global} and the KL local estimate of \Cref{assump:local-STL}.
+\end{proof}
+
+\section{Summary of the theory}
+\label{sec:theory-summary}
+
+\paragraph{Deterministic three-stage rates.}
+With the covariance bootstrap, the deterministic complexities are
+\[
+    T_{\mathrm c}(\epsilon)
+    =
+    O\!\left(
+        \logp\tfrac1{\beta\lambda_0}
+        +\kappa\logp\tfrac{\Delta_0}{\Delta_{\mathrm c}}
+        +(4+\Gamma)\log\tfrac1\epsilon
+    \right),
+\]
+\[
+    N_{\Riem}(\epsilon)
+    =
+    O\!\left(
+        \tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}
+        +\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}{\Delta_{\Riem}}
+        +\tfrac{4+\Gamma}{\Delta t}\log\tfrac1\epsilon
+    \right),
+\]
+\[
+    N_{\KL}(\epsilon)
+    =
+    O\!\left(
+        \tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}
+        +\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}{\Delta_{\KL}}
+        +\tfrac{4+2\Delta t+\Gamma}{\Delta t}\log\tfrac1\epsilon
+    \right).
+\]
+The dependence on the initial covariance is logarithmic, $\logp(1/(\beta\lambda_0))$,
+rather than the inverse dependence $1/\lambda_0$ of the frozen-bound analysis.
+
+\paragraph{Transport-bootstrap deterministic rates.}
+The remaining pure-Fisher--Rao covariance burn-in can be removed by a deterministic
+Wasserstein warm-start. In continuous time, running Wasserstein until
+$C\succeq c\beta^{-1}\Id$ and then switching to Fisher--Rao gives
+$T_{W\to\FR}^{\mathrm c}(\epsilon;c)=O(\tfrac1\beta+\kappa\logp\tfrac{\Delta_0}{\Delta_{\mathrm c}}+(4+\Gamma)\log\tfrac1\epsilon)$
+for fixed $c\in(0,1)$. In discrete time, one Bures--Wasserstein forward--backward step with
+$\eta=c/\beta$ creates the covariance floor $C\succeq c\beta^{-1}\Id$, after which the
+Riemannian and KL Fisher--Rao schemes satisfy
+$N_{W\to\Riem}(\epsilon;c)=\mathbf 1_{\{\lambda_0<c/\beta\}}+O(\tfrac\kappa{c\Delta t}\logp\tfrac{\Delta_0}{\Delta_{\Riem}}+\tfrac{4+\Gamma}{\Delta t}\log\tfrac1\epsilon)$
+and the analogous KL bound. Thus the adaptive WFR schedule can be replaced, at the
+deterministic-theory level, by the simpler rule: perform transport only to rescue the
+covariance, then switch permanently to Fisher--Rao.
+
+\paragraph{Global stochastic STL rates.}
+With covariance bootstrap and the intrinsic STL variance bound, the post-burn-in stochastic
+rates are
+\[
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{2\kappa}\Bigr)^{N-N_{\cov}^{\Riem}}\E\Delta_{N_{\cov}^{\Riem}}
+    +4\kappa^2\Delta t\,\Psi_\star^{\Riem}
+    \quad\text{(Riemannian)},
+\]
+\[
+    \E\Delta_N
+    \leq
+    \Bigl(1-\tfrac{\Delta t}{18\kappa}\Bigr)^{N-N_{\cov}^{\KL}}\E\Delta_{N_{\cov}^{\KL}}
+    +1224\kappa^4\Delta t\,\Psi_\star^{\KL}
+    \quad\text{(KL)}.
+\]
+The burn-in estimates close the first stochastic stage: under
+\Cref{assump:global-Hess-Lip}, $\E\Delta_{N_{\cov}^{\Riem}}\leq\Delta_0+\beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2N_{\cov}^{\Riem}$
+and $\E\Delta_{N_{\cov}^{\KL}}\leq\Delta_0+3\beta N_\theta^2\Hg^2\lambda_{\max}^4\Delta t^2N_{\cov}^{\KL}$.
+For a Gaussian target, $\Psi_\star^{\Riem}=\Psi_\star^{\KL}=0$ and the stochastic floor vanishes
+(\Cref{thm:Gaussian-STL}): single-sample STL converges globally with no floor. For a general
+log-concave target, the crude bound $\Psi_\star\leq4N_\theta(\kappa-1)^2$ gives
+condition-number-controlled floors $16\kappa^2(\kappa-1)^2N_\theta\Delta t$ (Riemannian) and
+$4896\kappa^4(\kappa-1)^2N_\theta\Delta t$ (KL), in place of the raw
+$\beta^3\lambda_{\max}^3/\alpha$-type floors of the naive analysis. The local STL refinement
+(\Cref{assump:local-STL}) then replaces the global Hessian-fluctuation floor by the sharper
+local floors $672\,\Delta t(4+\Gamma)N_\theta^2L_H^2$ and
+$714\,\Delta t(4+2\Delta t+\Gamma)N_\theta^2L_H^2$. The overall stochastic picture is
+\[
+    \boxed{
+    \text{covariance burn-in with energy control}
+    \;+\;
+    \text{global intrinsic-STL localization}
+    \;+\;
+    \text{local STL convergence}.
+    }
+\]
+
+\paragraph{Caveats.}
+The single-sample constant-stepsize methods retain a noise floor for non-Gaussian targets;
+exact convergence requires a decreasing stepsize (or $\Delta t\to0$ scaling). The closed
+burn-in energy estimates require the additional global Hessian-Lipschitz assumption
+\Cref{assump:global-Hess-Lip}; without it, the covariance burn-in remains pathwise but the
+energy at $N_{\cov}$ is left as $\E\Delta_{N_{\cov}}$. The KL stochastic constants in
+\Cref{thm:KL-STL-global,thm:KL-STL-global-local,cor:KL-STL-closed-global} are unoptimized
+(\Cref{rem:KL-constants}). The local-phase statements inherit the base manuscript's
+assumption that the stochastic iterates remain in the local region once they enter it.
+
+\paragraph{Bibliographic note.}
+The Wasserstein PL inequality and Bures--Wasserstein strong convexity are due to
+\cite{lambert2022variational}; the forward--backward Wasserstein step is from
+\cite{diao2023forward}; the Fisher--Rao/natural-gradient viewpoint follows
+\cite{chen2023sampling}; sticking-the-landing is from \cite{roeder2017sticking}. The
+deterministic local-convergence inputs (\Cref{assump:local-input}) and the local STL
+theorems (\Cref{assump:local-STL}) are imported from the base manuscript.

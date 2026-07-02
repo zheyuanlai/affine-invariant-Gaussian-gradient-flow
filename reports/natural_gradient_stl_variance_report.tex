@@ -1,57 +1,160 @@
 \documentclass[11pt]{article}
-\input{preamble.tex}
 
-\title{Sticking the Landing for Stochastic Gaussian\\
-Natural-Gradient Variational Inference:\\
-A Mean-Block Variance-Reduction Study}
-\author{}
-\date{}
+% ============================================================
+% Self-contained preamble. This report includes the full global-convergence
+% theory (Part I) and the numerical variance-reduction study (Part II), so it does
+% not \input the shared reports/preamble.tex: it merges everything the theory note
+% needs (theorem environments with shared numbering, cleveref) with what the
+% numerical part needs (booktabs/subcaption tables, graphicspath, \inputtable).
+% ============================================================
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{subcaption}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=blue!60!black,urlcolor=blue!60!black]{hyperref}
+\usepackage{aliascnt}
+\usepackage[nameinlink,capitalize]{cleveref}
 
+\graphicspath{{assets/figs/}}
+
+% --- theorem environments (shared section-wise numbering; cleveref-aware) ---
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newaliascnt{proposition}{theorem}
+\newtheorem{proposition}[proposition]{Proposition}
+\aliascntresetthe{proposition}
+\newaliascnt{lemma}{theorem}
+\newtheorem{lemma}[lemma]{Lemma}
+\aliascntresetthe{lemma}
+\newaliascnt{corollary}{theorem}
+\newtheorem{corollary}[corollary]{Corollary}
+\aliascntresetthe{corollary}
+\theoremstyle{definition}
+\newaliascnt{assumption}{theorem}
+\newtheorem{assumption}[assumption]{Assumption}
+\aliascntresetthe{assumption}
+\newaliascnt{definition}{theorem}
+\newtheorem{definition}[definition]{Definition}
+\aliascntresetthe{definition}
+\theoremstyle{remark}
+\newaliascnt{remark}{theorem}
+\newtheorem{remark}[remark]{Remark}
+\aliascntresetthe{remark}
+
+\crefname{theorem}{Theorem}{Theorems}\Crefname{theorem}{Theorem}{Theorems}
+\crefname{proposition}{Proposition}{Propositions}\Crefname{proposition}{Proposition}{Propositions}
+\crefname{lemma}{Lemma}{Lemmas}\Crefname{lemma}{Lemma}{Lemmas}
+\crefname{corollary}{Corollary}{Corollaries}\Crefname{corollary}{Corollary}{Corollaries}
+\crefname{assumption}{Assumption}{Assumptions}\Crefname{assumption}{Assumption}{Assumptions}
+\crefname{definition}{Definition}{Definitions}\Crefname{definition}{Definition}{Definitions}
+\crefname{remark}{Remark}{Remarks}\Crefname{remark}{Remark}{Remarks}
+
+% --- math macros (union of the theory note and the numerical study) ---
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\SPD}{\mathbb{S}_{++}}
+\newcommand{\Sym}{\mathbb{S}}
+\newcommand{\Id}{I}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\grad}{\operatorname{grad}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\Frob}{\mathrm{F}}
+\newcommand{\post}{\mathrm{post}}
+\newcommand{\FR}{\mathrm{FR}}
+\newcommand{\Riem}{\mathrm{R}}
+\newcommand{\calE}{\mathcal{E}}
+\newcommand{\PG}{\mathcal{P}_{\mathrm G}}
+\newcommand{\Aspace}{\mathcal{A}}
+\newcommand{\Fil}{\mathcal{F}}
+\newcommand{\STL}{\mathrm{STL}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\inner}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\logp}{\log_+}
+\newcommand{\glob}{\mathrm{glob}}
+\newcommand{\cov}{\mathrm{cov}}
+\newcommand{\loc}{\mathrm{loc}}
+\newcommand{\Gradnorm}{\mathsf{G}}
+\newcommand{\Hg}{L_{H,\mathrm g}}
+\newcommand{\burn}{\mathrm{burn}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+% numerical-study macros
 \newcommand{\bbase}{b_{\mathrm{base}}}
 \newcommand{\bstl}{b_{\mathrm{stl}}}
 \newcommand{\score}{\operatorname{score}_\post}
 \newcommand{\VarFR}{\mathrm{Var}_{\mathrm{FR}}}
 \newcommand{\VarE}{\mathrm{Var}_{\mathrm{eucl}}}
+% table-fragment include helper (assets are written by reports/make_report_assets.py)
+\newcommand{\inputtable}[1]{\input{assets/#1}}
+
+\title{Sticking the Landing for Stochastic Gaussian\\
+Natural-Gradient Variational Inference:\\
+Global Theory and a Mean-Block Variance-Reduction Study}
+\author{}
+\date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Stochastic Gaussian natural-gradient variational inference estimates the Gaussian
-expectations that drive the Fisher--Rao flow from samples
-$\theta\sim\N(m,C)$. The \emph{Sticking-the-Landing} (STL) trick replaces the
-plain posterior-score mean estimator $\bbase(\theta)=\score(\theta)$ by the
-score-\emph{residual} estimator
-$\bstl(\theta)=\score(\theta)+C^{-1}(\theta-m)$, which subtracts the
-(zero-mean) score of the variational Gaussian itself. The residual estimator is
-unbiased and, at a well-specified Gaussian optimum, vanishes \emph{pointwise}. We
-isolate the effect of mean-block STL -- holding the covariance update fixed --
-with two experiments (an estimator-level variance comparison at fixed states and
-an algorithm-level trajectory comparison) on a well-specified anisotropic
-Gaussian target and a misspecified smooth strongly log-concave $\log\cosh$
-target, swept over dimension, conditioning, and (for $\log\cosh$) the
-non-Gaussianity strength $\tau$.
+This report is a self-contained account of the Sticking-the-Landing (STL) trick for
+stochastic Gaussian natural-gradient variational inference. It combines the global
+convergence \emph{theory} (Part~\ref{part:theory}) with a numerical
+\emph{variance-reduction study} (Part~\ref{part:numerics}) of the same schemes, so that
+the empirical findings can be read directly against the estimates that predict them.
 
-The findings are clean. For the Gaussian target the STL mean estimator has
-\emph{exactly zero} variance whenever $C=C_\star$ (the optimum and every
-mean-only perturbation); because the Hessian sampler is moreover deterministic
-(the Gaussian curvature is state-independent), STL collapses the algorithm's
-stochastic noise floor all the way to machine precision, while the baseline
-retains a floor set by its mean noise. For the misspecified $\log\cosh$ target
-STL still reduces the floor by roughly three orders of magnitude but does
-\emph{not} remove it, because the nonlinear part of the score is not captured by
-the Gaussian residual. STL is not universally beneficial: when the
-covariance is \emph{under-dispersed} ($C\prec C_\star$, so $C^{-1}$ is large) the
-residual term inflates the variance above the baseline. For the direct Hessian
-sampler used here the covariance-block ``STL'' rewrite is algebraically identical
-to the original covariance update, so the experiment genuinely isolates the mean
-block. We conclude that mean-STL is an essentially cost-free, practically
-effective variance-reduction device for Gaussian variational families -- best
-near the optimum and under correct Gaussian specification -- but not a
-theorem-level substitute for a stochastic-variance assumption.
+Part~\ref{part:theory} sharpens the global analysis along three axes. A \emph{covariance
+bootstrap} replaces the frozen lower covariance bound $\min(\lambda_{0,\min},1/\beta)$ used
+in the existing global proofs by the exact lower envelope of the covariance recursion,
+improving the warm-up dependence on the initial covariance from inverse,
+$1/\lambda_{0,\min}$, to logarithmic, $\logp(1/\lambda_{0,\min})$, and reorganizing the
+iteration complexity into three transparent stages (covariance burn-in, global
+localization, local convergence). A short \emph{Wasserstein transport bootstrap} followed
+by a permanent switch to Fisher--Rao removes even the logarithmic burn-in in the
+deterministic setting: a single Bures--Wasserstein forward--backward step of size $c/\beta$
+creates the floor $C\succeq c\beta^{-1}\Id$. On the stochastic side, an \emph{intrinsic STL
+variance identity} shows that the STL noise is bounded by the squared Fisher--Rao gradient
+norm plus a multiple of the intrinsic Hessian fluctuation
+$\Psi(a)=\E_{X\sim\rho_a}\|C^{1/2}(\nabla^2V(X)-A(a))C^{1/2}\|_{\Frob}^2$. Since
+$\Psi\equiv0$ for a Gaussian target after whitening, the single-sample STL schemes have
+\emph{no} asymptotic stochastic floor for Gaussian targets, and a floor controlled by the
+condition number $\kappa=\beta/\alpha$ (rather than by raw powers of
+$\beta,\alpha,\lambda_{\max}$) for general strongly log-concave targets.
+
+Part~\ref{part:numerics} isolates the effect of mean-block STL numerically. It replaces
+the plain posterior-score mean estimator $\bbase(\theta)=\score(\theta)$ by the
+score-\emph{residual} estimator $\bstl(\theta)=\score(\theta)+C^{-1}(\theta-m)$, which is
+exactly the STL score estimator of the theory (Proposition on pointwise vanishing
+mirrors \Cref{thm:Gaussian-STL}). Two experiments -- an estimator-level variance
+comparison at fixed states and an algorithm-level trajectory comparison -- on a
+well-specified anisotropic Gaussian target and a misspecified smooth $\log\cosh$ target
+confirm the theory: for the Gaussian target the STL mean estimator has \emph{exactly zero}
+variance whenever $C=C_\star$ and the algorithm's stochastic noise floor collapses to
+machine precision (the $\Psi\equiv0$, no-floor prediction); for the $\log\cosh$ target STL
+reduces the floor but cannot remove it, and under covariance under-dispersion it can even
+\emph{increase} the variance. Mean-STL is thus an essentially cost-free, practically
+effective variance-reduction device for correctly specified Gaussian families near the
+optimum -- but, consistent with the theory, not a universal remedy.
 \end{abstract}
 
 \tableofcontents
+
+% ======================================================================
+% ======================================================================
+\input{covariance_bootstrap_theory.tex}
+
+% ======================================================================
+% ======================================================================
+\part{Numerical study: mean-block STL variance reduction}
+\label{part:numerics}
 
 % ======================================================================
 \section{Motivation}
@@ -68,8 +171,8 @@ flow is
 \qquad
 \dot C = C + C\,\E_{q_a}[\nabla^2\log\rho_\post(\theta)]\,C,
 \end{equation}
-with $\score(\theta)=\grad\log\rho_\post(\theta)=-\grad V(\theta)$ and
-$\nabla^2\log\rho_\post=-\grad^2V$. A stochastic algorithm draws
+with $\score(\theta)=\nabla\log\rho_\post(\theta)=-\nabla V(\theta)$ and
+$\nabla^2\log\rho_\post=-\nabla^2V$. A stochastic algorithm draws
 $\theta_n\sim\N(m_n,C_n)$ and replaces the two expectations in
 \eqref{eq:flow} by sample estimators. The one-sample baselines are
 $b_n=\score(\theta_n)$ and $S_n=\nabla^2\log\rho_\post(\theta_n)$, and the mean
@@ -78,28 +181,31 @@ update is $m_{n+1}=m_n+\Delta t\,C_n b_n$.
 The estimator $\score(\theta)$ is noisy even at the optimum: for a Gaussian
 target the score is linear, $\score(\theta)=-A\theta$, so $b_n$ fluctuates with
 $\theta_n$ while its \emph{mean} is what the flow needs. Sticking the Landing
-\cite{stl} removes the part of this fluctuation that the variational family can
-account for analytically.
+\cite{roeder2017sticking} removes the part of this fluctuation that the variational family
+can account for analytically. This is precisely the mean-block instance of the intrinsic
+STL variance bound proved in Part~\ref{part:theory} (\Cref{lem:intrinsic-STL}): the
+residual estimator's variance is governed by $\Psi$, which vanishes for a Gaussian target.
 
 % ======================================================================
 \section{Theory: what STL changes, and what it does not}
-\label{sec:theory}
+\label{sec:num-theory}
 
 \paragraph{Mean block.}
 For a Gaussian $q_a=\N(m,C)$ the variational score is explicit,
 \begin{equation}
-\grad_\theta\log q_a(\theta) = -\,C^{-1}(\theta-m).
+\nabla_\theta\log q_a(\theta) = -\,C^{-1}(\theta-m).
 \end{equation}
 The STL mean estimator subtracts it from the posterior score,
 \begin{equation}
 \label{eq:bstl}
 \bstl(\theta)
- = \score(\theta) - \grad_\theta\log q_a(\theta)
+ = \score(\theta) - \nabla_\theta\log q_a(\theta)
  = \score(\theta) + C^{-1}(\theta-m).
 \end{equation}
 Because $\E_{q_a}[C^{-1}(\theta-m)]=0$, the estimator is \emph{unbiased} for
 $\E_{q_a}[\score]$; this is the quantity the mean update needs, so swapping
-$\bbase$ for $\bstl$ changes only the noise, not the target.
+$\bbase$ for $\bstl$ changes only the noise, not the target. In the notation of
+Part~\ref{part:theory}, $\bstl=\widehat b_n$ of \eqref{eq:STL-score}.
 
 \begin{proposition}[Pointwise vanishing at a well-specified optimum]
 \label{prop:zero}
@@ -115,7 +221,9 @@ fluctuation is
 $\bstl(\theta)-\E[\bstl] = (C^{-1}-A)(\theta-m)$,
 which depends on $C$ but \emph{not} on $m$: it is exactly zero whenever
 $C=C_\star=A^{-1}$, regardless of the mean. This is the precise sense in which
-``correct Gaussian specification'' matters more than ``distance to the optimum.''
+``correct Gaussian specification'' matters more than ``distance to the optimum,'' and it
+is the finite-sample face of the no-floor theorem \Cref{thm:Gaussian-STL}: with
+$\Psi\equiv0$ the algorithm's stochastic noise floor vanishes.
 
 \paragraph{Covariance block (why it is not a separate estimator here).}
 The natural residual rewrite of the curvature estimator is
@@ -138,6 +246,9 @@ $(1+\Delta t)C^{-1}-\Delta t K_n=C^{-1}-\Delta t S_n$ in \eqref{eq:kl-equiv}.
 Both identities are verified numerically to machine precision in the test suite.
 Consequently the covariance update is held \emph{fixed} across baseline and STL,
 and the only algorithmic difference is the mean estimator $\bbase$ vs.\ $\bstl$.
+This is the same simplification \eqref{eq:STL-cov-simplify} used throughout
+Part~\ref{part:theory}: the STL covariance update coincides with the raw
+Hessian-sampling update, so the residual covariance noise enters only through $\Psi$.
 
 % ======================================================================
 \section{Experimental design}
@@ -160,6 +271,9 @@ obtained by a deterministic per-coordinate fixed point
 $c_i=1/(a_i+\tau\,\E_{\N(0,c_i)}[\operatorname{sech}^2])$ evaluated by
 Gauss--Hermite quadrature (recorded stationarity residual $<10^{-9}$).
 \end{itemize}
+These are the two regimes distinguished by the theory: the Gaussian target has
+$\Psi\equiv0$ (\Cref{thm:Gaussian-STL}), while the $\log\cosh$ target has $\Psi>0$ and a
+$\kappa$-controlled floor (\Cref{thm:Riem-STL-global,thm:KL-STL-global}).
 
 \paragraph{Experiment A (estimator-level).}
 At six fixed Gaussian states -- the optimum, three mean perturbations
@@ -172,7 +286,9 @@ Fisher--Rao mean-block variance $\VarFR(b)=\E[(b-\E b)^\top C(b-\E b)]$, and the
 ratios $\VarFR(\bstl)/\VarFR(\bbase)$ and $\VarE(\bstl)/\VarE(\bbase)$. For the
 Gaussian target the closed forms $\VarE(\bbase)=\Tr(ACA)$,
 $\VarFR(\bbase)=\Tr(CACA)$, $\VarE(\bstl)=\Tr(DCD)$, $\VarFR(\bstl)=\Tr(CDCD)$
-with $D=C^{-1}-A$ validate the Monte Carlo estimates.
+with $D=C^{-1}-A$ validate the Monte Carlo estimates. The Fisher--Rao variance
+$\VarFR(\bstl)$ is exactly the mean-block instance of the intrinsic quantity
+$\E[\varepsilon_b^\top C\varepsilon_b]$ in \Cref{lem:intrinsic-STL}.
 
 \paragraph{Experiment B (algorithm-level).}
 We run the four methods \texttt{riemannian}, \texttt{riemannian\_stl},
@@ -189,7 +305,9 @@ $\mathcal{E}(a_n)-\mathcal{E}(a_\star)$ (analytic for the Gaussian target,
 Gauss--Hermite for $\log\cosh$), the squared mean error, the relative covariance
 Frobenius error, $W_2^2$ to $a_\star$, the covariance eigenvalue extremes, and an
 SPD flag; the \emph{noise floor} is the energy gap averaged/medianed over the
-final $20\%$ of iterations.
+final $20\%$ of iterations. The floor is the empirical counterpart of the additive
+$\Delta t\,\Psi_\star$ term in the global stochastic rates of
+Part~\ref{part:theory}.
 
 \paragraph{Grids and reproducibility.}
 The Gaussian grid is $d\in\{2,8,32\}$, $\kappa\in\{10,100,10^4\}$; the $\log\cosh$
@@ -216,7 +334,7 @@ they split the two regimes cleanly: \emph{over}-dispersion reduces the variance
 at $\tfrac14 C_\star$), since $C^{-1}$ is then large and amplifies the residual.
 For the misspecified $\log\cosh$ target the ratio is small but \emph{nonzero}
 even at the optimum -- the nonlinear $\tanh$ part of the score is not removed by
-the Gaussian residual -- and grows with the mean offset
+the Gaussian residual, exactly the $\Psi>0$ mechanism -- and grows with the mean offset
 (Figure~\ref{fig:stl-dist}). Table~\ref{tab:stl-est} reports the medians; the
 Gaussian closed forms match the Monte Carlo estimates to within sampling error.
 
@@ -267,9 +385,13 @@ descending to machine precision. The reason is structural: the Gaussian Hessian
 is state-independent, so the sampled covariance update is in fact deterministic
 and converges exactly to $C_\star$; once $C=C_\star$ the STL mean estimator is
 pointwise zero, so the mean stops fluctuating and the iterate lands on $a_\star$.
+This is the empirical realization of \Cref{thm:Gaussian-STL}: with $\Psi\equiv0$
+the stochastic floor $\Delta t\,\Psi_\star$ is zero.
 On the $\log\cosh$ target the Hessian sampler is genuinely stochastic and the
 score residual cannot cancel the $\tanh$ term, so STL lowers the floor by about
-three orders of magnitude but a residual floor remains. Figure~\ref{fig:stl-floor}
+three orders of magnitude but a residual floor remains, in line with the
+$\kappa$-controlled floor of \Cref{thm:Riem-STL-global,thm:KL-STL-global}.
+Figure~\ref{fig:stl-floor}
 aggregates every cell: the Gaussian STL points sit on the display floor, and the
 $\log\cosh$ points lie consistently below the diagonal. Table~\ref{tab:stl-floor}
 gives the median reduction factors by scheme and batch size (the Gaussian STL
@@ -336,9 +458,11 @@ already computed (via $C^{-1}$) by the KL covariance step. Within the regime it
 was designed for -- a well-specified Gaussian target near the optimum -- it is
 extremely effective: the mean-gradient variance is exactly zero whenever
 $C=C_\star$, and the algorithm's stochastic noise floor drops by one to two orders
-of magnitude. For a misspecified but smooth target it still helps near the
+of magnitude. This is exactly what the no-floor theorem \Cref{thm:Gaussian-STL}
+predicts. For a misspecified but smooth target it still helps near the
 optimum, but it cannot remove the floor, because the residual estimator only
-cancels the Gaussian part of the score. STL is therefore best presented as a
+cancels the Gaussian part of the score -- the residual floor is governed by $\Psi$
+(\Cref{lem:intrinsic-STL}). STL is therefore best presented as a
 \emph{practical variance-reduction device}, not a theorem-level replacement for a
 stochastic-variance assumption: it does not make the stochastic gradient vanish in
 general, and under covariance under-dispersion it can even \emph{increase} the
@@ -351,7 +475,7 @@ variance.
 \begin{itemize}
 \item We test the \emph{direct} Hessian sampler, for which the covariance-block
 residual rewrite is algebraically identical to the original update
-(\S\ref{sec:theory}); the experiment therefore isolates mean-STL and says nothing
+(\S\ref{sec:num-theory}); the experiment therefore isolates mean-STL and says nothing
 about Hessian-free \emph{pathwise} covariance gradients, where an STL-type
 covariance correction \emph{is} a genuinely different estimator.
 \item High-dimensional behavior is established empirically over $d\le 32$ and
@@ -361,12 +485,27 @@ $d$-dependence reported here is a controlled best case, not a worst-case bound.
 under-dispersion; the magnitude of the benefit (and of the inflation) depends on
 how far $C$ is from $C_\star$ and on the degree of target misspecification, both
 of which are problem-specific.
+\item The theory of Part~\ref{part:theory} is stated for the single-sample
+estimators and carries the explicit (unoptimized) constants flagged in
+\Cref{rem:KL-constants}; the numerical study uses small mini-batches and does not
+probe the theoretical stepsize thresholds, so it validates the qualitative
+predictions ($\Psi\equiv0\Rightarrow$ no floor; $\Psi>0\Rightarrow$ residual
+floor) rather than the constants.
 \end{itemize}
 
 \begin{thebibliography}{9}
-\bibitem{stl} G.~Roeder, Y.~Wu, and D.~Duvenaud.
+\bibitem{roeder2017sticking} G.~Roeder, Y.~Wu, and D.~Duvenaud.
 \emph{Sticking the Landing: Simple, Lower-Variance Gradient Estimators for
 Variational Inference}. Advances in Neural Information Processing Systems, 2017.
+\bibitem{lambert2022variational} M.~Lambert, S.~Chewi, F.~Bach, S.~Bonnabel, and
+P.~Rigollet. \emph{Variational inference via Wasserstein gradient flows}. Advances
+in Neural Information Processing Systems, 2022.
+\bibitem{diao2023forward} M.~Z.~Diao, K.~Balasubramanian, S.~Chewi, and A.~Salim.
+\emph{Forward-backward Gaussian variational inference via JKO in the
+Bures--Wasserstein space}. International Conference on Machine Learning, 2023.
+\bibitem{chen2023sampling} Y.~Chen, S.~Chewi, A.~Salim, and A.~Wibisono.
+\emph{Gaussian variational inference in the Fisher--Rao / natural-gradient
+geometry}. 2023.
 \end{thebibliography}
 
 \end{document}
