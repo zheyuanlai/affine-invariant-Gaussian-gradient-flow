@@ -1,0 +1,687 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{microtype}
+
+\numberwithin{equation}{section}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\Lip}{Lip}
+\newcommand{\R}{\mathbb R}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Id}{\mathrm{Id}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\loc}{\mathrm{loc}}
+
+\title{Hessian Lipschitzness Does Not Rescue the\\
+Dimension-Free Logarithmic Local Rate}
+\author{}
+\date{July 14, 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We give a rigorous option-(B) answer to the Hessian-Lipschitz local-rate
+question.  A two-scale radial-softplus construction produces smooth genuine
+Hessians, already in equilibrium-whitened coordinates, for which
+\[
+ \kappa\asymp \frac d{\sigma^2},\qquad
+ \gamma_{\loc}\asymp\frac{\sigma}{\sqrt d}\asymp\kappa^{-1/2},\qquad
+ L_H\asymp\frac{\sqrt d}{\sigma^2},\qquad
+ \tau_H^2\gtrsim\frac{\sqrt d}{\sigma}\asymp\sqrt\kappa.
+\]
+Taking $(d,\sigma)=(n^4,n)$ gives $L_H\asymp1$; taking
+$(d,\sigma)=(n^6,n^2)$ gives $L_H\asymp n^{-1}\to0$.  In both cases
+$\kappa\asymp n^2$ and
+$\gamma_{\loc}\asymp n^{-1}\asymp\kappa^{-1/2}$.  Thus even a vanishing
+whitened Hessian-Lipschitz modulus does not rescue any polylogarithmic local
+rate.  The proof uses exact Gaussian isotropization and an explicit affine
+Rayleigh witness.  No Frobenius/operator conversion, symmetry-only surrogate,
+or noncommutative Loewner transfer occurs.
+
+We also complete the requested calibration.  The attached unit-scale
+counterexample has $L_H\asymp\sqrt\kappa$.  The fixed-width logistic smoothing
+of the one-dimensional rare-tail step has $L_H\asymp\sqrt\kappa$ but is only
+preasymptotically log-sharp; a genuine asymptotically log-sharp compact-tail
+smoothing exists with $L_H=O(\sqrt\kappa)$.  Across unrestricted smoothings
+there is no canonical minimal power, although bounded or polylogarithmic
+$L_H$ cannot realize the one-dimensional logarithmic extremizer.
+\end{abstract}
+
+\section{Main result and norm convention}
+
+For a $C^3$ potential define its Hessian operator-Lipschitz modulus by
+\[
+ L_H(V):=\sup_{x\ne y}
+ \frac{\|\nabla^2V(x)-\nabla^2V(y)\|_{\op}}{\|x-y\|}.
+\]
+Since the third derivative is symmetric,
+\begin{equation}\label{eq:tensor-lip}
+ L_H(V)=\sup_x\sup_{\|h\|=\|u\|=1}
+ |\nabla^3V(x)[h,u,u]|.
+\end{equation}
+Indeed, the right side is
+$\sup_{x,\|h\|=1}\|D(\nabla^2V)(x)[h]\|_{\op}$; the fundamental theorem of
+calculus proves one inequality and directional difference quotients prove the
+other.  Thus every $L_H$ below is the tensor/operator quantity in (H2), not a
+Frobenius norm.
+For a symmetric trilinear form $\mathcal T$, we also write
+$\|\mathcal T\|_{\rm inj}:=\sup_{\|h\|=\|u\|=\|v\|=1}
+|\mathcal T[h,u,v]|$.
+
+\begin{theorem}[Vanishing-$L_H$ square-root counterexample]\label{thm:main}
+There are numerical constants $c,C>0$ and $n_0\in\mathbb N$ such that for
+every integer $n\ge n_0$ there is a $C^\infty$, strongly convex potential
+$V_n:\R^{n^6+1}\to\R$ satisfying, for
+$Z\sim\mathcal N(0,I_{n^6+1})$,
+\begin{equation}\label{eq:equilibrium-main}
+ \E\nabla V_n(Z)=0,\qquad \E\nabla^2V_n(Z)=I.
+\end{equation}
+If $\alpha_n,\beta_n$ are its optimal scalar curvature constants and
+$\kappa_n=\beta_n/\alpha_n$, then
+\begin{equation}\label{eq:main-scales}
+ \frac c n\le\alpha_n\le\frac Cn,\qquad
+ cn\le\beta_n\le Cn,\qquad
+ cn^2\le\kappa_n\le Cn^2.
+\end{equation}
+Its optimal whitened Hessian-Lipschitz modulus and linearized gap obey
+\begin{equation}\label{eq:main-L-gap}
+ \frac c n\le L_H(V_n)\le\frac Cn,
+ \qquad
+ \frac c n\le\gamma_{\loc}(V_n)\le\frac Cn,
+\end{equation}
+and its first-Hermite Hessian coupling satisfies
+\begin{equation}\label{eq:main-tau}
+ \tau_H(V_n)^2\ge cn.
+\end{equation}
+Consequently
+\[
+ L_H(V_n)\longrightarrow0,\qquad
+ \gamma_{\loc}(V_n)\asymp\kappa_n^{-1/2},
+ \qquad
+ \gamma_{\loc}(V_n)^{-1}\asymp\sqrt{\kappa_n}\gg\log\kappa_n.
+\]
+The same construction with transverse dimension $d=n^4$ and scale
+$\sigma=n$ has $L_H\asymp1$, $\kappa\asymp n^2$, and
+$\gamma_{\loc}\asymp n^{-1}$.  Hence the conjectured bound fails even at a
+fixed Hessian-Lipschitz modulus, independently of how a candidate $\Phi$ is
+defined near zero.
+\end{theorem}
+
+The construction and proof occupy Sections~\ref{sec:family}--\ref{sec:tau}.
+We first perform the mandatory calibration.
+
+\section{Mandatory calibration}\label{sec:calibration}
+
+\subsection{The attached unit-scale radial-softplus family}
+
+The attached counterexample uses
+\[
+ r(y)=\sqrt{1+\|y\|^2},\quad
+ F(s)=\log(1+e^s),\quad
+ U(t,y)=F(r(y)-\sqrt d-\delta t),
+\]
+and $V=\alpha\|z\|^2/2+c_dU+b^\top z$, where
+$c_d\asymp\sqrt d$ and $\kappa_d\asymp d$.  The exact third-order chain rule
+is
+\begin{align}\label{eq:unit-chain}
+ \nabla^3U={}&F'''(s)(\nabla s)^{\otimes3}
+ +F''(s)\,\operatorname{Sym}(\nabla^2s\otimes\nabla s)
+ +F'(s)\nabla^3s.
+\end{align}
+Here $\|\nabla s\|$, $\|\nabla^2s\|_{\op}$, and the injective norm of
+$\nabla^3s$ are uniformly bounded, as are the first three derivatives of
+$F$.  Hence $L_H(U)\le C$.
+
+For the reverse bound, take $y=\rho e_1$, let $\rho\to\infty$, and choose
+$t$ so that $s=\log2$.  In the $e_1$ direction,
+$\partial_1r\to1$ while $\partial_{11}r,\partial_{111}r\to0$, and
+\[
+ F'''(\log2)=-\frac{2}{27}.
+\]
+Thus $L_H(U)\ge2/27$.  The quadratic and affine parts have zero third
+derivative, so
+\begin{equation}\label{eq:old-L-calibration}
+ L_H(V_d)\asymp c_d\asymp\sqrt d\asymp\sqrt{\kappa_d}.
+\end{equation}
+This is the exact whitened tensor/operator scale.  Merely widening $F$ does
+not remove it: the term $F'(s)\nabla^3r$ in
+\eqref{eq:unit-chain} remains of unit size.  The counterexample below widens
+the radial core and the outer softplus simultaneously.
+
+\subsection{The one-dimensional rare-tail family}
+
+Let $K\ge2$, $a=K^{-1}$, and consider the logistic smoothing
+\begin{equation}\label{eq:logistic-smoothing}
+ W_{K,\varepsilon}(x)
+ =a+(K-a)\ell\left(\frac{x-r}{\varepsilon}\right),
+ \qquad \ell(u)=\frac1{1+e^{-u}},
+\end{equation}
+where $r$ is chosen so that $\E W_{K,\varepsilon}(Z)=1$.  The normalization
+is exactly
+\begin{equation}\label{eq:logistic-normalization}
+ \E\ell((Z-r)/\varepsilon)=\frac1{K+1},
+\end{equation}
+and
+\begin{equation}\label{eq:logistic-L}
+ L_H(W_{K,\varepsilon})
+ =\|W_{K,\varepsilon}'\|_\infty
+ =\frac{K-K^{-1}}{4\varepsilon}.
+\end{equation}
+
+For fixed $\varepsilon>0$, this smoothing is not asymptotically log-sharp.
+For every polynomial $P$ of degree at most two, dominated convergence gives
+\begin{equation}\label{eq:logistic-tilt}
+ e^{r/\varepsilon}\E[P(Z)\ell((Z-r)/\varepsilon)]
+ \longrightarrow\E[P(Z)e^{Z/\varepsilon}]
+ \quad(r\to\infty).
+\end{equation}
+Equations~\eqref{eq:logistic-normalization}--\eqref{eq:logistic-tilt} yield
+\begin{equation}\label{eq:fixed-logistic-asymptotics}
+ r=\varepsilon\log K+\frac1{2\varepsilon}+o(1),\qquad
+ T:=\E[ZW_{K,\varepsilon}(Z)]\to\varepsilon^{-1},\qquad
+ H:=\E[(Z^2-1)W_{K,\varepsilon}(Z)]\to\varepsilon^{-2}.
+\end{equation}
+The determinant of the packed $2\times2$ generator tends to one and its
+trace tends to $2+(2\varepsilon^2)^{-1}$, so its gap tends to a positive
+$\varepsilon$-dependent constant.  Thus the fixed width $0.1$ experiment in
+the audit is preasymptotic.  Formula~\eqref{eq:logistic-L} nevertheless shows
+that its Hessian-Lipschitz scale is $\Theta(K)=\Theta(\sqrt\kappa)$.
+
+A genuinely asymptotically log-sharp smooth realization is easy to obtain,
+but it still does not have small $L_H$.  Let $h\in C^\infty(\R)$ be
+nondecreasing, $h=0$ on $(-\infty,0]$, and $h=1$ on $[1,\infty)$.  Define
+\begin{equation}\label{eq:compact-smoothing}
+ W_K(x)=K^{-1}+(K-K^{-1})h(x-r),\qquad \E W_K(Z)=1.
+\end{equation}
+If $r_K$ is determined by $\mathbb P(Z>r_K)=1/(K+1)$, then
+$r\le r_K\le r+1$, so $r\asymp r_K\asymp\sqrt{\log K}$.  With
+$\nu_K(dx)=W_K(x)\varphi(x)\,dx$, one has
+\begin{equation}\label{eq:compact-moments}
+ \E_{\nu_K}Z\asymp r_K,\qquad
+ \E_{\nu_K}Z^2\asymp r_K^2,\qquad
+ 0\le\operatorname{Var}_{\nu_K}(Z)\le C.
+\end{equation}
+For completeness, the first two estimates follow by using the support
+$[r,\infty)$ for the lower bounds and splitting at $2r$ for the upper
+bounds.  For the variance, center at $r+1$: the transition contribution is
+bounded by its total mass, the tail beyond $r+1$ has a bounded Gaussian
+overshoot second moment, and the $K^{-1}\varphi$ background contributes
+$O(r_K^2/K)$.  Therefore
+\begin{equation}\label{eq:1d-det}
+ \frac12\le\det L_K=\frac{1+\operatorname{Var}_{\nu_K}(Z)}2\le C,\qquad
+ \Tr L_K\asymp r_K^2,\qquad
+ \gamma_{\loc}(W_K)\asymp\frac1{1+\log\kappa},\quad \kappa=K^2.
+\end{equation}
+This fixed-shape smoothing has
+\begin{equation}\label{eq:compact-L}
+ L_H(W_K)=(K-K^{-1})\|h'\|_\infty=\Theta(K)=\Theta(\sqrt\kappa).
+\end{equation}
+
+There is no canonical ``minimal $L_H$ over all smoothings'' unless the
+smoothing class and the comparison constant in
+$\gamma_{\loc}\asymp1/\log\kappa$ are fixed.  Here is an explicit reason.
+Fix $0<\theta<1$, put $A=K^\theta$ and $w=(K-A)/A$, and use the cutoff $h$
+from~\eqref{eq:compact-smoothing}.  Choose $R_K$ so large that
+\[
+ (K-A)\E[(1+Z^2)h((Z-R_K)/w)]\le K^{-10},
+\]
+and set
+\begin{equation}\label{eq:remote-cap-smoothing}
+ W_{K,\theta}(x)=K^{-1}+(A-K^{-1})h(x-r)
+ +(K-A)h((x-R_K)/w),
+\end{equation}
+with $r$ chosen continuously so that $\E W_{K,\theta}=1$.  The two ramps
+both have slope $O(A)$, the optimal range is $[K^{-1},K]$, and the remote
+ramp has negligible mass and first two moments.  The main normalization is
+$\E h(Z-r)=(1+o(1))/A$, so the same argument as above, with $K$ replaced by
+$A$, gives
+\[
+ \gamma_{\loc}\asymp(\theta\log K)^{-1},\qquad
+ L_H\asymp K^\theta.
+\]
+Thus different fixed comparison constants give different powers of $K$.
+
+There is, however, a useful rigorous qualitative lower calibration.  If
+$f\ge0$, $m=\E f>0$, and $f$ is $L$-Lipschitz, then
+\begin{equation}\label{eq:1d-lip-cov}
+ \left|\frac{\E[Zf(Z)]}{m}\right|^2
+ \le C\log\left(e+\frac Lm\right).
+\end{equation}
+To prove it, positivity and Lipschitzness first give
+$f(0)\le C(m+L)$ and hence $f(x)\le C(m+L(1+|x|))$.  For the probability
+density $f\varphi/m$, split its first absolute moment at
+$R=2\sqrt{\log(e+L/m)}$; the bulk is at most $R$, and standard Gaussian tail
+moments make the remaining contribution universally bounded.  Applying
+\eqref{eq:1d-lip-cov} to $f=W-K^{-1}$ gives a sharp qualitative conclusion.
+Indeed, let $\mu_2=\E[W(Z)Z^2]$ and let $\gamma\le\Lambda$ be the two
+eigenvalues of the packed generator.  Since
+$\det L=(1+\operatorname{Var}_{W\varphi}Z)/2\ge1/2$,
+$\Lambda\ge(2\gamma)^{-1}$.  Because
+$\Tr L=(3+\mu_2)/2=\gamma+\Lambda$, one has
+$\mu_2\ge(2\gamma)^{-1}$ whenever $\gamma$ is sufficiently small.  The
+characteristic equation then gives
+\[
+ T^2=(1-\gamma)(1+\mu_2-2\gamma)\ge\frac1{4\gamma}.
+\]
+Thus $\gamma\le C_0/(1+\log\kappa)$ implies
+$T^2\ge c(C_0)(1+\log\kappa)$.  Since
+$m=\E(W-K^{-1})=1-K^{-1}\in[1/2,1]$, inequality
+\eqref{eq:1d-lip-cov} shows that any uniformly log-sharp family of this
+normalization must have $L_H\ge\kappa^{c_0}$ for some constant $c_0>0$
+determined by the gap comparison constant.  In
+particular, the one-dimensional logarithmic extremizer cannot be realized
+with bounded or polylogarithmic $L_H$.  This corrects the small-$L_H$
+premise in the proposed calibration; the high-dimensional construction below
+is strictly more adverse.
+
+\section{The two-scale radial-softplus family}\label{sec:family}
+
+Let $d$ and $\sigma$ satisfy
+\begin{equation}\label{eq:parameter-range}
+ \sigma\ge1,\qquad d\ge C_0\sigma^2,
+\end{equation}
+where $C_0$ is a sufficiently large numerical constant.  Write
+$z=(t,y)\in\R\times\R^d$ and set
+\begin{equation}\label{eq:scaled-profiles}
+ r(y):=\sqrt{\sigma^2+\|y\|^2},\qquad
+ R:=\sqrt{\sigma^2+d},\qquad
+ F_\sigma(s):=\sigma\log(1+e^{s/\sigma}).
+\end{equation}
+Put
+\[
+ p(s):=F_\sigma'(s),\qquad
+ q(s):=F_\sigma''(s)=\frac1\sigma p(s)(1-p(s)).
+\]
+Thus $0<p<1$, $0<q\le(4\sigma)^{-1}$, and
+$|F_\sigma'''|\le(4\sigma^2)^{-1}$.
+
+For $0\le\delta\le1$, define
+\begin{equation}\label{eq:Udelta}
+ s_\delta(t,y):=r(y)-R-\delta t,\qquad
+ U_\delta(t,y):=F_\sigma(s_\delta(t,y)),\qquad
+ A_\delta:=\nabla^2U_\delta.
+\end{equation}
+Writing $S=\|y\|^2$,
+\begin{equation}\label{eq:radial-derivatives}
+ v_\delta:=\nabla s_\delta=(-\delta,y/r),\qquad
+ D(y):=\nabla_y^2r=\frac{I_d}{r}-\frac{yy^\top}{r^3}.
+\end{equation}
+The exact Hessian is
+\begin{equation}\label{eq:exact-Hessian}
+ A_\delta=q(s_\delta)v_\delta v_\delta^\top
+ +p(s_\delta)\begin{pmatrix}0&0\\0&D(y)\end{pmatrix}.
+\end{equation}
+Both terms are positive semidefinite.  The tangential eigenvalue of $D$ is
+$r^{-1}$ and its radial eigenvalue is $\sigma^2r^{-3}$.  Since
+$\|v_\delta\|^2\le2$,
+\begin{equation}\label{eq:A-bound}
+ 0\preceq A_\delta\preceq\frac{3}{2\sigma}I_{d+1}.
+\end{equation}
+
+\section{Exact Gaussian isotropization}\label{sec:isotropization}
+
+Let $T\sim\mathcal N(0,1)$ and $Y\sim\mathcal N(0,I_d)$ be independent.
+In the following expectations $s_\delta=s_\delta(T,Y)$ and $r=r(Y)$.
+Define
+\begin{align}
+ Q_{d,\sigma}(\delta)&:=\E q(s_\delta),\label{eq:Qdef}\\
+ M_{d,\sigma}(\delta)&:=\frac1d\E\left[
+ q(s_\delta)\frac S{r^2}
+ +p(s_\delta)\left(\frac{d-1}{r}+\frac{\sigma^2}{r^3}\right)
+ \right].\label{eq:Mdef}
+\end{align}
+Rotation invariance and oddness of the mixed block give
+\begin{equation}\label{eq:mean-A}
+ \E A_\delta
+ =\diag(\delta^2Q_{d,\sigma}(\delta),M_{d,\sigma}(\delta)I_d).
+\end{equation}
+
+\begin{lemma}[Uniform scalar estimates and the isotropizing root]
+\label{lem:isotropization}
+Under~\eqref{eq:parameter-range}, uniformly for $0\le\delta\le1$,
+\begin{equation}\label{eq:QM-bounds}
+ \frac c\sigma\le Q_{d,\sigma}(\delta)\le\frac1{4\sigma},
+ \qquad
+ \frac cR\le M_{d,\sigma}(\delta)\le\frac CR.
+\end{equation}
+If $C_0$ is large enough, the continuous equation
+\begin{equation}\label{eq:root-equation}
+ \delta^2Q_{d,\sigma}(\delta)=M_{d,\sigma}(\delta)
+\end{equation}
+has a root $\delta_{d,\sigma}\in(0,1)$.  For any such root, with
+$m_{d,\sigma}$ denoting the common value,
+\begin{equation}\label{eq:root-scales}
+ \delta_{d,\sigma}^2\asymp\frac\sigma R,\qquad
+ m_{d,\sigma}\asymp\frac1R,\qquad
+ \E A_{\delta_{d,\sigma}}=m_{d,\sigma}I_{d+1}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+On the event
+\[
+ \mathcal E_d:=\{|S-d|\le2\sqrt d,\ |T|\le1\},
+\]
+Chebyshev's inequality and independence give
+$\mathbb P(\mathcal E_d)\ge c_0>0$.  Moreover
+\[
+ |r-R|=\frac{|S-d|}{r+R}\le2,\qquad |s_\delta|\le3.
+\]
+Since $\sigma\ge1$, both $p(s_\delta)$ and
+$\sigma q(s_\delta)$ are bounded below on this event.  This proves the
+lower bound for $Q$.  On the same event,
+\[
+ \Tr D=\frac{d-1}{r}+\frac{\sigma^2}{r^3}\ge c\frac dR,
+\]
+which proves the lower bound for $M$.
+
+The upper bound for $Q$ is immediate.  For $d>2$,
+\begin{equation}\label{eq:inverse-radius}
+ \E\frac1r\le\E S^{-1/2}
+ \le(\E S^{-1})^{1/2}=\frac1{\sqrt{d-2}}\le\frac CR.
+\end{equation}
+The first summand in~\eqref{eq:Mdef} is at most $(4\sigma d)^{-1}$,
+and the second is at most $(1+d^{-1})\E r^{-1}$.  This proves
+\eqref{eq:QM-bounds}.
+
+Continuity follows by dominated convergence.  The left side minus the right
+side of~\eqref{eq:root-equation} is negative at zero and positive at one
+once $R/\sigma$ is a sufficiently large numerical constant.  Hence a root
+exists.  At any root,~\eqref{eq:QM-bounds} gives
+\eqref{eq:root-scales}, and~\eqref{eq:mean-A} gives exact isotropy.
+\end{proof}
+
+Fix a root, abbreviate $U=U_{\delta_{d,\sigma}}$, $A=\nabla^2U$, and set
+\begin{equation}\label{eq:alpha-c}
+ \alpha:=\frac\sigma R,\qquad
+ c_{d,\sigma}:=\frac{1-\alpha}{m_{d,\sigma}}\asymp R.
+\end{equation}
+Define
+\begin{equation}\label{eq:Vdef}
+ V_{d,\sigma}(z)
+ :=\frac\alpha2\|z\|^2+c_{d,\sigma}U(z)+b_{d,\sigma}^\top z,
+ \qquad
+ b_{d,\sigma}:=-c_{d,\sigma}\E\nabla U(Z).
+\end{equation}
+The gradient of $U$ is bounded, so $b_{d,\sigma}$ is finite.  It is a
+multiple of the $t$ direction.  The Hessian
+\begin{equation}\label{eq:Wdef}
+ W_{d,\sigma}=\nabla^2V_{d,\sigma}=\alpha I+c_{d,\sigma}A
+\end{equation}
+satisfies, exactly,
+\begin{equation}\label{eq:exact-equilibrium}
+ \E\nabla V_{d,\sigma}(Z)=0,\qquad \E W_{d,\sigma}(Z)=I.
+\end{equation}
+
+The optimal lower curvature is $\alpha$, since $A(t,y)\to0$ as
+$t\to+\infty$ for fixed $y$.  Equation~\eqref{eq:A-bound} gives the upper
+curvature bound.  Conversely, at $y=0$ and with $t$ chosen so that
+$s_\delta=0$, the transverse block of $A$ is $I_d/(2\sigma)$.  Thus the
+optimal upper curvature $\beta$ satisfies
+\begin{equation}\label{eq:beta-kappa}
+ \alpha+\frac{c_{d,\sigma}}{2\sigma}\le\beta
+ \le\alpha+\frac{3c_{d,\sigma}}{2\sigma},\qquad
+ \beta\asymp\frac R\sigma,\qquad
+ \kappa:=\frac\beta\alpha\asymp\frac{R^2}{\sigma^2}\asymp\frac d{\sigma^2}.
+\end{equation}
+The potential is $C^\infty$ and $\alpha$-strongly convex, hence normalizable.
+It is a genuine Hessian and its complete compatibility hierarchy holds
+classically.
+
+\section{The exact Hessian-Lipschitz scale}\label{sec:Lip}
+
+The third derivative of $r$ is
+\begin{align}\label{eq:D3r}
+ \nabla^3r[h,u,v]
+={}&-\frac{(y\cdot h)(u\cdot v)+(y\cdot u)(h\cdot v)
+ +(y\cdot v)(h\cdot u)}{r^3}\\
+ &+3\frac{(y\cdot h)(y\cdot u)(y\cdot v)}{r^5}.
+\end{align}
+Consequently
+\begin{equation}\label{eq:s-derivative-bounds}
+ \|\nabla s_\delta\|\le\sqrt2,\qquad
+ \|\nabla^2s_\delta\|_{\op}\le\sigma^{-1},\qquad
+ \|\nabla^3s_\delta\|_{\rm inj}\le6\sigma^{-2}.
+\end{equation}
+The exact chain rule is
+\begin{align}\label{eq:D3U}
+ \nabla^3U[h,u,v]={}&F_\sigma'''(s)\,ds[h]ds[u]ds[v]\\
+ &+q(s)\{\nabla^2s[h,u]ds[v]+\nabla^2s[h,v]ds[u]
+ +\nabla^2s[u,v]ds[h]\}\\
+ &+p(s)\nabla^3s[h,u,v].
+\end{align}
+Equations~\eqref{eq:s-derivative-bounds}--\eqref{eq:D3U} give
+\begin{equation}\label{eq:D3U-upper}
+ \sup_z\|\nabla^3U(z)\|_{\rm inj}\le\frac C{\sigma^2}.
+\end{equation}
+For the reverse bound, fix $y=(\sigma/2)e_1$ and send $t\to-\infty$.
+Then $p(s)\to1$ and $q(s),F_\sigma'''(s)\to0$, so
+$\nabla^3U\to\nabla^3r$.  Directly from~\eqref{eq:D3r},
+\[
+ |\nabla^3r[e_1,e_1,e_1]|=\frac{c_1}{\sigma^2}
+\]
+for a numerical $c_1>0$.  Since the quadratic and affine terms in
+\eqref{eq:Vdef} have zero third derivative,
+\begin{equation}\label{eq:LH-frontier}
+ L_H(V_{d,\sigma})\asymp\frac{c_{d,\sigma}}{\sigma^2}
+ \asymp\frac R{\sigma^2}\asymp\frac{\sqrt d}{\sigma^2}.
+\end{equation}
+This is a direct injective-tensor estimate; no dimension-dependent
+Frobenius conversion is present.
+
+\section{Compatible Rayleigh identity and the inverse gap}\label{sec:gap}
+
+If $X$ is the physical covariance perturbation, its packed coordinate is
+$X/\sqrt2$ and its Fisher norm is
+\begin{equation}\label{eq:Fisher-norm}
+ \|(u,X)\|_\star^2:=\|u\|^2+\frac12\|X\|_F^2.
+\end{equation}
+
+\begin{lemma}[Compatible Bochner--Rayleigh identity]\label{lem:rayleigh}
+Let $V\in C^4$ and suppose that its Hessian $W=\nabla^2V$ and the first two
+derivatives of $W$ have at most polynomial growth.  If $\E W=I$, then the
+packed generator in the question satisfies
+\begin{equation}\label{eq:rayleigh-identity}
+ 4\mathcal Q_W(u,X)
+ =\E[(2u+XZ)^\top W(Z)(2u+XZ)]+\|X\|_F^2.
+\end{equation}
+If $W\succeq\alpha I$ and $0<\alpha\le1$, then
+\begin{equation}\label{eq:alpha-floor}
+ \mathcal Q_W(u,X)\ge\alpha\|(u,X)\|_\star^2,\qquad
+ \gamma_{\loc}(W)\ge\alpha.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Expanding the displayed block operator in the packed coordinate gives
+\[
+ \mathcal Q_W(u,X)=\|u\|^2+u^\top T[X]
+ +\frac12\|X\|_F^2+\frac14\langle X,H[X]\rangle_F.
+\]
+Gaussian integration by parts and third-derivative symmetry give
+\[
+ \E[u^\top W XZ]=u^\top T[X].
+\]
+In components, double Gaussian integration by parts gives
+\[
+ \E[Z_aZ_bW_{ij}(Z)]
+ =\delta_{ab}\delta_{ij}+\E[\partial_{ab}W_{ij}(Z)].
+\]
+Full fourth-derivative symmetry then gives
+\[
+ X_{ia}X_{jb}\E[\partial_{ab}W_{ij}]
+ =X_{ij}X_{ab}\E[\partial_{ab}W_{ij}],
+\]
+and therefore
+\[
+ \E[(XZ)^\top W(XZ)]
+ =\|X\|_F^2+\langle X,H[X]\rangle_F.
+\]
+Substitution proves~\eqref{eq:rayleigh-identity}.  The displayed family has a
+bounded Hessian and bounded derivatives of the Hessian of every order because
+$r\ge\sigma>0$, so all steps are classical.  Finally,
+\[
+ 4\mathcal Q_W(u,X)
+ \ge4\alpha\|u\|^2+(1+\alpha)\|X\|_F^2
+ \ge4\alpha\|(u,X)\|_\star^2,
+\]
+which proves~\eqref{eq:alpha-floor}.
+\end{proof}
+
+For the matching upper bound, take
+\begin{equation}\label{eq:witness}
+ u=e_t,\qquad
+ X=\diag(0,\lambda I_d),\qquad
+ \lambda:=\frac{2\delta_{d,\sigma}R}{d}.
+\end{equation}
+Then $2u+XZ=(2,\lambda Y)$ and
+\begin{equation}\label{eq:X-cost}
+ \|X\|_F^2=d\lambda^2
+ =\frac{4\delta_{d,\sigma}^2R^2}{d}\le C\frac\sigma R=C\alpha,
+ \qquad \|(u,X)\|_\star^2\ge1.
+\end{equation}
+Let $g(S)=S/r$.  From~\eqref{eq:exact-Hessian}, exactly,
+\begin{equation}\label{eq:exact-A-energy}
+ (2,\lambda Y)^\top A(2,\lambda Y)
+ =q(s)\lambda^2\left(g(S)-\frac dR\right)^2
+ +p(s)\lambda^2\frac{\sigma^2S}{r^3}.
+\end{equation}
+The factorization
+\begin{equation}\label{eq:residual-factorization}
+ g(S)-\frac dR
+ =(S-d)\frac{\sigma^2+rR}{rR(r+R)}
+\end{equation}
+implies
+\begin{equation}\label{eq:residual-moment}
+ \left|g(S)-\frac dR\right|\le\frac{|S-d|}{R},\qquad
+ \E\left(g(S)-\frac dR\right)^2\le\frac{2d}{R^2}\le2.
+\end{equation}
+Also, by~\eqref{eq:inverse-radius},
+\begin{equation}\label{eq:radial-moment}
+ \E\frac S{r^3}\le\E\frac1r\le\frac C R.
+\end{equation}
+Using $q\le(4\sigma)^{-1}$,
+$\delta_{d,\sigma}^2\asymp\sigma/R$, and
+$c_{d,\sigma}\asymp R$, equations
+\eqref{eq:exact-A-energy}--\eqref{eq:radial-moment} give
+\begin{equation}\label{eq:scaled-A-energy}
+ c_{d,\sigma}\E[(2,\lambda Y)^\top A(2,\lambda Y)]
+ \le C\left(\frac1d+\frac{\sigma^3R}{d^2}\right)
+ \le C\frac\sigma R=C\alpha.
+\end{equation}
+Moreover
+\begin{equation}\label{eq:floor-energy}
+ \alpha\E\|(2,\lambda Y)\|^2=\alpha(4+d\lambda^2)\le C\alpha.
+\end{equation}
+Substitution into~\eqref{eq:rayleigh-identity}, followed by division by the
+Fisher norm, proves
+\begin{equation}\label{eq:gap-frontier}
+ \gamma_{\loc}(V_{d,\sigma})\le C\frac\sigma R.
+\end{equation}
+The alpha floor gives the reverse bound.  Together with
+\eqref{eq:beta-kappa},
+\begin{equation}\label{eq:gap-exact-frontier}
+ \gamma_{\loc}(V_{d,\sigma})\asymp\frac\sigma R
+ \asymp\kappa^{-1/2}.
+\end{equation}
+
+\section{First-Hermite certificate}\label{sec:tau}
+
+Let
+\begin{equation}\label{eq:Btest}
+ B:=\diag(0,I_d/\sqrt d),\qquad \|B\|_F=1.
+\end{equation}
+Hessian compatibility and two Gaussian integrations by parts give
+\begin{align}
+ e_t^\top T[B]
+ &=\E[t\Tr(BW_{d,\sigma})]
+ =\E[(BZ)^\top W_{d,\sigma}e_t]\notag\\
+ &=-\frac{c_{d,\sigma}\delta_{d,\sigma}}{\sqrt d}
+ \E\left[q(s)\frac S r\right].\label{eq:T-certificate}
+\end{align}
+On the event $\mathcal E_d$ from Lemma~\ref{lem:isotropization},
+$q(s)\ge c/\sigma$ and $S/r\ge c\sqrt d$.  Hence
+\begin{equation}\label{eq:tau-frontier}
+ \tau_H^2\ge|e_t^\top T[B]|^2
+ \ge c\frac{c_{d,\sigma}^2\delta_{d,\sigma}^2}{\sigma^2}
+ \ge c\frac R\sigma
+ \asymp\sqrt\kappa.
+\end{equation}
+This explicitly realizes the central Frobenius trap rather than using it:
+the averaged $t$-derivative of the transverse Hessian has tiny individual
+eigenvalues but rank $d$, so its Frobenius norm is large even though the
+pointwise injective third-tensor norm is $L_H\asymp R/\sigma^2$.
+
+Combining~\eqref{eq:beta-kappa}, \eqref{eq:LH-frontier},
+\eqref{eq:gap-exact-frontier}, and~\eqref{eq:tau-frontier} yields the complete
+two-parameter frontier
+\begin{equation}\label{eq:complete-frontier}
+ \boxed{
+ \kappa\asymp\frac d{\sigma^2},\qquad
+ L_H\asymp\frac{\sqrt d}{\sigma^2},\qquad
+ \gamma_{\loc}\asymp\frac\sigma{\sqrt d}\asymp\kappa^{-1/2},\qquad
+ \tau_H^2\gtrsim\frac{\sqrt d}{\sigma}\asymp\sqrt\kappa.}
+\end{equation}
+The specializations $(d,\sigma)=(n^4,n)$ and $(n^6,n^2)$ prove
+Theorem~\ref{thm:main}.  More generally, keeping
+$d\asymp\kappa\sigma^2$ leaves the square-root gap unchanged while
+$L_H\asymp\sqrt\kappa/\sigma$ can be made arbitrarily small by increasing
+the dimension.
+
+\section{Whitening transfer and guardrail audit}
+
+If an original-coordinate potential $V^0$ has Hessian-Lipschitz modulus
+$L_H^0$ and whitening uses
+$x=m_\star+\Sigma_\star^{1/2}z$, then
+\[
+ V^{\rm w}(z)=V^0(m_\star+\Sigma_\star^{1/2}z),\qquad
+ \nabla^2V^{\rm w}(z)=\Sigma_\star^{1/2}\nabla^2V^0(x)\Sigma_\star^{1/2}.
+\]
+Therefore
+\begin{equation}\label{eq:whitening-transfer}
+ L_H^{\rm w}\le L_H^0\|\Sigma_\star^{1/2}\|_{\op}^3.
+\end{equation}
+The construction above requires no transfer: $\Sigma_\star=I$, and every
+$\alpha,\beta,\kappa,L_H$ is already a whitened quantity.
+
+The proof meets the stated guardrails as follows.
+\begin{enumerate}[leftmargin=2em,label=\arabic*.]
+ \item Equation~\eqref{eq:exact-Hessian} is the pointwise Hessian of the
+ displayed $C^\infty$ potential.  Full third- and fourth-order compatibility,
+ not first-Hermite symmetry alone, is used in Lemma~\ref{lem:rayleigh} and
+ \eqref{eq:T-certificate}.
+ \item No commutation-free Loewner transfer occurs.  The inverse gap is the
+ scalar Rayleigh calculation
+ \eqref{eq:exact-A-energy}--\eqref{eq:gap-exact-frontier}.
+ \item Bounds and isotropic mean are not treated as sufficient abstract data.
+ Exact isotropy comes from~\eqref{eq:root-equation}, and the small energy comes
+ from the compatible radial and mixed blocks of~\eqref{eq:exact-Hessian}.
+ \item Both $\kappa$ and $L_H$ are post-whitening quantities.  The general
+ coordinate conversion is recorded separately in
+ \eqref{eq:whitening-transfer}.
+ \item The Hessian and every derivative of the Hessian are bounded, so every
+ Gaussian integration by parts used here is classical.  No unproved weak
+ extension is needed.
+ \item The inverse gap is $\Theta(\sqrt\kappa)$, genuinely larger than
+ $O(\log\kappa)$, even when $L_H\to0$.
+ \item No statement about a nonlinear attraction radius is made.
+ \item At no point is an operator bound on $\nabla^3V$ converted into a
+ Frobenius bound.  The large Frobenius coupling is instead certified directly
+ by the normalized test~\eqref{eq:Btest}.
+\end{enumerate}
+
+\end{document}
