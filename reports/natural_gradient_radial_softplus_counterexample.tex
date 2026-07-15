@@ -1,0 +1,518 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{microtype}
+
+\numberwithin{equation}{section}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\diag}{diag}
+\newcommand{\R}{\mathbb R}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Id}{\mathrm{Id}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\loc}{\mathrm{loc}}
+
+\title{A Smooth Genuine-Hessian Counterexample to the\\
+Dimension-Free Logarithmic Local-Rate Conjecture}
+\author{}
+\date{July 14, 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We construct an explicit sequence of smooth, strongly convex potentials in
+equilibrium-whitened coordinates for which the Gaussian natural-gradient
+linearized gap has the square-root, rather than logarithmic, condition-number
+scale.  In dimension $N_\theta=d+1$, the potentials satisfy
+\[
+  \E\nabla V_d(Z)=0,\qquad \E\nabla^2V_d(Z)=I,
+  \qquad
+  \alpha_d I\preceq\nabla^2V_d\preceq\beta_d I,
+\]
+with post-whitening condition number $\kappa_d=\beta_d/\alpha_d\asymp d$,
+but
+\[
+  \gamma_{\loc}(V_d)\asymp d^{-1/2}\asymp\kappa_d^{-1/2}.
+\]
+Thus $\gamma_{\loc}^{-1}\asymp\sqrt{\kappa_d}\gg1+\log\kappa_d$.
+The same examples satisfy $\tau_H^2\gtrsim\sqrt d\asymp\sqrt{\kappa_d}$,
+so they also disprove the proposed dimension-free first-Hermite Hessian
+bound.  The Hessian field is pointwise $\nabla^2V_d$ with
+$V_d\in C^\infty$; no symmetry-only surrogate, noncommutative Loewner
+transfer, or unproved Bellman/packet input is used.
+\end{abstract}
+
+\section{Statement of the counterexample}
+
+All constants below are numerical and independent of $d$.  The notation
+$a_d\asymp b_d$ means $c b_d\le a_d\le C b_d$ for two such constants.
+
+\begin{theorem}[Smooth square-root counterexample]\label{thm:main}
+There are universal constants $c,C>0$ and $d_0\in\mathbb N$ such that, for
+every integer $d\ge d_0$, there is a $C^\infty$, strongly convex potential
+$V_d:\R^{d+1}\to\R$ with Hessian $W_d=\nabla^2V_d$ satisfying, for
+$Z\sim\mathcal N(0,I_{d+1})$,
+\begin{equation}\label{eq:equilibrium}
+  \E\nabla V_d(Z)=0,
+  \qquad
+  \E W_d(Z)=I_{d+1}.
+\end{equation}
+If $\alpha_d$ and $\beta_d$ are the optimal scalar lower and upper curvature
+constants, then
+\begin{equation}\label{eq:kappa-scale}
+  \alpha_d=d^{-1/2},
+  \qquad
+  c\sqrt d\le\beta_d\le C\sqrt d,
+  \qquad
+  c d\le\kappa_d:=\frac{\beta_d}{\alpha_d}\le C d.
+\end{equation}
+The positive linearized generator at $(0,I)$ obeys
+\begin{equation}\label{eq:gap-scale}
+  \frac1{\sqrt d}
+  \le\gamma_{\loc}(V_d)
+  \le\frac C{\sqrt d}.
+\end{equation}
+Consequently
+\begin{equation}\label{eq:counter-conclusion}
+  \gamma_{\loc}(V_d)\asymp\kappa_d^{-1/2},
+  \qquad
+  \gamma_{\loc}(V_d)^{-1}\ge c\sqrt{\kappa_d},
+  \qquad
+  (1+\log\kappa_d)\gamma_{\loc}(V_d)\longrightarrow0.
+\end{equation}
+Moreover, the first-Hermite Hessian coupling satisfies
+\begin{equation}\label{eq:tau-lower-main}
+  \tau_H(V_d)^2\ge c\sqrt d\ge c'\sqrt{\kappa_d}.
+\end{equation}
+\end{theorem}
+
+The construction is given explicitly below.  Its only dimension-dependent
+parameter $\delta_d$ is the smallest zero in $[0,1]$ of the continuous scalar
+function in \eqref{eq:isotropizing-equation}; Lemma~\ref{lem:delta} proves
+that this zero exists and has the stated scale.  This is a canonical
+one-dimensional definition, analogous to specifying a Gaussian quantile.
+
+\section{The radial-softplus Hessian}
+
+Write $z=(t,y)\in\R\times\R^d$ and define
+\begin{equation}\label{eq:profiles}
+  r(y):=\sqrt{1+\lVert y\rVert^2},
+  \qquad
+  F(s):=\log(1+e^s),
+  \qquad
+  p(s):=F'(s),
+  \qquad
+  q(s):=F''(s)=p(s)(1-p(s)).
+\end{equation}
+Thus $0<p<1$ and $0<q\le1/4$.  For $0\le\delta\le1$, set
+\begin{equation}\label{eq:Udelta}
+  s_\delta(t,y):=r(y)-\sqrt d-\delta t,
+  \qquad
+  U_\delta(t,y):=F(s_\delta(t,y)),
+  \qquad
+  A_\delta:=\nabla^2U_\delta.
+\end{equation}
+Let $S=\lVert y\rVert^2$ and
+\begin{equation}\label{eq:radial-derivatives}
+  v_\delta:=\nabla s_\delta=\begin{pmatrix}-\delta\\y/r\end{pmatrix},
+  \qquad
+  D(y):=\nabla_y^2r=\frac{I_d}{r}-\frac{yy^\top}{r^3}.
+\end{equation}
+Direct differentiation gives the exact Hessian
+\begin{equation}\label{eq:HessU}
+  A_\delta
+  =q(s_\delta)v_\delta v_\delta^\top
+  +p(s_\delta)
+   \begin{pmatrix}0&0\\0&D(y)\end{pmatrix}.
+\end{equation}
+In longitudinal/transverse blocks this is
+\begin{equation}\label{eq:Hess-blocks}
+  (A_\delta)_{tt}=\delta^2q,
+  \qquad
+  (A_\delta)_{yt}=-\delta q\frac y r,
+  \qquad
+  (A_\delta)_{yy}=q\frac{yy^\top}{r^2}+pD(y).
+\end{equation}
+Both summands in \eqref{eq:HessU} are positive semidefinite.  The eigenvalues
+of $D$ are $r^{-1}$ in tangential directions and $r^{-3}$ in the radial
+direction.  Hence $0\preceq D\preceq I_d$, while
+$\lVert v_\delta\rVert^2\le2$.  It follows that
+\begin{equation}\label{eq:A-bound}
+  0\preceq A_\delta\preceq\frac32 I_{d+1}
+  \qquad(0\le\delta\le1).
+\end{equation}
+
+Let $T\sim\mathcal N(0,1)$ and $Y\sim\mathcal N(0,I_d)$ be independent.  In
+the next definitions, $s_\delta=s_\delta(T,Y)$ and $r=r(Y)$:
+\begin{align}
+  Q_d(\delta)
+  &:=\E q(s_\delta),\label{eq:Qdef}\\
+  M_d(\delta)
+  &:=\frac1d\E\left[
+       q(s_\delta)\frac{S}{r^2}
+       +p(s_\delta)\left(\frac d r-\frac S{r^3}\right)
+     \right].\label{eq:Mdef}
+\end{align}
+Rotation invariance in $y$ and oddness of the mixed block imply
+\begin{equation}\label{eq:mean-A}
+  \E A_\delta
+  =\diag\bigl(\delta^2Q_d(\delta),M_d(\delta)I_d\bigr).
+\end{equation}
+
+\begin{lemma}[Isotropizing parameter]\label{lem:delta}
+Uniformly over $0\le\delta\le1$ and all sufficiently large $d$,
+\begin{equation}\label{eq:QM-bounds}
+  c\le Q_d(\delta)\le\frac14,
+  \qquad
+  \frac c{\sqrt d}\le M_d(\delta)\le\frac C{\sqrt d}.
+\end{equation}
+Consequently the continuous equation
+\begin{equation}\label{eq:isotropizing-equation}
+  \delta^2Q_d(\delta)=M_d(\delta)
+\end{equation}
+has a zero $\delta_d\in(0,1)$.  If $\delta_d$ denotes its smallest zero and
+\begin{equation}\label{eq:mdef}
+  m_d:=\delta_d^2Q_d(\delta_d)=M_d(\delta_d),
+\end{equation}
+then
+\begin{equation}\label{eq:delta-m-scale}
+  c d^{-1/4}\le\delta_d\le C d^{-1/4},
+  \qquad
+  c d^{-1/2}\le m_d\le C d^{-1/2},
+  \qquad
+  \E A_{\delta_d}=m_dI_{d+1}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Let
+\[
+  \mathcal E_d:=\{|S-d|\le2\sqrt d,\ |T|\le1\}.
+\]
+Since $\operatorname{Var}(S)=2d$, Chebyshev's inequality and independence
+give $\mathbb P(\mathcal E_d)\ge c_0>0$.  On $\mathcal E_d$,
+\[
+  (\sqrt d-1)^2\le1+S\le(\sqrt d+1)^2,
+\]
+so $|r-\sqrt d|\le1$ and $|s_\delta|\le2$ for every
+$0\le\delta\le1$.  Therefore $q(s_\delta)\ge\min_{|s|\le2}q(s)>0$ and
+$p(s_\delta)\ge p(-2)>0$ on this event.  This proves the lower bound on
+$Q_d$; the upper bound is $q\le1/4$.
+
+The identity
+\begin{equation}\label{eq:trace-D}
+  \frac d r-\frac S{r^3}=\frac{d-1}{r}+\frac1{r^3}
+\end{equation}
+shows that the second term in \eqref{eq:Mdef} is at least $c\sqrt d$ on
+$\mathcal E_d$.  This proves $M_d(\delta)\ge c/\sqrt d$.
+
+For the upper bound, the first integrand in \eqref{eq:Mdef} is at most
+$1/4$.  Also, for $d>2$,
+\begin{equation}\label{eq:inverse-radius}
+  \E\frac1r
+  \le\E S^{-1/2}
+  \le(\E S^{-1})^{1/2}
+  =\frac1{\sqrt{d-2}},
+\end{equation}
+where the last equality follows by integrating the $\chi_d^2$ density.
+Combining \eqref{eq:trace-D} and \eqref{eq:inverse-radius} gives
+$M_d(\delta)\le C/\sqrt d$.
+
+The map $\delta\mapsto\delta^2Q_d(\delta)-M_d(\delta)$ is continuous by
+dominated convergence.  It is negative at $\delta=0$ and, by
+\eqref{eq:QM-bounds}, positive at $\delta=1$ for all sufficiently large $d$.
+Thus a zero exists.  At every zero, \eqref{eq:QM-bounds} gives
+$\delta_d^2\asymp d^{-1/2}$ and $m_d\asymp d^{-1/2}$.  The last assertion
+then follows from \eqref{eq:mean-A}.
+\end{proof}
+
+\section{Whitening and the post-whitening condition number}
+
+Fix $\delta_d$ from Lemma~\ref{lem:delta}, abbreviate
+$U_d:=U_{\delta_d}$ and $A_d:=A_{\delta_d}$, and set
+\begin{equation}\label{eq:alpha-c}
+  \alpha_d:=d^{-1/2},
+  \qquad
+  c_d:=\frac{1-\alpha_d}{m_d}.
+\end{equation}
+Define
+\begin{equation}\label{eq:Vdef}
+  V_d(z):=\frac{\alpha_d}{2}\lVert z\rVert^2+c_dU_d(z)+b_d^\top z,
+  \qquad
+  b_d:=-c_d\E\nabla U_d(Z)
+      =c_d\delta_d\E p(s_{\delta_d}(Z))\,e_t.
+\end{equation}
+The vector $b_d$ is finite because $\nabla U_d$ is bounded; explicitly, it
+is a multiple of the $t$ direction.  It changes no Hessian and makes
+$\E\nabla V_d=0$.  The Hessian is
+\begin{equation}\label{eq:Wdef}
+  W_d(z)=\nabla^2V_d(z)=\alpha_dI+c_dA_d(z).
+\end{equation}
+By \eqref{eq:delta-m-scale} and \eqref{eq:alpha-c},
+\begin{equation}\label{eq:whitening}
+  \E W_d=\alpha_dI+c_dm_dI=I.
+\end{equation}
+Thus the construction is already in equilibrium-whitened coordinates; every
+condition number below is $\kappa_{\rm white}$.
+
+From \eqref{eq:A-bound},
+\begin{equation}\label{eq:W-upper}
+  \alpha_dI\preceq W_d
+  \preceq\left(\alpha_d+\frac32c_d\right)I.
+\end{equation}
+For fixed $y$, $A_d(t,y)\to0$ as $t\to+\infty$, so the optimal lower
+curvature constant is exactly $\alpha_d$.  At $y=0$ and
+$t=(1-\sqrt d)/\delta_d$, one has $s_{\delta_d}=0$ and the transverse block
+of $A_d$ is $I_d/2$.  Hence the optimal upper constant $\beta_d$ satisfies
+\begin{equation}\label{eq:beta-bounds}
+  \alpha_d+\frac12c_d\le\beta_d
+  \le\alpha_d+\frac32c_d.
+\end{equation}
+Since $m_d\asymp d^{-1/2}$, this proves
+$\beta_d\asymp\sqrt d$ and $\kappa_d=\beta_d/\alpha_d\asymp d$.
+
+The function $V_d$ is $C^\infty$ and $\alpha_d$-strongly convex.  In
+particular $e^{-V_d}$ is integrable, and $W_d$ is a genuine pointwise Hessian
+whose complete mixed-derivative hierarchy holds classically (and hence also
+distributionally).
+
+\section{The exact local Rayleigh identity}
+
+For completeness, we record the coordinate convention used for the local
+gap.  If $X\in\operatorname{Sym}(d+1)$ is the physical covariance
+perturbation, its packed coordinate is $X/\sqrt2$ and its Fisher--Rao norm is
+\begin{equation}\label{eq:FRnorm}
+  \lVert(u,X)\rVert_\star^2
+  :=\lVert u\rVert^2+\frac12\lVert X\rVert_F^2.
+\end{equation}
+
+\begin{lemma}[Compatible Bochner--Rayleigh identity]\label{lem:rayleigh}
+For a smooth Hessian field $W=\nabla^2V$ with $\E W=I$, the quadratic form of
+the packed generator in the question satisfies
+\begin{equation}\label{eq:rayleigh-identity}
+  4\mathcal Q_W(u,X)
+  =\E\big[(2u+XZ)^\top W(Z)(2u+XZ)\big]+\lVert X\rVert_F^2,
+\end{equation}
+where
+$\mathcal Q_W(u,X)=\langle(u,X/\sqrt2),L_\star(u,X/\sqrt2)\rangle$.
+Consequently, if $W\succeq\alpha I$ with $0<\alpha\le1$, then
+\begin{equation}\label{eq:alpha-floor}
+  \mathcal Q_W(u,X)\ge
+  \alpha\left(\lVert u\rVert^2+\frac12\lVert X\rVert_F^2\right),
+  \qquad
+  \gamma_{\loc}(W)\ge\alpha.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Expanding the displayed block operator $L_\star$ in the packed coordinate
+$(u,X/\sqrt2)$ gives
+\[
+  \mathcal Q_W(u,X)
+  =\lVert u\rVert^2+u^\top T[X]
+   +\frac12\lVert X\rVert_F^2+\frac14\langle X,H[X]\rangle_F.
+\]
+Gaussian integration by parts, together with
+$\partial_kW_{ij}=\partial_iW_{kj}$ and the corresponding fourth-order
+mixed-derivative symmetry, gives the compatible Bochner identities
+\begin{align*}
+  \E[u^\top W XZ]&=u^\top T[X],\\
+  \E[(XZ)^\top W(XZ)]
+    &=\lVert X\rVert_F^2+\langle X,H[X]\rangle_F.
+\end{align*}
+Substitution proves \eqref{eq:rayleigh-identity}.  All integrations by parts
+are classical for $V_d$; equivalently they follow first for compactly
+supported cutoffs and then by dominated convergence from the bounded Hessian.
+
+If $W\succeq\alpha I$, then $\E Z=0$ and
+$\E\lVert XZ\rVert^2=\lVert X\rVert_F^2$ give
+\[
+  4\mathcal Q_W(u,X)
+  \ge4\alpha\lVert u\rVert^2+(1+\alpha)\lVert X\rVert_F^2
+  \ge4\alpha\lVert(u,X)\rVert_\star^2,
+\]
+where the last step uses $\alpha\le1$.
+\end{proof}
+
+\section{Explicit inverse-gap certificate}
+
+Take
+\begin{equation}\label{eq:witness}
+  u=e_t,
+  \qquad
+  X=\diag(0,\lambda_d I_d),
+  \qquad
+  \lambda_d:=\frac{2\delta_d}{\sqrt d}.
+\end{equation}
+Then
+\begin{equation}\label{eq:b-and-X}
+  2u+XZ=(2,\lambda_dY),
+  \qquad
+  \lVert X\rVert_F^2=d\lambda_d^2=4\delta_d^2,
+  \qquad
+  \lVert(u,X)\rVert_\star^2=1+2\delta_d^2\ge1.
+\end{equation}
+Put
+\begin{equation}\label{eq:gdef}
+  g(Y):=\frac{\lVert Y\rVert^2}{r(Y)}=r(Y)-\frac1{r(Y)}.
+\end{equation}
+Using \eqref{eq:HessU}, the Hessian energy is exactly
+\begin{equation}\label{eq:exact-A-energy}
+  (2,\lambda_dY)^\top A_d(2,\lambda_dY)
+  =q(s_{\delta_d})\bigl(-2\delta_d+\lambda_dg(Y)\bigr)^2
+   +p(s_{\delta_d})\lambda_d^2\frac{S}{r^3}.
+\end{equation}
+
+Two elementary radial bounds suffice.  First,
+\begin{equation}\label{eq:r-centered}
+  r-\sqrt d=\frac{S+1-d}{r+\sqrt d}
+  \quad\Longrightarrow\quad
+  \E(r-\sqrt d)^2\le\frac{\E(S+1-d)^2}{d}le3.
+\end{equation}
+Since $g=r-r^{-1}$ and $r\ge1$,
+\begin{equation}\label{eq:g-centered}
+  \E(g-\sqrt d)^2\le8.
+\end{equation}
+Second, \eqref{eq:inverse-radius} gives
+\begin{equation}\label{eq:radial-Hess-mean}
+  \E\frac{S}{r^3}\le\E\frac1r\le\frac1{\sqrt{d-2}}.
+\end{equation}
+Because $q\le1/4$ and $\lambda_d=2\delta_d/\sqrt d$,
+\eqref{eq:exact-A-energy}--\eqref{eq:radial-Hess-mean} imply
+\begin{equation}\label{eq:A-energy-bound}
+  \E[(2,\lambda_dY)^\top A_d(2,\lambda_dY)]
+  \le\frac{8\delta_d^2}{d}
+      +\frac{4\delta_d^2}{d\sqrt{d-2}}
+  \le\frac{C\delta_d^2}{d}.
+\end{equation}
+At the isotropizing root, $m_d=\delta_d^2Q_d(\delta_d)$ and
+$Q_d(\delta_d)\ge c$.  Therefore
+\begin{equation}\label{eq:scaled-A-energy}
+  c_d\E[(2,\lambda_dY)^\top A_d(2,\lambda_dY)]
+  \le\frac Cd.
+\end{equation}
+The remaining two terms in \eqref{eq:rayleigh-identity} satisfy
+\begin{equation}\label{eq:floor-and-X-cost}
+  \alpha_d\E\lVert(2,\lambda_dY)\rVert^2
+  =\alpha_d(4+4\delta_d^2)\le\frac C{\sqrt d},
+  \qquad
+  \lVert X\rVert_F^2=4\delta_d^2\le\frac C{\sqrt d}.
+\end{equation}
+Combining \eqref{eq:rayleigh-identity}, \eqref{eq:scaled-A-energy}, and
+\eqref{eq:floor-and-X-cost}, then dividing by
+\eqref{eq:b-and-X}, gives
+\begin{equation}\label{eq:gap-upper}
+  \gamma_{\loc}(V_d)le\frac C{\sqrt d}.
+\end{equation}
+The matching lower bound $\gamma_{\loc}\ge\alpha_d=d^{-1/2}$ follows from
+\eqref{eq:alpha-floor}.  Together with $\kappa_d\asymp d$, this proves
+\eqref{eq:gap-scale}--\eqref{eq:counter-conclusion}.
+
+Geometrically, the witness is not accidental.  The rank-one vector in
+\eqref{eq:HessU} is $(-\delta_d,Y/r)$, and its inner product with
+$(2,\lambda_dY)$ is
+$2\delta_d(g/\sqrt d-1)$.  Gaussian radial concentration makes this
+$O_{L^2}(\delta_d/\sqrt d)$, while the radial eigenvalue of $D$ is $r^{-3}$.
+The affine perturbation therefore follows an approximate null direction of the
+\emph{genuine} Hessian.
+
+\section{First-Hermite certificate}
+
+Let
+\begin{equation}\label{eq:Btest}
+  B:=\diag(0,I_d/\sqrt d),
+  \qquad
+  \lVert B\rVert_F=1.
+\end{equation}
+For the operator $T$ in the question, smooth Hessian compatibility and two
+Gaussian integrations by parts give
+\begin{align}
+  e_t^\top T[B]
+  &=\E[t\Tr(BW_d)]
+    =\E[(BZ)^\top W_de_t]\notag\\
+  &=-c_d\frac{\delta_d}{\sqrt d}
+    \E\left[q(s_{\delta_d})\frac{S}{r}\right].
+  \label{eq:T-certificate}
+\end{align}
+On the event $\mathcal E_d$ used in Lemma~\ref{lem:delta},
+$q(s_{\delta_d})\ge c$ and $S/(\sqrt d\,r)\ge c$ for all sufficiently
+large $d$.  Hence
+\begin{equation}\label{eq:qzeta-lower}
+  \frac1{\sqrt d}\E\left[q(s_{\delta_d})\frac S r\right]\ge c.
+\end{equation}
+Since $c_d\asymp\sqrt d$ and $\delta_d\asymp d^{-1/4}$,
+\eqref{eq:T-certificate}--\eqref{eq:qzeta-lower} yield
+\begin{equation}\label{eq:tau-lower}
+  \tau_H^2\ge|e_t^\top T[B]|^2\ge c\sqrt d.
+\end{equation}
+Because $\kappa_d\asymp d$,
+\[
+  D_{\kappa_d}
+  =\left(4+\frac4{\sqrt\pi}\right)(1+\log\kappa_d)
+  =O(\log d)
+  =o(\tau_H^2).
+\]
+This proves \eqref{eq:tau-lower-main} and directly refutes the intended
+dimension-free first-Hermite estimate.
+
+\begin{corollary}[The affine weighted Korn frontier also fails]
+Put $\widetilde A_d=W_d-\alpha_dI=c_dA_d$.  Then
+$\E\widetilde A_d=(1-\alpha_d)I$ and
+$0\preceq\widetilde A_d\preceq L_dI$ with $L_d\asymp\sqrt d$.  For the
+witness \eqref{eq:witness},
+\[
+  \E[(2u+XZ)^\top\widetilde A_d(2u+XZ)]\le\frac Cd,
+  \qquad
+  (1-\alpha_d)\lVert X\rVert_F^2\le\frac C{\sqrt d}.
+\]
+Thus multiplying their sum by
+$1+\log(eL_d/(1-\alpha_d))=O(\log d)$ still gives $o(1)$, whereas
+$(1-\alpha_d)\lVert u\rVert^2\to1$.  Hence the proposed affine weighted Korn
+inequality cannot hold under the stated assumptions, even for smooth genuine
+Hessians.
+\end{corollary}
+
+\section{Guardrail audit}
+
+\begin{enumerate}[leftmargin=2em,label=\arabic*.]
+  \item The construction never replaces Hessian compatibility by symmetry of
+  the first Hermite tensor.  Equation \eqref{eq:HessU} is the pointwise
+  Hessian of the displayed $C^\infty$ potential.
+  \item No commutation-free Loewner transfer is used.  The inverse-gap
+  certificate is the scalar Rayleigh computation
+  \eqref{eq:exact-A-energy}--\eqref{eq:gap-upper}.
+  \item Spectral bounds and isotropic mean are not treated as sufficient
+  abstract data.  The small energy comes from the explicit compatible radial
+  and mixed Hessian blocks in \eqref{eq:Hess-blocks}.
+  \item Whitening is exact in \eqref{eq:whitening}.  The constants
+  $\alpha_d,\beta_d,\kappa_d$ are post-whitening constants; no original-to-
+  whitened conversion is invoked.
+  \item The potential is $C^\infty$, its Hessian is bounded, and all Gaussian
+  integrations by parts and mixed-derivative identities are classical.  They
+  also remain valid in the weak/distributional formulation.
+  \item The construction is genuinely high-dimensional and gives
+  $\gamma_{\loc}^{-1}\asymp\sqrt\kappa$, so it does not conflict with the
+  sharp one-dimensional logarithmic examples.
+  \item The result concerns only the linearized local gap.  It makes no claim
+  about a nonlinear attraction radius.
+\end{enumerate}
+
+\paragraph{Conclusion.}
+The family \eqref{eq:Vdef} is an admissible option-(B) counterexample.  The
+dimension-free logarithmic local-rate conjecture is false under the assumptions
+in the question, and the already-known square-root fallback has the correct
+order on this smooth family.
+
+\end{document}
