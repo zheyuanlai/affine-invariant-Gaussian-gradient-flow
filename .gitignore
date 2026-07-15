@@ -51,6 +51,9 @@ ENV/
 *.tmp
 *.bak
 
+# Temporary directories at any depth
+**/tmp/
+
 # Local specs/manuscript sources (not tracked)
 docs/
 local-convergence/

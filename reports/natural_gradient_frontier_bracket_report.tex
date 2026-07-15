@@ -1,0 +1,1239 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=0.9in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs,array,longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{microtype}
+
+\allowdisplaybreaks
+\numberwithin{equation}{section}
+\setlist{nosep,leftmargin=2em}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{obstruction}[theorem]{Obstruction profile}
+\newtheorem{rigidity}[theorem]{Rigidity lemma}
+\newtheorem{openproblem}[theorem]{Open problem}
+
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\Sym}{Sym}
+\DeclareMathOperator{\Lip}{Lip}
+\DeclareMathOperator{\Ent}{Ent}
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Id}{\mathrm{Id}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\inj}{\mathrm{inj}}
+\newcommand{\HS}{\mathrm{HS}}
+\newcommand{\cA}{\mathcal A}
+\newcommand{\cQ}{\mathcal Q}
+\newcommand{\cR}{\mathfrak R}
+\newcommand{\pos}[1]{(#1)_+}
+
+\title{Equilibrium-Whitened Gaussian Natural Gradient Flow:\\
+A Certified Bracket, a Correction to the Lipschitz Frontier,\\
+and the Remaining Excess-Coupling Lemma}
+\author{}
+\date{July 15, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report the outcome of concurrent prove and refute searches, followed by
+bidirectional adversarial audit.  The proposed Lipschitz formula is
+\emph{false as a global statement}: already in dimension one,
+\[
+ \gamma^{-1}\le 3+C\min\{\log\kappa,\log(e+L_H),L_H^2\},
+\]
+so an unconditional additive $\log\kappa$ is impossible at fixed $L_H$.
+An explicit smooth scalar family has arbitrary prescribed optimal condition
+number and prescribed fixed $L_H$, so this is not a vacuous parameter issue.
+Moreover, the two proposed formulas are mutually inconsistent without a
+dimension cap, because the Lipschitz class is a subclass of the bounded
+Hessian class.
+
+Neither the dimension-only frontier nor the corrected higher-dimensional
+Lipschitz frontier is closed here.  The best certified parameter-only upper
+bounds obtained in this run are
+\[
+ \gamma^{-1}\le C\left[1+\min\left\{\sqrt\kappa,
+ \sqrt{N\log(e\kappa)}+N^{1/3}\log(e\kappa)\right\}\right]
+\]
+under (H1), and the stronger multi-branch estimate in
+Theorem~\ref{thm:main-upper} under (H1)+(H2).  The latter includes the new
+rank-adaptive bound
+\[
+ \tau_H^2\le
+ \min\{(1-\alpha)(\beta-1),
+ (1-\alpha)(1-\alpha+\sqrt N L_H),
+ (\beta-1)(\beta-1+\sqrt N L_H)\}.
+\]
+
+On the lower side, a floor-lowered version of the exact two-scale
+radial-softplus family has, uniformly for $0<\alpha\le\sigma/R$,
+\[
+ N\asymp R^2,\quad \kappa\asymp\frac{R}{\alpha\sigma},\quad
+ L_H\asymp\frac{R}{\sigma^2},\quad
+ \tau_H^2\asymp\frac R\sigma,\quad
+ \gamma^{-1}\asymp\frac R\sigma
+ =N^{1/4}L_H^{1/2}.
+\]
+It therefore certifies the dimension/Lipschitz face even for $\kappa>N$.
+The report ends with proved rigidity lemmas, quantitative obstruction
+profiles, and one standalone excess-coupling lemma whose resolution would
+close the corrected gap.
+\end{abstract}
+
+\tableofcontents
+
+\section{Verdict and proof-status map}\label{sec:verdict}
+
+Let $Z\sim N(0,I_N)$, $W=\nabla^2V$, and assume
+\begin{equation}\label{eq:H1}
+ \alpha I\preceq W\preceq\beta I,\qquad \E W=I,\qquad
+ \kappa=\beta/\alpha.
+\end{equation}
+Thus $0<\alpha\le1\le\beta$.  Under (H1), $W$ is understood as the bounded
+weak Hessian of $V$, defined almost everywhere; under (H2), it has its
+operator-Lipschitz representative.
+When imposed, (H2) means
+\begin{equation}\label{eq:H2}
+ \|W(x)-W(y)\|_{\op}\le L_H\|x-y\|.
+\end{equation}
+All constants below are numerical.  Curvature constants and Lipschitz
+moduli are optimal unless explicitly described as upper bounds.
+
+Define the worst inverse gaps
+\[
+ \cR_D(N,\kappa):=\sup_{\mathrm{(H1)}}\gamma^{-1},\qquad
+ \cR_L(N,\kappa,L):=\sup_{\substack{\mathrm{(H1),(H2)}\\L_H\le L}}
+ \gamma^{-1}.
+\]
+The inclusions alone give
+\begin{equation}\label{eq:monotonicity}
+ \cR_L(N,\kappa,L)\le\cR_D(N,\kappa).
+\end{equation}
+Thus the two formulas in the question cannot both be globally sharp: when
+$N<\kappa$ and $L$ is large, the proposed Lipschitz expression contains
+$\sqrt\kappa$, whereas the proposed dimension-only expression contains
+$\sqrt N$.  This observation does \emph{not} prove a $\sqrt N$ upper bound;
+that is part of the open dimension-only problem.
+
+There is, however, an unconditional refutation.
+
+\begin{theorem}[The original F--L formula is false]\label{thm:FL-false}
+For $N=1$, every admissible $W$ satisfying (H1)+(H2) obeys
+\begin{equation}\label{eq:scalar-upper-intro}
+ \gamma^{-1}\le
+ 3+C\min\{\log\kappa,\log(e+L_H),L_H^2\}.
+\end{equation}
+For every $\kappa>1$ and $L_0>0$, the class with optimal condition number
+exactly $\kappa$ and optimal modulus exactly $L_0$ is nonempty.  Hence, at
+fixed $L_0$, its worst inverse gap is uniformly bounded as
+$\kappa\to\infty$, contradicting the proposed unavoidable $\log\kappa$.
+\end{theorem}
+
+The proof is in Section~\ref{sec:scalar}.  The evidence and all certified
+families are consistent with the following \emph{corrected conjecture}:
+\begin{align}
+ \cR_D(N,\kappa)
+ &\asymp 1+\log\kappa+\sqrt{\min\{N,\kappa\}},
+ \label{eq:corrected-D-conj}\\
+ \cR_L(N,\kappa,L)
+ &\asymp 1+\min\{\log\kappa,\log(e+L)\}
+ +\min\{\sqrt\kappa,\sqrt N,N^{1/4}L^{1/2}\}.
+ \label{eq:corrected-L-conj}
+\end{align}
+Here and below additive positive terms may equivalently be replaced by their
+maximum, up to a factor of three.  Formula~\eqref{eq:corrected-L-conj},
+including its $\sqrt N$ cap, remains conjectural and depends on closing the
+dimension-only problem.  No claim in this report assumes it.
+
+\subsection*{Certified ledger}
+
+The shared ledger contains only items that survived cross-audit.  Later
+sections cite these labels.
+\begin{longtable}{@{}p{0.10\textwidth}p{0.84\textwidth}@{}}
+\toprule
+Label & Certified item\\
+\midrule
+\endhead
+C1 & Exact Bochner block, packed Rayleigh identity, coupling gap
+$\gamma\ge(3+\tau_H^2)^{-1}$, and curvature floor $\gamma\ge\alpha$.\\
+C2 & Two-sided shifted Schur bound
+$\tau_H^2\le(1-\alpha)(\beta-1)$.\\
+C3 & Under (H2), for unit $w$, the rank-adaptive shifted estimates
+$S_w\le a(a+L_H\rho_w)$ and $S_w\le b(b+L_H\rho_w)$.\\
+C4 & Scalar directional cap
+$\|M_w\|_{\op}^2\le C\min\{\log\kappa,\log(e+L_H),L_H^2\}$.\\
+C5 & Under (H1), entropy self-consistency:
+$\tau_H^2\le C[1+\sqrt{N\log\beta}+N^{1/3}\log\beta]$, with shifted
+versions and an (H2)-refined operator-scale term.\\
+C6 & The parameter-only upper brackets in Theorem~\ref{thm:main-upper}.\\
+C7 & The exactly isotropized two-scale radial-softplus family and its affine
+Rayleigh and first-Hermite certificates.\\
+C8 & Floor interpolation:
+$L_\star(W_a)=aI+(1-a)L_\star(B)$, with exact scaling of
+$\gamma,\tau_H,L_H$.\\
+R1 & Convex mixtures, rotations, direct sums, and tensor products do not
+amplify a bad gap.\\
+R2 & Shared-longitudinal modules obey the exact isotropy budget
+$\sum_j a_j/m_j=1$; identical star replication gains no power.\\
+R3 & Common-slope multi-ramp radial families collapse to one tilted
+barycenter and obey an amplitude/entropy cap.\\
+R4 & Positive fixed-frame ridge banks obey a POVM/Kadison coupling bound and
+an exact conditional affine-energy identity.\\
+R5 & A globally bounded Hessian cannot contain a nonzero unbounded flat
+quadratic transverse plateau; the clipped version pays an inverse-radius
+amplitude cost.\\
+O1--O5 & Quantitative obstruction profiles in Section~\ref{sec:obstructions}.\\
+\bottomrule
+\end{longtable}
+
+\section{Exact operator identities}\label{sec:operator}
+
+Let $\Sym_N$ carry the Frobenius inner product.  Define
+\begin{align}
+ T[X]&:=\E[\Tr(XW(Z))Z],
+ &T^*[u]&:=\E[(u^\top Z)W(Z)],\label{eq:T-def}\\
+ H[X]&:=\E[W(Z)(Z^\top XZ-\Tr X)].\label{eq:H-def}
+\end{align}
+After packing the physical covariance perturbation as $X/\sqrt2$,
+\begin{equation}\label{eq:Lstar}
+ L_\star=
+ \begin{pmatrix}I&T/\sqrt2\\T^*/\sqrt2&I+H/2\end{pmatrix},
+ \qquad
+ \gamma=\lambda_{\min}(L_\star),\qquad
+ \tau_H=\|T\|_{\op}.
+\end{equation}
+Write
+\begin{equation}\label{eq:M-S}
+ M_w:=T^*w=\E[(w^\top Z)W(Z)],\qquad
+ S_w:=\|M_w\|_F^2.
+\end{equation}
+
+\begin{lemma}[Bochner and Rayleigh identities; C1]\label{lem:bochner}
+For a genuine Hessian satisfying $\E W=I$,
+\begin{equation}\label{eq:bochner}
+ \E[(u+XZ)^\top W(Z)(u+XZ)]
+ =\|u\|^2+2u^\top T[X]+\|X\|_F^2+\langle X,H[X]\rangle_F.
+\end{equation}
+Consequently
+\begin{equation}\label{eq:bochner-block}
+ \begin{pmatrix}I&T\\T^*&I+H\end{pmatrix}\succeq0,\qquad
+ I+H-T^*T\succeq0.
+\end{equation}
+More generally, if a positive semidefinite genuine Hessian field $G$ has
+$\E G=cI$, and $T_G,H_G$ are defined as in
+\eqref{eq:T-def}--\eqref{eq:H-def}, then
+\begin{align}
+ \E[(u+XZ)^\top G(Z)(u+XZ)]
+ &=c\|u\|^2+2u^\top T_G[X]+c\|X\|_F^2
+   +\langle X,H_G[X]\rangle_F,\label{eq:bochner-general}\\
+ \begin{pmatrix}cI&T_G\\T_G^*&cI+H_G\end{pmatrix}&\succeq0.
+ \label{eq:bochner-general-block}
+\end{align}
+In physical covariance coordinates,
+\begin{equation}\label{eq:exact-rayleigh}
+ 4\cQ_W(u,X)=
+ \E[(2u+XZ)^\top W(Z)(2u+XZ)]+\|X\|_F^2.
+\end{equation}
+In particular,
+\begin{equation}\label{eq:two-gap-baselines}
+ \gamma\ge\alpha,\qquad
+ \gamma\ge\frac1{3+\tau_H^2}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For smooth $V$, one and two Gaussian integrations by parts, followed by
+third- and fourth-derivative symmetry, give
+\[
+ \E[u^\top W XZ]=u^\top T[X],
+ \qquad
+ \E[(XZ)^\top W(XZ)]
+ =\|X\|_F^2+\langle X,H[X]\rangle_F.
+\]
+The same calculation with $\E G=cI$ replaces each identity contribution by
+$c$ and proves \eqref{eq:bochner-general}.  This proves
+\eqref{eq:bochner}, \eqref{eq:bochner-general}, and
+\eqref{eq:exact-rayleigh}.  Positivity of the corresponding left sides gives
+the two blocks and the Schur complement in \eqref{eq:bochner-block}.
+The bound $W\succeq\alpha I$ in \eqref{eq:exact-rayleigh} gives the
+$\alpha$-floor.
+
+For the coupling bound, \eqref{eq:bochner-block} implies
+\[
+ I+H/2\succeq (I+T^*T)/2.
+\]
+On a singular-value sector of $T$, the resulting lower comparison operator
+is
+\[
+ \begin{pmatrix}1&s/\sqrt2\\s/\sqrt2&(1+s^2)/2\end{pmatrix}.
+\]
+It has determinant $1/2$ and trace $(3+s^2)/2$, so its smaller eigenvalue
+is at least $(3+s^2)^{-1}$.  Take $s\le\tau_H$.
+
+Under (H1) without classical derivatives, apply the stationary OU
+mollification $W_s=P_sW=\nabla^2(e^{2s}P_sV)$.  It preserves the curvature
+bounds and $\E W_s=I$.  The identities hold for $s>0$ and pass to the limit
+by dominated convergence, using bounded $W$ times a Gaussian-polynomial
+dominator.  This is the only regularization used in the
+(H1)-only arguments.
+\end{proof}
+
+\begin{lemma}[Shifted Schur cancellation; C2]\label{lem:shifted-schur}
+Put
+\begin{equation}\label{eq:a-b}
+ a=1-\alpha,\qquad b=\beta-1.
+\end{equation}
+Then
+\begin{equation}\label{eq:ab}
+ \tau_H^2\le ab=(1-\alpha)(\beta-1).
+\end{equation}
+Moreover
+\begin{equation}\label{eq:sqrt-kappa-gap}
+ \gamma^{-1}\le 3+\sqrt\kappa.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Apply the generalized Bochner block \eqref{eq:bochner-general-block} to
+$A=W-\alpha I\succeq0$ and to
+$C=\beta I-W\succeq0$.  Their means are $aI,bI$, their couplings are
+$T,-T$, and their fourth-order terms are $H,-H$.  For $a,b>0$, their Schur
+complements give
+\[
+ T^*T\preceq a(aI+H),\qquad
+ T^*T\preceq b(bI-H).
+\]
+If either scalar is zero, positivity of the corresponding block forces
+$T=0$, so the same inequalities hold at the endpoint.
+If $a+b=0$, then $W=I$ almost surely and the conclusion is immediate.
+Otherwise, the convex combination with weights $b/(a+b)$ and $a/(a+b)$
+cancels $H$ and gives $T^*T\preceq abI$.  Notice that \eqref{eq:ab} does
+\emph{not} say $\tau_H^2\le\sqrt\kappa$.
+
+If $\alpha\ge\kappa^{-1/2}$, the floor gives
+$\gamma^{-1}\le\sqrt\kappa$.  Otherwise
+$\beta=\kappa\alpha<\sqrt\kappa$, so
+$ab\le\beta<\sqrt\kappa$ and the coupling branch gives
+$\gamma^{-1}\le3+\sqrt\kappa$.
+\end{proof}
+
+\section{Certified upper side}\label{sec:upper}
+
+This section proves the strongest parameter-only upper envelope found in the
+run.  It does not close either proposed frontier.
+
+\subsection{Where (H2) enters: a weak third-derivative estimate}
+
+Under (H2), Rademacher's theorem gives $\nabla^3V$ almost everywhere and
+\begin{equation}\label{eq:D3-inj}
+ \|\nabla^3V(x)\|_{\inj}\le L_H
+ \quad\text{for a.e. }x.
+\end{equation}
+No pointwise fourth derivative is assumed in the next lemma; the needed
+fourth-order compatibility identity is used only in the weak/OU-mollified
+form of Lemma~\ref{lem:bochner}.
+
+\begin{lemma}[Rank-adaptive Lipschitz--Schur estimate; C3]
+\label{lem:rank-adaptive}
+For a unit vector $w$ with $S_w>0$, let
+\[
+ B_w=M_w/\sqrt{S_w},\qquad
+ \rho_w=\|B_w\|_*\le\sqrt{\operatorname{rank}M_w}\le\sqrt N.
+\]
+Then
+\begin{equation}\label{eq:rank-adaptive}
+ S_w\le a(a+L_H\rho_w),\qquad
+ S_w\le b(b+L_H\rho_w).
+\end{equation}
+Consequently
+\begin{equation}\label{eq:tau-H2-basic}
+ \tau_H^2\le
+ \min\{ab,a(a+\sqrt N L_H),b(b+\sqrt N L_H)\}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For $q_B(Z)=Z^\top BZ-\Tr B$, Hessian compatibility and the generalized
+Bochner identity \eqref{eq:bochner-general} give
+\begin{equation}\label{eq:QA}
+ Q_A(B):=\E[(BZ)^\top A(BZ)]
+ =a\|B\|_F^2+\E[q_B\Tr(BA)].
+\end{equation}
+The shifted Schur complement yields
+\[
+ S_w=\langle B_w,T^*w\rangle_F^2
+ \le\|TB_w\|^2\le aQ_A(B_w).
+\]
+Weak Gaussian integration by parts gives
+\begin{equation}\label{eq:weak-Stein}
+ \E[q_B\Tr(BA)]
+ =\E[(BZ)^\top\nabla\Tr(BA)].
+\end{equation}
+Diagonalizing $B$ and using \eqref{eq:D3-inj},
+\[
+ \|\nabla\Tr(BW)\|\le L_H\|B\|_*.
+\]
+Since $\E\|BZ\|\le\|B\|_F=1$, equations
+\eqref{eq:QA}--\eqref{eq:weak-Stein} prove the first bound.  Applying the
+same argument to $C=\beta I-W$ proves the second.  This is the precise point
+where (H2) enters.
+\end{proof}
+
+For unit $w$, direct first-order Stein also gives
+\begin{equation}\label{eq:direct-Stein}
+ M_w=\E[D_wW(Z)],\qquad
+ \|M_w\|_{\op}\le L_H,\qquad
+ S_w\le NL_H^2.
+\end{equation}
+Combining \eqref{eq:tau-H2-basic} with C1--C2 already yields
+\begin{equation}\label{eq:H2-simple-gap}
+ \gamma^{-1}\le4+\min\{\sqrt\kappa,\sqrt N L_H,NL_H^2\}.
+\end{equation}
+The first Lipschitz branch is power-slack on the mandatory two-scale audit;
+Section~\ref{sec:audit-family} records the exact loss.
+
+\subsection{Entropy self-consistency under (H1)}
+
+\begin{lemma}[Bounded-density quadratic tilt]\label{lem:quadratic-entropy}
+Let $p\ge0$, $\E p=1$, $p\le\beta$, and $h=\log\beta$.  If
+$B\in\Sym_N$, $\|B\|_F=1$, and $\eta=\|B\|_{\op}$, then
+\begin{equation}\label{eq:quadratic-tilt}
+ |\E[pq_B]|\le C(\sqrt h+\eta h).
+\end{equation}
+For a unit vector $w$,
+\begin{equation}\label{eq:linear-tilt}
+ |\E[p(w^\top Z)]|^2\le2h.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Because $p\le\beta$, its Gaussian relative entropy satisfies
+$D(p\gamma\Vert\gamma)=\E[p\log p]\le h$.  If $\lambda_i$ are the
+eigenvalues of $B$, then
+\[
+ \log\E e^{\theta q_B}
+ =\sum_i\left[-\theta\lambda_i-\frac12\log(1-2\theta\lambda_i)\right]
+ \le\frac{C\theta^2}{1-2|\theta|\eta}
+\]
+whenever $2|\theta|\eta<1$.  Entropy variational duality, applied to
+$q_B$ and $-q_B$, followed by
+$\theta\asymp\min\{\sqrt h,\eta^{-1}\}$, proves
+\eqref{eq:quadratic-tilt}.  For the linear variable, use
+$\log\E e^{\theta w^\top Z}=\theta^2/2$ and optimize exactly.
+\end{proof}
+
+\begin{theorem}[Dimension/entropy bound; C5]\label{thm:entropy}
+Under (H1),
+\begin{equation}\label{eq:entropy-tau}
+ \tau_H^2\le
+ C\left[1+\sqrt{N\log\beta}+N^{1/3}\log\beta\right].
+\end{equation}
+More precisely, when $a,b>0$, set
+\begin{equation}\label{eq:shifted-h}
+ h_a=\log\frac{\beta-\alpha}{1-\alpha},\qquad
+ h_b=\log\frac{\beta-\alpha}{\beta-1},
+\end{equation}
+one also has
+\begin{align}
+ \tau_H^2&\le
+ Ca^2[1+\sqrt{Nh_a}+N^{1/3}h_a],\label{eq:shifted-a-ent}\\
+\tau_H^2&\le
+ Cb^2[1+\sqrt{Nh_b}+N^{1/3}h_b].\label{eq:shifted-b-ent}
+\end{align}
+If $a=0$ or $b=0$, the bounds and isotropic mean force $W=I$ almost surely,
+so $\tau_H=0$ and the endpoint claim is trivial.
+\end{theorem}
+
+\begin{proof}
+Fix a unit vector $w$ and write $S=S_w>0$, $B=M_w/\sqrt S$.  By C1,
+\begin{equation}\label{eq:S-Q}
+ S\le\|TB\|^2\le Q_W(B)
+ =1+\E[q_B\Tr(BW)].
+\end{equation}
+Decompose $B=B_+-B_-$ and, whenever $\Tr B_\pm>0$, set
+\[
+ p_\pm=\frac{\Tr(B_\pm W)}{\Tr B_\pm}.
+\]
+These are densities with $p_\pm\le\beta$.  Lemma~\ref{lem:quadratic-entropy}
+and $\|B\|_*\le\sqrt N$ therefore imply
+\begin{equation}\label{eq:self-consistency-1}
+ S\le1+C\sqrt N(\sqrt h+\eta h),\qquad
+ h=\log\beta,\quad \eta=\|B\|_{\op}.
+\end{equation}
+For every unit $v$, the scalar function $p_v=v^\top Wv$ is also a density
+bounded by $\beta$.  Equation~\eqref{eq:linear-tilt} gives
+\begin{equation}\label{eq:M-op-entropy}
+ \|M_w\|_{\op}^2\le2h,\qquad
+ \eta\le\sqrt{2h/S}.
+\end{equation}
+Thus
+\begin{equation}\label{eq:cubic-S}
+ S\le1+C\sqrt{Nh}+C\frac{\sqrt N h^{3/2}}{\sqrt S}.
+\end{equation}
+If $S\le2(1+C\sqrt{Nh})$ we are done.  Otherwise the last term is at least
+$S/2$, whence $S^{3/2}\le C\sqrt N h^{3/2}$ and
+$S\le CN^{1/3}h$.  This proves \eqref{eq:entropy-tau}.
+
+Apply the same proof to $(W-\alpha I)/a$ and to
+$(\beta I-W)/b$, using the shifted Schur inequalities before normalization,
+to obtain \eqref{eq:shifted-a-ent}--\eqref{eq:shifted-b-ent}.
+The OU limiting argument in Lemma~\ref{lem:bochner} justifies all
+compatibility identities under (H1) alone.
+\end{proof}
+
+\subsection{Scalar directional cap and the combined theorem}
+
+\begin{lemma}[Nonnegative Lipschitz density]\label{lem:lip-density}
+If $f\ge0$, $m=\E f(Z)>0$, and $f$ is $L$-Lipschitz on $\R$, then
+\begin{equation}\label{eq:lip-density}
+ \left|\frac{\E[Zf(Z)]}{m}\right|^2
+ \le C\log\left(e+\frac Lm\right).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Positivity and Lipschitzness imply $f(0)\le C(m+L)$, by integrating the
+tent lower bound for $f$ near zero.  Hence
+$f(x)\le C[m+L(1+|x|)]$.  Under the probability density $f\varphi/m$,
+split the first absolute moment at
+$R=2\sqrt{\log(e+L/m)}$.  The bulk is at most $R$; the displayed envelope
+and the standard Gaussian tail moments bound the tail by a numerical
+constant.  The absolute mean is no larger than this first moment.
+\end{proof}
+
+\begin{lemma}[Directional operator cap; C4]\label{lem:directional-cap}
+Under (H1)+(H2), for every unit $w$,
+\begin{equation}\label{eq:directional-cap}
+ \|M_w\|_{\op}^2\le
+ C\min\{\log\kappa,\log(e+L_H),L_H^2\}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Fix a unit $v$, let $G=w^\top Z$, and condition
+$v^\top W(Z)v$ on $G=t$.  The resulting scalar function $f(t)$ is
+nonnegative, has mean one, is bounded by $\beta\le\kappa$, and is
+$L_H$-Lipschitz.  The entropy-linear estimate gives
+$|\E[Gf(G)]|^2\le2\log\beta$; Lemma~\ref{lem:lip-density} gives the
+$\log(e+L_H)$ bound; and one-dimensional Stein gives the $L_H^2$ bound.
+Taking the supremum over $v$ proves the claim.
+\end{proof}
+
+The last lemma gives both
+\begin{equation}\label{eq:rank-cap}
+ S_w\le CN\min\{\log\kappa,\log(e+L_H),L_H^2\}
+\end{equation}
+and a refinement of the cubic proof.  Namely, replace the numerator
+$2h$ in \eqref{eq:M-op-entropy} by the directional cap while retaining the
+quadratic-density entropy $h$.  This proves the following summary.
+
+\begin{theorem}[Best certified parameter-only upper bracket; C6]
+\label{thm:main-upper}
+Set
+\begin{equation}\label{eq:h-d0}
+ h_\kappa=\log(e\kappa),\qquad
+ d_{\kappa,L}=\min\{\log\kappa,\log(e+L),L^2\}.
+\end{equation}
+Under (H1),
+\begin{equation}\label{eq:H1-main-upper}
+ \boxed{
+ \gamma^{-1}\le C\left[1+\min\left\{\sqrt\kappa,
+ \sqrt{Nh_\kappa}+N^{1/3}h_\kappa\right\}\right].}
+\end{equation}
+Under (H1)+(H2),
+\begin{equation}\label{eq:H2-main-upper}
+ \boxed{
+ \begin{aligned}
+ \gamma^{-1}\le C\Big[1+\min\{&\sqrt\kappa,\sqrt N L_H,NL_H^2,
+ Nd_{\kappa,L_H},\\
+ &\sqrt{Nh_\kappa}
+ +N^{1/3}h_\kappa^{2/3}d_{\kappa,L_H}^{1/3}\}\Big].
+ \end{aligned}}
+\end{equation}
+The sharper $a,b,\beta$-dependent statements are
+\eqref{eq:ab}, \eqref{eq:rank-adaptive}, and
+\eqref{eq:shifted-a-ent}--\eqref{eq:shifted-b-ent}.
+\end{theorem}
+
+\begin{proof}
+Use C1 to convert each upper bound on $\tau_H^2$ into an upper bound on
+$\gamma^{-1}$, and combine with the $\alpha$-floor case split in C2.
+Equation~\eqref{eq:H1-main-upper} follows from
+Theorem~\ref{thm:entropy} and $\beta\le\kappa$.
+For \eqref{eq:H2-main-upper}, take the minimum of
+\eqref{eq:H2-simple-gap}, \eqref{eq:direct-Stein},
+\eqref{eq:rank-cap}, and the refined cubic inequality
+\[
+ S_w\le C\left[1+\sqrt{Nh_\kappa}
+ +N^{1/3}h_\kappa^{2/3}d_{\kappa,L_H}^{1/3}\right].
+\]
+All constants are absorbed by the outer $C[1+\cdot]$.
+\end{proof}
+
+\section{The scalar correction is exact in its parameters}\label{sec:scalar}
+
+For $N=1$, $M_1=\E[ZW]$ is scalar, so
+Lemma~\ref{lem:directional-cap} and C1 immediately prove
+\eqref{eq:scalar-upper-intro}.  We now certify nonvacuity for arbitrary exact
+$(\kappa,L_H)$.
+
+\begin{proposition}[Exact-$\kappa$, exact-$L_H$ scalar family]
+\label{prop:scalar-logistic}
+Fix $\kappa>1$ and $L_0>0$.  Put
+\begin{equation}\label{eq:scalar-logistic}
+ \alpha=\frac2{\kappa+1},\qquad
+ \varepsilon=\frac{1-\alpha}{2L_0},\qquad
+ B_\varepsilon(x)=\frac2{1+e^{x/\varepsilon}},\qquad
+ W_\kappa=\alpha+(1-\alpha)B_\varepsilon.
+\end{equation}
+Then $W_\kappa$ is a smooth genuine one-dimensional Hessian with
+\begin{equation}\label{eq:scalar-exact-parameters}
+ \E W_\kappa=1,\quad
+ \inf W_\kappa=\alpha,\quad
+ \sup W_\kappa=2-\alpha=\kappa\alpha,\quad
+ \Lip(W_\kappa)=L_0.
+\end{equation}
+After an affine correction, its potential satisfies $\E V'(Z)=0$ and is
+normalizable.  Its gap is bounded below uniformly in $\kappa$ for fixed
+$L_0$.
+\end{proposition}
+
+\begin{proof}
+The identity $B_\varepsilon(x)+B_\varepsilon(-x)=2$ and Gaussian symmetry
+give $\E B_\varepsilon=1$.  Its range is $(0,2)$ and its optimal derivative
+bound is $(2\varepsilon)^{-1}$.  Equations
+\eqref{eq:scalar-exact-parameters} follow directly.  Integrate twice to
+obtain $V''=W_\kappa$ and choose the affine term to center $\E V'(Z)$.
+Since $W_\kappa\ge\alpha>0$, the potential is strongly convex and
+normalizable.  The uniform gap lower bound is also a direct consequence of
+\eqref{eq:scalar-upper-intro}.  This completes the proof of
+Theorem~\ref{thm:FL-false}.
+\end{proof}
+
+The compact-tail/remote-cap scalar construction from the supplied
+counterexample note gives the matching adverse mechanism
+\begin{equation}\label{eq:scalar-log-lower}
+ \gamma^{-1}\gtrsim
+ 1+\min\{\log\kappa,\log(e+L_H)\}
+\end{equation}
+up to numerical rescaling of the logarithms: a principal ramp of height
+$A$ creates a tilted Gaussian mean of order $\sqrt{\log A}$, while a very
+remote ramp fixes the exact supremum and infimum with negligible first two
+Gaussian moments.  Taking $A$ comparable to the smaller permitted height
+and slope produces \eqref{eq:scalar-log-lower}.  Lemma~\ref{lem:lip-density}
+is the matching obstruction.  Thus the logarithmic part of the corrected
+conjecture is already sharp in one dimension.
+
+\section{Best certified adverse family}\label{sec:family}
+
+We give a self-contained certificate for the two-scale family and then
+lower its curvature floor.  Put $z=(t,y)\in\R\times\R^d$, assume
+$\sigma\ge1$ and $d\ge C_0\sigma^2$ for a sufficiently large numerical
+$C_0$, and, for $0\le\delta\le1$, define
+\begin{equation}\label{eq:family-def}
+ r(y)=\sqrt{\sigma^2+\|y\|^2},\quad
+ R=\sqrt{\sigma^2+d},\quad
+ F_\sigma(s)=\sigma\log(1+e^{s/\sigma}),\quad
+ U_\delta(t,y)=F_\sigma(r(y)-R-\delta t).
+\end{equation}
+For expectations below, write $Z=(T,Y)$ with
+$T\sim N(0,1)$ and $Y\sim N(0,I_d)$ independent.
+Write $p=F_\sigma'$, $q=F_\sigma''$, $s=r-R-\delta t$, and
+$A_\delta=\nabla^2U_\delta$.  With
+\[
+ v=(-\delta,y/r),\qquad
+ D=I_d/r-yy^\top/r^3,
+\]
+the exact Hessian is
+\begin{equation}\label{eq:family-A}
+ A_\delta=q(s)vv^\top+p(s)
+ \begin{pmatrix}0&0\\0&D\end{pmatrix}\succeq0,\qquad
+ 0\preceq A_\delta\preceq\frac{3}{2\sigma}I.
+\end{equation}
+
+For $S=\|Y\|^2$, define
+\begin{align}
+ Q(\delta)&=\E q(s),\label{eq:Q}\\
+ M(\delta)&=\frac1d\E\left[q(s)\frac S{r^2}
+ +p(s)\left(\frac{d-1}{r}+\frac{\sigma^2}{r^3}\right)\right].
+ \label{eq:M}
+\end{align}
+Rotation invariance gives
+\begin{equation}\label{eq:EA-diag}
+ \E A_\delta=\operatorname{diag}(\delta^2Q(\delta),M(\delta)I_d).
+\end{equation}
+
+\begin{lemma}[Exact isotropizing root; C7]\label{lem:root}
+There is a root $\delta\in(0,1)$ of
+\begin{equation}\label{eq:root}
+ \delta^2Q(\delta)=M(\delta)=:m,
+\end{equation}
+and every such root satisfies
+\begin{equation}\label{eq:root-scales-report}
+ Q\asymp\sigma^{-1},\qquad M\asymp R^{-1},\qquad
+ \delta^2\asymp\frac\sigma R,\qquad m\asymp\frac1R,\qquad
+ \E A=mI_{d+1}.
+\end{equation}
+Moreover
+\begin{equation}\label{eq:A-Lip}
+ \sup_z\|\nabla^3U(z)\|_{\inj}\asymp\sigma^{-2}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+On the event $|S-d|\le2\sqrt d$, $|T|\le1$, which has probability bounded
+below, one has $|r-R|\le2$ and $|s|\le3$.  Hence
+$q\gtrsim\sigma^{-1}$ and $p\gtrsim1$, proving the lower bounds for $Q$ and
+$M$.  The upper bounds use $q\le(4\sigma)^{-1}$ and
+\[
+ \E r^{-1}\le(\E S^{-1})^{1/2}=(d-2)^{-1/2}\lesssim R^{-1}.
+\]
+The function $\delta^2Q-M$ is continuous, negative at zero, and positive at
+one once $R/\sigma$ is a sufficiently large numerical constant.  The
+intermediate value theorem and the scalar bounds give
+\eqref{eq:root-scales-report}.
+
+Finally,
+\[
+ \|\nabla s\|\le\sqrt2,\qquad
+ \|\nabla^2s\|_{\op}\le\sigma^{-1},\qquad
+ \|\nabla^3s\|_{\inj}\le6\sigma^{-2},
+\]
+while $|F_\sigma'''|\lesssim\sigma^{-2}$ and
+$F_\sigma''\lesssim\sigma^{-1}$.  The third-order chain rule gives the
+upper bound in \eqref{eq:A-Lip}.  For the reverse bound, take
+$y=(\sigma/2)e_1$ and send $t\to-\infty$; the softplus derivative tends to
+one and $\nabla^3U\to\nabla^3r$, whose $(e_1,e_1,e_1)$ entry has magnitude
+$c/\sigma^2$.
+\end{proof}
+
+Fix the root and set
+\begin{equation}\label{eq:B-base}
+ B=A/m,\qquad \E B=I.
+\end{equation}
+For an arbitrary floor $0<\alpha<1$, define
+\begin{equation}\label{eq:floor-family}
+ W_\alpha=\alpha I+(1-\alpha)B,\qquad
+ V_\alpha(z)=\frac\alpha2\|z\|^2+\frac{1-\alpha}{m}U(z)+b_\alpha^\top z,
+\end{equation}
+where $b_\alpha=-(1-\alpha)m^{-1}\E\nabla U(Z)$.  This is a smooth genuine
+Hessian and satisfies both equilibrium equations exactly.
+
+\begin{theorem}[Floor-lowered two-scale frontier; C7--C8]
+\label{thm:floor-family}
+Uniformly for $0<\alpha\le\sigma/R$,
+\begin{align}
+ N&=d+1\asymp R^2,&
+ \beta&\asymp R/\sigma,&
+ \kappa&\asymp R/(\alpha\sigma),\label{eq:floor-parameters-1}\\
+ L_H&\asymp R/\sigma^2,&
+ \tau_H^2&\asymp R/\sigma,&
+ \gamma&\asymp\sigma/R.\label{eq:floor-parameters-2}
+\end{align}
+Consequently
+\begin{equation}\label{eq:floor-saturation}
+ \gamma^{-1}\asymp\frac R\sigma
+ =N^{1/4}L_H^{1/2},\qquad
+ (\tau_H^2)^2\asymp\min\{N,\sqrt N L_H\}.
+\end{equation}
+By lowering $\alpha$, the same face persists for arbitrarily large
+$\kappa$, including $\kappa>N$.
+\end{theorem}
+
+\begin{proof}
+The optimal lower curvature is $\alpha$, because $A(t,y)\to0$ along a tail.
+Equation~\eqref{eq:family-A}, the point $y=0,s=0$, and $m\asymp R^{-1}$ give
+the two-sided upper-curvature scale $\beta\asymp R/\sigma$.  Lemma
+\ref{lem:root} gives $L_H\asymp R/\sigma^2$.
+
+For the inverse-gap witness take
+\begin{equation}\label{eq:family-witness}
+ u=e_t,\qquad X=\operatorname{diag}(0,\lambda I_d),\qquad
+ \lambda=\frac{2\delta R}{d}.
+\end{equation}
+Then $\|X\|_F^2\lesssim\sigma/R$.  Exactly,
+\begin{equation}\label{eq:family-energy}
+ (2u+XZ)^\top A(2u+XZ)
+ =q(s)\lambda^2\left(\frac S r-\frac dR\right)^2
+ +p(s)\lambda^2\frac{\sigma^2S}{r^3}.
+\end{equation}
+The factorization
+\[
+ \frac S r-\frac dR
+ =(S-d)\frac{\sigma^2+rR}{rR(r+R)}
+\]
+gives an $L^2$ bound of order one, while
+$\E[S/r^3]\lesssim R^{-1}$.  Using $q\lesssim\sigma^{-1}$,
+$m^{-1}\asymp R$, and $\delta^2\asymp\sigma/R$ in
+\eqref{eq:family-energy} yields
+\[
+ m^{-1}\E[(2u+XZ)^\top A(2u+XZ)]\lesssim\sigma/R.
+\]
+The floor energy is also $O(\alpha+\sigma/R)$, so the exact Rayleigh identity
+gives $\gamma\lesssim\sigma/R$ for $\alpha\le\sigma/R$.
+
+For the coupling certificate take
+$D_0=\operatorname{diag}(0,I_d/\sqrt d)$.  Compatibility gives
+\begin{equation}\label{eq:family-T-cert}
+ e_t^\top T[D_0]
+ =-\frac{(1-\alpha)\delta}{m\sqrt d}
+ \E\left[q(s)\frac S r\right].
+\end{equation}
+The central event used in Lemma~\ref{lem:root} bounds the last expectation
+below by $c\sqrt d/\sigma$.  Thus $\tau_H^2\gtrsim R/\sigma$.  The sharp
+Schur bound gives the reverse inequality
+\[
+ \tau_H^2\le(1-\alpha)(\beta-1)\lesssim R/\sigma.
+\]
+C1 then gives $\gamma\gtrsim\sigma/R$, completing all two-sided estimates.
+Finally, $N\asymp R^2$ and
+$L_H=R/\sigma^2$ imply \eqref{eq:floor-saturation}.
+\end{proof}
+
+\begin{lemma}[Exact floor interpolation; C8]\label{lem:floor-interpolation}
+If $B\succeq0$, $\E B=I$, and
+$W_a=aI+(1-a)B$, then
+\begin{equation}\label{eq:floor-interpolation}
+ T_a=(1-a)T_B,\quad H_a=(1-a)H_B,\quad
+ L_{\star,a}=aI+(1-a)L_{\star,B},
+\end{equation}
+and therefore
+\begin{equation}\label{eq:floor-spectral}
+ \gamma_a=a+(1-a)\gamma_B,\quad
+ \tau_a=(1-a)\tau_B,\quad
+ L_{H,a}=(1-a)L_{H,B}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The constant Hessian has zero first-Hermite and centered-quadratic
+couplings, so $T,H$ are scaled by $1-a$.  Substitute in
+\eqref{eq:Lstar}; the identity operator commutes with everything, giving
+the eigenvalue and norm statements.  If
+$\inf_z\lambda_{\min}B(z)=0$, then as $a\downarrow0$ the condition number
+may diverge while $\gamma_a\to\gamma_B$, $\tau_a\to\tau_B$, and
+$L_{H,a}\to L_{H,B}$.  For $a\le\min\{\gamma_B,1/2\}$ these quantities are
+comparable to those of $B$ up to numerical factors.
+\end{proof}
+
+\subsection{Exact-sector numerical triage}\label{sec:quadrature}
+
+Numerics were used only to kill or prioritize candidates, never as a
+certificate.  Hermite quadrature in $T$ and generalized Laguerre quadrature
+in $S=\|Y\|^2$ reduce every $O(d)$-symmetric expectation to two scalar
+sectors.  The reproducible implementation is
+\path{scripts/natural_gradient_local_rate/exact_sector_replication_triage.py}.
+For $J$ identical modules sharing $t$, solving the exact equation
+$J\delta^2Q=M$ gave:
+\begin{center}
+\begin{tabular}{rrrrrr}
+\toprule
+$d$&$\sigma$&$J$&$\delta^2$&$J\delta^2$&$\tau_{\rm wit}^2$\\
+\midrule
+16&2&1&0.96532&0.96532&0.24316\\
+16&2&4&0.23228&0.92912&0.25261\\
+16&2&16&0.05751&0.92011&0.25508\\
+81&3&1&0.65248&0.65248&0.64024\\
+81&3&4&0.16106&0.64425&0.64842\\
+81&3&16&0.04014&0.64219&0.65050\\
+\bottomrule
+\end{tabular}
+\end{center}
+The corresponding Rayleigh quotients were $0.688,0.685,0.685$ and
+$0.541,0.540,0.539$.  The invariant columns suggested the exact isotropy
+budget proved below; the proof, not this table, is ledger item R2.
+
+\section{Rigidity lemmas from failed counterexamples}\label{sec:rigidity}
+
+Each failed counterexample was converted into a proof-usable constraint.
+
+\begin{rigidity}[Convex mixture and direct sum; R1]
+\label{rig:mixture}
+If already-whitened Hessians are mixed as $W=\sum_j\theta_jW_j$, then
+\begin{equation}\label{eq:mixture}
+ \gamma(W)\ge\sum_j\theta_j\gamma(W_j)\ge\min_j\gamma(W_j),\qquad
+ \tau_H(W)\le\max_j\tau_H(W_j),\qquad
+ L_H(W)\le\max_jL_H(W_j).
+\end{equation}
+If $V(z)=\sum_jV_j(z_j)$ is an orthogonal product, then
+\begin{equation}\label{eq:direct-sum}
+ \gamma(V)=\min\{1,\min_j\gamma(V_j)\},\qquad
+ \tau_H(V)=\max_j\tau_H(V_j),\qquad
+ L_H(V)=\max_jL_H(V_j).
+\end{equation}
+\end{rigidity}
+
+\begin{proof}
+$L_\star$ is affine in $W$ and its smallest eigenvalue is concave, proving
+\eqref{eq:mixture}; $T$ and the Lipschitz seminorm are subadditive.  For a
+product, the diagonal covariance sectors reproduce the component operators.
+Every off-block covariance sector has $T=H=0$ and eigenvalue one.  Gaussian
+independence gives the stated maximum formulas.  Thus rotations, convex
+randomization, tensor products, and quadratic padding cannot amplify the
+bad rate.
+\end{proof}
+
+\begin{rigidity}[Shared-longitudinal isotropy budget; R2]
+\label{rig:shared-t}
+Suppose positive modules $A_j$ share a coordinate $t$ and act on mutually
+orthogonal transverse blocks $E_j$, with
+\[
+ \E A_j=\operatorname{diag}(a_j,m_jI_{E_j}).
+\]
+If $0<\alpha<1$ and
+$W=\alpha I+\sum_jc_jA_j$, $c_j>0$, is exactly isotropic, then
+\begin{equation}\label{eq:isotropy-budget}
+ \boxed{\sum_j\frac{a_j}{m_j}=1.}
+\end{equation}
+For $J$ identical radial-softplus modules, exact isotropy forces
+\begin{equation}\label{eq:J-root}
+ J\delta^2Q=M,\qquad \delta^2\asymp\frac{\sigma}{JR}.
+\end{equation}
+The total witness cost, coupling, gap, $\beta$, and $L_H$ remain within
+constants of the one-module values; there is no power of $J$ gain.
+\end{rigidity}
+
+\begin{proof}
+Each transverse mean equation gives $c_jm_j=1-\alpha$ and the common
+$t$ equation gives $\sum_jc_ja_j=1-\alpha$.  Division proves
+\eqref{eq:isotropy-budget}.  In the identical case this is
+\eqref{eq:J-root}.  The apparent coherent factor $J$ in the transverse
+coupling is canceled by $\delta^2\propto J^{-1}$; the normalized witness has
+$\|X\|_F^2\asymp J\delta^2\asymp\sigma/R$.  Summing the exact energy
+identity \eqref{eq:family-energy} gives the same scale.  The shared
+longitudinal terms are controlled directly, rather than by a blockwise
+maximum: in the third-order chain rule,
+$J\delta^3=O(1)$, $\sum_j\|h_j\|^3\le1$, and
+$\delta\sum_j\|h_j\|^2\le1$ for every unit direction
+$h=(h_t,h_1,\ldots,h_J)$.  Likewise,
+$J\delta^2/\sigma=O(R^{-1})$ controls the shared longitudinal curvature.
+Together with the blockwise transverse estimates, these give the asserted
+curvature and Lipschitz scales.
+\end{proof}
+
+\begin{rigidity}[Common-slope radial multi-ramp collapse; R3]
+\label{rig:multi-ramp}
+Let $U(t,y)=F(r(y)-R-\delta t)$ with $F',F''\ge0$, allowing arbitrarily
+many ramps.  Suppose
+$W=\alpha I+c\nabla^2U$, $c>0$, is exactly isotropic and the nontrivial
+quantity $Q:=\E F''(s)$ is positive.  (If $Q=0$, the isotropizing equation
+below cannot hold with a nonzero transverse mean.)  Let $M$ be the
+transverse mean in \eqref{eq:M}, and define
+\[
+ \mu_q=\frac{\E[F''(s)S/r]}{Q},\qquad
+ K=\frac{\sup F''}{Q}.
+\]
+Exact isotropy forces $\delta^2Q=M$, and for the normalized transverse test
+\begin{equation}\label{eq:multi-ramp-slice}
+ |e_t^\top T[D_0]|^2
+ =\frac{(1-\alpha)^2\mu_q^2}{\delta^2d}.
+\end{equation}
+Moreover
+\begin{equation}\label{eq:multi-ramp-rigid}
+ K\le\frac{(\beta-\alpha)\delta^2}{1-\alpha},\qquad
+ \mu_q\le\sqrt d+\sqrt{2\log K},\qquad
+ \mu_q^2\le\delta^2d\frac{\beta-1}{1-\alpha}.
+\end{equation}
+Thus ramp count produces only one tilted barycenter, not a square-sum gain.
+\end{rigidity}
+
+\begin{proof}
+The isotropy and slice formulas are the same exact differentiations as in
+Section~\ref{sec:family}.  The peak of $F''$ is a pointwise Hessian
+eigenvalue; after applying the isotropic coefficient this gives the first
+bound in \eqref{eq:multi-ramp-rigid}.  The $F''$-tilted radial density is at
+most $K$ relative to the Gaussian radial law.  Entropy transport plus the
+one-Lipschitz concentration of $\|Y\|$ gives the second.  Finally combine
+\eqref{eq:multi-ramp-slice} with C2.
+\end{proof}
+
+\begin{rigidity}[Positive ridge POVM and conditional energy; R4]
+\label{rig:ridge}
+Suppose $a>0$ and
+\begin{equation}\label{eq:ridge-A}
+ A(z)=\sum_\ell a_\ell f_\ell(v_\ell^\top z)v_\ell v_\ell^\top,\qquad
+ a_\ell,f_\ell\ge0,\quad\|v_\ell\|=1,\quad \E A=aI.
+\end{equation}
+Omit terms with $m_\ell=0$.  Let $m_\ell=\E f_\ell(G)$,
+$\mu_\ell=\E[Gf_\ell(G)]/m_\ell$, and
+\[
+ Q_\ell=\frac{a_\ell m_\ell}{a}v_\ell v_\ell^\top.
+\]
+Then $\sum_\ell Q_\ell=I$, and for every unit $w$,
+\begin{equation}\label{eq:ridge-Kadison}
+ \left\|\E[(w^\top Z)A(Z)]\right\|_F^2
+ \le a^2\sum_\ell\Tr(Q_\ell)\mu_\ell^2(w^\top v_\ell)^2
+ \le a^2\max_\ell\mu_\ell^2.
+\end{equation}
+If $s_\ell^2$ is the variance of $G$ under density
+$f_\ell(G)/m_\ell$, then for $\eta(z)=2u+Xz$,
+\begin{equation}\label{eq:ridge-energy}
+ \E[\eta^\top A\eta]
+ =\sum_\ell a_\ell m_\ell\left[
+ \|P_{v_\ell^\perp}Xv_\ell\|^2
+ +(v_\ell^\top Xv_\ell)^2s_\ell^2
+ +\{2v_\ell^\top u+(v_\ell^\top Xv_\ell)\mu_\ell\}^2
+ \right].
+\end{equation}
+\end{rigidity}
+
+\begin{proof}
+Gaussian regression gives
+\[
+ \E[(w^\top Z)A]=a\sum_\ell\mu_\ell(w^\top v_\ell)Q_\ell.
+\]
+The unital positive map $\Phi(c)=\sum_\ell c_\ell Q_\ell$ from the
+commutative diagonal algebra obeys Kadison's inequality
+$\Phi(c)^2\preceq\Phi(c^2)$.  Taking traces proves the first inequality in
+\eqref{eq:ridge-Kadison}; the second uses
+$\sum_\ell\Tr(Q_\ell)(w^\top v_\ell)^2=w^\top Iw=1$.
+
+For \eqref{eq:ridge-energy}, condition on $G=v_\ell^\top Z$ and decompose
+$Xv_\ell=(v_\ell^\top Xv_\ell)v_\ell+P_{v_\ell^\perp}Xv_\ell$.
+Completing the square under the tilted law gives the three nonnegative terms.
+Thus a low-gap ridge bank requires simultaneous direction locking, narrow
+tilted features, and common affine incidence.  Uniformly bounded scalar
+couplings cannot coherently amplify in a fixed positive frame.
+\end{proof}
+
+\begin{rigidity}[Flat quadratic plateau; R5]\label{rig:plateau}
+If on a transverse region
+\[
+ V(t,y)=a(t)+b(t)^\top y+\tfrac12y^\top C(t)y,
+\]
+then $W_{ty}=b'(t)+C'(t)y$.  A globally bounded Hessian forces
+$C'(t)=0$.  If the representation holds only for $\|y\|\le R_0$ and
+$\|W\|_{\op}\le\beta$, then
+\begin{equation}\label{eq:plateau-cap}
+ \|C'(t)\|_{\op}\le\frac{\beta}{R_0}
+\end{equation}
+up to an inessential factor two.  Thus a nonzero flat slice must clip
+nonlinearly in $y$ and pay an inverse-radius amplitude cost.
+\end{rigidity}
+
+\begin{proof}
+Compare the mixed Hessian block at $y=R_0v$ and $y=-R_0v$, then take the
+supremum over unit $v$.  Letting $R_0\to\infty$ proves the global statement.
+Equivalently, full Hessian compatibility reads
+$\partial_tW_{yy}=\nabla_yW_{ty}$; a constant nonzero transverse slice would
+integrate to an unbounded mixed block.
+\end{proof}
+
+\section{Obstruction profiles from stalled proofs}\label{sec:obstructions}
+
+Every proof route that lost a power on the running audit is recorded here as
+a quantitative construction target.
+
+\begin{obstruction}[O1: Schur-flat high-rank plateau]
+Let $B=P_r/\sqrt r$.  The certified H2 argument gives only
+\begin{equation}\label{eq:O1}
+ Q_A(B)\le a+L_H\sqrt r,\qquad S\le aQ_A(B).
+\end{equation}
+These data permit $S\asymp L_H\sqrt r$, whereas the corrected frontier
+requires the diffuse excess to be at most
+$S\lesssim\sqrt{L_H\sqrt r}$.  A closing proof must use global bounded
+Hessian clipping and near-Schur saturation jointly, beyond the trace
+identity.  A counterexample target must realize both on the same packet.
+\end{obstruction}
+
+\begin{obstruction}[O2: diffuse bounded-density quadratic tilt]
+Under (H1), entropy permits a density bounded by $\kappa$ to tilt the flat
+chaos $q_{P_r/\sqrt r}$ by $\Theta(\sqrt{\log\kappa})$.  Nuclear aggregation
+then permits
+\begin{equation}\label{eq:O2}
+ S\asymp\sqrt r\,\sqrt{\log\kappa},
+\end{equation}
+which is exactly the power/log loss in C5.  Entropy plus the trace
+compatibility identity alone cannot prove $S\lesssim\sqrt r+\log\kappa$.
+The missing constraint must connect a diffuse chaos tilt to the mixed
+Hessian blocks that saturate Schur.
+\end{obstruction}
+
+\begin{obstruction}[O3: OU smoothing cannot pay for itself]
+For stationary OU smoothing,
+\begin{equation}\label{eq:O3}
+ \tau_H(P_sW)=e^{-s}\tau_H(W),\qquad
+ L_H(P_sW)\lesssim
+ \frac{(\beta-\alpha)e^{-s}}{\sqrt{1-e^{-2s}}}.
+\end{equation}
+Undoing the exact $e^{-s}$ contraction removes the apparent smoothing gain
+and returns at best $1+\sqrt N(\beta-\alpha)$.  Any successful OU split must
+estimate a bounded long-time component by structure not inherited from the
+smoothed Lipschitz modulus alone.
+\end{obstruction}
+
+\begin{obstruction}[O4: symmetric tensor without global clipping]
+The abstract symmetric tensor
+\begin{equation}\label{eq:O4}
+ G=c\,\Sym(e_1\otimes P_r)
+\end{equation}
+has $\|G\|_{\inj}\asymp c$ but
+$\|G(e_1,\cdot,\cdot)\|_F^2\asymp rc^2$.
+Therefore symmetry and the a.e. injective bound in (H2) alone cannot produce
+the desired exponent.  The missing input is that $G$ is the averaged third
+derivative of a Hessian confined globally between two scalar barriers.
+Rigidity R5 is the simplest manifestation of this clipping cost.
+\end{obstruction}
+
+\begin{obstruction}[O5: surviving counterexample geometry]
+R1--R5 rule out convex mixtures, disjoint products, one-level shared-$t$
+stars, common-slope multi-shells, fixed positive ridge frames, and literal
+flat quadratic plateaux as amplification mechanisms.  A surviving adverse
+family must therefore use at least one of:
+\begin{enumerate}[label=(\alph*)]
+ \item variable-slope overlapping radial packets satisfying exact isotropy
+ $\sum_j\delta_j^2Q_j=\sum_jM_j$ and sharing one affine witness;
+ \item a genuinely overlapping hierarchy that reuses transverse mean beyond
+ the nodewise budget \eqref{eq:isotropy-budget};
+ \item signed component Hessians whose total remains pointwise positive,
+ with deterministic curvature and Lipschitz control;
+ \item a near-incidence slab packing satisfying all three nonnegative
+ conditions in \eqref{eq:ridge-energy} while preventing pointwise curvature
+ stacking.
+\end{enumerate}
+In every case the mixed coupling must nearly saturate the shifted Schur
+bound on the same high-nuclear-rank packet.  This is a construction target,
+not a belief that such a family exists.
+\end{obstruction}
+
+\section{Mandatory running audit on
+\texorpdfstring{$(d,\sigma)=(n^4,n)$}{(d,sigma)=(n4,n)}}
+\label{sec:audit-family}
+
+The exact two-scale certificate gives
+\begin{equation}\label{eq:mandatory-scales}
+ N\asymp n^4,\quad \alpha\asymp n^{-1},\quad \beta\asymp n,\quad
+ \kappa\asymp n^2,\quad L_H\asymp1,\quad
+ \tau_H^2\asymp n,\quad \gamma^{-1}\asymp n.
+\end{equation}
+The audit is:
+\begin{center}
+\begin{tabular}{@{}
+  >{\raggedright\arraybackslash}p{0.34\textwidth}
+  >{\raggedright\arraybackslash}p{0.23\textwidth}
+  >{\raggedright\arraybackslash}p{0.32\textwidth}@{}}
+\toprule
+Certified step & Value on family & Verdict\\
+\midrule
+Shifted Schur $ab$ & $\asymp n$ & sharp\\
+H2 rank branch $\sqrt N L_H$ & $\asymp n^2$ & power-slack by $n$; O1\\
+Direct Stein $NL_H^2$ & $\asymp n^4$ & power-slack by $n^3$\\
+H1 entropy branch & $\asymp n^2\sqrt{\log n}$ & power-slack by
+$n\sqrt{\log n}$; O2\\
+OU bridge & at least $\asymp n^3$ in the tested split & power-slack by
+$n^2$; O3\\
+Corrected excess conjecture &
+$\min\{N,\sqrt N L_H\}=n^2=(\tau_H^2)^2$ & exactly saturated\\
+\bottomrule
+\end{tabular}
+\end{center}
+The geometry responsible for every loss is explicit.  The averaged
+$t$-slice has $d\asymp n^4$ coherent transverse eigenvalues of order
+$n^{-3/2}$: its operator norm is tiny, while its Frobenius square is
+$n$.  It is generated by a shell with tangential curvature of order one and
+longitudinal width of order $n^{3/2}$.  Any proof that collapses the slice to
+a trace, nuclear norm, or operator norm loses a power here and is declared
+non-closing rather than recycled with new constants.
+
+For the floor-lowered family, write $r=R/\sigma$.  Then
+\[
+ \sqrt N=R,\qquad L_H=r^2/R,\qquad
+ \tau_H^2\asymp r,\qquad \sqrt\kappa\ge r,
+\]
+and
+\begin{equation}\label{eq:floor-open-audit}
+ \min\{N,\sqrt N L_H\}=r^2\asymp(\tau_H^2)^2.
+\end{equation}
+Thus lowering the floor does not expose a missing $\kappa$ dependence in the
+corrected target; it exactly saturates its regularity/dimension side.
+
+\section{The standalone closing lemma}\label{sec:open-lemma}
+
+The proof and refute ledgers meet at one precise statement.  It is not proved
+in this report.
+
+\begin{openproblem}[Standalone excess-coupling lemma, H2 version]
+\label{thm:open-H2}
+There should be a numerical constant $C>0$ such that, for every admissible
+genuine Hessian and every unit $w$,
+\begin{equation}\label{eq:open-H2}
+ \boxed{
+ \pos{\|M_w\|_F^2-Cd_{\kappa,L_H}}^2
+ \le C\min\{N,\sqrt N L_H\},
+ \qquad
+ d_{\kappa,L_H}=1+\min\{\log\kappa,\log(e+L_H)\}.}
+\end{equation}
+\end{openproblem}
+
+Taking square roots would give
+\[
+ \tau_H^2\le C\left[d_{\kappa,L_H}
+ +\min\{\sqrt N,N^{1/4}L_H^{1/2}\}\right].
+\]
+Combining this with C1--C2 would prove the upper side of the corrected
+conjecture \eqref{eq:corrected-L-conj}.  It has the right scalar reduction;
+it is saturated by the unit, two-scale, and floor-lowered radial families;
+and every audited inequality that currently fails to prove it is isolated in
+O1--O4.
+
+Under (H1) alone, the corresponding standalone target is
+\begin{equation}\label{eq:open-H1}
+ \boxed{
+ \pos{\|M_w\|_F^2-C(1+\log\kappa)}^2\le CN.}
+\end{equation}
+It would imply
+$\tau_H^2\lesssim1+\log\kappa+\sqrt N$ and, after the curvature-floor
+case split, the upper side of \eqref{eq:corrected-D-conj}.
+
+The sharp unresolved issue is therefore not a symmetry-only first-Hermite
+estimate.  It is a \emph{diffuse-excess theorem}: after removing the scalar
+entropy/Lipschitz contribution, prove that a high-rank first-Hermite Hessian
+slice cannot simultaneously have large Frobenius energy and near-saturate
+the shifted Bochner--Schur inequality without paying the global bounded
+Hessian clipping cost.  This formulation uses full Hessian compatibility,
+places (H2) exactly in the regularity branch, and survives every certified
+family and rigidity audit in this run.
+
+\section{Final bracket}
+
+The guaranteed deliverable is therefore the following nonconditional
+bracket.
+\begin{align*}
+ \text{(H1) lower:}\quad
+ &\cR_D(N,\kappa)\gtrsim
+ 1+\log\kappa+\sqrt{\min\{N,\kappa\}},
+ \quad\text{(supplied certified families)},\\
+ \text{(H1) upper:}\quad
+ &\cR_D(N,\kappa)\lesssim
+ 1+\min\{\sqrt\kappa,
+ \sqrt{N\log(e\kappa)}+N^{1/3}\log(e\kappa)\},\\[2mm]
+ \text{(H2) adverse face:}\quad
+ &\cR_L(N,\kappa,L)\gtrsim
+ 1+\min\{\log\kappa,\log(e+L)\}
+ +\min\{\sqrt\kappa,\sqrt N,N^{1/4}L^{1/2}\},\\
+ &\hspace{35mm}\text{on the parameter faces certified above},\\
+ \text{(H2) upper:}\quad
+ &\cR_L(N,\kappa,L)\lesssim \text{the right side of
+ \eqref{eq:H2-main-upper}, with $L_H$ replaced by $L$}.
+\end{align*}
+The original F--L statement is rejected by Theorem~\ref{thm:FL-false}.
+The corrected F--L and the original F--D statements remain open.  No
+genuine-Hessian, exactly whitened family was found above the corrected
+frontier; no closing proof was found either.  Every asserted inequality and
+family in this report has an explicit proof or certificate, while the boxed
+statements \eqref{eq:open-H2} and \eqref{eq:open-H1} are visibly marked as
+the remaining open lemmas.
+
+\end{document}
