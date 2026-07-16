@@ -24,7 +24,7 @@
 \newcommand{\op}{\mathrm{op}}
 \newcommand{\loc}{\mathrm{loc}}
 
-\title{Hessian Lipschitzness Does Not Rescue the\\
+\title{A Bounded-Hessian-Lipschitz Counterexample to the\\
 Dimension-Free Logarithmic Local Rate}
 \author{}
 \date{July 14, 2026}
@@ -34,8 +34,8 @@ Dimension-Free Logarithmic Local Rate}
 \maketitle
 
 \begin{abstract}
-We give a rigorous option-(B) answer to the Hessian-Lipschitz local-rate
-question.  A two-scale radial-softplus construction produces smooth genuine
+We give an option-(B) counterexample to the Hessian-Lipschitz local-rate
+conjecture.  A two-scale radial-softplus construction produces smooth genuine
 Hessians, already in equilibrium-whitened coordinates, for which
 \[
  \kappa\asymp \frac d{\sigma^2},\qquad
@@ -43,22 +43,13 @@ Hessians, already in equilibrium-whitened coordinates, for which
  L_H\asymp\frac{\sqrt d}{\sigma^2},\qquad
  \tau_H^2\gtrsim\frac{\sqrt d}{\sigma}\asymp\sqrt\kappa.
 \]
-Taking $(d,\sigma)=(n^4,n)$ gives $L_H\asymp1$; taking
-$(d,\sigma)=(n^6,n^2)$ gives $L_H\asymp n^{-1}\to0$.  In both cases
-$\kappa\asymp n^2$ and
-$\gamma_{\loc}\asymp n^{-1}\asymp\kappa^{-1/2}$.  Thus even a vanishing
-whitened Hessian-Lipschitz modulus does not rescue any polylogarithmic local
-rate.  The proof uses exact Gaussian isotropization and an explicit affine
-Rayleigh witness.  No Frobenius/operator conversion, symmetry-only surrogate,
-or noncommutative Loewner transfer occurs.
-
-We also complete the requested calibration.  The attached unit-scale
-counterexample has $L_H\asymp\sqrt\kappa$.  The fixed-width logistic smoothing
-of the one-dimensional rare-tail step has $L_H\asymp\sqrt\kappa$ but is only
-preasymptotically log-sharp; a genuine asymptotically log-sharp compact-tail
-smoothing exists with $L_H=O(\sqrt\kappa)$.  Across unrestricted smoothings
-there is no canonical minimal power, although bounded or polylogarithmic
-$L_H$ cannot realize the one-dimensional logarithmic extremizer.
+Taking $(d,\sigma)=(n^4,n)$ gives $L_H\le\Lambda_0$ for one absolute
+constant, $\kappa\asymp n^2$, and
+$\gamma_{\loc}\asymp n^{-1}\asymp\kappa^{-1/2}$.  Thus bounded whitened
+Hessian-Lipschitz modulus does not rescue a logarithmic local rate.  The proof
+uses exact Gaussian isotropization and a literally Fisher--Rao-normalized
+affine Rayleigh witness.  No Frobenius/operator conversion, symmetry-only
+surrogate, or noncommutative Loewner transfer occurs.
 \end{abstract}
 
 \section{Main result and norm convention}
@@ -82,11 +73,11 @@ For a symmetric trilinear form $\mathcal T$, we also write
 $\|\mathcal T\|_{\rm inj}:=\sup_{\|h\|=\|u\|=\|v\|=1}
 |\mathcal T[h,u,v]|$.
 
-\begin{theorem}[Vanishing-$L_H$ square-root counterexample]\label{thm:main}
+\begin{theorem}[Bounded-$L_H$ square-root counterexample]\label{thm:main}
 There are numerical constants $c,C>0$ and $n_0\in\mathbb N$ such that for
 every integer $n\ge n_0$ there is a $C^\infty$, strongly convex potential
-$V_n:\R^{n^6+1}\to\R$ satisfying, for
-$Z\sim\mathcal N(0,I_{n^6+1})$,
+$V_n:\R^{n^4+1}\to\R$ satisfying, for
+$Z\sim\mathcal N(0,I_{n^4+1})$,
 \begin{equation}\label{eq:equilibrium-main}
  \E\nabla V_n(Z)=0,\qquad \E\nabla^2V_n(Z)=I.
 \end{equation}
@@ -97,9 +88,9 @@ $\kappa_n=\beta_n/\alpha_n$, then
  cn\le\beta_n\le Cn,\qquad
  cn^2\le\kappa_n\le Cn^2.
 \end{equation}
-Its optimal whitened Hessian-Lipschitz modulus and linearized gap obey
+Its whitened Hessian-Lipschitz modulus and linearized gap obey
 \begin{equation}\label{eq:main-L-gap}
- \frac c n\le L_H(V_n)\le\frac Cn,
+ c\le L_H(V_n)\le C,
  \qquad
  \frac c n\le\gamma_{\loc}(V_n)\le\frac Cn,
 \end{equation}
@@ -109,184 +100,16 @@ and its first-Hermite Hessian coupling satisfies
 \end{equation}
 Consequently
 \[
- L_H(V_n)\longrightarrow0,\qquad
  \gamma_{\loc}(V_n)\asymp\kappa_n^{-1/2},
  \qquad
  \gamma_{\loc}(V_n)^{-1}\asymp\sqrt{\kappa_n}\gg\log\kappa_n.
 \]
-The same construction with transverse dimension $d=n^4$ and scale
-$\sigma=n$ has $L_H\asymp1$, $\kappa\asymp n^2$, and
-$\gamma_{\loc}\asymp n^{-1}$.  Hence the conjectured bound fails even at a
-fixed Hessian-Lipschitz modulus, independently of how a candidate $\Phi$ is
-defined near zero.
+In particular, for an absolute $\Lambda_0$ the whole sequence belongs to
+$\mathcal C(\kappa_n,\Lambda_0)$, while
+$\gamma_{\loc}(V_n)(1+\log\kappa_n)\to0$.
 \end{theorem}
 
 The construction and proof occupy Sections~\ref{sec:family}--\ref{sec:tau}.
-We first perform the mandatory calibration.
-
-\section{Mandatory calibration}\label{sec:calibration}
-
-\subsection{The attached unit-scale radial-softplus family}
-
-The attached counterexample uses
-\[
- r(y)=\sqrt{1+\|y\|^2},\quad
- F(s)=\log(1+e^s),\quad
- U(t,y)=F(r(y)-\sqrt d-\delta t),
-\]
-and $V=\alpha\|z\|^2/2+c_dU+b^\top z$, where
-$c_d\asymp\sqrt d$ and $\kappa_d\asymp d$.  The exact third-order chain rule
-is
-\begin{align}\label{eq:unit-chain}
- \nabla^3U={}&F'''(s)(\nabla s)^{\otimes3}
- +F''(s)\,\operatorname{Sym}(\nabla^2s\otimes\nabla s)
- +F'(s)\nabla^3s.
-\end{align}
-Here $\|\nabla s\|$, $\|\nabla^2s\|_{\op}$, and the injective norm of
-$\nabla^3s$ are uniformly bounded, as are the first three derivatives of
-$F$.  Hence $L_H(U)\le C$.
-
-For the reverse bound, take $y=\rho e_1$, let $\rho\to\infty$, and choose
-$t$ so that $s=\log2$.  In the $e_1$ direction,
-$\partial_1r\to1$ while $\partial_{11}r,\partial_{111}r\to0$, and
-\[
- F'''(\log2)=-\frac{2}{27}.
-\]
-Thus $L_H(U)\ge2/27$.  The quadratic and affine parts have zero third
-derivative, so
-\begin{equation}\label{eq:old-L-calibration}
- L_H(V_d)\asymp c_d\asymp\sqrt d\asymp\sqrt{\kappa_d}.
-\end{equation}
-This is the exact whitened tensor/operator scale.  Merely widening $F$ does
-not remove it: the term $F'(s)\nabla^3r$ in
-\eqref{eq:unit-chain} remains of unit size.  The counterexample below widens
-the radial core and the outer softplus simultaneously.
-
-\subsection{The one-dimensional rare-tail family}
-
-Let $K\ge2$, $a=K^{-1}$, and consider the logistic smoothing
-\begin{equation}\label{eq:logistic-smoothing}
- W_{K,\varepsilon}(x)
- =a+(K-a)\ell\left(\frac{x-r}{\varepsilon}\right),
- \qquad \ell(u)=\frac1{1+e^{-u}},
-\end{equation}
-where $r$ is chosen so that $\E W_{K,\varepsilon}(Z)=1$.  The normalization
-is exactly
-\begin{equation}\label{eq:logistic-normalization}
- \E\ell((Z-r)/\varepsilon)=\frac1{K+1},
-\end{equation}
-and
-\begin{equation}\label{eq:logistic-L}
- L_H(W_{K,\varepsilon})
- =\|W_{K,\varepsilon}'\|_\infty
- =\frac{K-K^{-1}}{4\varepsilon}.
-\end{equation}
-
-For fixed $\varepsilon>0$, this smoothing is not asymptotically log-sharp.
-For every polynomial $P$ of degree at most two, dominated convergence gives
-\begin{equation}\label{eq:logistic-tilt}
- e^{r/\varepsilon}\E[P(Z)\ell((Z-r)/\varepsilon)]
- \longrightarrow\E[P(Z)e^{Z/\varepsilon}]
- \quad(r\to\infty).
-\end{equation}
-Equations~\eqref{eq:logistic-normalization}--\eqref{eq:logistic-tilt} yield
-\begin{equation}\label{eq:fixed-logistic-asymptotics}
- r=\varepsilon\log K+\frac1{2\varepsilon}+o(1),\qquad
- T:=\E[ZW_{K,\varepsilon}(Z)]\to\varepsilon^{-1},\qquad
- H:=\E[(Z^2-1)W_{K,\varepsilon}(Z)]\to\varepsilon^{-2}.
-\end{equation}
-The determinant of the packed $2\times2$ generator tends to one and its
-trace tends to $2+(2\varepsilon^2)^{-1}$, so its gap tends to a positive
-$\varepsilon$-dependent constant.  Thus the fixed width $0.1$ experiment in
-the audit is preasymptotic.  Formula~\eqref{eq:logistic-L} nevertheless shows
-that its Hessian-Lipschitz scale is $\Theta(K)=\Theta(\sqrt\kappa)$.
-
-A genuinely asymptotically log-sharp smooth realization is easy to obtain,
-but it still does not have small $L_H$.  Let $h\in C^\infty(\R)$ be
-nondecreasing, $h=0$ on $(-\infty,0]$, and $h=1$ on $[1,\infty)$.  Define
-\begin{equation}\label{eq:compact-smoothing}
- W_K(x)=K^{-1}+(K-K^{-1})h(x-r),\qquad \E W_K(Z)=1.
-\end{equation}
-If $r_K$ is determined by $\mathbb P(Z>r_K)=1/(K+1)$, then
-$r\le r_K\le r+1$, so $r\asymp r_K\asymp\sqrt{\log K}$.  With
-$\nu_K(dx)=W_K(x)\varphi(x)\,dx$, one has
-\begin{equation}\label{eq:compact-moments}
- \E_{\nu_K}Z\asymp r_K,\qquad
- \E_{\nu_K}Z^2\asymp r_K^2,\qquad
- 0\le\operatorname{Var}_{\nu_K}(Z)\le C.
-\end{equation}
-For completeness, the first two estimates follow by using the support
-$[r,\infty)$ for the lower bounds and splitting at $2r$ for the upper
-bounds.  For the variance, center at $r+1$: the transition contribution is
-bounded by its total mass, the tail beyond $r+1$ has a bounded Gaussian
-overshoot second moment, and the $K^{-1}\varphi$ background contributes
-$O(r_K^2/K)$.  Therefore
-\begin{equation}\label{eq:1d-det}
- \frac12\le\det L_K=\frac{1+\operatorname{Var}_{\nu_K}(Z)}2\le C,\qquad
- \Tr L_K\asymp r_K^2,\qquad
- \gamma_{\loc}(W_K)\asymp\frac1{1+\log\kappa},\quad \kappa=K^2.
-\end{equation}
-This fixed-shape smoothing has
-\begin{equation}\label{eq:compact-L}
- L_H(W_K)=(K-K^{-1})\|h'\|_\infty=\Theta(K)=\Theta(\sqrt\kappa).
-\end{equation}
-
-There is no canonical ``minimal $L_H$ over all smoothings'' unless the
-smoothing class and the comparison constant in
-$\gamma_{\loc}\asymp1/\log\kappa$ are fixed.  Here is an explicit reason.
-Fix $0<\theta<1$, put $A=K^\theta$ and $w=(K-A)/A$, and use the cutoff $h$
-from~\eqref{eq:compact-smoothing}.  Choose $R_K$ so large that
-\[
- (K-A)\E[(1+Z^2)h((Z-R_K)/w)]\le K^{-10},
-\]
-and set
-\begin{equation}\label{eq:remote-cap-smoothing}
- W_{K,\theta}(x)=K^{-1}+(A-K^{-1})h(x-r)
- +(K-A)h((x-R_K)/w),
-\end{equation}
-with $r$ chosen continuously so that $\E W_{K,\theta}=1$.  The two ramps
-both have slope $O(A)$, the optimal range is $[K^{-1},K]$, and the remote
-ramp has negligible mass and first two moments.  The main normalization is
-$\E h(Z-r)=(1+o(1))/A$, so the same argument as above, with $K$ replaced by
-$A$, gives
-\[
- \gamma_{\loc}\asymp(\theta\log K)^{-1},\qquad
- L_H\asymp K^\theta.
-\]
-Thus different fixed comparison constants give different powers of $K$.
-
-There is, however, a useful rigorous qualitative lower calibration.  If
-$f\ge0$, $m=\E f>0$, and $f$ is $L$-Lipschitz, then
-\begin{equation}\label{eq:1d-lip-cov}
- \left|\frac{\E[Zf(Z)]}{m}\right|^2
- \le C\log\left(e+\frac Lm\right).
-\end{equation}
-To prove it, positivity and Lipschitzness first give
-$f(0)\le C(m+L)$ and hence $f(x)\le C(m+L(1+|x|))$.  For the probability
-density $f\varphi/m$, split its first absolute moment at
-$R=2\sqrt{\log(e+L/m)}$; the bulk is at most $R$, and standard Gaussian tail
-moments make the remaining contribution universally bounded.  Applying
-\eqref{eq:1d-lip-cov} to $f=W-K^{-1}$ gives a sharp qualitative conclusion.
-Indeed, let $\mu_2=\E[W(Z)Z^2]$ and let $\gamma\le\Lambda$ be the two
-eigenvalues of the packed generator.  Since
-$\det L=(1+\operatorname{Var}_{W\varphi}Z)/2\ge1/2$,
-$\Lambda\ge(2\gamma)^{-1}$.  Because
-$\Tr L=(3+\mu_2)/2=\gamma+\Lambda$, one has
-$\mu_2\ge(2\gamma)^{-1}$ whenever $\gamma$ is sufficiently small.  The
-characteristic equation then gives
-\[
- T^2=(1-\gamma)(1+\mu_2-2\gamma)\ge\frac1{4\gamma}.
-\]
-Thus $\gamma\le C_0/(1+\log\kappa)$ implies
-$T^2\ge c(C_0)(1+\log\kappa)$.  Since
-$m=\E(W-K^{-1})=1-K^{-1}\in[1/2,1]$, inequality
-\eqref{eq:1d-lip-cov} shows that any uniformly log-sharp family of this
-normalization must have $L_H\ge\kappa^{c_0}$ for some constant $c_0>0$
-determined by the gap comparison constant.  In
-particular, the one-dimensional logarithmic extremizer cannot be realized
-with bounded or polylogarithmic $L_H$.  This corrects the small-$L_H$
-premise in the proposed calibration; the high-dimensional construction below
-is strictly more adverse.
 
 \section{The two-scale radial-softplus family}\label{sec:family}
 
@@ -466,7 +289,8 @@ The exact chain rule is
 \end{align}
 Equations~\eqref{eq:s-derivative-bounds}--\eqref{eq:D3U} give
 \begin{equation}\label{eq:D3U-upper}
- \sup_z\|\nabla^3U(z)\|_{\rm inj}\le\frac C{\sigma^2}.
+ \sup_z\|\nabla^3U(z)\|_{\rm inj}
+ \le\frac{6+5\sqrt2/4}{\sigma^2}<\frac8{\sigma^2}.
 \end{equation}
 For the reverse bound, fix $y=(\sigma/2)e_1$ and send $t\to-\infty$.
 Then $p(s)\to1$ and $q(s),F_\sigma'''(s)\to0$, so
@@ -542,17 +366,27 @@ $r\ge\sigma>0$, so all steps are classical.  Finally,
 which proves~\eqref{eq:alpha-floor}.
 \end{proof}
 
-For the matching upper bound, take
+For the matching upper bound, put $P_d:=\diag(0,I_d)$ and first take the
+unnormalized pair
 \begin{equation}\label{eq:witness}
- u=e_t,\qquad
- X=\diag(0,\lambda I_d),\qquad
+ u_0=e_t,\qquad
+ X_0=\lambda P_d,\qquad
  \lambda:=\frac{2\delta_{d,\sigma}R}{d}.
 \end{equation}
-Then $2u+XZ=(2,\lambda Y)$ and
+Its literal Fisher--Rao normalization is
+\begin{equation}\label{eq:normalized-witness}
+ N_F^2:=1+\frac{d\lambda^2}{2},\qquad
+ \widehat u:=\frac{u_0}{N_F},\qquad
+ \widehat X:=\frac{X_0}{N_F},\qquad
+ \|(\widehat u,\widehat X)\|_\star=1.
+\end{equation}
+The covariance coordinate in the packed Euclidean display of $L_\star$ is
+$\widehat X/\sqrt2$.  For the unnormalized pair,
+$2u_0+X_0Z=(2,\lambda Y)$ and
 \begin{equation}\label{eq:X-cost}
- \|X\|_F^2=d\lambda^2
+ \|X_0\|_F^2=d\lambda^2
  =\frac{4\delta_{d,\sigma}^2R^2}{d}\le C\frac\sigma R=C\alpha,
- \qquad \|(u,X)\|_\star^2\ge1.
+ \qquad N_F^2=1+O(\alpha).
 \end{equation}
 Let $g(S)=S/r$.  From~\eqref{eq:exact-Hessian}, exactly,
 \begin{equation}\label{eq:exact-A-energy}
@@ -587,10 +421,14 @@ Moreover
 \begin{equation}\label{eq:floor-energy}
  \alpha\E\|(2,\lambda Y)\|^2=\alpha(4+d\lambda^2)\le C\alpha.
 \end{equation}
-Substitution into~\eqref{eq:rayleigh-identity}, followed by division by the
-Fisher norm, proves
+Substitution into~\eqref{eq:rayleigh-identity} proves
+$\mathcal Q_W(u_0,X_0)\le C\alpha$.  By homogeneity and
+\eqref{eq:normalized-witness},
 \begin{equation}\label{eq:gap-frontier}
- \gamma_{\loc}(V_{d,\sigma})\le C\frac\sigma R.
+ \gamma_{\loc}(V_{d,\sigma})
+ \le\mathcal Q_W(\widehat u,\widehat X)
+ =\frac{\mathcal Q_W(u_0,X_0)}{N_F^2}
+ \le C\frac\sigma R.
 \end{equation}
 The alpha floor gives the reverse bound.  Together with
 \eqref{eq:beta-kappa},
@@ -598,6 +436,61 @@ The alpha floor gives the reverse bound.  Together with
  \gamma_{\loc}(V_{d,\sigma})\asymp\frac\sigma R
  \asymp\kappa^{-1/2}.
 \end{equation}
+
+\subsection{Symmetry-sector check}
+
+The construction is $O(d)$-invariant in the $y$ variables.  Accordingly the
+packed mean--covariance space splits orthogonally into a three-dimensional
+trivial sector
+\[
+ \operatorname{span}\{e_t;\ e_te_t^\top;\ P_d/\sqrt d\},
+\]
+a two-dimensional standard sector
+$\operatorname{span}\{e_j;(e_te_j^\top+e_je_t^\top)/\sqrt2\}$ repeated $d$
+times, and a transverse-traceless scalar sector of multiplicity
+$d(d+1)/2-1$.  The multiplicities sum to
+$(d+1)+(d+1)(d+2)/2$, the dimension of the full packed space.
+
+For an exact check, write
+\[
+ W=\begin{pmatrix}a&b y^\top\\b y&c_0I_d+e\,yy^\top\end{pmatrix}
+\]
+with
+\[
+ a=\alpha+c_{d,\sigma}\delta^2q,\quad
+ b=-c_{d,\sigma}\delta q/r,\quad
+ c_0=\alpha+c_{d,\sigma}p/r,\quad
+ e=c_{d,\sigma}(q/r^2-p/r^3).
+\]
+Let $E=e_te_t^\top$, $P=P_d/\sqrt d$, and set
+\begin{align*}
+ t_E&=\E[Ta],&
+ t_P&=\frac1{\sqrt d}\E[T(dc_0+eS)]
+ =-\frac{c_{d,\sigma}\delta}{\sqrt d}\E[qS/r],\\
+ h_{EE}&=\E[a(T^2-1)],&
+ h_{EP}&=\E[a(S-d)/\sqrt d]
+ =\frac1{\sqrt d}\E[(dc_0+eS)(T^2-1)],\\
+ h_{PP}&=\E[(dc_0+eS)(S-d)/d].
+\end{align*}
+In the orthonormal packed basis $(e_t,E,P)$, the trivial block is exactly
+\begin{equation}\label{eq:trivial-sector}
+ L_{\rm triv}=
+ \begin{pmatrix}
+ 1&t_E/\sqrt2&t_P/\sqrt2\\
+ t_E/\sqrt2&1+h_{EE}/2&h_{EP}/2\\
+ t_P/\sqrt2&h_{EP}/2&1+h_{PP}/2
+ \end{pmatrix}.
+\end{equation}
+The normalized witness~\eqref{eq:normalized-witness} has the exact sector
+coordinate
+\begin{equation}\label{eq:witness-sector-coordinate}
+ \frac{(1,0,\lambda\sqrt{d/2})}
+ {\sqrt{1+d\lambda^2/2}}
+\end{equation}
+in~\eqref{eq:trivial-sector}.  Its block Rayleigh quotient is therefore
+identically the full-space quotient evaluated in
+\eqref{eq:exact-A-energy}--\eqref{eq:gap-frontier}; no multiplicity or
+physical-versus-packed coordinate is being suppressed.
 
 \section{First-Hermite certificate}\label{sec:tau}
 
@@ -636,30 +529,141 @@ two-parameter frontier
  \gamma_{\loc}\asymp\frac\sigma{\sqrt d}\asymp\kappa^{-1/2},\qquad
  \tau_H^2\gtrsim\frac{\sqrt d}{\sigma}\asymp\sqrt\kappa.}
 \end{equation}
-The specializations $(d,\sigma)=(n^4,n)$ and $(n^6,n^2)$ prove
-Theorem~\ref{thm:main}.  More generally, keeping
+The specialization $(d,\sigma)=(n^4,n)$ proves
+Theorem~\ref{thm:main}.  The alternative $(d,\sigma)=(n^6,n^2)$ even has
+$L_H\asymp n^{-1}\to0$ with the same $\kappa\asymp n^2$ and gap scale.
+More generally, keeping
 $d\asymp\kappa\sigma^2$ leaves the square-root gap unchanged while
 $L_H\asymp\sqrt\kappa/\sigma$ can be made arbitrarily small by increasing
 the dimension.
 
-\section{Whitening transfer and guardrail audit}
+\section{An explicit option-(B) sequence}\label{sec:explicit-sequence}
 
-If an original-coordinate potential $V^0$ has Hessian-Lipschitz modulus
-$L_H^0$ and whitening uses
-$x=m_\star+\Sigma_\star^{1/2}z$, then
-\[
- V^{\rm w}(z)=V^0(m_\star+\Sigma_\star^{1/2}z),\qquad
- \nabla^2V^{\rm w}(z)=\Sigma_\star^{1/2}\nabla^2V^0(x)\Sigma_\star^{1/2}.
-\]
-Therefore
-\begin{equation}\label{eq:whitening-transfer}
- L_H^{\rm w}\le L_H^0\|\Sigma_\star^{1/2}\|_{\op}^3.
+We record loose numerical constants so that the class quantifiers do not rest
+on asymptotic notation.  For every integer $n\ge15000$, set
+\begin{equation}\label{eq:explicit-slice}
+ d_n=n^4,\qquad \sigma_n=n,\qquad
+ R_n=\sqrt{d_n+\sigma_n^2},\qquad N_\theta^{(n)}=d_n+1.
 \end{equation}
-The construction above requires no transfer: $\Sigma_\star=I$, and every
-$\alpha,\beta,\kappa,L_H$ is already a whitened quantity.
+Choose the smallest root $\delta_n\in(0,1)$ of
+\eqref{eq:root-equation}, put
+\[
+ m_n:=\delta_n^2Q_{d_n,\sigma_n}(\delta_n)
+     =M_{d_n,\sigma_n}(\delta_n),\quad
+ \alpha_n:=\frac{\sigma_n}{R_n},\quad
+ c_n:=\frac{1-\alpha_n}{m_n},
+\]
+and define $V_n$ by~\eqref{eq:Vdef}, with these specialized parameters.
+Also write
+\begin{equation}\label{eq:explicit-specialized-notation}
+ A_n:=A_{\delta_n},\qquad W_n:=\nabla^2V_n,\qquad
+ \lambda_n:=\frac{2\delta_nR_n}{d_n},\qquad
+ N_{F,n}^2:=1+\frac{d_n\lambda_n^2}{2},
+\end{equation}
+and set
+$\widehat u_n=e_t/N_{F,n}$,
+$\widehat X_n=\lambda_nP_{d_n}/N_{F,n}$.
+Then $\|(\widehat u_n,\widehat X_n)\|_\star=1$ exactly, and its packed
+covariance coordinate is $\widehat X_n/\sqrt2$.
 
-The proof meets the stated guardrails as follows.
-\begin{enumerate}[leftmargin=2em,label=\arabic*.]
+Here are fully explicit bounds behind the root.  On
+$\mathcal E_n=\{|S-d_n|\le2\sqrt{d_n},\ |T|\le1\}$, Chebyshev's inequality,
+independence, and $\mathbb P(|T|\le1)>1/3$ give
+$\mathbb P(\mathcal E_n)>1/6$.  On this event $|s_\delta|\le3$.  Since
+Euler's number satisfies $\mathrm e<3$, uniformly for $0\le\delta\le1$,
+\begin{equation}\label{eq:explicit-QM}
+ \frac1{4704\sigma_n}\le Q_{d_n,\sigma_n}(\delta)
+ \le\frac1{4\sigma_n},\qquad
+ \frac1{672R_n}\le M_{d_n,\sigma_n}(\delta)
+ \le\frac3{R_n}.
+\end{equation}
+For the lower bounds use $p\ge1/28$, $q\ge1/(784\sigma_n)$, and
+$\Tr D\ge d_n/(4R_n)$ on $\mathcal E_n$.  For the upper bound on $M$, use
+\[
+ \frac1{d_n}p\left(\frac{d_n-1}{r}
+ +\frac{\sigma_n^2}{r^3}\right)\le\frac1r,\qquad
+ \frac1{4\sigma_nd_n}\le\frac1{R_n},\qquad
+ \E r^{-1}\le(\E S^{-1})^{1/2}
+ =(d_n-2)^{-1/2}\le2R_n^{-1}.
+\]
+Since $R_n/\sigma_n=\sqrt{n^2+1}>14112$, the left side minus the right
+side of~\eqref{eq:root-equation} is negative at zero and positive at one.
+Thus the specified root exists, and~\eqref{eq:explicit-QM} gives
+\begin{equation}\label{eq:explicit-root-bounds}
+ \frac{\sigma_n}{168R_n}\le\delta_n^2
+ \le14112\frac{\sigma_n}{R_n},\qquad
+ \frac1{672R_n}\le m_n\le\frac3{R_n},\qquad
+ \frac{R_n}{6}\le c_n\le672R_n.
+\end{equation}
+In particular, the two equalities in~\eqref{eq:exact-equilibrium} remain
+exact; the inequalities in this paragraph are used only to audit scales.
+
+Define the explicit valid upper curvature and class ceiling
+\begin{equation}\label{eq:explicit-kappa-ceiling}
+ \widetilde\beta_n:=1009\frac{R_n}{\sigma_n},\qquad
+ \overline\kappa_n:=\frac{\widetilde\beta_n}{\alpha_n}
+ =1009(n^2+1).
+\end{equation}
+Equations~\eqref{eq:A-bound} and~\eqref{eq:explicit-root-bounds} give
+$\alpha_nI\preceq W_n\preceq\widetilde\beta_nI$.  Moreover the direct
+chain-rule estimate~\eqref{eq:D3U-upper} can be read with constant eight, so
+\begin{equation}\label{eq:explicit-Lambda}
+ L_H(V_n)\le\frac{8c_n}{\sigma_n^2}
+ \le5376\frac{R_n}{\sigma_n^2}\le8064=:\Lambda_0.
+\end{equation}
+Consequently $(N_\theta^{(n)},V_n)\in
+\mathcal C(\overline\kappa_n,\Lambda_0)$ and
+$\overline\kappa_n\to\infty$.
+
+For completeness, the constants in the normalized Rayleigh calculation can
+also be made numerical.  Equations~\eqref{eq:explicit-root-bounds},
+\eqref{eq:exact-A-energy}, and~\eqref{eq:residual-moment} give
+\[
+ d_n\lambda_n^2\le112896\alpha_n,\qquad
+ \E[(2,\lambda_nY)^\top A_n(2,\lambda_nY)]
+ \le\frac{\lambda_n^2}{2\sigma_n}
+ +2\frac{\lambda_n^2\sigma_n^2}{R_n}.
+\]
+Using $R_n^2/d_n\le2$, $R_n^2/d_n^2\le\alpha_n$, and
+$\sigma_n^3R_n/d_n^2\le\alpha_n$, the two terms after multiplication by
+$c_n$ are at most $18966528\alpha_n$ and $75866112\alpha_n$,
+respectively.  Thus
+\[
+ c_n\E[(2,\lambda_nY)^\top A_n(2,\lambda_nY)]
+ \le94832640\alpha_n.
+\]
+Together with the floor energy and the final $\|X\|_F^2$ term in
+\eqref{eq:rayleigh-identity}, which are at most $112900\alpha_n$ and
+$112896\alpha_n$, respectively, this yields
+\[
+ 4\mathcal Q_{W_n}(e_t,\lambda_nP_{d_n})<200000000\alpha_n.
+\]
+For the literally normalized witness~\eqref{eq:normalized-witness}, therefore,
+\begin{equation}\label{eq:explicit-psi-bound}
+ \gamma_{\loc}(V_n)\le50000000\alpha_n
+ \le\frac{1600000000}{\sqrt{\overline\kappa_n}}.
+\end{equation}
+If $\kappa_n^{\rm opt}$ denotes the optimal post-whitening condition number,
+the point $y=0$, $s=0$ and~\eqref{eq:explicit-kappa-ceiling} give
+\begin{equation}\label{eq:optimal-kappa-comparison}
+ \frac{n^2+1}{12}\le\kappa_n^{\rm opt}
+ \le1009(n^2+1).
+\end{equation}
+The same last bound in~\eqref{eq:explicit-psi-bound}, with the same numerical
+constant, therefore holds with $\kappa_n^{\rm opt}$ in place of
+$\overline\kappa_n$.  Hence outcome (B) holds with
+\begin{equation}\label{eq:psi}
+ \psi(\kappa):=1600000000\,\kappa^{-1/2},\qquad
+ \psi(\kappa)(1+\log\kappa)\longrightarrow0.
+\end{equation}
+
+\section{Final guardrail audit}
+
+The construction requires no coordinate transfer: it is defined with
+$Z\sim N(0,I)$ and satisfies $\E W(Z)=I$ exactly.  Thus every
+$\alpha,\beta,\kappa,L_H$ above is already post-whitening.  The remaining
+guardrails are met as follows.
+\begin{enumerate}[leftmargin=2em,label=\arabic*.,itemsep=.2em,topsep=.3em]
  \item Equation~\eqref{eq:exact-Hessian} is the pointwise Hessian of the
  displayed $C^\infty$ potential.  Full third- and fourth-order compatibility,
  not first-Hermite symmetry alone, is used in Lemma~\ref{lem:rayleigh} and
@@ -670,9 +674,8 @@ The proof meets the stated guardrails as follows.
  \item Bounds and isotropic mean are not treated as sufficient abstract data.
  Exact isotropy comes from~\eqref{eq:root-equation}, and the small energy comes
  from the compatible radial and mixed blocks of~\eqref{eq:exact-Hessian}.
- \item Both $\kappa$ and $L_H$ are post-whitening quantities.  The general
- coordinate conversion is recorded separately in
- \eqref{eq:whitening-transfer}.
+ \item Both $\kappa$ and $L_H$ are post-whitening quantities; no raw-coordinate
+ estimate is imported.
  \item The Hessian and every derivative of the Hessian are bounded, so every
  Gaussian integration by parts used here is classical.  No unproved weak
  extension is needed.
