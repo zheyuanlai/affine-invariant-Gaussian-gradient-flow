@@ -1,0 +1,1736 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs,longtable,array}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\usepackage[nameinlink,capitalise,noabbrev]{cleveref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=MidnightBlue,
+  citecolor=OliveGreen,
+  urlcolor=BrickRed,
+  pdftitle={The Kannan--Lovasz--Simonovits Conjecture: Problem, Progress, and Research Directions}
+}
+
+\setlist[itemize]{topsep=4pt,itemsep=2pt,parsep=1pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt,parsep=1pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\allowdisplaybreaks
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{target}[theorem]{Open target}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\HS}{\mathrm{HS}}
+\newcommand{\Lip}{\mathrm{Lip}}
+\newcommand{\Id}{\mathrm{Id}}
+\newcommand{\1}{\mathbf 1}
+\newcommand{\CP}{C_{\mathrm P}}
+\newcommand{\dd}{\,d}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+
+\newcommand{\statusbox}[1]{%
+  \begin{center}
+  \fcolorbox{BrickRed}{BrickRed!5}{%
+    \begin{minipage}{0.91\textwidth}
+      \textbf{Status.} #1
+    \end{minipage}}
+  \end{center}}
+
+\title{\textbf{The Kannan--Lov\'asz--Simonovits Conjecture}\\
+Problem, Audited Progress, and Possible Future Directions}
+\author{Research note from a multi-route proof investigation}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The Kannan--Lov\'asz--Simonovits (KLS) conjecture asks for a
+dimension-free Cheeger, or equivalently Poincar\'e, inequality for every
+isotropic log-concave probability measure.  This note gives a standalone
+statement of the problem, records the exact reductions needed to pass
+between its standard formulations, and summarizes the strongest results
+obtained in an extended proof investigation.  The main advances are an
+exact second-order ledger for a low eigenfunction, a rank-one-defect
+Lichnerowicz theorem, strict spectral amplification under normalized
+self-convolution, including its unequal-input extension, and a
+posterior reverse-smoothing theorem which makes fixed-Gaussian analytic
+outputs a quantitatively equivalent target.  A weighted-Fisher ledger closes for pure translations
+and for smooth post-noise Gaussian conditional fibers.  Exact
+stochastic-localization and Gaussian-posterior identities isolate the
+remaining global gates.  We also record explicit counterexamples to
+several tempting forward-only and slice-local claims.  No complete
+proof of KLS is claimed.  Checkpoint 17 adds audited posterior
+Hilbert--Schmidt and affine-stability ledgers, the asymptotic fixed-Gaussian
+saturation comparison, simple-eigenspace and longitudinal Hardy frontiers,
+and the product ANOVA/matrix-Stein obstruction.  The final section proposes
+a prioritized research program whose statements are precise enough to be
+proved or falsified independently.
+\end{abstract}
+
+\statusbox{Checkpoint 17 does not contain a complete proof of KLS.
+Every assertion labeled ``open target,'' ``candidate,'' or ``future
+direction'' remains unproved.  The posterior reverse theorem is a valid
+general reduction, while the score and weighted-Fisher estimates close only
+near-affine branches.  The affine-interaction inequality needed for the
+remaining nonlinear branch is not proved.  All other displayed identities
+and model calculations below were checked with their dependence on
+dimension and auxiliary parameters exposed.  The new posterior
+Hilbert--Schmidt, affine-stability, fixed-Gaussian, simple-eigengap, and
+product-ANOVA statements are audited lemmas or conditional frontiers.  The
+twice-Bochner ledger still retains an \(O_\kappa(\lambda)\) transverse
+saturation remainder and a longitudinal quotient gate; neither is assumed
+away.  These results are not a KLS proof.}
+
+\tableofcontents
+
+\section{The problem}
+
+\subsection{Log-concavity, boundary measure, and covariance}
+
+A probability measure \(\mu\) on \(\R^n\) is \emph{log-concave} if for
+compact sets \(A,B\subset\R^n\) and \(0<\theta<1\),
+\[
+ \mu(\theta A+(1-\theta)B)
+ \ge \mu(A)^\theta\mu(B)^{1-\theta}.
+\]
+By Borell's characterization, \(\mu\) is supported on an affine subspace
+\(E\); on its minimal affine hull it is either a point mass or has a
+density \(e^{-V}\), where \(V\) is convex \cite{Borell1975}.
+
+For a Borel set \(A\), let
+\[
+ A_\varepsilon=\{x:\operatorname{dist}(x,A)\le\varepsilon\},
+ \qquad
+ \mu^+(A)=\liminf_{\varepsilon\downarrow0}
+ \frac{\mu(A_\varepsilon)-\mu(A)}{\varepsilon}.
+\]
+The Cheeger constant is
+\[
+ \psi_\mu=
+ \inf_{0<\mu(A)<1}
+ \frac{\mu^+(A)}{\min\{\mu(A),1-\mu(A)\}}.
+\]
+Write \(A_\mu=\Cov(\mu)\).  The measure is \emph{isotropic} when its
+barycenter is zero and \(A_\mu=I\).
+
+\subsection{The KLS conjecture}
+
+\begin{theorem}[KLS conjecture; desired statement]
+There is a universal constant \(c>0\) such that every non-point
+log-concave probability measure \(\mu\) on every Euclidean space satisfies
+\[
+ \boxed{\qquad
+ \psi_\mu\ge \frac{c}{\sqrt{\norm{A_\mu}_{\op}}}.
+ \qquad}                                             \tag{KLS}
+\]
+Equivalently, \(\inf_n\inf_\mu\psi_\mu>0\), where the second infimum is
+over isotropic log-concave probabilities on \(\R^n\).
+\end{theorem}
+
+The conjecture originated in the study of random walks and isoperimetry
+for convex bodies \cite{KLS1995}.  The word \emph{universal} is essential:
+no dependence on \(n\), the support, a smoothing parameter, or a
+localization time is permitted.
+
+\section{Exact reductions and equivalent targets}
+
+\subsection{Affine hull and degenerate covariance}
+
+Let \(E=m+L\) be the minimal affine hull of the support.  Exterior
+Minkowski content computed in \(\R^n\) agrees with that computed using the
+induced Euclidean metric on \(E\).  Indeed, for \(B=A\cap E\),
+\(B_\varepsilon^E\subset A_\varepsilon\cap E\), while a set already
+contained in \(E\) has the same distance function on \(E\) in either
+ambient space.  Taking the two infima gives
+\[
+                         \psi_\mu^{\R^n}=\psi_\mu^E.  \tag{2.1}
+\]
+
+On the direction space \(L\), the covariance is positive definite.  If
+\(v\in L\) had zero variance, the support would lie in the proper affine
+hyperplane \(m+(L\cap v^\perp)\), contradicting minimality.  On
+\(L^\perp\), covariance is zero.  Thus the ambient operator norm is the
+largest eigenvalue of \(A_\mu|_L\).
+
+\subsection{Affine maps}
+
+If \(S:E\to F\) is invertible and \(\nu=S_\#\mu\), then
+\[
+ \frac{\psi_\mu}{\norm S_{\op}}
+ \le \psi_\nu
+ \le \norm{S^{-1}}_{\op}\psi_\mu.                  \tag{2.2}
+\]
+For example,
+\(A_{\varepsilon/\norm S_{\op}}\subset
+S^{-1}((SA)_\varepsilon)\), which proves the left inequality directly
+from the definition; apply it to \(S^{-1}\) for the other direction.
+
+Translate by \(-m\) and take \(S=A_\mu^{-1/2}\) on \(L\).  The image is
+isotropic, and \(\norm{S^{-1}}_{\op}=\sqrt{\norm{A_\mu}_{\op}}\).
+Consequently, a universal isotropic lower bound implies (KLS), including
+all lower-dimensional supports.  The converse is immediate.  A point mass
+is precisely the excluded zero-dimensional case.
+
+\subsection{Poincar\'e and first-moment formulations}
+
+Let \(\CP(\mu)\) be the optimal constant in
+\[
+ \Var_\mu f\le \CP(\mu)\int|\nabla f|^2\dd\mu.       \tag{2.3}
+\]
+The chain rule gives
+\[
+ \CP(S_\#\mu)\le\norm S_{\op}^2\CP(\mu),\qquad
+ \CP(\mu)\le\norm{S^{-1}}_{\op}^2\CP(S_\#\mu).    \tag{2.4}
+\]
+For log-concave measures, Cheeger's inequality and the reverse
+Buser--Ledoux implication under \(CD(0,\infty)\), together with standard
+convex approximation, give universal constants \(c,C>0\) such that
+\[
+ \CP(\mu)\le \frac{4}{\psi_\mu^2},
+ \qquad
+ \psi_\mu\ge\frac{c}{\sqrt{\CP(\mu)}}.              \tag{2.5}
+\]
+Hence KLS is equivalent, up to constants, to
+\[
+ \boxed{\quad
+ \Var_\mu f\le C\norm{A_\mu}_{\op}
+ \int|\nabla f|^2\dd\mu
+ \quad}                                               \tag{P}
+\]
+for every locally Lipschitz \(f\in L^2(\mu)\).  Truncation, cutoff, and
+mollification extend a proof for compactly supported smooth tests to this
+full class without changing the constant.
+
+E.~Milman's equivalence theorem under the same convexity hypothesis
+identifies \(\psi_\mu^{-1}\), up to constants, with
+\[
+ D_1(\mu)=
+ \sup_{\Lip(f)\le1}\int|f-\operatorname{med}_\mu f|\dd\mu
+ \cite{Milman2009}.
+\]
+Mean and median centerings differ by at most a factor two.  Thus the
+isotropic form of KLS is also equivalent to
+\[
+ \sup_{\Lip(f)\le1}\E|f(X)-\E f(X)|\le C.            \tag{M}
+\]
+Linear functions already satisfy this by isotropy.  Radial Lipschitz
+functions are controlled by the dimension-free thin-shell theorem.  A bad
+witness must therefore be genuinely nonlinear and non-radial.
+
+\begin{remark}
+KLS is not a dimension-free log-Sobolev statement.  Isotropic
+one-dimensional exponential measures already obstruct subgaussian tails.
+No argument below assumes a uniform log-Sobolev or \(T_2\) inequality.
+\end{remark}
+
+\section{An exact low-eigenfunction ledger}
+
+This section records the most useful general identities found in the
+investigation.  Work first with a smooth convex potential on a smooth
+convex support and Neumann boundary condition; the closed-form identities
+extend by convex approximation.
+
+Let \(A=-L_\mu\) be the nonnegative weighted generator and suppose
+\[
+ Af=\lambda f,\qquad
+ \E f=0,\qquad \E f^2=1,\qquad \E|\nabla f|^2=\lambda.
+\]
+Set
+\[
+ a=\E[Xf],\qquad r=f-a\cdot x,\qquad \delta=\norm r_2.
+\]
+
+\begin{proposition}[Affine residual identities]
+For an isotropic \(\mu\),
+\begin{align}
+ &\E r=0,\qquad \E[Xr]=0,
+ \qquad |a|^2=1-\delta^2,                              \tag{3.1}\\
+ &\E\nabla f=\lambda a,
+ \qquad \E\nabla r=-(1-\lambda)a,                    \tag{3.2}\\
+ &\E|\nabla r|^2
+   =1-\lambda+(2\lambda-1)\delta^2,                  \tag{3.3}\\
+ &\Var(\nabla f)
+   =\lambda\bigl[1-\lambda(1-\delta^2)\bigr].       \tag{3.4}
+\end{align}
+\end{proposition}
+
+\begin{proof}
+The first line is orthogonal projection onto the linear functions.
+Testing the weak eigenvalue equation against \(b\cdot x\) gives
+\(b\cdot\E\nabla f=\lambda b\cdot a\), proving (3.2).
+The remaining formulas follow by expanding
+\(\nabla r=\nabla f-a\).
+\end{proof}
+
+Let
+\[
+ B_f=\E\norm{D^2f}_{\HS}^2
+\]
+and let \(\mathcal R_V(f)\ge0\) denote the sum of the potential-curvature
+and Reilly boundary-curvature terms.  Bochner--Reilly gives
+\[
+ B_f+\mathcal R_V(f)=\lambda^2.                       \tag{3.5}
+\]
+Applying the same bottom Poincar\'e inequality componentwise to
+\(\partial_i f\) and using (3.4) produces the exact nonnegative defect
+identity
+\[
+ \boxed{\quad
+ [B_f-\lambda\Var(\nabla f)]+\mathcal R_V(f)
+ =\lambda^3(1-\delta^2).
+ \quad}                                               \tag{3.6}
+\]
+In particular,
+\[
+                         \norm{D^2r}_2\le\lambda.     \tag{3.7}
+\]
+
+The identity says that a hypothetical small-gap, near-linear eigenfunction
+has a residual \(r\) that is small both in value and Hessian, yet has mean
+gradient almost \(-a\).  This isolates the following gate.
+
+\begin{target}[Residual mean-gradient inequality]
+Prove, for every centered isotropic log-concave \(\mu\),
+\[
+ \boxed{\qquad
+ |\E\nabla g|
+ \le C\bigl(\norm g_2+\norm{D^2g}_2\bigr),
+ \quad \E g=0,\quad \E[Xg]=0.
+ \qquad}                                              \tag{MG}
+\]
+\end{target}
+
+Applied to \(r\), (MG) gives
+\[
+ (1-\lambda)\sqrt{1-\delta^2}\le C(\delta+\lambda), \tag{3.8}
+\]
+and therefore closes the near-linear branch whenever \(\delta\) is a
+sufficiently small universal constant.
+
+The stronger Hessian-only form holds in one dimension and tensorizes to
+products.  If \(\nu\) is centered, variance one, and log-concave on
+\(\R\), its one-dimensional Poincar\'e constant is universally bounded.
+Applying Poincar\'e first to \(h'\) and then to \(h-(\int h'\dd\nu)x\)
+gives, for \(h\perp\{1,x\}\),
+\[
+ \left|\int h'\dd\nu\right|
+ \le12\left(\int(h'')^2\dd\nu\right)^{1/2}.          \tag{3.9}
+\]
+Conditional projections onto product coordinates are orthogonal, so
+\[
+ |\E\nabla g|^2
+ \le144\E\norm{D^2g}_{\HS}^2                         \tag{3.10}
+\]
+for products of isotropic one-dimensional log-concave laws.
+
+\subsection{A false interpolation and its diagnostic value}
+
+The seemingly natural inequality
+\[
+ \Var(\nabla f)\le C\delta\norm{D^2f}_2              \tag{3.11}
+\]
+is false even for genuine first eigenfunctions.  The first degree-one
+Neumann mode on the isotropic Euclidean ball has
+\[
+ \delta\asymp n^{-1},\qquad
+ \Var(\nabla f)\asymp n^{-1},\qquad
+ \norm{D^2f}_2\asymp n^{-1/2},
+\]
+so the ratio in (3.11) grows like \(\sqrt n\).  Any viable near-linearity
+argument must target the \emph{mean} gradient or another finite-dimensional
+component, not the whole gradient variance.
+
+\section{The directional third-moment gate}
+
+For a symmetric matrix \(B\), define
+\[
+ q_B=X^TBX-\Tr B,
+ \qquad
+ T B=\E[Xq_B].
+\]
+The quadratic restriction of the Hessian-only form of (MG) is exactly
+\[
+ \boxed{\qquad
+ \sup_{|u|=1}
+ \norm{\E[(u\cdot X)(XX^T-I)]}_{\HS}\le C.
+ \qquad}                                              \tag{TM}
+\]
+Indeed, \(T^*u=\E[(u\cdot X)(XX^T-I)]\), while
+\(D^2q_B=2B\).  More explicitly, apply the inequality to
+\(q_B-(TB)\cdot X\), which is orthogonal to both constants and linear
+functions and has the same Hessian as \(q_B\).
+
+Thin-shell estimates for every projection give only
+\[
+ |\Tr(PM_u)|\le C\sqrt{\operatorname{rank}P},
+ \qquad M_u=\E[(u\cdot X)(XX^T-I)].                  \tag{4.1}
+\]
+Ordering the eigenvalues yields
+\(|\lambda_j(M_u)|\le Cj^{-1/2}\), hence
+\[
+                         \norm{M_u}_{\HS}\le C\sqrt{\log(en)}. \tag{4.2}
+\]
+The harmonic diagonal matrix shows that (4.1) alone cannot remove the
+logarithm.  A successful proof of (TM) must use compatibility among matrix
+directions, not only rank-by-rank trace information.
+
+\subsection{Dependent model classes where (TM) is dimension-free}
+
+The investigation established (TM) with universal constants for several
+nonproduct classes.
+
+\paragraph{Paired wedges.}
+For
+\[
+ K_a=\{(t,x,y):|t|\le1,
+ |x_i|\le1+a_it,
+ |y_i|\le1-a_it\},
+\]
+let \(S=\sum_i a_i^2\) and \(v=\Var T\).  The axial marginal potential
+satisfies \(W''\ge2S\), hence \(vS\le1/2\).  After whitening, the only
+nonzero third coefficients are
+\[
+ \lambda_i=\frac{2a_i\sqrt v}{1+a_i^2v},
+ \qquad \sum_i\lambda_i^2\le2,
+\]
+and therefore
+\[
+ \sup_{|u|=1}\norm{M_u}_{\HS}\le2.                  \tag{4.3}
+\]
+The whitened law is an explicit \(4\)-Lipschitz image of a product law,
+which also gives \(\CP\le192\).  A one-sided wedge admits an analogous
+map and the explicit bound \(\CP<972\).
+
+\paragraph{Dirichlet laws.}
+For a log-concave Dirichlet distribution with parameters
+\(\alpha_i\ge1\), write \(A=\sum_i\alpha_i\) and
+\(q_i=\alpha_i/A\).  A unit tangent direction has coefficients \(a_i\)
+with \(\sum q_ia_i=0\) and \(\sum q_ia_i^2=1\).  Direct moment algebra gives
+\[
+ \norm{M_{u(a)}}_{\HS}^2
+ =\frac{4(A+1)}{(A+2)^2}
+   \left(\sum_i a_i^2-2\right)<4.                    \tag{4.4}
+\]
+
+\paragraph{Cones and conditional Gaussian families.}
+For a cone over a centrally symmetric base,
+\[
+ \sup_{|u|=1}\norm{M_u}_{\HS}^2
+ =\frac{4(n-1)(n+2)}{(n+3)^2}<4.                     \tag{4.5}
+\]
+The same gate holds for affine box slices and affine Gaussian covariance
+pencils.
+
+More generally, consider
+\[
+ p(t,y)\propto
+ \exp\!\left[-W(t)-\frac12y^TQ(t)y\right],
+ \qquad R(t)=Q(t)^{-1}.
+\]
+Joint log-concavity is equivalent to
+\[
+                         W''\ge0,\qquad R''\preceq0.  \tag{4.6}
+\]
+This permits genuinely rotating, noncommuting covariance eigenspaces.
+After whitening, marginal curvature controls the normalized covariance
+velocity by
+\[
+ \Phi''(t)\ge\frac12
+ \norm{R(t)^{-1/2}R'(t)R(t)^{-1/2}}_{\HS}^2.          \tag{4.7}
+\]
+A one-dimensional Stein-kernel argument then proves (TM) with a universal
+constant for the entire conditional-Gaussian class.
+
+\subsection{Why general slicing remains open}
+
+For an arbitrary smooth conditional law
+\(p_t(y)\propto e^{-V(t,y)}\), set
+\(H=D_y^2V\), \(g=V_t-\E_tV_t\), and let \(Lu=g\) for the conditional
+generator.  The Brascamp--Lieb deficit controls
+\(\E_t\norm{D^2u}_{\HS}^2\).  Covariance velocity would follow from
+\[
+ \boxed{\quad
+ \norm{\E[Y\otimes\nabla u+\nabla u\otimes Y]}_{\HS}^2
+ \le C\E\norm{D^2u}_{\HS}^2.
+ \quad}                                               \tag{AH}
+\]
+This affine-Hessian rigidity is itself a near-linear KLS gate.  Moving
+boundaries cannot be omitted: for an interval and for a centered
+exponential law, the covariance of the iid sum-difference slice is convex,
+not concave, and all relevant curvature is carried by endpoint flux.
+
+\section{A rank-one-defect Lichnerowicz theorem}
+
+One genuinely general positive theorem arose from the localization route.
+
+\begin{proposition}[Rank-one curvature defect]
+Let \(u\in S^{n-1}\), \(P=I-u\otimes u\), and let
+\(d\mu=e^{-V}dx\) be log-concave.  If, distributionally,
+\[
+                         D^2V\succeq\kappa P,
+\]
+then
+\[
+ \boxed{\quad
+ \CP(\mu)\le201\left(\kappa^{-1}
+ +\Var_\mu\ip{X}{u}\right).
+ \quad}                                               \tag{5.1}
+\]
+The same statement holds intrinsically on a lower-dimensional affine
+support.
+\end{proposition}
+
+Here is the proof mechanism.  Disintegrate at
+\(x=tu+y\), with conditional law \(\nu_t\) on \(u^\perp\) and marginal
+\(e^{-U(t)}dt\).  There is a canonical continuity-equation velocity
+\(w_t\) satisfying
+\[
+ \partial_t\nu_t+\operatorname{div}(\nu_tw_t)=0,
+ \qquad
+ \kappa\int|w_t|^2\dd\nu_t\le U''(t).                \tag{5.2}
+\]
+The second inequality is a reinforced infinitesimal Pr\'ekopa theorem;
+the cross-Hessian block is essential.  If
+\(g(t)=\int f(t,y)\dd\nu_t(y)\), then
+\[
+ g'(t)=\int(\partial_tf+\nabla_yf\cdot w_t)\dd\nu_t,
+\]
+so
+\[
+ \frac{g'(t)^2}{1+\int|w_t|^2\dd\nu_t}
+ \le\int|\nabla f|^2\dd\nu_t.                        \tag{5.3}
+\]
+A curvature-weighted one-dimensional Hardy inequality, plus conditional
+Lichnerowicz in \(u^\perp\), proves (5.1).  Gaussian convolution preserves
+the transverse curvature quantitatively:
+\[
+ \kappa\longmapsto\frac{\kappa}{1+\kappa\varepsilon},
+\]
+which permits passage to nonsmooth potentials without loss in the final
+constant.
+
+This theorem is useful after localization has created curvature in all but
+one direction.  Its remaining obstruction is the variance of the
+adaptively selected survivor direction.
+
+\section{Stochastic localization and heat-flow identities}
+
+\subsection{Function-specific localization}
+
+For a normalized first eigenfunction, a localization driver can preserve
+its posterior mean while adding curvature away from one selected direction.
+Combining the preserved variance with (5.1) gives the exact ledger
+\[
+ \boxed{\quad
+ 1\le\frac{192}{T}\lambda
+ +96\E[R_T\mathcal E_T].
+ \quad}                                               \tag{6.1}
+\]
+Here \(R_T\) is the terminal variance in the surviving direction and
+\(\mathcal E_T=\E_T|\nabla f|^2\) is posterior energy.  Thus a small gap
+forces \(R_T\) to be of order \(1/\lambda\) under the
+energy-biased path law.  Ordinary expectation bounds on \(R_T\) are
+insufficient because of this correlation.
+
+A softened driver that creates full curvature has the complementary
+tradeoff
+\[
+                         1-\E m_T^2\le\frac{\lambda}{\eta T}, \tag{6.2}
+\]
+where \(m_T\) is the localized mean and \(\eta T I\) is the curvature
+created.  Equations (6.1)--(6.2) make precise why preserving the signal and
+regularizing its selected direction compete.
+
+\subsection{Parallel coupling and a low-mode martingale}
+
+In standard stochastic localization, write \(A_t=\Cov(\mu_t)\) and let
+\[
+ M_0=I,\qquad \dot M_t=A_tM_t.
+\]
+For a fixed \(f\), set
+\[
+ c_t=\Cov_{\mu_t}(X,f),\qquad
+ D_t=\E_t[(f-\E_tf)(X-a_t)(X-a_t)^T].
+\]
+Direct It\^o differentiation gives
+\[
+ dc_t=D_t\dd B_t-A_tc_t\dd t,
+ \qquad
+ \boxed{\ M_t^Tc_t\text{ is a martingale}.\ }        \tag{6.3}
+\]
+For the eigenfunction decomposition in \cref{sec:posterior} below,
+\(c_0=a\).  At time one, \(\mu_1\) is 1-strongly log-concave, so
+\[
+                         \E|c_1|^2\le\lambda.         \tag{6.4}
+\]
+With \(b=a/|a|\), (6.3)--(6.4) imply
+\[
+ \boxed{\qquad
+ \E|M_1b|^2\ge\frac{1-\delta^2}{\lambda}.
+ \qquad}                                              \tag{6.5}
+\]
+A nearly linear small mode must therefore select an expensive direction
+of the coupling.  Available theorems control only the trace
+\[
+                         \E\Tr(M_1^TM_1)\le Cn,        \tag{6.6}
+\]
+not the selected direction.
+
+The weakest final-time statement that closes this branch is
+\[
+ \boxed{\quad
+ \E\left[
+ \frac{\ip{M_1b}{c_1}^2}{|c_1|^2}\1_{\{c_1\ne0\}}
+ \right]\le C.
+ \quad}                                               \tag{FA}
+\]
+This is strictly weaker than \(\E|M_1b|^2\le C\): it controls only the
+random normal component used by the martingale pairing.  It passes the
+Gaussian, cube, product-exponential, ball, and simplex tests.  A one-spike
+matrix path shows that (6.6) and ordered-rank stopping bounds alone do not
+imply (FA).
+
+Coarea does not automatically help.  The quotient in (FA) is a normal
+stretch of the initial-tilt flow at one fixed starting point.  Change of
+variables averages over random preimages instead, and endpoint integration
+by parts controls the conditional mean of \(M_1b\), not its conditional
+second moment.
+
+\section{Gaussian posterior and a directional-MMSE target}
+\label{sec:posterior}
+
+Let \(X\sim\mu\), \(G\sim N(0,I)\) be independent, and \(Y=X+G\).
+Write
+\[
+ m(y)=\E[X\mid Y=y],\qquad
+ A(y)=\Cov(X\mid Y=y).
+\]
+The posterior is 1-strongly log-concave, hence \(0\preceq A(y)\preceq I\).
+For
+\(F(y)=\E[f(X)\mid Y=y]\), exponential-family differentiation gives
+\[
+                         \nabla F(y)=\Cov(X,f\mid Y=y)=c(y). \tag{7.1}
+\]
+If \(f=a\cdot x+r\), then exactly
+\[
+                         c(y)=A(y)a+e(y),
+ \qquad e(y)=\Cov(X,r\mid Y=y).                       \tag{7.2}
+\]
+Posterior Poincar\'e and total variance imply
+\[
+ \E|c(Y)|^2\le\lambda,
+ \qquad
+ \E|e(Y)|^2\le\delta^2.                              \tag{7.3}
+\]
+
+For a unit vector \(b\), define
+\[
+ \operatorname{mmse}_\mu(b)
+ =\E\Var(b\cdot X\mid X+G)
+ =\E[b^TA(Y)b].                                       \tag{7.4}
+\]
+
+\begin{target}[Directional MMSE floor]
+Prove that every centered isotropic log-concave law satisfies
+\[
+ \boxed{\qquad
+ \inf_{|b|=1}\operatorname{mmse}_\mu(b)\ge c_0>0.
+ \qquad}                                              \tag{DMMSE}
+\]
+\end{target}
+
+This would close the very-near-linear branch immediately.  Indeed, with
+\(a=|a|b\), (7.2)--(7.3) and the Hilbert-space triangle inequality give
+\[
+ \sqrt\lambda
+ \ge c_0\sqrt{1-\delta^2}-\delta.                    \tag{7.5}
+\]
+
+The target is nonlinear despite involving a linear latent variable.  The
+orthogonal noisy coordinates may carry nonlinear information about
+\(b\cdot X\).  Tweedie's identity
+\[
+ m(y)=y+\nabla\log q(y),\qquad \nabla m(y)=A(y),       \tag{7.6}
+\]
+where \(q\) is the density of \(Y\), shows the KLS content.  For
+\(h_b(y)=b\cdot m(y)\),
+\[
+ \Var_q(h_b)=1-\operatorname{mmse}_\mu(b),
+ \qquad
+ \int|\nabla h_b|^2\dd q=\E|A(Y)b|^2.                \tag{7.7}
+\]
+Thus failure of (DMMSE) produces a low-energy monotone posterior-mean
+function for the log-concave Gaussian convolution \(q\).
+
+There is a possible dimension-descent estimate worth auditing.  Reveal
+\(Y_\perp=P_{b^\perp}Y\) first and put
+\[
+ v(z)=\Var(b\cdot X\mid Y_\perp=z),\qquad
+ h_0(z)=\E[b\cdot X\mid Y_\perp=z].
+\]
+The rank-one curvature defect gives transverse posterior covariance at
+most \(I\), hence
+\[
+                         |\nabla h_0(z)|^2\le v(z).    \tag{7.8}
+\]
+Conditional one-dimensional log-concavity gives a scalar Gaussian-channel
+MMSE comparable from below to \(\min(v,1)\).  One-dimensional log-concave
+moments suggest
+\(\norm v_p\lesssim p^2\).  Combining these facts with Poincar\'e for the
+\((n-1)\)-dimensional marginal suggests the candidate recursion
+\[
+ \operatorname{mmse}_\mu(b)
+ \gtrsim
+ \frac{1}{\CP(q_\perp)\log^2(e+\CP(q_\perp))}.        \tag{7.9}
+\]
+Equation (7.9) was not fully audited before the investigation stopped.  It
+would still contain logarithmic loss, but it offers a concrete starting
+point for a new dimension-descent mechanism.
+
+\section{Further exact progress}
+
+\subsection{Convex half-set distance}
+
+If \(A\) is convex and \(\mu(A)=1/2\), one-dimensional localization of
+parallel expansions gives the dimension-free lower bound
+\[
+ \boxed{\qquad
+ \E\operatorname{dist}(X,A)
+ \ge \frac{2\log2-1}{4\mu^+(A)}.
+ \qquad}                                              \tag{8.1}
+\]
+The scalar constant is explicit.  The reverse inequality for arbitrary
+half-sets is already KLS-strength, and naive convexification fails even for
+the isotropic Laplace law.
+
+\subsection{Tensor slow-growth plateaus}
+
+Let
+\[
+ \mathcal C_n=\sup\{\CP(\mu):\mu\text{ isotropic log-concave on }\R^n\}.
+\]
+If \(\mathcal C_n\) were unbounded while obeying a logarithmic upper
+envelope, monotonicity implies dimensions \(n_j\) and integers
+\(r_j\to\infty\) such that
+\[
+ \frac{\mathcal C_{r_jn_j}}{\mathcal C_{n_j}}\to1.   \tag{8.2}
+\]
+Thus large tensor powers are relative near-extremizers with growing first
+eigenspace multiplicity.
+
+This does not by itself create a contradiction.  For a mixed tensor mode
+indexed by a symmetric zero-diagonal matrix \(B\), the spectral splitting
+is at most the convex-buffer cost times
+\[
+                         \frac{\norm B_{\op}}{\norm B_{\HS}}\le1. \tag{8.3}
+\]
+Moreover, the \(r\) tensor low modes occupy a rank-\(r\) exceptional
+subspace in ambient dimension \(rn\); ordered-rank localization still sees
+\(\log((rn)/r)=\log n\).  Multiplicity alone therefore does not remove the
+small-rank obstruction.
+
+\section{Self-convolution and the weighted-slice program}
+
+\subsection{Strict forward amplification under self-convolution}
+
+Let \(X,Y\) be independent with the same centered isotropic log-concave
+law \(\mu\), and put
+\[
+ S=\frac{X+Y}{\sqrt2},\qquad \nu=\mathcal L(S),\qquad
+ a=\lambda_1(\mu)=\CP(\mu)^{-1},\qquad
+ b=\lambda_1(\nu)=\CP(\nu)^{-1}.
+\]
+
+\begin{proposition}[Forward self-convolution amplification]
+Without assuming that either spectral edge is attained,
+\[
+ \boxed{\qquad
+ b(1-b)\le4(b-a),\qquad
+ b\ge\frac{\sqrt{9+16a}-3}{2}.
+ \qquad}                                              \tag{SC}
+\]
+\end{proposition}
+
+For a centered unit test \(f(S)\), set
+\[
+ h(X)=\E[f(S)\mid X],\quad
+ R_f=f(S)-h(X)-h(Y),\quad q=\E|\nabla f(S)|^2.
+\]
+The product Poincar\'e inequality on the two-coordinate-centered residual
+and the vector Hoeffding decomposition give
+\[
+ E_R:=\E|\nabla_{X,Y}R_f|^2\le2(q-a),                \tag{10.1}
+\]
+\[
+ \Var(Z)=2\Var(U)+\E|W|^2,\qquad
+ E_R=\Var(U)+\E|W|^2,                                \tag{10.2}
+\]
+where \(Z=\nabla f(S)\), \(U=\E[Z\mid X]\), and
+\(W=Z-\E[Z\mid X]-\E[Z\mid Y]+\E Z\).  Thus
+\(\Var(\nabla f)\le2E_R\le4(q-a)\).  Taking \(f\) in a
+spectral window \([b,b+\varepsilon]\), testing the weak generator equation
+against coordinates, and sending \(\varepsilon\downarrow0\) gives
+\(\Var(\nabla f)\ge b(1-b)-o(1)\).  This proves (SC), including at a
+continuous bottom spectral edge.
+
+If \(a_k\) is the gap after \(k\) normalized dyadic convolutions, then
+\(a_k\uparrow1\), and
+\[
+ a_{k+1}\le\frac12\quad\Longrightarrow\quad
+ a_{k+1}\ge\frac87a_k.                               \tag{10.3}
+\]
+This is only forward amplification.  It may take
+\(O(\log(1/a_0))\) convolutions to reach a fixed gap, so (SC) gives no
+dimension-free lower bound on the initial \(a_0\).
+
+\subsection{Unequal inputs and fixed-Gaussian output structure}
+
+Equality of the two input laws is not needed.  Let \(\mu_0,\mu_1\) be
+centered isotropic log-concave laws on the same Euclidean space, let
+\(X\sim\mu_0\), \(Y\sim\mu_1\) be independent, and set
+\[
+ S=\frac{X+Y}{\sqrt2},\qquad
+ a=\min\{\lambda_1(\mu_0),\lambda_1(\mu_1)\},\qquad
+ b=\lambda_1(\mathcal L(S)).
+\]
+The unequal vector predictors need not have the same variance.  If
+\[
+ u=\E|\E[\nabla f(S)\mid X]-\E\nabla f(S)|^2,\quad
+ v=\E|\E[\nabla f(S)\mid Y]-\E\nabla f(S)|^2
+\]
+and \(w\) is the squared norm of the two-coordinate residual, then
+\[
+ \Var(\nabla f)=u+v+w,\qquad
+ E_R=\frac{u+v}{2}+w.
+\]
+Consequently the proof of (SC) is unchanged:
+\[
+ \boxed{\qquad
+ b(1-b)\le4(b-a),\qquad
+ b\ge\frac{\sqrt{9+16a}-3}{2}.
+ \qquad}                                              \tag{USC}
+\]
+The identities are first read for smooth tests and then in the closed
+weighted Sobolev form domain.  For log-concave laws, smooth tests form a
+core after working intrinsically on the minimal affine hull.  This note
+does not extend (USC) to arbitrary singular non-log-concave inputs.
+
+Now take \(\mu_1=\gamma=N(0,I)\) and define
+\[
+ \mathcal G\mu
+ =\mathcal L\left(\frac{X+G}{\sqrt2}\right).
+\]
+Since every isotropic law has
+\(\lambda_1(\mu)\le1=\lambda_1(\gamma)\), the input parameter in
+(USC) is \(a=\lambda_1(\mu)\).  The only rearrangement supplied by
+(USC) is
+\[
+ \lambda_1(\mu)
+ \le\frac{\lambda_1(\mathcal G\mu)
+ (3+\lambda_1(\mathcal G\mu))}{4}.                   \tag{10.3a}
+\]
+This forward constraint gives no lower bound on the input from a lower
+bound on the output.  Hence (USC) alone gives no fixed-Gaussian reduction
+of KLS.  There is, however, a separate reverse comparison.
+
+\begin{proposition}[Posterior reverse smoothing]
+Let
+\(a=\lambda_1(\mu)\) and
+\(b=\lambda_1(\mathcal G\mu)\).  Then
+\[
+ \boxed{\qquad
+ b\le\frac{2a}{1-a}\quad(a<1),
+ \qquad a\ge\frac{b}{2+b}.
+ \qquad}                                             \tag{10.3c}
+\]
+The second inequality also holds when \(a=1\).
+\end{proposition}
+
+Indeed, take a centered normalized input form-domain test \(f\) with
+energy \(q<1\), put \(Y=X+G\), and set
+\(F(y)=\E[f(X)\mid Y=y]\).  The posterior is intrinsically
+one-strongly log-concave, so
+\[
+ \E\Var(f(X)\mid Y)\le q,
+ \qquad
+ \Var(F(Y))\ge1-q.                                  \tag{10.3d}
+\]
+Posterior differentiation gives
+\(\nabla F=\Cov(X,f\mid Y)\).  Covariance
+Cauchy--Schwarz together with
+\(\Cov(X\mid Y)\preceq I\) gives the dimension-free pointwise estimate
+\[
+ |\nabla F(Y)|^2\le\Var(f(X)\mid Y),
+\]
+and hence the energy of \(s\mapsto F(\sqrt2s)\) under
+\(\mathcal G\mu\) is at most \(2q\).  The variational definition of
+\(b\), followed by a form-domain minimizing sequence \(q\downarrow a\),
+proves (10.3c).  The argument is intrinsic on a lower-dimensional affine
+support and uses posterior strong log-concavity for hard supports, so no
+spectral attainment or ambient full-dimensionality is assumed.
+
+The output has a positive analytic log-concave density.  Before the
+\(1/\sqrt2\) rescaling, if \(U=-\log(\mu*\gamma)\), the Gaussian posterior
+identity and posterior Brascamp--Lieb inequality give
+\[
+ D^2U(y)=I-\Cov(X\mid X+G=y),\qquad
+ 0\preceq\Cov(X\mid X+G=y)\preceq I.
+\]
+For the potential \(\widetilde U(s)=U(\sqrt2s)+\mathrm{const}\) of
+\(\mathcal G\mu\),
+\[
+                         0\preceq D^2\widetilde U\preceq2I. \tag{10.3b}
+\]
+The forward inequality (USC) does not reverse, but the independent
+posterior estimate (10.3c) does.  Therefore the positive analytic isotropic
+class
+\[
+                         0\preceq D^2\widetilde U\preceq2I
+\]
+is a quantitatively equivalent KLS target: a universal output gap
+\(b\ge c_0\) gives \(a\ge c_0/(2+c_0)\), while the converse direction is
+restriction to a subclass.  This upper-curvature condition is not a
+Bakry--\'Emery lower-curvature hypothesis.  Lower-dimensional inputs and
+their Gaussian noises are handled intrinsically on their affine hulls.
+
+\subsection{Score rigidity, affine interaction, and one-form circularity}
+
+On the regularized class \(0\preceq D^2V\preceq\beta I\), integration by
+parts and covariance positivity give the score-rigidity estimate
+\[
+ |\E\nabla g|\le\sqrt{\beta-1}\,\norm g_2           \tag{10.3e}
+\]
+for every affine-orthogonal \(g\).  At \(\beta=2\), this gives a numerical
+gap for every bottom spectral-window vector whose \(L^2\) affine residual
+is at most \(1/2\).  The unresolved nonlinear branch can be isolated by
+the affine-interaction candidate
+\[
+ \operatorname{dist}_{L^2(\mathcal G\mu)}(f,\mathrm{Aff})^2
+ \le C_A\E\left|f\left(\frac{X+G}{\sqrt2}\right)
+ -\E[f\mid X]-\E[f\mid G]\right|^2.                 \tag{AI}
+\]
+Its kernel is exactly affine in full dimension and its sharp Gaussian
+constant is two, but no universal proof is supplied here; already its
+quadratic sector contains a dimension-free generalized quadratic-variance
+theorem.
+
+The tempting generic replacement
+\[
+ \int|w|^2d\nu\le C\left\{\int\|Dw\|_{\HS}^2d\nu
+              +\int w^TD^2Vw\,d\nu\right\},
+ \qquad w=\nabla f,                                  \tag{10.3f}
+\]
+does not provide an extra lemma.  Bochner and spectral calculus show that
+its optimal constant is exactly \(C_P(\nu)\); the centered-gradient Korn
+constant likewise lies between \(C_P(\nu)-1\) and \(C_P(\nu)\).
+Thus (10.3f) is circular.  The actual remaining mechanism is coherence of
+an almost-centered, slowly varying field which adaptively saturates the
+posterior covariance, or a proof of (AI) on the relevant bottom spectral
+windows.
+
+\subsection{Checkpoint 17: posterior saturation and affine stability}
+
+Let \(\pi\) be centered \(1\)-strongly log-concave on its intrinsic
+Euclidean support, let \(Z\sim\pi\), let \(A=\Cov Z\), and put
+\(\delta_\pi(u)=|u|^2-u^TAu\).  The audited mixed-third-moment theorem is
+\[
+ M_\pi(u):=\E[(u\cdot Z)ZZ^T],\qquad
+ \norm{M_\pi(u)}_{\HS}\le4\sqrt{\delta_\pi(u)}.       \tag{17.1}
+\]
+For \(Y=X+G\) with intrinsic \(G\sim N(0,I)\), write
+\(m_y=\E[X\mid Y=y]\), \(Z_y=X-m_y\),
+\(A_y=\Cov(X\mid Y=y)\), and \(H(y)=I-A_y\).  Differentiation gives
+\(D A_y[v]=\E[(v\cdot Z_y)Z_yZ_y^T\mid Y=y]\), and hence, for every
+(even adaptively selected) \(u=u(y)\),
+\[
+ \left(\sum_j\|(D A_y[e_j])u\|^2\right)^{1/2}
+ \le4\sqrt{u^TH(y)u}.                                \tag{17.2}
+\]
+This is a basis-summed Hilbert--Schmidt estimate with no trace or rank
+factor; it is local and does not synchronize directions globally.
+
+For every locally Sobolev vector field \(W\), the same estimate and
+\(0\preceq H\preceq I\) give
+\[
+ D(HW)[v]=(D H[v])W+H(DW[v]),\qquad
+ \norm{D(HW)}_{\HS}\le\norm{DW}_{\HS}+4\sqrt{W^THW},
+\]
+and therefore, with
+\(\mathcal D=\E\norm{DW}_{\HS}^2\) and
+\(\mathcal K=\E[W^THW]\),
+\[
+ \E\norm{D(HW)}_{\HS}^2\le2\mathcal D+32\mathcal K,
+ \qquad \E|HW|^2\le\mathcal K.                     \tag{17.3}
+\]
+
+The audited affine-stability lemma says that for centered
+\(1\)-strongly log-concave \(\pi\),
+\[
+ D_\pi(f):=\E|\nabla f|^2-\Var_\pi f\ge0
+ \quad\Longrightarrow\quad
+ \inf_{c,\ell}\E|f(Z)-c-\ell\cdot Z|^2\le22D_\pi(f). \tag{17.4}
+\]
+For a bottom input spectral-window vector \(g\) in the channel \(Y=X+G\),
+put \(q=\E|\nabla g|^2\) and
+\(d=\E\Var(g(X)\mid Y)\).  The reverse comparison gives
+\(q-d=O(a^2)\) whenever \(a=\lambda_1(\mu)\downarrow0\) (window width
+\(o(a^2)\)).  Applying (17.4) in each posterior gives
+\[
+ \E_Y\inf_{c,\ell}\E_{\pi_Y}
+ |g(X)-c-\ell\cdot(X-m_Y)|^2
+ \le22(q-d)=O(a^2).                                 \tag{17.5}
+\]
+The affine coefficients may switch with \(y\); (17.5) is not a global
+Gaussian-factor theorem.
+
+For the same intrinsic channel, let
+\(\lambda=\lambda_1(\mathcal L(Y))\) and let \(b=2\lambda\) be the gap of
+the normalized output.  Spectral-window passage gives
+\[
+ \frac{\sqrt{1+12a}-1}{6}\le\lambda\le\frac{a}{1-a},
+ \qquad a-3a^2\le\lambda\le a+2a^2\quad(a\downarrow0),
+\]
+and therefore
+\[
+ \lambda=a+O(a^2),\qquad b=2a+O(a^2).                 \tag{17.6}
+\]
+No spectral-edge attainment is used in these comparisons.
+
+\subsection{Simple eigengap and the longitudinal frontier}
+
+Let \(H=D^2U\), let \(h(y)\) be its simple lowest eigenvalue, and assume
+\(\lambda_2(H(y))-h(y)\ge\kappa>0\).  If \(P(y)\) is the rank-one lowest
+spectral projection, the audited Davis--Kahan/Hilbert--Schmidt calculation
+gives
+\[
+ \sum_j\norm{D_jP(y)}_{\HS}^2\le \frac{32}{\kappa^2}h(y). \tag{17.7}
+\]
+Writing \(Q=I-P\), the field ledger (with \(\mathcal D,\mathcal K\) as
+above) is
+\[
+ \E|QW|^2\le\mathcal K/\kappa,\qquad
+ \E\norm{D(PW)}_{\HS}^2
+ \le2\mathcal D+\frac{32}{\kappa^2}\mathcal K.       \tag{17.8}
+\]
+
+The twice-Bochner ledger is dimension-free but leaves an additional
+transverse remainder.  With the Witten one-form operator
+\(\mathcal A_1=-L+H\) and \(C=DW=\alpha P+C_0\),
+\(\alpha=e^TCe\), and \(t=D^3U[e,e,W]\), it reads
+\[
+ \begin{aligned}
+ \norm{\mathcal A_1W}_2^2\ge{}&
+ \E\norm{D(DW)}_{\HS}^2+3\E[h\alpha^2]
+ +\frac{3\kappa}{4}\E\norm{C_0}_{\HS}^2+2\E[\alpha t]+\E|HW|^2\\
+ &\hspace{18mm}-\frac{64}{3\kappa}\mathcal K .
+ \end{aligned}                                         \tag{17.9}
+\]
+For a normalized bottom field the final term is \(O_\kappa(\lambda)\), not
+\(O_\kappa(\lambda^2)\), so it is not absorbed by (17.9).  The remaining
+frontier therefore has both this transverse saturation remainder and the
+scalar longitudinal quotient gate.
+
+If the low line is fixed, the latter gate closes by the one-dimensional
+Hardy factorization.  For a one-dimensional log-concave \(q=e^{-u}\) with
+\(\Var_q(s)\le2\), and \(h=u''\), every smooth compactly supported amplitude
+\(a\) satisfies
+\[
+ \E(a'')^2+3\E[h(a')^2]+2\E[aa'h']+\E[h^2a^2]
+ \ge \frac1{24}\{\E(a')^2+\E[ha^2]\}.                \tag{17.10}
+\]
+Thus a nonzero scalar one-form eigenmode has eigenvalue at least \(1/24\),
+and the fixed-global-eigenline/product branch is closed.  A generic
+amplitude-connectivity replacement is false even for exact analytic
+gradients: for \(\nu=N(0,2I_2)\),
+\(f_R=(e^{Rx}+e^{Ry})/R\), and \(W_R=\nabla f_R\), define
+\(d\sigma_R=|W_R|^2d\nu/(2e^{4R^2})\) and
+\(N_R=W_RW_R^T/|W_R|^2\).  Then
+\[
+ \inf_{\operatorname{rank} P_0=1}\E_{\sigma_R}\norm{N_R-P_0}_{\HS}^2
+ =1-e^{-2R^2},\qquad
+ \E_{\sigma_R}\norm{DN_R}_{\HS}^2\le R^2e^{-2R^2}.  \tag{17.11}
+\]
+This example has repeated \(H\) and high field energy, so it does not
+disprove the simple-low-mode program; it does disprove generic
+amplitude-biased Poincare/connectivity claims.
+
+\subsection{Exact ANOVA jet, product closure, and matrix-Stein obstruction}
+
+For \(\mu=\bigotimes_i\mu_i\), with every factor centered,
+variance-one, and log-concave, let \(f\in L^2(\mathcal L(S))\) be
+centered and put \(S=(X+G)/\sqrt2\), \(h(X)=\E[f(S)\mid X]\), and
+\(R=f(S)-\E[f\mid X]-\E[f\mid G]\), Gaussian Hermite jets give
+\[
+ \E R^2=\sum_{|\alpha|\ge1}\frac{\Var_\mu(\partial^\alpha h)}{\alpha!},
+ \qquad
+ \norm{f}_2^2=V_0+\sum_{k\ge1}(V_k+M_k).
+\]
+The diagonal one-dimensional Stein ledger gives the dimension-free product
+affine-interaction theorem
+\[
+ \operatorname{dist}_{L^2(\mathcal L(S))}(f,\mathrm{Aff})^2\le900\,\E R^2. \tag{17.12}
+\]
+For a general centered isotropic law, a conditional frame-free criterion is
+the following: if a matrix Stein kernel \(\tau\) satisfies \(\E\tau=I\) and
+\[
+ K^2=\norm{\E[(\tau-I)(\tau-I)^T]}_{\op}<\infty,
+\]
+then, with Poincare constant \(C_0\), the same jet argument gives
+\[
+ \operatorname{dist}(f,\mathrm{Aff})^2\le(C_0+3+2K^2)\,\E R^2.             \tag{17.13}
+\]
+Known general log-concave kernels have only a Hilbert--Schmidt/trace budget
+of order \(n\); the operator bound in (17.13) is unresolved and is itself
+KLS-strength.  Thus (17.12) is a product theorem, not the missing
+irreducible ANOVA inequality.
+
+\subsection{Why the evident reverse arguments fail}
+
+Write \(\mathcal E_\eta(u)=\int|\nabla u|^2\,d\eta\).  If \(f\) is an
+attained normalized bottom mode of \(\mu\), define
+\[
+ H=\frac{f(X)+f(Y)}{\sqrt2},\qquad
+ g=\E[H\mid S],\qquad r=H-g.
+\]
+Orthogonal projection and the weak eigenvalue equation give
+\[
+ \boxed{\qquad
+ \mathcal E_\nu(g)
+ =a\bigl(1-2\norm r_2^2\bigr)+\mathcal E_{\mu^2}(r).
+ \qquad}                                              \tag{10.4}
+\]
+Conditional projection need not decrease energy.  For
+\(\mu=\operatorname{Unif}[-1,1]\),
+\[
+ f(x)=\sqrt2\sin(\pi x/2),\qquad a=\pi^2/4.
+\]
+Writing \(t=\sqrt2s\), direct averaging on the sum fiber gives
+\[
+ g(s)=\frac4\pi\frac{\sin(\pi t/2)}{2-|t|},\qquad |t|<2.
+\]
+If \(J=\int_0^\pi\sin^2(v)\,dv/v\), then
+\[
+ \Var_\nu(g)=\frac{8J}{\pi^2},\qquad
+ \mathcal E_\nu(g)=4(J-\tfrac12)>\frac{\pi^2}{4}
+                  =\mathcal E_{\mu^2}(H),            \tag{10.5}
+\]
+where
+\[
+ J\ge\frac{\pi^2}{8}-\frac{\pi^4}{192}
+ +\frac{\pi^6}{13824}+\frac5{16}+\frac1{4\pi^2}
+ >\frac12+\frac{\pi^2}{16}.                          \tag{10.6}
+\]
+Thus discarding the fiber residual cannot reverse (SC).
+
+Several scalar Lyapunov budgets fail for independent reasons.  For
+\[
+ X_k=\frac{\Gamma(k,1)-k}{\sqrt k},
+\]
+normalized self-convolution maps \(X_k\) to \(X_{2k}\), while
+\[
+                         \lambda_1(X_k)=\frac{k^2}{(k+1)^2}. \tag{10.7}
+\]
+Raw Fisher information is \(k/(k-2)\) for \(k>2\) and is infinite at the
+mandatory hard-support cases \(k\le2\).  Gaussian regularizations of the
+shifted exponential retain the limiting gap change
+\(1/4\mapsto4/9\), while the decrement of every bounded inverse-Fisher
+transform tends to zero.
+
+There is also a smooth high-chaos obstruction.  Let \(H_m\) be the
+probabilists' Hermite polynomial, fix even \(m\ge4\), and
+variance-normalize the strongly log-concave density proportional to
+\[
+ \exp[-x^2/2-\varepsilon H_m(x)/\sqrt{m!}].
+\]
+For fixed \(m\) and \(\varepsilon\downarrow0\), its gap \(a\) and the gap
+\(b\) after normalized self-convolution satisfy
+\[
+ a=1-\frac{m}{m-2}\varepsilon^2+O_m(\varepsilon^3),
+ \quad
+ b=1-\frac{m}{m-2}2^{2-m}\varepsilon^2
+        +O_m(\varepsilon^3).                         \tag{10.8}
+\]
+For isotropic \(\eta=\mathcal L(Z)\), define
+\[
+ \mathcal F(\eta)
+ =I\left(\frac{Z+G}{\sqrt2}\,\middle\|\,\gamma\right)
+ =1-2\operatorname{mmse}(Z\mid Z+G).
+\]
+Then
+\[
+ \lim_{\varepsilon\downarrow0}
+ \frac{\log(b/a)}
+ {\mathcal F(\mu)-\mathcal F(\mathsf T\mu)}
+ =\frac{2^m}{m-2}.                                   \tag{10.9}
+\]
+Letting \(m\) increase rules out a universal fixed-noise scalar charge.
+Entropy survives this high-chaos test, but raw entropy and dependence
+deficits are additive under products, normalization by dimension fails
+under Gaussian padding, and bounded transforms saturate.  The correct
+Hadamard sign is
+\[
+                         I(S;D)=h(S)+h(D)-2h(X);
+\]
+for shifted exponentials the value is Euler's constant.  These tests leave
+open directional, operator-valued, and function-specific reverse
+quantities.
+
+\subsection{The Gaussian-channel affine gate}
+
+Let \(Y=X+G\), let \(q\) be the law of \(Y\), and suppose that a smooth
+\(g\) satisfies
+\[
+ \E_\mu g=0,\qquad \E_\mu[Xg]=0,\qquad
+ h(y)=\E[g(X)\mid Y=y].
+\]
+The output score and affine orthogonality give
+\[
+                         |\E_q\nabla h|\le2^{-1/2}\norm g_2. \tag{10.10}
+\]
+For the posterior \(\mu_y\), write
+\[
+ A_y=\Cov_y(X),\qquad a_y=\E_y\nabla g,
+\]
+and let \(r_y\) be the residual after subtracting the posterior mean and
+best affine predictor from \(g\).  Posterior strong convexity yields
+\[
+ \E_\mu\nabla g-\E_q\nabla h
+ =\E[(I-A_Y)a_Y]-\E\Cov_Y(r_Y,X),                    \tag{10.11}
+\]
+\[
+ \left|\E\Cov_Y(r_Y,X)\right|
+ \le\norm{D^2g}_{L^2(\mu)}.                          \tag{10.12}
+\]
+The exact uncontrolled term is
+\[
+ \boxed{\qquad
+ \left|\E[(I-A_Y)a_Y]\right|
+ \le C\norm{D^2g}_{L^2(\mu)}.
+ \qquad}                                              \tag{AFF}
+\]
+A pointwise posterior form is false, since a posterior-affine function has
+zero Hessian.  The integrated estimate (AFF) remains unproved and is a
+KLS-strength near-linear gate; inserting a dimension-free Poincar\'e
+inequality for \(q\) would be circular.
+
+\subsection{The exact weighted-Fisher ledger}
+
+In the regular conditional-slice setting, let
+\[
+ r(s,z)=e^{-U(s,z)},\quad
+ \rho(s)=\int r(s,z)\,dz=e^{-\Phi(s)},\quad
+ q_s(z)=\frac{r(s,z)}{\rho(s)}.
+\]
+With
+\[
+ L_s=\Delta_z-\nabla_zU(s,\cdot)\cdot\nabla_z,\quad
+ L_sg_s=\ell_s:=\partial_s\log q_s,\quad
+ F_s=\nabla_zg_s,\quad H_s=D^2_{zz}U,
+\]
+put
+\[
+ C_s=\E_s\norm{D_zF_s}_{\HS}^2,\qquad
+ B_s=\E_s\ip{H_sF_s}{F_s}.
+\]
+Conditional Bochner gives
+\[
+                         I_\perp(s):=\E_s\ell_s^2=C_s+B_s. \tag{10.13}
+\]
+Define
+\[
+ \alpha_s=\partial_sg_s-\tfrac12|F_s|^2,\qquad
+ \mathcal Q_s=D^2U[(1,-F_s),(1,-F_s)].
+\]
+Joint convexity makes \(\mathcal Q_s\ge0\), and direct differentiation
+gives
+\[
+ L_s\alpha_s=\Phi''-\mathcal Q_s-\norm{D_zF_s}_{\HS}^2,
+ \qquad
+ \Phi''=\E_s\mathcal Q_s+C_s.                        \tag{10.14}
+\]
+If the scalar marginal is centered and variance one and \(\tau\) is its
+canonical Stein kernel, then
+\[
+ \boxed{\quad
+ \int\rho\tau^2(C_s+\E_s\mathcal Q_s)\,ds
+ =\int\rho\tau^2\Phi''\,ds
+ =1-\E_\rho(\tau')^2\le1.
+ \quad}                                               \tag{10.15}
+\]
+Thus deformation and material curvature already have a universal budget.
+The conditional curvature term \(B_s\) does not: in the full-space Hodge
+identity its apparent contribution cancels exactly against the horizontal
+and mixed terms.
+
+For the conditional centroid \(m(s)=\E_sZ\), the same calculation gives
+\[
+ m'=-\E_sF_s,\quad
+ m''=-\E_s[(Z-m)(\mathcal Q_s+\norm{D_zF_s}_{\HS}^2)],
+ \quad \E[\tau(S)m'(S)]=0.                           \tag{10.16}
+\]
+These global-in-\(s\) identities are indispensable: a slice-local
+replacement is false below.
+
+\subsection{Two complete weighted-Fisher subclasses}
+
+\paragraph{Pure translations.}
+Suppose before transverse smoothing that
+\[
+ p_s(x)=Z_\varphi^{-1}e^{-\varphi(x-m(s))}
+\]
+and that the joint law is isotropic and log-concave.  If \(Y\) has density
+proportional to \(e^{-\varphi}\), isotropy gives \(\Cov(Y)\preceq I\).
+Including subgradients and normal cones in the nonsmooth case,
+\[
+ \overline{\operatorname{conv}}\{\partial\varphi(y)\}
+ \supset\frac3{16}B_2^d.                             \tag{10.17}
+\]
+Testing joint convexity against this score-range inradius yields,
+in distributions,
+\[
+                         |Dm'|\le\frac{16}{3}D\Phi'. \tag{10.18}
+\]
+Cross-isotropy and one-dimensional Stein estimates give
+\[
+ \E[\tau^2|m'|^2]
+ \le3208\left(\frac{16}{3}\right)^2.                 \tag{10.19}
+\]
+After unit transverse Gaussian smoothing, Gaussian-channel contraction
+gives \(I_\perp(s)\le|m'(s)|^2\).  Consequently
+\[
+                         \int\rho\tau^2I_\perp\,ds\le C \tag{10.20}
+\]
+for every pure translating family, uniformly in transverse dimension.
+The finite-difference proof includes asymmetric fibers and hard endpoints.
+
+\paragraph{Smooth post-noise Gaussian fibers.}
+Consider
+\[
+ p(s,z)=Z^{-1}\exp\left[
+ -W(s)-\tfrac12(z-m(s))^TQ(s)(z-m(s))\right],
+ \qquad R(s)=Q(s)^{-1}.
+\]
+Assume \(W,m,R\in C^2\), \(R\succ0\), the joint potential is convex, the
+\(S\)-marginal is centered with variance one, and
+\[
+ \E[S\,m(S)]=0,\qquad
+ I\preceq R(s)\ \hbox{for every \(s\)},\qquad
+ \E R(S)\preceq\Lambda I.                            \tag{10.21}
+\]
+These are precisely the smooth full-support hypotheses used here; the
+lower bound on \(R\) is the unit transverse noise.
+
+Put \(y=z-m(s)\).  The exact centered Poisson field is
+\[
+ F_s=-m'(s)+A_sy,\qquad A_sR+RA_s=-R'.
+\]
+Writing
+\[
+ B_s=m'(s)^TR^{-1}m'(s)+B_s^0,\qquad
+ J_s=\frac12\Tr(R^{-1}R'R^{-1}R'),
+\]
+diagonalization of \(R(s)\) at fixed \(s\), followed by pairing the
+\((i,j)\) and \((j,i)\) terms, gives the noncommutative identity
+\[
+                         \boxed{C_s+B_s^0=J_s}.       \tag{10.22}
+\]
+No derivative of the diagonalizing frame is taken.  Joint convexity gives
+\[
+ \Phi''
+ =W''+\frac12\Tr(R^{-1}(-R''))+J_s\ge J_s,           \tag{10.23}
+\]
+and hence
+\[
+                         \int\rho\tau^2(C_s+B_s^0)\,ds\le1. \tag{10.24}
+\]
+
+The centroid theorem has the following audited scope: for a \(C^2\),
+full-support jointly convex Gaussian family satisfying the marginal and
+mixed-isotropy hypotheses above, but requiring only
+\(\E R\preceq\Lambda I\), matrix concavity and the Schur condition imply
+\[
+                         \E[\tau^2|m'|^2]\le C_{\rm cent}\Lambda. \tag{10.25}
+\]
+This allows noncommuting, rotating covariance matrices.  Under the
+post-noise lower bound \(R\succeq I\), one has \(R^{-1}\preceq I\), so
+\[
+ \boxed{\qquad
+ \int\rho(s)\tau(s)^2(C_s+B_s)\,ds
+ \le1+C_{\rm cent}\Lambda.
+ \qquad}                                              \tag{10.26}
+\]
+No nonsmooth Gaussian limit and no zero-noise limit is asserted.  A
+separate hard-interval calculation controls geometric centroid velocity,
+including wedge curvature atoms, but its identification with the
+post-noise Poisson field has not been proved.
+
+\subsection{A cone forcing global Stein weighting}
+
+For \(a\ge2\), let
+\[
+ q_a=\operatorname{Unif}[-a,a]*\gamma,\qquad U_a=-\log q_a.
+\]
+The mean-zero gradient field \(F_a(x)=x/a\) satisfies
+\[
+ \E_{q_a}|F_a'|^2=a^{-2},\qquad
+ \E_{q_a}[U_a''F_a^2]\ge\frac1{64a}.                 \tag{10.27}
+\]
+More decisively, the same divergence occurs for the exact Poisson field
+of one fixed isotropic law.  Start from
+\[
+ p(r,x)=\tfrac12e^{-r}\1_{\{r>0,\ |x|<r\}},\qquad
+ S=\frac{R-2}{\sqrt2},\qquad Y=\frac X{\sqrt2}.
+\]
+Then \(Y\mid S=s\) is uniform on \([-a,a]\), where
+\(a=s+\sqrt2>0\).  After unit Gaussian smoothing in \(Y\), its exact
+centered Poisson field obeys
+\[
+ \E_sF_s=0,\qquad C_s\le a^{-2},\qquad
+ B_s\ge\frac1{256a}.                                 \tag{10.28}
+\]
+Thus no universal slice-by-slice estimate
+\(B_s\lesssim C_s+|\E_sF_s|^2\) can hold.  Nevertheless
+\[
+ \rho(s)=2ae^{-\sqrt2a}\1_{\{a>0\}},\qquad
+ \tau(s)=\frac a{\sqrt2},\qquad B_s\le1,
+\]
+and therefore
+\[
+                         \int\rho\tau^2B_s\,ds\le\frac32. \tag{10.29}
+\]
+The obstruction is entirely in the centered shape residual, not centroid
+motion.  It forces a proof to retain the joint \(s\)-geometry and Stein
+weight.
+
+\subsection{Exact remaining gates}
+
+The weighted route would close its general slice estimate if one proved
+\[
+ \boxed{\qquad
+ \int\rho\tau^2B_s\,ds
+ \le C\int\rho\tau^2(C_s+\E_s\mathcal Q_s)\,ds.
+ \qquad}                                              \tag{WK}
+\]
+The cone proves that (WK) must be integrated in \(s\), while the
+translation theorem removes pure centroid motion from the unresolved
+sector.  What remains is genuinely nonlinear shape change.  A proposed
+scalar shape-acceleration shortcut is invalid: midpoint expansion cancels
+the \(U_zm''\) term and yields only affine-path curvature.
+
+The two surviving near-linear gates are (AFF) and (WK), but even a full
+weighted-Fisher or directional-MMSE theorem would currently close only the
+near-linear spectral branch.  The tensor-extremizer program still lacks a
+proved dimension-free dichotomy forcing every hypothetical small-gap mode
+to be near-linear, or an alternative argument applying the weighted
+estimate to every low mode.  Neither (AFF), (WK), nor this global
+nonlinear/near-linear dichotomy is assumed here.
+
+\section{Mechanisms ruled out by explicit tests}
+
+The negative results are as useful as the positive ones because they
+prevent equivalent forms of the conjecture from being reintroduced under
+new notation.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.25\textwidth}
+                  >{\raggedright\arraybackslash}p{0.68\textwidth}}
+\toprule
+Proposed mechanism & Audited obstruction \\
+\midrule
+\endfirsthead
+\toprule
+Proposed mechanism & Audited obstruction \\
+\midrule
+\endhead
+Thin shell alone controls (TM) & Projection traces permit the harmonic
+spectrum \(j^{-1/2}\), leaving \(\sqrt{\log n}\). \\
+\addlinespace
+Full-gradient interpolation & The first Neumann mode of the isotropic ball
+violates the natural multiplicative interpolation by \(\sqrt n\). \\
+\addlinespace
+Reverse conditional projection & For the first interval mode,
+\(\mathcal E_\nu(\E[H\mid S])>\mathcal E_{\mu^2}(H)\); the exact residual
+identity (10.4) has no favorable sign. \\
+\addlinespace
+Scalar reverse-convolution Lyapunov & Hard-support Gamma laws defeat
+bounded inverse-Fisher budgets, high Hermite modes defeat fixed-noise
+Fisher/MMSE charging, and additive entropy budgets fail under products or
+Gaussian padding. \\
+\addlinespace
+Trace localization \(\Rightarrow\) selected direction & A one-spike
+product-integral path has \(O(n)\) total trace but polylogarithmic
+amplification in the chosen direction. \\
+\addlinespace
+Coarea or determinant control of (FA) & The flow expectation is at a fixed
+initial tilt.  A linear map \(\operatorname{diag}(\sqrt n,1,\ldots,1)\)
+has acceptable trace and determinant scale but normal stretch \(n\). \\
+\addlinespace
+Strong self-concordance \(\Rightarrow\) KLS & On an isotropic cube, an
+explicit strongly self-concordant barrier has weighted Poincar\'e constant
+of order \(n\).  Barrier axioms give no covariance comparison. \\
+\addlinespace
+Bakry--\'Emery for the canonical metric & For the direct Cheng--Yau
+potential the natural curvature has the wrong sign; for uniform measure
+the curvature-to-metric ratio already tends to zero at an interval
+boundary. \\
+\addlinespace
+Pointwise barrier-metric comparison & It fails on the simplex, skew cones,
+and product exponentials; large inverse metric can occur on rare sets. \\
+\addlinespace
+Tensor multiplicity & Exact splitting never exceeds the convex buffer, and
+the low modes remain inside the allowed small-rank localization tail. \\
+\addlinespace
+Interior Brascamp--Lieb for slices & Uniform intervals and centered
+exponentials carry covariance motion entirely through moving-boundary
+terms. \\
+\addlinespace
+Pointwise post-noise curvature--Korn & The exact cone Poisson field has
+\(C_s\le a^{-2}\), \(B_s\ge(256a)^{-1}\), and zero mean, although its
+Stein-weighted integral is at most \(3/2\). \\
+\addlinespace
+Scalar shape acceleration & Midpoint expansion cancels the proposed
+\(U_zm''\) term and leaves only affine-path curvature. \\
+\addlinespace
+Finite Gaussian chaos & Exponential examples have factorial mixed moments;
+the relevant Hermite expansion can have zero radius of convergence. \\
+\addlinespace
+Entropy-controlled convex certificate & A one-dimensional zero-deficit
+transport defeats every prescribed-orientation signed convex certificate. \\
+\bottomrule
+\end{longtable}
+
+\section{Prioritized future directions}
+
+The following program is ordered by how sharply each step is formulated
+and how independently it can be tested.
+
+\subsection{Priority I: posterior covariance and low-mode alignment}
+
+\begin{enumerate}
+\item Prove or disprove (DMMSE).  First establish the proposed
+dimension-descent estimate (7.9) with all conditional derivatives and tail
+bounds written rigorously.  Then identify an additional rigidity input
+that removes its logarithm.  Candidate inputs include a tail theorem for
+the rank-one survivor variance or a nonlinear-information bound forced by
+joint log-concavity.
+
+\item Attack (FA) directly as a matrix-martingale statement.  Any proof
+must use that \(c_t\) is a posterior gradient of a fixed scalar low mode;
+trace bounds and arbitrary terminal directions are insufficient.  A useful
+intermediate target is a bound on amplification-weighted occupation of
+\((A_t-3I)_+\) along the direction selected by \(c_t\).
+
+\item Relate the two targets.  The posterior split (7.2) shows that
+(DMMSE) closes very-near-linear modes, while (FA) is a pathwise refinement.
+A proof should quantify precisely how much residual size \(\delta\) each
+one tolerates.
+
+\item Prove or disprove (AFF).  Equations (10.11)--(10.12) already control
+every posterior-nonlinear component; any proof must control the remaining
+posterior-affine term globally rather than by a false pointwise Hessian
+estimate.
+\end{enumerate}
+
+\subsection{Priority II: non-Gaussian slice-curvature compensation}
+
+The smooth post-noise Gaussian theorem proves the full weighted-Fisher
+bound by the exact identity \(C_s+B_s^0=J_s\), even for noncommuting
+covariance motion.  The next target is the integrated estimate (WK) for
+general slices.  The cone calculation forbids replacing it by a
+slice-by-slice Korn inequality, while the translation theorem shows that
+pure centroid motion is no longer the issue.
+
+One possible route to (WK) is a boundary-inclusive version of the
+Brascamp--Lieb stability estimate
+\[
+ \norm{C^{-1/2}\Cov_t(g,(Y-m)(Y-m)^T)C^{-1/2}}_{\HS}^2
+ \lesssim \mathcal D_{\mathrm{BL}}(g)
+ +\text{boundary/Reilly charge}.                     \tag{9.1}
+\]
+The endpoint term must reproduce the interval and exponential examples
+exactly.  Before attempting full generality, test (9.1) on polytopal slices
+with rotating facet normals and on smooth approximations of boxes.
+
+The affine-Hessian inequality (AH) is a clean alternative formulation.
+It should first be proved or falsified for centrally symmetric but
+dependent bodies, uniform polytopes, and skew cones.  Any proof for all
+gradients would contain a KLS-strength near-linear statement, so a
+score-specific version may be more realistic.
+
+\subsection{Priority III: exact canonical metric, only for low modes}
+
+Strong self-concordance alone is blocked.  A narrower question remains:
+for the exact direct Cheng--Yau metric \(H=D^2F\), can a first Euclidean
+eigenfunction satisfy
+\[
+ \int\ip{H^{-1}\nabla f}{\nabla f}\dd\mu
+ \le C\left(
+ \int|\nabla f|^2\dd\mu+
+ \int\norm{D^2f}_{\HS}^2\dd\mu\right)?              \tag{9.2}
+\]
+Bochner supplies the second term at order \(\lambda^2\).  The central
+issue is whether a low mode can concentrate its gradient on the rare sets
+where \(H^{-1}\) is large.  The simplex and skew-cone calculations provide
+sharp stress tests.  This direction is worthwhile only if it uses the
+exact canonical equation; generic barrier axioms have already been ruled
+out.
+
+\subsection{Priority IV: extremal structure}
+
+If one pursues an extremal sequence, impose all known constraints at once:
+
+\begin{itemize}
+\item witnesses are nonlinear and non-radial;
+\item tensor-product explanations are factored out;
+\item near-linear witnesses must satisfy the posterior and localization
+constraints (6.5), (FA), and (7.5);
+\item any tensor stationarity argument must pay the exact convex-buffer
+cost (8.3);
+\item any slicing argument must retain moving-boundary curvature.
+\end{itemize}
+
+A useful structure theorem would state that every counterexample sequence
+has one of two mutually exclusive features: a direction with vanishing
+unit-noise posterior MMSE, or a genuinely high-rank noncommuting
+conditional-covariance motion.  The two active programs above are designed
+to exclude precisely those alternatives.
+
+\section{Audit requirements for any future proof}
+
+Before a candidate argument is regarded as a proof, it should pass the
+following checks.
+
+\begin{enumerate}
+\item Track \(n\), smoothing, truncation, localization time, stopping rank,
+and bootstrap depth symbolically.  The final constant must be independent
+of all of them.
+\item Verify stochastic existence, stopping, integrability, and true
+martingale properties rather than formal local-martingale calculations.
+\item Pass from smooth, compact, strongly log-concave approximations to
+arbitrary log-concave measures without changing the constant.
+\item Treat lower-dimensional affine supports intrinsically and exclude
+only point masses.
+\item Cover every locally Lipschitz \(L^2\) test function in a Poincar\'e
+proof.
+\item Scan for circular assumptions: uniform Poincar\'e, (M), (TM), (MG),
+dimension-free survivor covariance, (AFF), (WK), and strong
+self-concordance of the entropic barrier are all KLS-strength gates unless
+independently proved.
+\item Test the constant chain on the cube, regular simplex, crosspolytope,
+product exponential, Euclidean ball, and a skew non-symmetric cone.
+\item Have a clean-room reader reprove every load-bearing lemma from its
+statement alone.
+\end{enumerate}
+
+\section{Conclusion}
+
+The investigation has not resolved KLS.  The strict convolution inequality
+(SC), including the unequal-input form (USC), remains a forward
+amplification statement.  The independent posterior comparison
+\[
+ a\ge\frac{b}{2+b}
+\]
+does give a dimension-free reduction to positive analytic isotropic
+outputs with \(0\preceq D^2\widetilde U\preceq2I\).  Along a hypothetical
+small-gap sequence this comparison is now known to saturate to second
+order: the unscaled output gap is \(a+O(a^2)\), and bottom input modes
+saturate the posterior Poincar\'e and covariance inequalities on average.
+
+Checkpoint 17 strengthens the local rigidity picture without closing its
+global gate.  The Hilbert--Schmidt posterior theorem removes the former
+trace loss, and strongly-log-concave affine stability shows that bottom
+modes are posterior-affine on average up to squared error \(O(a^2)\).
+Under a uniform simple posterior eigengap, the low spectral projection has
+dimension-free derivative energy.  Nevertheless the twice-Bochner ledger
+still contains an \(O_\kappa(\lambda)\) transverse saturation remainder
+and a signed longitudinal quotient term.  The longitudinal term is
+coercive with constant \(1/24\) after the line is fixed, but explicit
+Gaussian examples rule out generic amplitude-weighted connectivity as a
+way to fix it.
+
+The exact Gaussian-jet identity also sharpens the nonlinear branch.  It
+proves the affine-interaction estimate with constant \(900\) for arbitrary
+products of one-dimensional isotropic log-concave laws.  Extending that
+argument to irreducible laws would require a new operator-level
+matrix-Stein or equivalent coercivity mechanism; known trace budgets and
+the input Poincar\'e inequality are insufficient.
+
+Accordingly, the current frontier has two coupled components: global
+posterior direction and amplitude synchronization strong enough to absorb
+simple-eigenspace remainders, and a dimension-free affine-interaction or
+nonlinear/near-linear dichotomy for general log-concave laws.  The older
+weighted-Fisher gates (AFF), (WK), (DMMSE), and (FA) remain alternative
+formulations, not assumptions.  None of the audited reductions, stability
+theorems, fixed-line arguments, or subclass closures in this note is a
+complete proof of KLS.
+
+\begin{thebibliography}{99}
+
+\bibitem{Borell1975}
+C.~Borell,
+\newblock Convex set functions in \(d\)-space,
+\newblock \emph{Periodica Mathematica Hungarica} 6 (1975), 111--136.
+
+\bibitem{KLS1995}
+R.~Kannan, L.~Lov\'asz, and M.~Simonovits,
+\newblock Isoperimetric problems for convex bodies and a localization lemma,
+\newblock \emph{Discrete \& Computational Geometry} 13 (1995), 541--559.
+
+\bibitem{Ledoux2001}
+M.~Ledoux,
+\newblock \emph{The Concentration of Measure Phenomenon},
+\newblock American Mathematical Society, 2001.
+
+\bibitem{Milman2009}
+E.~Milman,
+\newblock On the role of convexity in isoperimetry, spectral gap and
+concentration,
+\newblock \emph{Inventiones Mathematicae} 177 (2009), 1--43.
+
+\bibitem{Eldan2013}
+R.~Eldan,
+\newblock Thin shell implies spectral gap up to polylog via a stochastic
+localization scheme,
+\newblock \emph{Geometric and Functional Analysis} 23 (2013), 532--569.
+
+\bibitem{BubeckEldan2015}
+S.~Bubeck and R.~Eldan,
+\newblock The entropic barrier: a simple and optimal universal
+self-concordant barrier,
+\newblock in \emph{Proceedings of COLT 2015}, 279--279.
+
+\bibitem{Hildebrand2014}
+R.~Hildebrand,
+\newblock Canonical barriers on convex cones,
+\newblock \emph{Mathematics of Operations Research} 39 (2014), 841--850.
+
+\bibitem{LaddhaLeeVempala2020}
+A.~Laddha, Y.~T.~Lee, and S.~Vempala,
+\newblock Strong self-concordance and sampling,
+\newblock in \emph{Proceedings of STOC 2020}, 1212--1222.
+
+\end{thebibliography}
+
+\end{document}

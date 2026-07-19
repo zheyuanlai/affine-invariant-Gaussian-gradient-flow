@@ -1,0 +1,959 @@
+# Clean-room audit of the constant-anisotropy Wulff tube
+
+## 0. Verdict
+
+Sections 5--7 of equimeasurable_matrix_replacement.md contain one correct
+local calculation and two distinct global gaps.
+
+1. For a smooth regular hypersurface, the map
+
+   \[
+                 (x,t)\longmapsto x+tD\Phi(n_x)
+   \]
+
+   has exactly the asserted weighted Jacobian, provided it is stopped at
+   the first anisotropic cut, focal, or support-contact time. The correct
+   base measure is
+   \(\Phi(n)e^{-V}d\mathcal H^{k-1}\). Sections 1--2 prove this, including
+   the hard-support edge convention.
+
+2. The long-ray argument controls the covariance of the Wulff
+   displacements \(z=D\Phi(n)\), not the covariance of the Euclidean
+   normals \(n\). There is no two-sided Loewner comparison between
+   \(z\otimes z\) and \(n\otimes n\), even for the special matrix
+   integrand. Section 4 gives an explicit counterexample. Trace, perimeter,
+   and projective angular variance do admit dimension-free comparisons.
+
+3. The Euclidean profile deficit retained by the equimeasurable
+   construction does not supply the small anisotropic-profile deficit
+   required by the killed-tube theorem. For \(\kappa=1/4\), the only
+   automatic profile comparison has distortion
+
+   \[
+                     \frac{1+\kappa}{1-\kappa}=\frac53.
+   \]
+
+   Thus a Euclidean relative profile error of \(6.02\cdot10^{-8}\) can
+   become an anisotropic relative error as large as \(2/3+o(1)\) under the
+   available estimates. This is far larger than the \(10^{-4}\)-scale
+   deletion budget.
+
+The proposed heat parameters
+
+\[
+       \alpha=10^{-16},\qquad \beta=10^{-8},\qquad \kappa=1/4
+\]
+
+do pass the scalar, physical-trace, and matrix-retention arithmetic. The
+recomputed constants are in Section 6. This does not repair items 2--3.
+
+A hierarchical repair of the anisotropy mismatch is numerically possible:
+Section 7 gives the explicit choice
+
+\[
+ \kappa=10^{-6},\qquad \alpha=10^{-28},\qquad
+ \beta=10^{-14}.
+\]
+
+Conditional on a Euclidean profile error at most \(10^{-6}\) on the
+relevant leaves, this passes matrix retention, Wulff-direction angular
+retention, and the finite tube-loss test. It does not prove that the joint
+equimeasurable minimizer has such globally minimizing leaves; that remains
+the separate nesting/profile-localization gap.
+
+The theorem below is complete for a \(C^2\) regular anisotropic minimizer in
+a \(C^2\) convex support. Extension to singular minimizers or nonsmooth hard
+supports needs a genuine anisotropic free-boundary regularity and coverage
+theorem. Singular points cannot simply be discarded because they have zero
+perimeter: offsets of a singular stratum can have positive volume.
+
+## 1. Geometry and stopping convention
+
+Let \(k\ge2\). Let \(\Phi:\mathbb R^k\to[0,\infty)\) be even, convex,
+one-homogeneous, \(C^2\) away from zero, and suppose
+\(D^2\Phi(n)\) is positive definite on \(n^\perp\) for every unit \(n\).
+Let
+
+\[
+ W=\{w\in\mathbb R^k:\langle w,q\rangle\le\Phi(q)
+                    \text{ for every }q\in\mathbb R^k\}.       \tag{1.1}
+\]
+
+Then \(\Phi\) is the support function of the strictly convex Wulff body
+\(W\), and \(D\Phi(n)\) is the unique point of \(\partial W\) with outer
+normal \(n\).
+
+Let \(\Omega\) be a bounded convex body with \(C^2\) boundary, let
+\(V\in C^2(\overline\Omega)\) be convex, and normalize
+
+\[
+             d\mu=Z^{-1}e^{-V}1_\Omega dx.                       \tag{1.2}
+\]
+
+Let \(E\subset\Omega\) have a closed regular representative whose relative
+boundary
+
+\[
+ \Sigma=\overline{\partial E\cap\operatorname{int}\Omega}
+\]
+
+is a compact \(C^2\) hypersurface with boundary. Write \(n\) for its
+exterior unit normal and
+
+\[
+ S_xu=D_un_x,\qquad z_x=D\Phi(n_x),\qquad
+ G_x=D^2\Phi(n_x)|_{n_x^\perp}.                                  \tag{1.3}
+\]
+
+At a free-boundary point assume the anisotropic Young condition
+
+\[
+                       \langle z_x,\nu_\Omega(x)\rangle=0.       \tag{1.4}
+\]
+
+This is the natural boundary condition for relative anisotropic perimeter;
+for \(\Phi(q)=|q|\) it is ordinary orthogonality.
+
+Define the relative anisotropic surface measure and perimeter by
+
+\[
+ d\sigma_{\Phi,\mu}=Z^{-1}\Phi(n)e^{-V}d\mathcal H^{k-1},
+ \qquad P_{\Phi,\mu}(E;\Omega)=\sigma_{\Phi,\mu}(\Sigma).        \tag{1.5}
+\]
+
+The anisotropic outer parallel set is
+
+\[
+                       E_t=(E+tW)\cap\Omega.                     \tag{1.6}
+\]
+
+For \(x\) in the relative interior of \(\Sigma\), let \(\tau(x)\) be the
+supremum of the times \(T>0\) for which, for every \(0<t<T\),
+
+* \(x+tz_x\in\Omega\setminus E\);
+* \(x\) is the unique Wulff contact point generating \(x+tz_x\) on
+  \(\partial E_t\); and
+* \(I+tG_xS_x\) is nonsingular with positive determinant.
+
+This kills a ray at first support contact, first collision with another
+Wulff ray, or first anisotropic focal point. Under the regular-coverage
+hypothesis
+
+\[
+ \mu\text{-a.e. point of }\Omega\setminus E
+ \text{ with positive anisotropic distance is generated by one such ray},
+                                                                    \tag{1.7}
+\]
+
+the map
+
+\[
+                         F(x,t)=x+tz_x                              \tag{1.8}
+\]
+
+is one-to-one on \(\{(x,t):0<t<\tau(x)\}\), and its area formula accounts
+for the whole tube.
+
+### 1.1 The free-boundary edge contributes no tube volume
+
+At \(x\in\partial\Sigma\), suppose an anisotropic closest-point condition
+produces a covector in the normal cone of the form
+
+\[
+                         q=a n_x+b\nu_\Omega(x),\qquad a,b\ge0.   \tag{1.9}
+\]
+
+If \(a>0\), divide by \(a\), put \(r=b/a\), and set
+
+\[
+                         f(r)=\Phi(n+r\nu).                       \tag{1.10}
+\]
+
+Condition (1.4) says \(f'(0)=0\). Strict tangential convexity gives
+
+\[
+ f''(r)=\langle D^2\Phi(n+r\nu)\nu,\nu\rangle>0\qquad(r>0),       \tag{1.11}
+\]
+
+because the component of \(\nu\) perpendicular to \(n+r\nu\) is nonzero.
+Thus \(D\Phi(n+r\nu)\cdot\nu=f'(r)>0\) for \(r>0\). This contradicts the
+supporting-halfspace inequality
+
+\[
+              \langle\nu_\Omega(x),y-x\rangle\le0
+              \qquad(y\in\Omega).                              \tag{1.12}
+\]
+
+If \(a=0\), Euler's identity gives
+\(D\Phi(\nu)\cdot\nu=\Phi(\nu)>0\), again contradicting (1.12). Hence
+\(b=0\): every admissible displacement generated at the free-boundary edge
+is the single ray \(x+tD\Phi(n_x)\). The image of
+\(\partial\Sigma\times(0,T)\) has Hausdorff dimension at most \(k-1\), so
+it has zero \(k\)-dimensional volume. Rays based exactly at the edge may
+have \(\tau(x)=0\) in a strictly convex support; this does not affect
+volume.
+
+For a nonsmooth support the normal cone can have several independent
+generators, and the preceding argument does not furnish the needed
+single-ray parameterization without an additional approximation or
+free-boundary regularity theorem.
+
+## 2. Exact killed Wulff Jacobian
+
+**Lemma 2.1 (weighted Wulff Jacobian).** Under the hypotheses of Section 1,
+for \(0<t<\tau(x)\), the weighted Jacobian of (1.8), relative to
+\(d\sigma_{\Phi,\mu}(x)dt\), is
+
+\[
+ j_x(t)=\det(I+tG_xS_x)
+        \exp\{-V(x+tz_x)+V(x)\}.                              \tag{2.1}
+\]
+
+If
+
+\[
+ \lambda=\operatorname{tr}(G_xS_x)-\langle\nabla V(x),z_x\rangle
+                                                                    \tag{2.2}
+\]
+
+is independent of \(x\), then
+
+\[
+ j_x(t)=\exp\{\lambda t-D_x(t)\},                              \tag{2.3}
+\]
+
+where
+
+\[
+\begin{aligned}
+ D_x(t)&=\int_0^t(t-s)K_x(s)ds,\\
+ K_x(s)&=\operatorname{tr}\left(
+       [(I+sG_xS_x)^{-1}G_xS_x]^2\right)
+       +\nabla^2V(x+sz_x)[z_x,z_x]\ge0.                         \tag{2.4}
+\end{aligned}
+\]
+
+In particular \(D_x\) is nonnegative and nondecreasing, and
+\(e^{-\lambda t}j_x(t)=e^{-D_x(t)}\) is nonincreasing until killing.
+
+**Proof.** For an orthonormal tangent frame \((e_1,\ldots,e_{k-1})\),
+
+\[
+ D_{e_i}F=(I+tG_xS_x)e_i,\qquad \partial_tF=z_x.                \tag{2.5}
+\]
+
+The first \(k-1\) vectors remain in \(n_x^\perp\), while Euler homogeneity
+gives
+
+\[
+                          z_x\cdot n_x=\Phi(n_x).                \tag{2.6}
+\]
+
+Thus the Euclidean volume Jacobian is
+\(\Phi(n_x)\det(I+tG_xS_x)\). Dividing by the factor \(\Phi(n_x)\) in
+(1.5) and inserting the density ratio proves (2.1).
+
+The operator \(G_xS_x\) is similar to the symmetric operator
+\(G_x^{1/2}S_xG_x^{1/2}\), hence has real eigenvalues. Before the focal
+time,
+
+\[
+ \frac d{dt}\log j_x(t)
+ =\operatorname{tr}[(I+tG_xS_x)^{-1}G_xS_x]
+   -\langle\nabla V(x+tz_x),z_x\rangle,                         \tag{2.7}
+\]
+
+and
+
+\[
+ \frac {d^2}{dt^2}\log j_x(t)=-K_x(t)\le0.                       \tag{2.8}
+\]
+
+The value of (2.7) at zero is (2.2). Twice integrating (2.8) proves
+(2.3)--(2.4). \(\square\)
+
+With the left-limit conventions
+
+\[
+\begin{aligned}
+ R(t)&=\int_\Sigma1_{\{t<\tau(x)\}}e^{-D_x(t)}
+                       d\sigma_{\Phi,\mu}(x),\\
+ R(t-)&=\int_\Sigma1_{\{t\le\tau(x)\}}e^{-D_x(t-)}
+                       d\sigma_{\Phi,\mu}(x),                   \tag{2.9}
+\end{aligned}
+\]
+
+\(R\) is nonincreasing and, under (1.7),
+
+\[
+ \frac d{dt}\mu(E_t)=P_{\Phi,\mu}(E_t;\Omega)
+                     =e^{\lambda t}R(t)                         \tag{2.10}
+\]
+
+for almost every \(t\). A ray killed exactly at \(t\) occurs in \(R(t-)\)
+and not in \(R(t)\). At a focal endpoint use
+\(D_x(t-)=\lim_{s\uparrow t}D_x(s)\), possibly \(+\infty\).
+
+The exact defect identity is
+
+\[
+\begin{aligned}
+ R(0)-R(T-)={}&\sigma_{\Phi,\mu}\{x:\tau(x)<T\}\\
+ &+\int_{\{\tau(x)\ge T\}}(1-e^{-D_x(T-)})
+                         d\sigma_{\Phi,\mu}(x).                 \tag{2.11}
+\end{aligned}
+\]
+
+This accounts exactly for focal loss, support contact, collisions, and
+smooth curvature/potential loss.
+
+## 3. The global theorem proved by the local algebra
+
+Define the anisotropic profile
+
+\[
+ I_\Phi(v)=\inf\{P_{\Phi,\mu}(A;\Omega):\mu(A)=v\}.             \tag{3.1}
+\]
+
+Concavity of \(I_\Phi\) is an explicit hypothesis below. It is not among
+the standard results licensed in the task and must be proved or cited in
+the exact Finsler/free-boundary generality before use.
+
+**Theorem 3.1 (anisotropic profile amplification).** Assume (1.7), assume
+\(I_\Phi\) is concave with \(I_\Phi(0)=0\), and let \(E\) be an
+anisotropic isoperimetric region of volume \(v_0\in(0,1/2]\), satisfying
+the regularity hypotheses above. Let \(P_0=I_\Phi(v_0)\). Fix
+\(0<a<v_0<b\le1/2\) and put
+
+\[
+ c=\frac{I_\Phi(b)}b,\qquad B=\frac b{v_0},\qquad
+ s_0=\min(v_0-a,b-v_0).                                      \tag{3.2}
+\]
+
+If
+
+\[
+ \frac{I_\Phi(a)}a\le(1+\delta)c,\qquad
+ \eta=\frac{\delta b}{s_0}<1,                                  \tag{3.3}
+\]
+
+and \(T_b\) is the first time \(\mu(E_t)=b\), then
+
+\[
+ \frac1{(1+\eta)c}
+ \log\left(1+\frac{1+\eta}{1+\delta}(B-1)\right)
+ \le T_b\le\frac{\log B}{c},                                  \tag{3.4}
+\]
+
+and
+
+\[
+ P_0-R(T_b-)
+ \le\left(1-\frac{B^{-\eta}}{1+\delta}\right)P_0
+ \le(\delta+\eta\log B)P_0.                                  \tag{3.5}
+\]
+
+**Proof.** Concavity makes \(I_\Phi(v)/v\) nonincreasing. The constant
+anisotropic mean curvature \(\lambda\) is a supporting slope at \(v_0\);
+the two secants give
+
+\[
+                         |\lambda-c|\le\eta c.                  \tag{3.6}
+\]
+
+Equation (2.10) and anisotropic minimality give, until volume \(b\),
+
+\[
+ e^{\lambda t}R(t)=P_{\Phi,\mu}(E_t)
+ \ge I_\Phi(\mu(E_t))\ge c\mu(E_t).                             \tag{3.7}
+\]
+
+Integration yields the upper bound in (3.4). The inequality \(R(t)\le
+P_0\) and \(P_0/v_0\le(1+\delta)c\) yield its lower bound. Taking regular
+times increasing to \(T_b\), using (3.6)--(3.7), gives
+
+\[
+ \frac{R(T_b-)}{P_0}\ge\frac{B^{-\eta}}{1+\delta}.               \tag{3.8}
+\]
+
+Finally \(1-e^{-u}\le u\) gives (3.5). \(\square\)
+
+**Lemma 3.2 (long Wulff rays force Euclidean covariance).** If
+\(G\subset\Sigma\) is measurable and
+
+\[
+ \tau(x)\ge T,\qquad D_x(T-)\le h\quad(x\in G),                 \tag{3.9}
+\]
+
+then the ordinary Euclidean covariance of \(\mu\) satisfies
+
+\[
+ \boxed{\operatorname{Cov}(\mu)\succeq
+ \frac{e^{-|\lambda|T-h}T^3}{12}
+ \int_G z_x\otimes z_x\,d\sigma_{\Phi,\mu}(x).}                 \tag{3.10}
+\]
+
+**Proof.** On each surviving ray, \(j_x(t)\ge e^{-|\lambda|T-h}\). For
+every \(\xi\in\mathbb R^k\) and every constant \(q\),
+
+\[
+ \int_0^T(\langle\xi,x+tz_x\rangle-q)^2j_x(t)dt
+ \ge e^{-|\lambda|T-h}\frac{T^3}{12}
+                         \langle\xi,z_x\rangle^2.               \tag{3.11}
+\]
+
+Integrate in \(x\), use the injective area formula, and take \(q\) to be
+the global mean of \(\xi\cdot X\). \(\square\)
+
+Equation (3.10), not the same formula with \(n_x\), is the exact covariance
+output.
+
+## 4. Comparisons for the matrix-replacement tension
+
+Let \(H=H^T\), \(\|H\|_{\mathrm{op}}\le1\), \(0<\kappa<1/3\), and
+
+\[
+ \Phi_H(q)=|q|+\kappa\frac{q^THq}{|q|}.                            \tag{4.1}
+\]
+
+For a unit vector \(n\), write \(h=n^THn\). Direct differentiation gives
+
+\[
+\begin{aligned}
+ \Phi_H(n)&=1+\kappa h,\\
+ z(n)=D\Phi_H(n)&=n+\kappa(2Hn-hn),\\
+ D^2\Phi_H(n)[u,u]&=|u|^2+
+       \kappa\{2u^THu-h|u|^2\},\qquad u\perp n.                 \tag{4.2}
+\end{aligned}
+\]
+
+Consequently
+
+\[
+\begin{gathered}
+ 1-\kappa\le\Phi_H(n)\le1+\kappa,\\
+ (1-3\kappa)|u|^2\le D^2\Phi_H(n)[u,u]
+                  \le(1+3\kappa)|u|^2,                         \tag{4.3}\\
+ |z(n)-n|\le2\kappa,\qquad
+ 1-\kappa\le|z(n)|\le1+2\kappa.                               \tag{4.4}
+\end{gathered}
+\]
+
+To see the first bound in (4.4), write \(Hn=hn+w\), with \(w\perp n\).
+Then
+\[
+ |2Hn-hn|^2=|hn+2w|^2=h^2+4|w|^2\le4.
+\]
+
+For every finite-perimeter set,
+
+\[
+ (1-\kappa)P_\mu(A)\le P_{\Phi_H,\mu}(A)
+                    \le(1+\kappa)P_\mu(A).                     \tag{4.5}
+\]
+
+Hence the profiles and Cheeger constants obey
+
+\[
+\begin{aligned}
+ (1-\kappa)I_\mu(v)&\le I_{\Phi_H}(v)
+                         \le(1+\kappa)I_\mu(v),\\
+ (1-\kappa)\psi_\mu&\le\psi_{\Phi_H,\mu}
+                         \le(1+\kappa)\psi_\mu.                 \tag{4.6}
+\end{aligned}
+\]
+
+Thus a dimension-free lower bound for the anisotropic Cheeger constant
+would imply one for the Euclidean Cheeger constant, up to \(1+\kappa\).
+This coarse final comparison is valid. It is not precise enough for a
+small-defect tube argument.
+
+### 4.1 The claimed matrix comparability is false
+
+Take \(k=2\),
+
+\[
+ H=\begin{pmatrix}0&1\\1&0\end{pmatrix},\qquad n=e_1.
+\]
+
+Then \(\|H\|_{\mathrm{op}}=1\), \(h=0\), and
+
+\[
+                         z=e_1+2\kappa e_2.                      \tag{4.7}
+\]
+
+For
+\(\xi=(-2\kappa,1)/\sqrt{1+4\kappa^2}\), one has
+\(\xi\cdot z=0\) but \(\xi\cdot n\ne0\). Therefore no positive universal
+constant \(c\) can make
+
+\[
+                         z\otimes z\succeq c\,n\otimes n.       \tag{4.8}
+\]
+
+Taking \(\xi=e_2\) also shows that no finite \(C\) makes
+\(z\otimes z\preceq Cn\otimes n\). The same example can be placed on a
+planar regular patch, so integration does not repair the assertion for an
+arbitrary packet.
+
+There is an additive comparison. If
+
+\[
+ M_n=\int_G n\otimes n\,d\sigma_\mu,\qquad
+ M_z=\int_G z\otimes z\,d\sigma_{\Phi_H,\mu},\qquad
+ A=\sigma_\mu(G),                                             \tag{4.9}
+\]
+
+then, for every \(\rho>0\),
+
+\[
+\begin{aligned}
+ M_n&\preceq \frac{1+\rho}{1-\kappa}M_z
+       +4\kappa^2(1+\rho^{-1})A I,\\
+ M_z&\preceq(1+\kappa)\{(1+\rho)M_n
+       +4\kappa^2(1+\rho^{-1})A I\}.                         \tag{4.10}
+\end{aligned}
+\]
+
+Indeed use \(n=z-(z-n)\), the scalar inequality
+\((a+b)^2\le(1+\rho)a^2+(1+\rho^{-1})b^2\), (4.4), and the density bounds
+in (4.5). The additive term is of order \(\kappa^2A\). When
+\(A\asymp p\) and the tube bound sought is of order \(p^3\), this is fatal
+for fixed \(\kappa\).
+
+### 4.2 A valid projective-angular comparison
+
+Although Loewner comparison fails, the direction map
+
+\[
+                  {\cal W}(n)=\frac{D\Phi_H(n)}{|D\Phi_H(n)|}   \tag{4.11}
+\]
+
+is odd and bi-Lipschitz on real projective space. Indeed
+
+\[
+ D{\cal W}(n)u=
+ \frac{P_{{\cal W}(n)^\perp}D^2\Phi_H(n)u}{|z(n)|}.             \tag{4.12}
+\]
+
+Projection from \(n^\perp\) to \({\cal W}(n)^\perp\) has least singular
+value at least
+\[
+ n\cdot{\cal W}(n)\ge\frac{1-\kappa}{1+2\kappa}.
+\]
+Equations (4.3)--(4.4) give
+
+\[
+ |D{\cal W}(n)u|\ge
+ \frac{(1-3\kappa)(1-\kappa)}{(1+2\kappa)^2}|u|.                \tag{4.13}
+\]
+
+For \(\kappa=1/4\), the coefficient is \(1/12\). Since this is the radial
+Gauss parametrization of a strictly convex body, it is a global
+diffeomorphism. Lifting a shortest target geodesic through its inverse
+gives
+
+\[
+ d_{\mathbb{RP}}(n,n')\le12\,
+ d_{\mathbb{RP}}({\cal W}(n),{\cal W}(n')).                     \tag{4.14}
+\]
+
+Since \(2s/\pi\le\sin s\le s\) on \([0,\pi/2]\),
+
+\[
+ 1-|{\cal W}(n)\cdot{\cal W}(n')|^2
+ \ge \frac1{36\pi^2}\{1-|n\cdot n'|^2\}.                       \tag{4.15}
+\]
+
+At \(\kappa=1/4\), the reweighting from \(d\sigma_\mu\) to the trace
+measure of \(M_z\) has density
+
+\[
+ r(n)=\Phi_H(n)|z(n)|^2
+ \in[(3/4)^3,(5/4)(3/2)^2].                                   \tag{4.16}
+\]
+
+Thus, for normalized independent normals under the two corresponding trace
+laws,
+
+\[
+ E_z[1-|w\cdot w'|^2]
+ \ge \frac1{1600\pi^2}E_n[1-|n\cdot n'|^2].                    \tag{4.17}
+\]
+
+The exact factor from (4.15)--(4.16) is
+\((.15)^2/(36\pi^2)=1/(1600\pi^2)\). This preserves positive angular
+variance, but it does not yield (4.8) or compare individual eigenvalues.
+
+For the small-\(\kappa\) repair below, an additive bound is more useful.
+If \(Q_n\) is the normalized Euclidean normal matrix and \(Q_z\) is the
+normalized Wulff-displacement matrix with trace weight
+\(\Phi_H(n)|z(n)|^2\), then for \(0<\kappa\le10^{-3}\),
+
+\[
+                         \|Q_z-Q_n\|_*\le21\kappa,               \tag{4.18}
+\]
+
+and hence
+
+\[
+ \left|\operatorname{tr}Q_z^2-\operatorname{tr}Q_n^2\right|
+ \le42\kappa.                                                   \tag{4.19}
+\]
+
+To prove (4.18), put \(w=z/|z|\). Equations (4.4) give
+\[
+ |w-n|\le\frac{4\kappa}{1-\kappa},\qquad
+ \|w\otimes w-n\otimes n\|_*\le\frac{8\kappa}{1-\kappa}.
+\]
+Moreover
+\[
+ (1-\kappa)^3\le r(n)\le(1+\kappa)(1+2\kappa)^2
+\]
+and \(\sup|r-1|\le6\kappa\) for \(\kappa\le10^{-3}\). Normalizing the
+weighted law costs at most \(12\kappa/(1-\kappa)^3\). The sum is less than
+\(21\kappa\). Equation (4.19) follows from
+\(\|Q_z+Q_n\|_{\mathrm{op}}\le2\).
+
+## 5. The profile mismatch
+
+Suppose the Euclidean profile is nearly linear between \(a\) and \(b\):
+
+\[
+               \frac{I_\mu(a)/a}{I_\mu(b)/b}\le1+\delta.        \tag{5.1}
+\]
+
+Equations (4.6) imply only
+
+\[
+ \frac{I_{\Phi_H}(a)/a}{I_{\Phi_H}(b)/b}
+ \le \frac{1+\kappa}{1-\kappa}(1+\delta).                       \tag{5.2}
+\]
+
+Thus the anisotropic relative error furnished by the available comparison
+is
+
+\[
+ \delta_\Phi\le \frac{1+\kappa}{1-\kappa}(1+\delta)-1
+ =\frac{2\kappa}{1-\kappa}
+  +\frac{1+\kappa}{1-\kappa}\delta.                             \tag{5.3}
+\]
+
+For \(\kappa=1/4\), this is \(2/3+(5/3)\delta\). Theorem 3.1 would then
+delete a fixed fraction of anisotropic surface measure, whereas the
+retained normal variance is only about \(4\cdot10^{-3}\). Therefore the
+sentence following (5.7) in equimeasurable_matrix_replacement.md cannot be
+used to pass from Euclidean near-linearity to the Wulff tube.
+
+Three separate hypotheses are still needed:
+
+1. almost every relevant level must be a global anisotropic isoperimetric
+   minimizer, not merely anisotropic CMC;
+2. its anisotropic profile must have a small relative deficit on the
+   multiplicative volume interval; and
+3. the retained cross-level normal matrix must be localized to those same
+   leaves without losing angular variance.
+
+The formal Euler equation in Section 6 of the audited file supplies none of
+these global statements.
+
+## 6. Audit of \(\alpha=10^{-16}\), \(\beta=10^{-8}\),
+\(\kappa=1/4\)
+
+This section uses only the parameterized estimates already proved in
+fixed_scale_wedge_extremality.md and the physical-transfer algebra in
+fixed_scale_physical_splicing.md. Here \(\beta\) is the near-minimizer
+error, not the volume ratio \(B\) in Theorem 3.1.
+
+With
+
+\[
+ I_0=(2\pi)^{-1/2},\quad c_0=I_0/4,\quad
+ c_G=\sqrt{2/\pi},\quad \sqrt\alpha=10^{-8},                     \tag{6.1}
+\]
+
+the coarea/Jensen deficit is
+
+\[
+ \frac{\Delta}{p}\le10^{-8}+\frac{4\cdot10^{-8}}
+                  {c_G(1-10^{-8})}
+ =6.0132566\cdot10^{-8}<6.02\cdot10^{-8}.                       \tag{6.2}
+\]
+
+The central posterior cutoff satisfies
+
+\[
+ M_\alpha=\sqrt{2\log(32\cdot10^8)}=6.6161041<7,                \tag{6.3}
+\]
+
+and the Mills-ratio estimate gives
+
+\[
+ a_-(\alpha)\ge\frac34\frac{M_\alpha}{1+M_\alpha^2}
+                  =0.11082788.                                  \tag{6.4}
+\]
+
+The constants in the fixed-scale defect proof give
+
+\[
+ C_*=1217.59014,\qquad \eta_s\le1.217591\cdot10^{-5},\qquad
+ \tau=8\eta_s\le9.74073\cdot10^{-5}.                           \tag{6.5}
+\]
+
+Using the conservative bound \(a_->.105\) and \(a_+<1.26\), the good
+physical flux obeys
+
+\[
+ \frac bp\ge\frac{.105(1-10^{-8})}{8\pi}
+                  =.0041778172.                                 \tag{6.6}
+\]
+
+Its effective rank is at least \(500\) once
+
+\[
+ K\ge1.51\cdot10^{29}.                                          \tag{6.7}
+\]
+
+This is a fixed universal threshold; below it, Buser--Ledoux already gives
+a fixed, though extremely small, universal Cheeger bound.
+
+For the analytic physical selector, (6.2), (6.6), and the rank-\(500\)
+alignment estimate give
+
+\[
+\begin{aligned}
+ \frac{\operatorname{tr}M_{\rm an}}p&>.0041777570,\\
+ \frac{\operatorname{tr}M_{\rm an}}
+      {\|M_{\rm an}\|_{\mathrm{op}}}&>246.44.                    \tag{6.8}
+\end{aligned}
+\]
+
+Retain the physical-volume central band
+\[
+ 10^{-4}\le\mu(\{F_0>r\})\le1-10^{-4}.
+\]
+The tail selected trace is bounded by the whole tail perimeter, hence by
+
+\[
+              (2\cdot10^{-4}+6.0132566\cdot10^{-8})p.           \tag{6.9}
+\]
+
+Therefore the central selected trace is greater than \(.00397769p\), its
+effective rank is greater than \(234\), and soft thinning gives the
+unweighted central normal law the variance bound
+
+\[
+                        1-\operatorname{tr}Q^2>.00396.           \tag{6.10}
+\]
+
+For the joint replacement, \(T>.00397769p\) and \(\kappa=1/4\). The exact
+normalization estimate is
+
+\[
+ \frac{4\Delta}{T}\left(1+\frac1\kappa\right)
+ <3.024\cdot10^{-4}.                                             \tag{6.11}
+\]
+
+Hence the replacement retains angular variance greater than \(.00365\).
+The looser values \(T>.0039p\) and \(3.09\cdot10^{-4}\) in the audited
+file are also correct. There is no arithmetic error in its
+(7.1)--(7.5).
+
+What is not supplied there as a single theorem is the simultaneous
+parameter rerun: the parameter-dependent physical transfer, central tail
+deletion, and low-\(K\) branch should be stated together rather than
+inferred across reports. More importantly, (6.11) controls a Euclidean
+normal-matrix variance. The Wulff tube requires the global anisotropic
+hypotheses of Theorem 3.1 and then produces the displacement matrix in
+(3.10). Sections 4--5 show why those facts do not follow from this constant
+chain at \(\kappa=1/4\).
+
+## 7. A small-anisotropy hierarchical repair
+
+The anisotropy mismatch itself can be made subordinate to the retained
+angular variance. Freeze
+
+\[
+ \boxed{\kappa=10^{-6},\qquad
+        \alpha=10^{-28},\qquad
+        \beta=10^{-14}}.                                      \tag{7.1}
+\]
+
+Keep the central physical-volume cutoff \(10^{-4}\), and suppose,
+conditionally, that the relevant Euclidean isoperimetric leaves satisfy a
+relative profile error
+
+\[
+                              \delta_E\le10^{-6}.                \tag{7.2}
+\]
+
+The heat arithmetic is as follows:
+
+\[
+\begin{aligned}
+ M_\alpha&=\sqrt{2\log(32\cdot10^{14})}=8.4500802,\\
+ a_-(\alpha)&\ge .08753070,\\
+ \Delta/p&\le6.0132566\cdot10^{-14},\\
+ \tau&\le9.74073\cdot10^{-11}.                                \tag{7.3}
+\end{aligned}
+\]
+
+Consequently
+
+\[
+ b/p\ge .0034827359.                                           \tag{7.4}
+\]
+
+The good physical matrix has effective rank at least \(500\) once
+
+\[
+                           K\ge1.81\cdot10^{47}.                 \tag{7.5}
+\]
+
+Again this is a universal threshold. Deleting the extreme-volume levels
+costs at most
+
+\[
+             (2\cdot10^{-4}+6.014\cdot10^{-14})p.
+\]
+
+Thus the central selected trace \(T_s\), its effective rank, and the
+unweighted angular variance satisfy
+
+\[
+\begin{aligned}
+ T_s&>.0032827359p,\\
+ R_{\rm eff}&>235.6,\\
+ 1-\operatorname{tr}Q^2&>.00326880.                           \tag{7.6}
+\end{aligned}
+\]
+
+The matrix-retention loss is now
+
+\[
+ \frac{4\Delta}{T_s}\left(1+\frac1\kappa\right)
+ <7.328\cdot10^{-5},                                           \tag{7.7}
+\]
+
+so the Euclidean normal angular variance after replacement is greater than
+
+\[
+                              .0031955.                          \tag{7.8}
+\]
+
+Equations (4.18)--(4.19) cost at most \(42\kappa=4.2\cdot10^{-5}\).
+Therefore the normalized Wulff-displacement direction law retains angular
+variance greater than
+
+\[
+                              .0031535.                          \tag{7.9}
+\]
+
+The profile comparison (5.3), under (7.2), gives
+
+\[
+ \delta_\Phi\le
+ \frac{2\cdot10^{-6}}{1-10^{-6}}
+ +\frac{1+10^{-6}}{1-10^{-6}}10^{-6}
+ <3.000005\cdot10^{-6}.                                       \tag{7.10}
+\]
+
+For the fixed tube interval
+\[
+ v_0=b/2,\qquad a=b/4,
+\]
+the volume parameter in Theorem 3.1 is \(B=2\) and
+\(\eta=4\delta_\Phi\). Its normalized killed-flux defect is at most
+
+\[
+ (1+4\log2)\delta_\Phi<1.132\cdot10^{-5}.                       \tag{7.11}
+\]
+
+After additionally deleting rays with \(D_x(T_b-)>1\), the deleted base
+surface is at most
+
+\[
+ \left(1+\frac1{1-e^{-1}}\right)
+ (1+4\log2)\delta_\Phi P_0
+ <2.923\cdot10^{-5}P_0.                                       \tag{7.12}
+\]
+
+Here is the exact variance accounting for this deletion. If a fraction
+\(\varepsilon\) of a probability law of rank-one projectors is deleted and
+the remainder is renormalized, then
+
+\[
+ \|Q_{\rm rem}-Q\|_*\le2\varepsilon,\qquad
+ |\operatorname{tr}Q_{\rm rem}^2-\operatorname{tr}Q^2|
+ \le4\varepsilon.                                             \tag{7.13}
+\]
+
+Indeed \(Q=(1-\varepsilon)Q_{\rm rem}+\varepsilon Q_{\rm del}\),
+and both conditional matrices are positive semidefinite of trace one.
+The Wulff displacement trace measure has the additional factor
+\(|z|^2\). By (4.4), the deleted fraction for that trace law is at most
+
+\[
+ \frac{(1+2\kappa)^2}{(1-\kappa)^2}
+       (2.923\cdot10^{-5})<2.924\cdot10^{-5}.                    \tag{7.14}
+\]
+
+Equations (7.9), (7.13), and (7.14) leave angular variance greater than
+\(.003036\) on the surviving long-ray packet. Thus (7.1) passes all three
+numerical tests requested:
+
+* matrix retention;
+* conversion from Euclidean normals to Wulff displacement directions; and
+* anisotropic finite-tube near-linearity.
+
+The hierarchy is robust. Symbolically it requires
+
+\[
+ \frac{\Delta}{T_s}\ll\kappa\,\mathcal V,\qquad
+ \kappa\ll\mathcal V,\qquad
+ \delta_E+\kappa\ll\mathcal V,                              \tag{7.15}
+\]
+
+where \(\mathcal V\) is the retained angular variance. Since
+\(\Delta=O(\sqrt\alpha)\) while \(T_s\) decays only like
+\(1/\sqrt{\log(1/\alpha)}\), one may first freeze \(\kappa\), then make
+\(\alpha\) sufficiently small. The enormous rank threshold is still a
+universal number.
+
+This is only a repair of the fixed-anisotropy constant mismatch. Assumption
+(7.2) is not supplied leafwise by the integrated Euclidean coarea deficit,
+and global anisotropic minimality of the levels remains unproved. In
+particular, the constants do not repair the nesting/stationarity gap.
+
+## 8. Singular sets and hard convex support
+
+For a smooth uniformly elliptic anisotropic integrand, interior
+isoperimetric minimizers are regular away from a high-codimension singular
+set. That statement alone does not prove (1.7). A zero-perimeter stratum
+can carry a positive family of supporting Wulff directions, just as a
+vertex of a convex polytope generates a positive-volume rounded cap under
+Minkowski addition.
+
+A sufficient theorem for extending Lemmas 2.1 and 3.2 is:
+
+> For almost every point outside an anisotropic perimeter minimizer having
+> a unique Wulff closest point, that closest point belongs to the regular
+> reduced boundary; the analogous assertion holds at the free boundary,
+> with the Young condition and the support normal cone.
+
+Such a result may follow from regularity of elliptic prescribed-mean-
+curvature boundaries at points admitting an exterior Wulff ball, but it is
+not proved in the audited reports and is not one of the task's licensed
+standard results. Without it, the area formula has a possible extra
+singular-origin flux. That flux is not harmless: it can satisfy the profile
+lower bound while leaving no long regular base ray for (3.10).
+
+Likewise, approximation of a nonsmooth convex support by smooth convex
+supports must preserve the relevant anisotropic minimizer, profile slope,
+Young contact condition, killed-flux loss, and displacement matrix with
+uniform constants. Mere weak convergence of measures and perimeters does
+not provide all these simultaneously.
+
+Accordingly, the exact proved scope is the regular \(C^2\) theorem of
+Sections 1--3. The general singular/hard-support version remains a
+load-bearing transfer theorem rather than a routine limiting argument.
