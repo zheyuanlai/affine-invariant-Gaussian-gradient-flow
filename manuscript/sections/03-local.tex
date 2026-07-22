@@ -1,0 +1,885 @@
+\section{Local convergence near equilibrium}
+\label{sec:local}
+
+The global theory of \Cref{sec:global} delivers the iterate into a neighborhood of the
+optimizer at a rate proportional to $\kappa^{-1}$. Near the optimizer the dynamics is governed
+by a different mechanism, and the condition number disappears from the rate. We develop that
+mechanism here, and we organize it around a decomposition of the natural gradient field into a
+Gaussian core and a non-Gaussian remainder,
+\[
+    F=\FGauss+H,
+    \qquad
+    \FGauss(m,C):=(-Cm,\;C-C^2),
+\]
+in which $\FGauss$, the field of the standard Gaussian target, is retained exactly and only $H$
+is Taylor-bounded. Since $H\equiv0$ whenever the target is Gaussian, everything the local theory
+certifies is exact on Gaussian targets.
+
+\subsection{Whitened coordinates and the linearized generator}
+\label{subsec:whitened}
+
+\begin{definition}[Whitened coordinates]
+\label{def:whitened}
+Given the optimizer $a_\star=(m_\star,C_\star)$, set
+\[
+    \widehat m:=C_\star^{-1/2}(m-m_\star),
+    \qquad
+    \widehat C:=C_\star^{-1/2}CC_\star^{-1/2},
+    \qquad
+    \widehat V(z):=V(m_\star+C_\star^{1/2}z),
+\]
+and let $0<\alphastar\leq\betastar<\infty$ satisfy
+$\alphastar\Id\preceq\nabla^2\widehat V(z)\preceq\betastar\Id$, with
+$\kappastar:=\betastar/\alphastar$.
+\end{definition}
+
+The Kullback--Leibler divergence and the dynamics \eqref{ODEs:NG}, \eqref{upd:Riem},
+\eqref{upd:KL} are invariant under $\theta\mapsto C_\star^{-1/2}(\theta-m_\star)$, so throughout
+this section $a=(m,C)$ denotes the whitened parameter and $a_\star=(0,\Id)$. The stationarity
+conditions read $\E_{\N(0,\Id)}[\nabla\widehat V]=0$ and
+$\E_{\N(0,\Id)}[\nabla^2\widehat V]=\Id$, whence $\alphastar\leq1\leq\betastar$, and one may
+take $\alphastar\geq1/\kappa$, $\betastar\leq\kappa$, $\kappastar\leq\kappa^2$. Statements
+transfer back through the fixed equilibrium norms
+\begin{equation}
+\label{eq:local-norms}
+    \norm{a-a_\star}_\star^2:=\norm{\widehat m}^2+\tfrac12\norm{\widehat C-\Id}_{\Frob}^2,
+    \qquad
+    \norm{a-a_\star}_{\star,\Delta t}^2:=\norm{\widehat m}^2+\tfrac{1+\Delta t}2\norm{\widehat C-\Id}_{\Frob}^2,
+\end{equation}
+of which $\norm{\cdot}_\star$ is the Fisher--Rao tangent norm frozen at $a_\star$. We write
+$\xi:=a-a_\star$, $D(a):=\norm{\xi}_\star^2$, and $F(a):=(Cg(a),\,C-CA(a)C)$, so that
+\eqref{ODEs:NG} reads $\dot a=F(a)$ with $F(a_\star)=0$. Finally we set
+\begin{equation}
+\label{eq:Gamma}
+    t_0:=\max\{1,\log(4\betastar)\},
+    \qquad
+    \Gamma:=\min\Bigl\{\betastar-1,\;\sqrt{N_\theta}\bigl(4\sqrt{2t_0}+4t_0+4\bigr)\Bigr\},
+\end{equation}
+so that $\Gamma=O\bigl(1+\sqrt{N_\theta}\log\kappastar\bigr)=O\bigl(1+\sqrt{N_\theta}\log\kappa\bigr)$.
+
+The linearization of $F$ at $a_\star$ is expressed through three Gaussian score operators, the
+first two of Hermite degree one and the third of Hermite degree two.
+
+\begin{definition}[Linearized score operators]
+\label{def:score-ops}
+Let $Z\sim\N(0,\Id)$ and $B(Z):=\nabla^2\widehat V(Z)$, so that $\E B(Z)=\Id$. For
+$u\in\R^{N_\theta}$ and $X\in\Sym(N_\theta)$ define
+\[
+    \mathcal T[X]_k:=\E\bigl[\Tr(XB(Z))Z_k\bigr],
+    \qquad
+    \mathcal T^*[u]_{ij}:=\E\bigl[(u^\top Z)B_{ij}(Z)\bigr],
+    \qquad
+    \mathcal H[X]_{ij}:=\E\bigl[B_{ij}(Z)(Z^\top XZ-\Tr X)\bigr].
+\]
+The Gaussian score identities of \Cref{app:identities} give
+$u^\top\mathcal T[X]=\Tr(\mathcal T^*[u]X)$ and $\Tr(\mathcal H[X]Y)=\Tr(X\mathcal H[Y])$, so
+$\mathcal T$ and $\mathcal T^*$ are mutually adjoint and $\mathcal H$ is self-adjoint.
+\end{definition}
+
+We reduce the spectral analysis to the diagonal modes of $\mathcal H$, on which the two
+score operators are represented by a matrix pair whose Schur complement is the quantity of
+interest.
+
+\begin{lemma}[Diagonal-mode bounds]
+\label{lem:diagonal-modes}
+Fix an orthogonal basis in which $X=\diag(\lambda)$, and set
+$\widetilde T_{ki}:=\E[B_{ii}(Z)Z_k]$, $G_{ij}:=\E[B_{ii}(Z)Z_j^2]$, and
+$D:=G-\one\one^\top$. Then $D$ is symmetric,
+\begin{equation}
+\label{eq:T-Schur}
+    \widetilde T^\top\widetilde T\preceq\Id+D,
+    \qquad\text{and}\qquad
+    \lambda_{\max}(D)\leq\Gamma .
+\end{equation}
+The proof is given in \Cref{app:identities}.
+\end{lemma}
+
+The two branches of $\Gamma$ have different origins. The branch $\betastar-1$ is the pointwise
+curvature bound applied to a diagonal quadratic form. The branch
+$\sqrt{N_\theta}(4\sqrt{2t_0}+4t_0+4)$ comes from the exact representation
+$\lambda^\top D\lambda=\E[\Tr(XB(Z))(Z^\top XZ-\Tr X)]$ together with a Laurent--Massart tail
+bound for the chi-square chaos $Z^\top XZ-\Tr X$; it is a genuine $\sqrt{N_\theta}$ and not
+$N_\theta$, because the pointwise bound $|\Tr(XB)|\leq\Tr(|X|B)$ costs only $\norm\lambda_1$.
+
+\begin{proposition}[Spectral sandwich for the linearized generator]
+\label{prop:spectral-sandwich}
+Let $J_\star:=DF(a_\star)$ and $\mathcal L_\star:=-J_\star$. Then
+\begin{equation}
+\label{eq:Lstar-formula}
+    \mathcal L_\star(u,X)
+    =\Bigl(u+\tfrac12\mathcal T[X],\;X+\mathcal T^*[u]+\tfrac12\mathcal H[X]\Bigr),
+\end{equation}
+$\mathcal L_\star$ is self-adjoint in the Fisher--Rao inner product $\inner\cdot\cdot_\star$
+frozen at $a_\star$, and with $\gstar:=\lambda_{\min}(\mathcal L_\star)$ and
+$\Lstar:=\lambda_{\max}(\mathcal L_\star)$,
+\begin{equation}
+\label{eq:linear-gap-bounds}
+    \boxed{\;
+    \max\Bigl\{\alphastar,\frac1{4+\Gamma}\Bigr\}
+    \leq\gstar\leq\Lstar\leq
+    \min\Bigl\{\betastar,\frac{4+\Gamma}2\Bigr\}.\;}
+\end{equation}
+For a Gaussian target, $\mathcal T=0$, $\mathcal H=0$, and $\gstar=\Lstar=1$.
+\end{proposition}
+
+\begin{proof}
+Bonnet--Price differentiation at $a_\star=(0,\Id)$, recorded in \Cref{app:identities}, gives
+$\E_{\N(u,\Id+X)}[\nabla\widehat V]=u+\tfrac12\mathcal T[X]+O(\norm{(u,X)}_\star^2)$ and
+$\E_{\N(u,\Id+X)}[\nabla^2\widehat V]=\Id+\mathcal T^*[u]+\tfrac12\mathcal H[X]+O(\norm{(u,X)}_\star^2)$;
+substituting into $F(m,C)=(-C\E[\nabla\widehat V],\,C-C\E[\nabla^2\widehat V]C)$ gives
+\eqref{eq:Lstar-formula}, and the adjoint identities of \Cref{def:score-ops} make
+$\mathcal L_\star$ self-adjoint. Its quadratic form, after diagonalizing $X=\diag(\lambda)$, is
+\begin{equation}
+\label{eq:Q-linear}
+    Q(u,\diag\lambda)
+    :=\inner{\mathcal L_\star(u,X)}{(u,X)}_\star
+    =\norm u^2+u^\top\widetilde T\lambda+\tfrac12\norm\lambda^2+\tfrac14\lambda^\top D\lambda .
+\end{equation}
+Set $\nu:=1/(4+\Gamma)$. Completing the square in $u$, the coercivity
+$Q\geq\nu\norm\cdot_\star^2$ reduces through \eqref{eq:T-Schur} to
+$\tfrac{1-\nu}2-\tfrac{1+\nu\Gamma}{4(1-\nu)}\geq0$, that is to
+$1-\nu(4+\Gamma)+2\nu^2\geq0$, whose left side equals $2\nu^2>0$ at $\nu=1/(4+\Gamma)$. For the
+matching upper bound, \Cref{lem:diagonal-modes} gives
+\[
+    Q(u,\diag\lambda)
+    \leq\norm u^2+\sqrt{1+\Gamma}\,\norm u\norm\lambda+\Bigl(\tfrac12+\tfrac\Gamma4\Bigr)\norm\lambda^2
+    \leq\frac{4+\Gamma}2\Bigl(\norm u^2+\tfrac12\norm\lambda^2\Bigr).
+\]
+For the second branch we use the exact identity
+$\E[\eta(Z)^\top B(Z)\eta(Z)]=\norm u^2+2u^\top\widetilde T\lambda+\norm\lambda^2+\lambda^\top D\lambda$
+of \Cref{lem:diagonal-modes} with $\eta(Z)=2u+XZ$, which turns \eqref{eq:Q-linear} into
+\[
+    Q(u,\diag\lambda)=\tfrac14\E\bigl[(2u+XZ)^\top B(Z)(2u+XZ)\bigr]+\tfrac14\norm\lambda^2 .
+\]
+Sandwiching $\alphastar\Id\preceq B(Z)\preceq\betastar\Id$ against
+$\E\norm{2u+XZ}^2=4\norm u^2+\norm\lambda^2$ gives
+$\alphastar\norm u^2+\tfrac{1+\alphastar}4\norm\lambda^2\leq Q\leq\betastar\norm u^2+\tfrac{1+\betastar}4\norm\lambda^2$,
+and $\alphastar\leq1\leq\betastar$ yields $\tfrac{1+\alphastar}4\geq\tfrac{\alphastar}2$ and
+$\tfrac{1+\betastar}4\leq\tfrac{\betastar}2$, so
+$\alphastar\norm\xi_\star^2\leq Q(\xi)\leq\betastar\norm\xi_\star^2$. The spectral theorem gives
+\eqref{eq:linear-gap-bounds}.
+\end{proof}
+
+The two branches of \eqref{eq:linear-gap-bounds} are complementary: the $\Gamma$ branch is
+universal and carries the dimension dependence, while the $(\alphastar,\betastar)$ branch is
+sharper for well-conditioned targets, where the universal estimate is pessimistic. For the rest
+of the local theory any certified lower bound $0<\gamma_0\leq\gstar$ may be used; the universal
+choice is $\gamma_0=1/(4+\Gamma)$, and the Gaussian target has the exact value $\gstar=1$.
+
+We now record what \eqref{eq:linear-gap-bounds} gives for the two discretizations. The
+Riemannian map is a straight Euler step in the Fisher--Rao geometry and inherits the spectrum
+of $\mathcal L_\star$ directly; the KL map does not, because its covariance block carries the
+extra factor $(1+\Delta t)^{-1}$ from the backward entropy step, and it becomes self-adjoint
+only after the covariance block of the norm is reweighted by $1+\Delta t$, which is what
+$\norm\cdot_{\star,\Delta t}$ in \eqref{eq:local-norms} does.
+
+\begin{proposition}[Linearized contractions of the two schemes]
+\label{prop:linearized-maps}
+Let $T_\Riem$ and $T_\KL$ denote the maps \eqref{upd:Riem} and \eqref{upd:KL} in whitened
+coordinates. If $0<\Delta t\leq2/(4+\Gamma)$, then
+\[
+    \norm{DT_\Riem(a_\star)\xi}_\star\leq\Bigl(1-\frac{\Delta t}{4+\Gamma}\Bigr)\norm\xi_\star,
+    \qquad
+    \norm{DT_\KL(a_\star)\xi}_{\star,\Delta t}\leq\Bigl(1-\frac{\Delta t}{4+2\Delta t+\Gamma}\Bigr)\norm\xi_{\star,\Delta t}.
+\]
+\end{proposition}
+
+\begin{proof}
+For the Riemannian map $DT_\Riem(a_\star)=\Id-\Delta t\,\mathcal L_\star$, and
+$\Delta t\,\Lstar\leq1$ by \eqref{eq:linear-gap-bounds}, so its spectrum lies in
+$[0,1-\Delta t/(4+\Gamma)]$. For the KL map, differentiating \eqref{upd:KL} at $(0,\Id)$ gives
+\[
+    M_\KL(u,X):=DT_\KL(a_\star)(u,X)
+    =\Bigl((1-\Delta t)u-\tfrac{\Delta t}2\mathcal T[X],\;
+    \frac{X-\Delta t\,\mathcal T^*[u]-\tfrac{\Delta t}2\mathcal H[X]}{1+\Delta t}\Bigr),
+\]
+which is self-adjoint in
+$\inner{(u,X)}{(v,Y)}_{\star,\Delta t}:=u^\top v+\tfrac{1+\Delta t}2\Tr(XY)$ and satisfies the
+exact identity
+$\norm\xi_{\star,\Delta t}^2-\inner{M_\KL\xi}{\xi}_{\star,\Delta t}=\Delta t\,Q(\xi)$ with $Q$
+as in \eqref{eq:Q-linear}. Completing the square in $u$ as before, the weighted coercivity
+$Q(\xi)\geq\nu\norm\xi_{\star,\Delta t}^2$ reduces to
+$1-\nu(4+2\Delta t+\Gamma)+2(1+\Delta t)\nu^2\geq0$, whose left side equals
+$2(1+\Delta t)\nu^2>0$ at $\nu=1/(4+2\Delta t+\Gamma)$. Since
+$Q(\xi)\leq\tfrac{4+\Gamma}2\norm\xi_{\star,\Delta t}^2$ and $\Delta t\leq2/(4+\Gamma)$, the
+spectrum of $M_\KL$ is nonnegative, so its operator norm is its largest eigenvalue, which is at
+most $1-\Delta t/(4+2\Delta t+\Gamma)$.
+\end{proof}
+
+\subsection{The Gaussian core and the certified region}
+\label{subsec:core}
+
+The energy gap controls the covariance spectrum, not merely the parameter distance, and the
+region on which the local theory is certified is the corresponding energy sublevel set. The
+mechanism is the entropy term, which contributes a logarithmic barrier at
+degenerate covariances on top of the quadratic coercivity supplied by strong convexity.
+
+\begin{lemma}[Entropy-enhanced coercivity]
+\label{lem:coercivity}
+Write $B:=C^{1/2}$ with eigenvalues $s_1,\dots,s_{N_\theta}$ and set
+$\phi_{\alphastar}(s):=s-1-\log s+\tfrac{\alphastar}2(s-1)^2$. Then
+\begin{equation}
+\label{eq:entropy-coerc}
+    \DeltaE(m,C)\geq\frac{\alphastar}2\norm m^2+\sum_{i=1}^{N_\theta}\phi_{\alphastar}(s_i).
+\end{equation}
+For a Gaussian target this is an equality, and
+$\DeltaE_{\mathrm G}(m,C)=\tfrac12\norm m^2+\sum_i\varphi(c_i)$ with
+$\varphi(c):=\tfrac12(c-1-\log c)$ and $c_i$ the eigenvalues of $C$.
+\end{lemma}
+
+\begin{proof}
+With $X=m+BZ$ we have $\DeltaE=\E[\widehat V(m+BZ)-\widehat V(Z)]-\log\det B$. By
+$\alphastar$-strong convexity,
+$\widehat V(m+BZ)-\widehat V(Z)\geq\nabla\widehat V(Z)^\top(m+(B-\Id)Z)+\tfrac{\alphastar}2\norm{m+(B-\Id)Z}^2$.
+Taking expectations, $\E[\nabla\widehat V(Z)]^\top m=0$,
+$\E[\nabla\widehat V(Z)^\top(B-\Id)Z]=\Tr(B-\Id)$ by Gaussian integration by parts, and
+$\E\norm{m+(B-\Id)Z}^2=\norm m^2+\norm{B-\Id}_{\Frob}^2$. Hence
+$\DeltaE\geq\tfrac{\alphastar}2\norm m^2+\Tr(B-\Id)-\log\det B+\tfrac{\alphastar}2\norm{B-\Id}_{\Frob}^2$,
+which diagonalizes to \eqref{eq:entropy-coerc}. For a Gaussian target the convexity step is an
+equality and $\phi_1(s)=\tfrac12(s^2-1-\log s^2)=\varphi(c)$ with $c=s^2$.
+\end{proof}
+
+Since $\phi_{\alphastar}$ is strictly decreasing on $(0,1)$, increasing on $(1,\infty)$, and
+vanishes at $1$, for each $\delta>0$ the equation $\phi_{\alphastar}(s)=\delta$ has roots
+$0<s_-(\delta)<1<s_+(\delta)$, and we set $\ell_\delta:=s_-(\delta)^2$,
+$U_\delta:=s_+(\delta)^2$. Then $\DeltaE(a)\leq\delta$ forces
+$\ell_\delta\Id\preceq C\preceq U_\delta\Id$, and, with
+\begin{equation}
+\label{eq:band-conversion}
+    \vartheta(\delta):=\sup_{s\in[s_-,s_+],\,s\neq1}\frac{(s^2-1)^2}{2\phi_{\alphastar}(s)}
+    \leq\frac{(1+s_+)^2}{\alphastar+s_+^{-2}},
+    \qquad
+    \mathfrak b(\delta)^2:=\max\Bigl\{\tfrac2{\alphastar},\vartheta(\delta)\Bigr\},
+\end{equation}
+one has $\DeltaE(a)\leq\delta\Rightarrow\norm{a-a_\star}_\star\leq\mathfrak b(\delta)\sqrt\delta$
+and $\norm{a-a_\star}_{\star,\Delta t}\leq\mathfrak b_{\Delta t}(\delta)\sqrt\delta$ with
+$\mathfrak b_{\Delta t}(\delta)^2:=\max\{2/\alphastar,(1+\Delta t)\vartheta(\delta)\}$. For a
+Gaussian target $\ell_\delta$ and $U_\delta$ are the two roots of $\varphi(c)=\delta$.
+
+\begin{definition}[Region, hull, and non-Gaussian moduli]
+\label{def:region}
+For $\delta>0$ set $\Ureg_\delta:=\{a:\DeltaE(a)\leq\delta\}$ and let
+$\mathcal V_\delta:=\{a_\star+s(a-a_\star):a\in\Ureg_\delta,\,s\in[0,1]\}$ be its star-shaped
+hull. Set $\bar\Lambda_\delta:=\max\{U_\delta,1/\alphastar\}$ and
+\[
+    \mathcal B_\delta:=\sup_{a\in\mathcal V_\delta}\norm{A(a)-\Id}_{\op},
+    \quad
+    \Sigma_\delta:=\sup_{a\in\mathcal V_\delta}\bigl(\E_{\rho_a}\norm{\nabla^2\widehat V(X)-A(a)}_{\Frob}^2\bigr)^{1/2},
+    \quad
+    \bar\Sigma_\delta:=\min\{\Sigma_\delta,\betastar-\alphastar\}.
+\]
+All three moduli vanish for Gaussian targets and are nondecreasing in $\delta$.
+\end{definition}
+
+Every $a\in\Ureg_\delta$ satisfies $\ell_\delta\Id\preceq C\preceq U_\delta\Id$ and
+$\norm{a-a_\star}_\star\leq\mathfrak b(\delta)\sqrt\delta$, and so does every point of
+$\mathcal V_\delta$, since $C'=(1-s)\Id+sC$ has eigenvalues in $[\ell_\delta,U_\delta]$ and
+$\norm{a'-a_\star}_\star=s\norm\xi_\star$. The region is compact, and it is forward invariant
+for the flow, because $\tfrac{\dd}{\dd t}\DeltaE=-\Gradnorm^2\leq0$, and for any scheme step
+satisfying $\calE(a_{n+1})\leq\calE(a_n)$.
+
+We next show that the Gaussian core dissipates exactly against the equilibrium norm. The Gaussian core is nonlinear in the covariance,
+but its dissipation against the equilibrium norm is an exact algebraic identity, so no Taylor
+expansion is spent on it and the certified rate degrades only through the covariance floor
+$\ell_\delta$.
+
+\begin{lemma}[Exact Gaussian-core dissipation]
+\label{lem:gauss-core}
+Let $\FGauss(m,C):=(-Cm,\,C-C^2)$ be the natural gradient field of the standard Gaussian target
+$\widehat V_{\mathrm G}(z)=\tfrac12\norm z^2$. Then $D\FGauss(a_\star)=-\Id$ on
+$\R^{N_\theta}\times\Sym(N_\theta)$, and for every $a=(m,C)$, with $\xi=a-a_\star$,
+\[
+    \inner{\xi}{\FGauss(a)}_\star
+    =-m^\top Cm-\tfrac12\Tr\bigl(C(C-\Id)^2\bigr)
+    =-\tfrac12q_{\mathrm G}(a)D(a),
+    \qquad
+    q_{\mathrm G}(a):=\frac{2m^\top Cm+\Tr(C(C-\Id)^2)}{\norm m^2+\tfrac12\norm{C-\Id}_{\Frob}^2}.
+\]
+Moreover $q_{\mathrm G}(a)\geq2\lambda_{\min}(C)$, with equality when $m=0$ and $C-\Id$ is
+supported on a minimal eigendirection of $C$; consequently
+$\inner{\xi}{\FGauss(a)}_\star\leq-\ell_\delta D(a)$ on $\Ureg_\delta$.
+\end{lemma}
+
+\begin{proof}
+At $a_\star=(0,\Id)$ with $\zeta=(u,U)$ we have $D(-Cm)[\zeta]=-u$ and
+$D(C-C^2)[\zeta]=U-(U\Id+\Id U)=-U$. Writing $X=C-\Id$, we have
+$C-C^2=-C(C-\Id)=-(X+X^2)$, so
+$\inner{\xi}{\FGauss}_\star=-m^\top Cm+\tfrac12\Tr(X\cdot(-(X+X^2)))=-m^\top Cm-\tfrac12\Tr(CX^2)$,
+using $\Id+X=C$. Finally $2m^\top Cm\geq2\lambda_{\min}(C)\norm m^2$ and, since $C$ and $X$
+commute, $\Tr(CX^2)\geq\lambda_{\min}(C)\norm X_{\Frob}^2$, so the numerator of
+$q_{\mathrm G}$ is at least $2\lambda_{\min}(C)D(a)$, with equality as stated; on
+$\Ureg_\delta$, $\lambda_{\min}(C)\geq\ell_\delta$.
+\end{proof}
+
+The remainder $H:=F-\FGauss$ is, since $g_{\mathrm G}(a)=-m$ and $A_{\mathrm G}(a)=\Id$,
+\begin{equation}
+\label{eq:H-def}
+    H(a)=\bigl(C(g(a)+m),\;-C(A(a)-\Id)C\bigr),
+    \qquad H(a_\star)=0,
+\end{equation}
+both components being built from the non-Gaussian discrepancies
+$g(a)+m=-\E_{\rho_a}[\nabla\widehat V(X)-X]$ and $A(a)-\Id=\E_{\rho_a}[\nabla^2\widehat V(X)-\Id]$.
+Its second differential is controlled by the following modulus.
+
+\begin{lemma}[Non-Gaussian second-differential modulus]
+\label{lem:Kng}
+Define
+\[
+    \Kng(\delta):=\sup_{a\in\mathcal V_\delta}\;\sup_{\zeta\neq0}\;
+    \frac{\norm{D^2H(a)[\zeta,\zeta]}_\star}{\norm\zeta_\star^2}.
+\]
+Then $\Kng(\delta)\leq\bigl(K_{\mathrm{ng},m}(\delta)^2+\tfrac12K_{\mathrm{ng},C}(\delta)^2\bigr)^{1/2}$
+with
+\[
+    K_{\mathrm{ng},m}(\delta):=\frac{U_\delta^{3/2}}{\ell_\delta^2}
+    \Bigl(\sqrt3\,\bar\Sigma_\delta+\Sigma_\delta+\sqrt{\Sigma_\delta^2+2\mathcal B_\delta^2}\Bigr),
+    \qquad
+    K_{\mathrm{ng},C}(\delta):=\frac{U_\delta^2}{\ell_\delta^2}
+    \bigl((4\sqrt2+\sqrt6)\Sigma_\delta+4\mathcal B_\delta\bigr).
+\]
+In particular $\Kng(\delta)=0$ for every Gaussian target, and, with the band factors
+$U_\delta,\ell_\delta$ held fixed,
+$\Kng(\delta)=O\bigl(\tfrac{U_\delta^2}{\ell_\delta^2}(\mathcal B_\delta+\Sigma_\delta)\bigr)$.
+The proof is given in \Cref{app:identities}.
+\end{lemma}
+
+Since $H(a_\star)=0$, the integral Taylor formula
+$R_{\mathrm{ng}}(\xi):=H(a)-DH(a_\star)\xi=\int_0^1(1-s)D^2H(a_\star+s\xi)[\xi,\xi]\dd s$ has
+every segment point in $\mathcal V_\delta$, so
+$\norm{R_{\mathrm{ng}}(\xi)}_\star\leq\tfrac12\Kng(\delta)\norm\xi_\star^2$ for
+$a=a_\star+\xi\in\Ureg_\delta$. Combining this with \Cref{lem:gauss-core} gives the local
+convergence of the flow.
+
+\begin{theorem}[Gaussian-core local convergence of the flow]
+\label{thm:loc-flow}
+Let $0<\gamma_0\leq\gstar$ and $\delta>0$, and set
+\begin{equation}
+\label{eq:rho-core}
+    \rho_{\mathrm{core}}(\delta):=2\gamma_0-2+2\ell_\delta-\Kng(\delta)\,\mathfrak b(\delta)\sqrt\delta .
+\end{equation}
+If $\rho_{\mathrm{core}}(\delta)>0$ and $\DeltaE(a_0)\leq\delta$, then the flow \eqref{ODEs:NG}
+remains in $\Ureg_\delta$ and
+\[
+    \norm{a_t-a_\star}_\star^2\leq e^{-\rho_{\mathrm{core}}(\delta)t}\norm{a_0-a_\star}_\star^2,
+    \qquad t\geq0 .
+\]
+\end{theorem}
+
+\begin{proof}
+The region $\Ureg_\delta$ is compact and forward invariant, so the flow exists in it for all
+$t\geq0$. Since $\norm\cdot_\star$ is a fixed inner-product norm,
+$\tfrac12\tfrac{\dd}{\dd t}D=\inner{\xi_t}{\FGauss(a_t)}_\star+\inner{\xi_t}{H(a_t)}_\star$,
+and the first term is at most $-\ell_\delta D(a_t)$ by \Cref{lem:gauss-core}. Next
+$H(a_t)=B_\star\xi_t+R_{\mathrm{ng}}(\xi_t)$ with $B_\star=DH(a_\star)=J_\star+\Id$
+self-adjoint, so
+$\inner{\xi_t}{B_\star\xi_t}_\star=\inner{\xi_t}{J_\star\xi_t}_\star+\norm{\xi_t}_\star^2\leq(1-\gamma_0)D(a_t)$
+by \Cref{prop:spectral-sandwich}. Finally
+$\norm{\xi_t}_\star\leq\mathfrak b(\delta)\sqrt\delta$ gives
+$\inner{\xi_t}{R_{\mathrm{ng}}(\xi_t)}_\star\leq\tfrac12\Kng(\delta)\mathfrak b(\delta)\sqrt\delta\,D(a_t)$.
+Adding, $\tfrac{\dd}{\dd t}D\leq-\rho_{\mathrm{core}}(\delta)D$, and Gr\"onwall's inequality
+completes the proof.
+\end{proof}
+
+\begin{corollary}[Universal certified level]
+\label{cor:loc-universal}
+With $\gamma_0=1/(4+\Gamma)$ one has $\rho_{\mathrm{core}}(\delta)\to2/(4+\Gamma)$ as
+$\delta\downarrow0$, since $\ell_\delta\uparrow1$ and $\mathfrak b(\delta)\sqrt\delta\downarrow0$.
+Hence for every $\rho<2/(4+\Gamma)$ there is $\delta_{\mathrm c}(\rho)>0$ with
+$\rho_{\mathrm{core}}(\delta)\geq\rho$ on $(0,\delta_{\mathrm c}(\rho)]$, and every such level
+is admissible in \Cref{thm:loc-flow}.
+\end{corollary}
+
+\begin{corollary}[Exact sharpness for Gaussian targets]
+\label{cor:loc-Gauss}
+Let the target be Gaussian. Then $\gstar=1$, $\Kng\equiv0$, and \Cref{thm:loc-flow} holds with
+the exact rate $\rho_{\mathrm{core}}(\delta)=2\ell_\delta$. Consequently, for every
+$\rho\in(0,2)$ the largest energy sublevel on which rate $\rho$ is certified is
+$\{\DeltaE\leq\sharpthr(\rho)\}$ with
+\begin{equation}
+\label{eq:gauss-sharp-thresh}
+    \sharpthr(\rho)=\varphi\Bigl(\frac\rho2\Bigr)=\frac12\Bigl(\frac\rho2-1-\log\frac\rho2\Bigr),
+\end{equation}
+independent of the dimension, and this level is exactly the supremal threshold
+$\inf\{\DeltaE(a):a\neq a_\star,\;q_{\mathrm c}(a)<\rho\}$ for the instantaneous rate
+$q_{\mathrm c}(a):=-2\inner{a-a_\star}{F(a)}_\star/\norm{a-a_\star}_\star^2$.
+\end{corollary}
+
+\begin{proof}
+For a Gaussian target $F=\FGauss$ and $H\equiv0$, so $\gstar=1$ by
+\Cref{prop:spectral-sandwich} and $\Kng\equiv0$ by \Cref{lem:Kng}, whence
+$\rho_{\mathrm{core}}=2\ell_\delta$; rate $\rho$ is certified precisely when
+$\ell_\delta\geq\rho/2$, that is, since $\ell_\delta$ is the lower root of $\varphi(c)=\delta$
+and $\varphi$ decreases on $(0,1)$, when $\delta\leq\varphi(\rho/2)$. For the benchmark,
+$q_{\mathrm c}=q_{\mathrm G}\geq2\lambda_{\min}(C)$ by \Cref{lem:gauss-core}; if
+$q_{\mathrm c}(a)<\rho$ then some eigenvalue $c_j<\rho/2$, so
+$\DeltaE_{\mathrm G}(a)\geq\varphi(c_j)>\varphi(\rho/2)$, while $m=0$ and
+$C=\diag(c,1,\dots,1)$ with $c\uparrow\rho/2$ has $q_{\mathrm G}=2c<\rho$ and
+$\DeltaE_{\mathrm G}\to\varphi(\rho/2)$.
+\end{proof}
+
+For general targets the certified rate degrades from $2\gstar$ continuously, through
+$\ell_\delta$ and through the moduli $\mathcal B_\delta,\Sigma_\delta$ that enter $\Kng$. As
+$\delta\downarrow0$, $\rho_{\mathrm{core}}(\delta)\to2\gstar$, which is the exact asymptotic
+squared-norm rate of the flow.
+
+\subsection{Discrete local convergence}
+\label{subsec:disc-local}
+
+For Gaussian targets both schemes are scalar in the eigenbasis of $C_n$ and admit exact
+contraction intervals. We record the KL map first, since its interval is closed-form.
+
+\begin{proposition}[Exact Gaussian KL map]
+\label{prop:Gauss-KL-map}
+Let the target be Gaussian, so that \eqref{upd:KL} in whitened coordinates becomes
+$m_{n+1}=(\Id-\Delta t\,C_n)m_n$ and $C_{n+1}=(1+\Delta t)C_n(\Id+\Delta t\,C_n)^{-1}$. In the
+eigenbasis of $C_n$, each covariance eigenvalue $c$ and the aligned mean component transform by
+\[
+    c^+=\frac{(1+\Delta t)c}{1+\Delta t\,c},
+    \qquad
+    r_m(c)=(1-\Delta t\,c)^2,
+    \qquad
+    r_C(c)=\frac1{(1+\Delta t\,c)^2}.
+\]
+Fix $0<\Delta t<2$ and $q\in(0,1)$ with
+$q\geq q_0(\Delta t):=\max\{(1+\Delta t)^{-2},(1-\Delta t)^2\}$, and set
+\begin{equation}
+\label{eq:kl-interval}
+    I_{\Delta t}^{\KL}(q):=\Bigl[\frac{q^{-1/2}-1}{\Delta t},\;\frac{1+\sqrt q}{\Delta t}\Bigr]\ni1 .
+\end{equation}
+Then $r_m(c),r_C(c)\leq q$ on $I_{\Delta t}^{\KL}(q)$, the scalar map $c\mapsto c^+$ maps
+$I_{\Delta t}^{\KL}(q)$ into itself, and if $\operatorname{spec}(C_n)\subseteq I_{\Delta t}^{\KL}(q)$
+then $\norm{a_{n+k}-a_\star}_{\star,\Delta t}^2\leq q^k\norm{a_n-a_\star}_{\star,\Delta t}^2$ for
+all $k\geq0$. For $\Delta t\leq\sqrt2$, and in particular for $\Delta t\leq2/(4+\Gamma)$, one
+has $q_0(\Delta t)=(1+\Delta t)^{-2}$.
+\end{proposition}
+
+\begin{proof}
+Both updates share the eigenbasis of $C_n$; there $c^+-1=\tfrac{c-1}{1+\Delta t\,c}$ gives
+$r_C(c)=(1+\Delta t\,c)^{-2}$ and the aligned mean scales by $1-\Delta t\,c$. Now
+$r_m(c)\leq q$ is equivalent to $c\in[\tfrac{1-\sqrt q}{\Delta t},\tfrac{1+\sqrt q}{\Delta t}]$
+and $r_C(c)\leq q$ to $c\geq\tfrac{q^{-1/2}-1}{\Delta t}$; since $q^{-1/2}-1\geq1-\sqrt q$, the
+covariance lower bound dominates and gives \eqref{eq:kl-interval}, and $1$ lies in the interval
+exactly when $q\geq q_0(\Delta t)$. Since $c^+-1$ has the sign of $c-1$ with smaller magnitude
+and $c^+-c=\tfrac{\Delta t\,c(1-c)}{1+\Delta t\,c}$ has the opposite sign, $c^+$ lies strictly
+between $c$ and $1$, so an interval containing $1$ is preserved; each scalar factor being
+$\leq q$, the norm \eqref{eq:local-norms} contracts by $q$ per step.
+\end{proof}
+
+\begin{proposition}[Exact Gaussian Riemannian map]
+\label{prop:Gauss-Riem-map}
+For a Gaussian target the update \eqref{upd:Riem} in whitened coordinates reduces to
+$m_{n+1}=(\Id-\Delta t\,C_n)m_n$ and, in the eigenbasis of $C_n$, to
+$c^+=c\,e^{\Delta t(1-c)}$, with scalar factors $r_m^\Riem(c)=(1-\Delta t\,c)^2$ and
+\[
+    r_C^\Riem(c)=\Bigl(\frac{c\,e^{\Delta t(1-c)}-1}{c-1}\Bigr)^2,
+    \qquad r_C^\Riem(1)=(1-\Delta t)^2 .
+\]
+For $0<\Delta t<2$ and $q\in(0,1)$ with $q\geq(1-\Delta t)^2$, let
+$I_{\Delta t}^\Riem(q)=[\ell,u]$ be the connected component containing $1$ of
+$\{c>0:r_m^\Riem(c)\leq q,\ r_C^\Riem(c)\leq q\}$. If in addition
+\[
+    \Delta t\leq\min\Bigl\{1,\;\frac{\log u}{u-1}\Bigr\}
+\]
+and $\operatorname{spec}(C_n)\subseteq I_{\Delta t}^\Riem(q)$, then
+$\norm{a_{n+k}-a_\star}_\star^2\leq q^k\norm{a_n-a_\star}_\star^2$ for all $k\geq0$.
+\end{proposition}
+
+\begin{proof}
+For a Gaussian target $F_C(a)=C-C^2=-C(C-\Id)$, so $C^{-1/2}F_CC^{-1/2}=\Id-C$ and the
+retraction gives $C^+=C^{1/2}e^{\Delta t(\Id-C)}C^{1/2}=C\,e^{\Delta t(\Id-C)}$, since $C$ and
+$\Id-C$ commute; in the eigenbasis this is $c^+=c\,e^{\Delta t(1-c)}$, and expanding at $c=1$
+gives $r_C^\Riem(1)=(1-\Delta t)^2$. On $I_{\Delta t}^\Riem(q)$ both factors are at most $q$;
+the first stepsize condition prevents a point below $1$ from overshooting above $1$ and the
+second prevents points in $(1,u]$ from crossing below $1$, so $c\mapsto c\,e^{\Delta t(1-c)}$
+keeps $[\ell,u]$ forward invariant and the per-step contraction propagates.
+\end{proof}
+
+The Riemannian interval endpoints solve scalar transcendental equations, while the KL interval
+\eqref{eq:kl-interval} is closed-form, so \Cref{prop:Gauss-KL-map} is the primary discrete
+Gaussian statement and \Cref{prop:Gauss-Riem-map} its parallel. For general targets we record
+the clean per-step rate used in the complexity statements, writing
+$\gamma_\Riem:=1/(4+\Gamma)$ and $\gamma_\KL:=1/(4+2\Delta t+\Gamma)$ for the certified
+linearized gaps of \Cref{prop:linearized-maps} in the norms $\norm\cdot_\star$ and
+$\norm\cdot_{\star,\Delta t}$, and
+$\mathfrak b_{\star,\Riem}(\delta):=\mathfrak b(\delta)$,
+$\mathfrak b_{\star,\KL}(\delta):=\mathfrak b_{\Delta t}(\delta)$ for the corresponding
+norm-conversion constants, which satisfy
+$\mathfrak b_{\Delta t}(\delta)\leq\sqrt{1+\Delta t}\,\mathfrak b(\delta)$. For a scheme map $T$
+we write
+\begin{equation}
+\label{eq:Kdisc}
+    \Kdisc(\delta):=\Delta t^{-1}\sup_{a\in\mathcal V_\delta}\norm{D^2T(a)}_{\star,\bullet},
+    \qquad
+    \norm{D^2T(a)}_{\star,\bullet}:=\sup_{\norm\xi_{\star,\bullet}=1}\norm{D^2T(a)[\xi,\xi]}_{\star,\bullet},
+\end{equation}
+the normalization by $\Delta t$ reflecting that both scheme maps are $\Id+O(\Delta t)$.
+
+\begin{theorem}[General-target discrete local convergence]
+\label{thm:loc-disc}
+Fix a scheme $\bullet\in\{\Riem,\KL\}$ with gap $\gamma_\bullet$ and norm
+$\norm\cdot_{\star,\bullet}$, and suppose
+\[
+    0<\Delta t\leq\min\Bigl\{\frac2{4+\Gamma},\;\frac1{\betastar\bar\Lambda_\delta}\Bigr\},
+    \qquad
+    \Kdisc(\delta)\,\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\leq\gamma_\bullet .
+\]
+If $\DeltaE(a_0)\leq\delta$, then the iterates remain in $\Ureg_\delta$ and
+\[
+    \norm{a_n-a_\star}_{\star,\bullet}
+    \leq\Bigl(1-\tfrac12\Delta t\,\gamma_\bullet\Bigr)^n\norm{a_0-a_\star}_{\star,\bullet},
+\]
+so the Riemannian rate is $(1-\tfrac{\Delta t}{2(4+\Gamma)})^n$ and the KL rate is
+$(1-\tfrac{\Delta t}{2(4+2\Delta t+\Gamma)})^n$. Since $\Kdisc(\delta)\to\Kdisc(0)<\infty$ and
+$\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\to0$ as $\delta\downarrow0$, the radius
+condition holds for all sufficiently small $\delta$.
+\end{theorem}
+
+\begin{proof}
+The descent estimates of \Cref{lem:descent-Riem} and \Cref{prop:onestep-KL} give
+$\calE(a_{n+1})\leq\calE(a_n)$ under $\Delta t\leq1/(\betastar\bar\Lambda_\delta)$, so
+$a_{n+1}\in\Ureg_\delta$ and $\norm{\xi_n}_{\star,\bullet}\leq\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta$.
+Writing $\xi_n:=a_n-a_\star$ and $M_\bullet:=DT(a_\star)$, the integral Taylor identity
+\[
+    a_{n+1}-a_\star=T(a_\star+\xi_n)-T(a_\star)
+    =M_\bullet\xi_n+\int_0^1(1-s)D^2T(a_\star+s\xi_n)[\xi_n,\xi_n]\dd s
+\]
+holds, its linear part contracting by $1-\Delta t\gamma_\bullet$ by
+\Cref{prop:linearized-maps}. Since $a_\star+s\xi_n\in\mathcal V_\delta$ for $s\in[0,1]$, the
+remainder is bounded by
+$\tfrac12\Delta t\Kdisc(\delta)\norm{\xi_n}_{\star,\bullet}^2\leq\tfrac12\Delta t\gamma_\bullet\norm{\xi_n}_{\star,\bullet}$
+by \eqref{eq:Kdisc} and the radius condition. Adding gives the per-step factor
+$1-\tfrac12\Delta t\gamma_\bullet$, and iterating completes the proof.
+\end{proof}
+
+The contraction step of the previous proof is valid at each point separately, without the
+forward-invariance argument and hence without the energy-descent stepsize restriction. We
+isolate it, because the stochastic analysis of \Cref{sec:stochastic} perturbs exactly this
+estimate and cannot afford the descent constraint.
+
+\begin{lemma}[Pointwise one-step contraction]
+\label{lem:loc-contraction}
+Fix $\bullet\in\{\Riem,\KL\}$ and a level $\delta>0$ satisfying the radius condition
+$\Kdisc(\delta)\,\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\leq\gamma_\bullet$ of
+\Cref{thm:loc-disc}. If $0<\Delta t\leq2/(4+\Gamma)$, then every $a\in\Ureg_\delta$
+satisfies
+\[
+    \norm{T_\bullet(a)-a_\star}_{\star,\bullet}
+    \leq\Bigl(1-\tfrac12\Delta t\,\gamma_\bullet\Bigr)\norm{a-a_\star}_{\star,\bullet}.
+\]
+No energy-descent hypothesis is used.
+\end{lemma}
+
+\begin{proof}
+With $\xi:=a-a_\star$ and $a\in\Ureg_\delta\subseteq\mathcal V_\delta$, the integral Taylor
+identity of the previous proof holds at the single point $a$. Its linear part obeys
+$\norm{M_\bullet\xi}_{\star,\bullet}\leq(1-\Delta t\gamma_\bullet)\norm\xi_{\star,\bullet}$ by
+\Cref{prop:linearized-maps}, whose only stepsize requirement is $\Delta t\leq2/(4+\Gamma)$, and
+the segment $a_\star+s\xi$ lies in $\mathcal V_\delta$, so the remainder is at most
+$\tfrac12\Delta t\Kdisc(\delta)\norm\xi_{\star,\bullet}^2\leq\tfrac12\Delta t\gamma_\bullet\norm\xi_{\star,\bullet}$
+by the radius condition and $\norm\xi_{\star,\bullet}\leq\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta$.
+\end{proof}
+
+\begin{remark}[Status of $\Kdisc$]
+\label{rem:Kdisc}
+The constant $\Kdisc(\delta)$ is finite and continuous in $\delta$, with
+$\Kdisc(\delta)\to\Kdisc(0)<\infty$, but it is not available in closed form. Under
+\Cref{assump:logconcave-smooth} the maps $g(a)=-\E_{\rho_a}[\nabla V]$ and
+$A(a)=\E_{\rho_a}[\nabla^2V]$ are $C^\infty$ on every spectrally bounded compact subset of
+$\Aspace$, since each parameter derivative brings down a Gaussian score polynomial, and both
+scheme maps are smooth functions of $g,A,C$ on $\mathcal V_\delta$, so $D^2T$ is continuous
+there and its supremum over the compact hull is finite. The radius condition of
+\Cref{thm:loc-disc} is therefore constructive rather than a practical formula.
+\end{remark}
+
+\subsection{Online entry criteria}
+\label{subsec:entry}
+
+The test $\DeltaE(a_n)\leq\delta$ is not directly computable, since $\calE(a_\star)$ is
+unknown, and the local analysis is carried out in whitened coordinates while the algorithm runs
+in the original ones. The following sufficient tests use only the current iterate and known
+target quantities, in the original coordinates.
+
+\begin{proposition}[Computable residual gate]
+\label{prop:entry-residual}
+Let $\alpha>0$ be the strong-convexity constant of the target, and at $a=(m,C)$ in original
+coordinates set $g(a)=-\E_{\rho_a}[\nabla V(\theta)]$, $A(a)=\E_{\rho_a}[\nabla^2V(\theta)]$,
+and the Bures--Wasserstein gradient residual
+\[
+    \mathcal R_{\BW}(a)^2
+    :=\norm{g(a)}^2+\Tr\bigl[(C^{-1}-A(a))\,C\,(C^{-1}-A(a))\bigr].
+\]
+Then $\mathcal R_{\BW}(a)^2\geq2\alpha\,\DeltaE(a)$, so for any a priori certified local level
+$\delta_{\loc}$,
+\[
+    \mathcal R_{\BW}(a_n)^2\leq2\alpha\,\delta_{\loc}
+    \quad\Longrightarrow\quad
+    \DeltaE(a_n)\leq\delta_{\loc}.
+\]
+The left-hand side is evaluated from $g(a_n)$, $A(a_n)$, $C_n$, and $\alpha$, none of which
+requires $C_\star$, $m_\star$, or $\calE(a_\star)$. When a covariance floor $C_n\succeq\ell_n\Id$
+is available, the Fisher--Rao gradient norm gives the alternative intrinsic test
+$\Gradnorm(a_n)^2\leq\alpha\ell_n\delta_{\loc}\Rightarrow\DeltaE(a_n)\leq\delta_{\loc}$, which
+is more restrictive than the Bures--Wasserstein gate. Once either test triggers, energy descent
+keeps $\DeltaE(a_k)\leq\delta_{\loc}$ for all $k\geq n$, so the local theorems apply
+permanently. The proof is given in \Cref{app:det-proofs}.
+\end{proposition}
+
+\begin{proposition}[Exact Gaussian spectral gates]
+\label{prop:entry-Gauss}
+Let the target be Gaussian with precision $H$, so that $C_\star=H^{-1}$, and put
+$S_n:=H^{1/2}C_nH^{1/2}$, computable from $C_n$ and $H$ without the target mean. Then, for
+$0<\rho\leq2$, the condition $\lambda_{\min}(S_n)\geq\rho/2$ certifies instantaneous rate
+$\geq\rho$ for the flow and is forward invariant, each covariance eigenvalue obeying
+$\dot s=s(1-s)$ and moving monotonically toward $1$. For the KL scheme,
+$\operatorname{spec}(S_n)\subseteq I_{\Delta t}^{\KL}(q)$ certifies the per-step contraction
+$\norm{a_{n+1}-a_\star}_{\star,\Delta t}^2\leq q\norm{a_n-a_\star}_{\star,\Delta t}^2$ and is
+forward invariant.
+\end{proposition}
+
+\begin{proof}
+$S_n$ is the whitened covariance $\widehat C_n$. For the flow,
+$q_{\mathrm c}=q_{\mathrm G}\geq2\lambda_{\min}(\widehat C_n)=2\lambda_{\min}(S_n)$ by
+\Cref{lem:gauss-core}, and for $\rho\leq2$ the threshold $\rho/2$ lies below $1$, so the scalar
+dynamics $\dot s=s(1-s)$ preserves it. The KL statement is \Cref{prop:Gauss-KL-map} in whitened
+coordinates.
+\end{proof}
+
+These spectral gates can be substantially less restrictive than the residual gate, since they
+impose no condition on the mean and depend only on the target-relative covariance spectrum. The
+level $\delta_{\loc}$ itself is target-adaptive through
+$\alphastar,\betastar,\Sigma_\delta,\mathcal B_\delta,\Kng$; a precomputable conservative choice
+follows from the a priori bounds $\alphastar\geq\kappa^{-1}$, $\betastar\leq\kappa$,
+$\Sigma_\delta\leq\sqrt{N_\theta}(\betastar-\alphastar)$,
+$\mathcal B_\delta\leq\max\{\betastar-1,1-\alphastar\}$, which reduce the continuous-time
+admissibility condition $\rho_{\mathrm{core}}(\delta)>0$ of \Cref{thm:loc-flow} to a scalar
+inequality in $\alpha,\beta,N_\theta$. For the discrete schemes the admissible level remains
+implicit, by \Cref{rem:Kdisc}.
+
+\begin{remark}[Stochastic caveat]
+\label{rem:entry-stoch}
+For the stochastic schemes of \Cref{sec:stochastic} neither pathwise nor expected containment
+follows from these gates alone. The one-step recursion
+$\E[\DeltaE_{n+1}\mid\Fil_n]\leq q\DeltaE_n+\eta$ with a variance floor $\eta>0$ gives only
+$\E[\DeltaE_{n+1}\mid\Fil_n]\leq q\delta_{\loc}+\eta$, which is at most $\delta_{\loc}$ only if
+$\delta_{\loc}\geq\eta/(1-q)$. Entry must therefore be combined with the containment analysis
+of \Cref{sec:stochastic}.
+\end{remark}
+
+\subsection{Sharpness: no dimension-free logarithmic local rate}
+\label{subsec:loc-sharp}
+
+The bound $\Gamma\leq\betastar-1$ makes the certified local rate $1/(4+\Gamma)$ deteriorate
+linearly in the whitened smoothness constant. We show that the true gap $\gstar$ obeys no logarithmic bound uniformly in the dimension, even
+under the additional hypothesis of a dimension-free Hessian-Lipschitz constant.
+
+\begin{theorem}[Convex-ridge lower bound on the local gap]
+\label{thm:loc-sharp}
+There are numerical constants $K_0,c_\kappa,C_\kappa,C_\tau,C_\gamma>0$ with the following property. For every
+integer $m$ with $K:=(8m)^{1/4}\geq K_0$ and $N_\theta:=m+1$, there is a potential
+$V\in C^\infty(\R^{N_\theta})$ satisfying \Cref{assump:logconcave-smooth} and the whitening
+conditions $\E_{\N(0,\Id)}[\nabla V]=0$, $\E_{\N(0,\Id)}[\nabla^2V]=\Id$ of
+\Cref{def:whitened}, and satisfying \Cref{assump:hess-lip} with the dimension-free constant
+$\LH=64$, such that
+\[
+    c_\kappa K^2\leq\kappastar\leq C_\kappa K^2,
+    \qquad
+    \tau_H^2\geq\frac K2-C_\tau,
+    \qquad
+    \gstar\leq\frac{C_\gamma}K\leq\frac{C_\gamma'}{\sqrt{\kappastar}},
+\]
+where $\tau_H:=\sup_{\norm w=1}\norm{\E[(w^\top Z)\nabla^2V(Z)]}_{\Frob}=\norm{\mathcal T}$ is
+the first-Hermite coupling norm of \Cref{def:score-ops}. For this family the Schur bound
+\eqref{eq:T-Schur} gives $\tau_H^2\leq1+\Gamma$ with $\Gamma=\betastar-1=\Theta(K)$, so that
+\[
+    \tau_H^2=\Theta(K)=\Theta\bigl(\kappastar^{1/2}\bigr),
+    \qquad
+    \gstar=\Theta\bigl(K^{-1}\bigr)=\Theta\bigl(\kappastar^{-1/2}\bigr).
+\]
+Consequently the $\betastar-1$ branch of $\Gamma$ in \eqref{eq:Gamma} is saturated, and there
+is no positive function $c(\LH)$ for which $\gstar\geq c(\LH)/(1+\log\kappastar)$ holds in
+every dimension under \Cref{assump:logconcave-smooth} and \Cref{assump:hess-lip}. The
+construction and the proof are given in \Cref{app:ridge}.
+\end{theorem}
+
+\begin{remark}[Scope]
+\label{rem:loc-sharp-scope}
+The family uses $N_\theta=m+1=K^4/8+1=\Theta(\kappastar^2)$. It therefore rules out estimates
+uniform over the dimension only. It does not settle whether an analogous obstruction exists at
+fixed $N_\theta$, or for $N_\theta=o(\kappastar^2)$, and, since the branch it saturates is
+$\betastar-1$, it says nothing about the sharpness of the $\sqrt{N_\theta}\log\kappastar$
+branch of $\Gamma$.
+\end{remark}
+
+\subsection{Deterministic three-stage complexity}
+\label{subsec:three-stage}
+
+The complete run separates into three stages: a covariance burn-in in which an underdispersed
+initial covariance is lifted to the curvature scale, a global localization in which the energy
+gap is driven into a certified level, and a local convergence in which the parameter error
+contracts at the spectral rate of \Cref{prop:spectral-sandwich}. The total cost is their sum,
+\begin{equation}
+\label{eq:three-stage-box}
+    \boxed{\;
+    \underbrace{\logp\frac1{\betastar\lamzstar}}_{\text{covariance burn-in}}
+    \;+\;
+    \underbrace{\kappastar\logp\frac{\DeltaE_0}{\delta_{\mathrm c}}}_{\text{global localization}}
+    \;+\;
+    \underbrace{(4+\Gamma)\log\frac1\varepsilon}_{\text{local convergence}}\;}
+\end{equation}
+with the error measured by the energy gap in the first two stages and by the equilibrium
+parameter norm in the third, the transition between the two metrics being effected by the
+conversion $\DeltaE(a)\leq\delta\Rightarrow\norm{a-a_\star}_\star\leq\mathfrak b(\delta)\sqrt\delta$
+of \eqref{eq:band-conversion}.
+
+\begin{theorem}[Deterministic three-stage complexity]
+\label{thm:three-stage}
+Assume \Cref{assump:logconcave-smooth} and $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$.
+Let $\delta_{\mathrm c}>0$ be a level admissible for \Cref{thm:loc-flow} with
+$\rho_{\mathrm{core}}(\delta_{\mathrm c})\geq1/(4+\Gamma)$, and let
+$\delta_\Riem,\delta_\KL>0$ be levels admissible for \Cref{thm:loc-disc} for the two schemes at
+the stepsizes below; such levels exist by \Cref{cor:loc-universal} and \Cref{thm:loc-disc}. For
+sufficiently small $\varepsilon>0$, specifically
+$\varepsilon<\mathfrak b_{\star,\bullet}(\delta_\bullet)^2\delta_\bullet$ for the relevant level and norm:
+\begin{enumerate}
+\item For the flow \eqref{ODEs:NG}, the time
+\[
+    T_{\mathrm c}(\varepsilon)
+    =O\Bigl(\logp\frac1{\betastar\lamzstar}
+    +\kappastar\logp\frac{\DeltaE_0}{\delta_{\mathrm c}}
+    +(4+\Gamma)\log\frac1\varepsilon\Bigr)
+\]
+suffices for $\norm{a_T-a_\star}_\star^2\leq\varepsilon$. The first two terms may be replaced by
+the smaller of this affine-invariant expression and
+$\logp(1/(\beta\lambda_0))+\kappa\logp(\DeltaE_0/\delta_{\mathrm c})$.
+\item For \eqref{upd:Riem} with
+$0<\Delta t\leq\min\{1/(2\beta\lambda_{\max}),\,2/(4+\Gamma),\,1/(\betastar\bar\Lambda_{\delta_\Riem})\}$,
+\[
+    N_\Riem(\varepsilon)
+    =O\Bigl(\frac1{\Delta t}\logp\frac1{\beta\lambda_0}
+    +\frac\kappa{\Delta t}\logp\frac{\DeltaE_0}{\delta_\Riem}
+    +\frac{4+\Gamma}{\Delta t}\log\frac1\varepsilon\Bigr)
+\]
+iterations suffice for $\norm{a_N-a_\star}_\star^2\leq\varepsilon$.
+\item For \eqref{upd:KL} with
+$0<\Delta t\leq\min\{1/(\beta\lambda_{\max}),\,2/(4+\Gamma),\,1/(\betastar\bar\Lambda_{\delta_\KL})\}$,
+\[
+    N_\KL(\varepsilon)
+    =O\Bigl(\frac1{\Delta t}\logp\frac1{\beta\lambda_0}
+    +\frac\kappa{\Delta t}\logp\frac{\DeltaE_0}{\delta_\KL}
+    +\frac{4+2\Delta t+\Gamma}{\Delta t}\log\frac1\varepsilon\Bigr)
+\]
+iterations suffice for $\norm{a_N-a_\star}_{\star,\Delta t}^2\leq\varepsilon$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+For the flow, \Cref{thm:glob-cont} with $\delta=\delta_{\mathrm c}$ gives
+$\DeltaE(a_t)\leq\delta_{\mathrm c}$ after time
+$O(\logp\tfrac1{\betastar\lamzstar}+\kappastar\logp\tfrac{\DeltaE_0}{\delta_{\mathrm c}})$, so
+$a_t\in\Ureg_{\delta_{\mathrm c}}$ and
+$\norm{a_t-a_\star}_\star\leq\mathfrak b(\delta_{\mathrm c})\sqrt{\delta_{\mathrm c}}$ by
+\eqref{eq:band-conversion}. Restarting \Cref{thm:loc-flow} at that time gives
+$\norm{a_{t+s}-a_\star}_\star^2\leq e^{-s/(4+\Gamma)}\mathfrak b(\delta_{\mathrm c})^2\delta_{\mathrm c}$,
+so a further time $s=(4+\Gamma)\log(\mathfrak b(\delta_{\mathrm c})^2\delta_{\mathrm c}/\varepsilon)$
+suffices, which is $O((4+\Gamma)\log\tfrac1\varepsilon)$ since $\delta_{\mathrm c}$ does not
+depend on $\varepsilon$. For the two schemes, \Cref{thm:glob-Riem} and \Cref{thm:glob-KL} with
+$\delta=\delta_\bullet$ give $\DeltaE(a_n)\leq\delta_\bullet$ after
+$O(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}+\tfrac\kappa{\Delta t}\logp\tfrac{\DeltaE_0}{\delta_\bullet})$
+iterations, and $\norm{a_n-a_\star}_{\star,\bullet}\leq\mathfrak b_{\star,\bullet}(\delta_\bullet)\sqrt{\delta_\bullet}$.
+The stepsize windows satisfy the hypotheses of \Cref{thm:loc-disc}, whose per-step factors are
+$1-\tfrac{\Delta t}{2(4+\Gamma)}$ and $1-\tfrac{\Delta t}{2(4+2\Delta t+\Gamma)}$, so a further
+$O(\tfrac{4+\Gamma}{\Delta t}\log\tfrac1\varepsilon)$, respectively
+$O(\tfrac{4+2\Delta t+\Gamma}{\Delta t}\log\tfrac1\varepsilon)$, iterations suffice, using
+$-\log(1-x)\geq x$.
+\end{proof}
+
+\begin{corollary}[Burn-in-free three-stage complexity]
+\label{cor:three-stage-burninfree}
+Under \Cref{assump:logconcave-smooth}, initialize by either the quadratic rescue of
+\Cref{def:rescue} or the Bures--Wasserstein transport warm-start of \Cref{thm:burnin-BW} with
+target $c=1$, that is with $\eta=1/\beta$ and at most one forward--backward step. Both land
+$C_0\succeq\tfrac1\beta\Id$, so $\lambda_0\geq\tfrac1\beta$ and the first stage of
+\Cref{thm:three-stage} is removed: for both discretizations
+\[
+    N_\bullet(\varepsilon)
+    =n_{\mathrm{init}}
+    +O\Bigl(\frac\kappa{\Delta t}\logp\frac{\DeltaE_0}{\delta_\bullet}
+    +\frac{c_\bullet}{\Delta t}\log\frac1\varepsilon\Bigr),
+    \qquad
+    c_\Riem=4+\Gamma,
+    \quad
+    c_\KL=4+2\Delta t+\Gamma,
+\]
+where $n_{\mathrm{init}}\in\{0,1\}$ is the warm-start, one Hessian query for the rescue or
+$\mathbf 1_{\{\lambda_0<1/\beta\}}\leq1$ forward--backward steps for transport, and
+$\DeltaE_0=\DeltaE(a_0)$ is the energy of the warm-started initializer. For a Gaussian target
+the rescue gives $\DeltaE_0=0$, so the localization stage vanishes as well and the whole run
+collapses to the single initializing query.
+\end{corollary}
+
+\begin{proof}
+For the rescue, \Cref{lem:rescue-band} gives $C_0\succeq\tfrac1\beta\Id$; for transport with
+$c=1$ the one-step Bures--Wasserstein floor of \Cref{thm:burnin-BW} with $\eta=1/\beta$ gives
+$C^+\succeq\tfrac1\beta\Id$ in one step, skipped when $\lambda_0\geq1/\beta$ already. In both
+cases $\lambda_0\geq\tfrac1\beta>\tfrac1{2\beta}$, so the covariance envelopes of
+\Cref{lem:cov-Riem} and \Cref{lem:cov-KL} keep $C_n\succeq\tfrac1{2\beta}\Id$ for all $n\geq0$
+and the burn-in stage of \Cref{thm:three-stage}(2)--(3) is empty. The Gaussian case is
+\Cref{thm:rescue-Gauss}.
+\end{proof}
+
+Each of the three stages is sharp. The covariance burn-in cannot be removed within Fisher--Rao
+alone, since the underdispersed eigenvalue obeys $\dot\mu\approx\mu$ and reaching the curvature
+scale from $\lambda_0$ costs time $\asymp\log(1/(\beta\lambda_0))$, which is why
+\Cref{cor:three-stage-burninfree} must change geometry or oracle to delete it. The
+$\kappa$-dependence of the global localization stage is attained by the logarithmic spiral of
+\Cref{thm:sharp-cont} in continuous time and by the bump train of \Cref{thm:sharp-disc} for
+either scheme at a globally fixed stepsize. The $(4+\Gamma)$-dependence of the local stage is
+attained by the convex ridge of \Cref{thm:loc-sharp}, which saturates the $\betastar-1$ branch
+of $\Gamma$ and rules out any dimension-free logarithmic replacement.
+
+% SOURCES:
+% improved-global-local-stoch.tex l.1177-1202 (whitened setup, eq:Gamma with the sqrt(N_theta)
+%   branch and t_0=max{1,log(4 beta_star)}) -> def:whitened, eq:Gamma.
+%   [Supersedes improved-global-local.tex l.3058-3063, whose Gamma carries the weaker
+%   N_theta(3+4/sqrt(pi)(1+log kappa_star)) branch; contract sec.4 authority note takes the
+%   sharper statement when the two notes disagree.]
+% improved-global-local-stoch.tex l.1204-1211 (def:linear-score-ops) -> def:score-ops
+% improved-global-local-stoch.tex l.1213-1275 (lem:linear-diagonal-bounds, Laurent-Massart
+%   proof) -> lem:diagonal-modes  [supersedes improved-global-local.tex l.3088-3184]
+% improved-global-local-stoch.tex l.1277-1323 (prop:linearized, two-sided sandwich
+%   max{alpha_star,1/(4+Gamma)} <= gamma_star <= Lambda_star <= min{beta_star,(4+Gamma)/2})
+%   -> prop:spectral-sandwich  [supersedes improved-global-local.tex l.3186-3279, one-sided]
+% improved-global-local.tex l.3281-3365 (prop:linearized-maps, Delta t-weighted
+%   self-adjointization of the KL linearization) -> prop:linearized-maps
+% improved-global-local.tex l.3374-3405 (lem:entropy-coerc) -> lem:coercivity
+% improved-global-local.tex l.3407-3435 (cor:band, band + norm conversion) -> eq:band-conversion
+% improved-global-local.tex l.3437-3470 (def:region, lem:region-geom) -> def:region
+% improved-global-local.tex l.3474-3510 (lem:gauss-core) -> lem:gauss-core
+% improved-global-local.tex l.3512-3523 (eq:H-def) -> eq:H-def
+% improved-global-local.tex l.3584-3668 (lem:Kng, cor:taylor-ng) -> lem:Kng
+% improved-global-local.tex l.3672-3715 (thm:core-flow) -> thm:loc-flow
+% improved-global-local.tex l.3717-3723 (cor:core-universal) -> cor:loc-universal
+% improved-global-local.tex l.3725-3786 (cor:gauss-sharp, def:sharp, prop:sharp) -> cor:loc-Gauss
+% improved-global-local.tex l.3806-3867 (prop:kl-gauss) -> prop:Gauss-KL-map
+% improved-global-local.tex l.3985-4023 (prop:riem-gauss) -> prop:Gauss-Riem-map
+% improved-global-local.tex l.4029-4086 (thm:disc-local, K_disc normalization) -> thm:loc-disc
+% improved-global-local-stoch.tex l.1693-1720 (lem:local-map-contraction) -> lem:loc-contraction
+% improved-global-local-stoch.tex l.1722-1736 (rem:Kdisc-finite) -> rem:Kdisc
+% improved-global-local.tex l.4099-4133 (prop:entry-residual) -> prop:entry-residual
+% improved-global-local.tex l.4135-4150 (rem:threshold-computable) -> closing paragraph of 3.4
+% improved-global-local.tex l.4152-4176 (prop:entry-gauss) -> prop:entry-Gauss
+% improved-global-local-stoch.tex l.1770-1775 (stochastic containment caveat) -> rem:entry-stoch
+% local-log-kappa-counterexample.tex l.205-259 (thm:main), l.1661-1670 (integration-ready
+%   two-sided corollary), l.1607-1631 (rem-scaling-scope), l.1544-1549 (cor:smooth-ridge)
+%   -> thm:loc-sharp, rem:loc-sharp-scope
+% improved-global-local.tex l.4180-4280 (thm:det-three-stage, affine-invariant continuous
+%   statement) -> thm:three-stage
+% improved-global-local-stoch.tex l.2051-2081 (cor:burnin-free) -> cor:three-stage-burninfree
+% improved-global-local-stoch.tex l.1818-1826 (why the burn-in is intrinsic to Fisher-Rao)
+%   -> closing sharpness paragraph
+%
+% TODO(label): prop:entry-residual rests on the Bures-Wasserstein PL inequality
+%   (det note lem:W2-PL, l. approx. 700) and the FR/W2 gradient-norm comparison
+%   (det note lem:FR-W2). Neither has a label in the fixed namespace of the drafting
+%   contract; both must be stated in Section 2 or in app:det-proofs, and the proof
+%   pointer here updated to the label they receive.

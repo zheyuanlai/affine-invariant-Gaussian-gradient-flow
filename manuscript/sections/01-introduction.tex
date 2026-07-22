@@ -1,193 +1,204 @@
 \section{Introduction}
-\label{sec:introduction}
+\label{sec:intro}
 
-Gaussian variational inference replaces an intractable target distribution
-\(\pi(x)\propto e^{-V(x)}\) on \(\R^d\) by the minimizer of
-\[
-  \calE(m,C)
-  :=\KL\!\left(\N(m,C)\,\middle\|\,\pi\right),
-  \qquad (m,C)\in\R^d\times\SPD(d).
-\]
-The approximation is computationally useful only if the optimization respects
-the strong coupling between the mean and covariance.  Euclidean updates do not:
-their behavior changes under an invertible affine reparameterization of the
-target.  The Fisher--Rao natural gradient is invariant under precisely these
-changes of coordinates and is therefore a canonical geometry for the full
-Gaussian family \citep{rao1945information,amari1998natural,amari2016information}.
-This paper develops a global-to-local rate theory and identifies several rates
-that this geometry can and cannot deliver.
+We consider the problem of sampling the target posterior distribution with
+density $\rho_\post (\cdot)$, for the parameter $\theta \in \R^{N_\theta}$,
+given by
+\begin{equation*}
+    \rho_\post (\theta) \propto \exp (-V(\theta)), \qquad \theta \in \R^{N_\theta},
+\end{equation*}
+where $V(\theta) : \R^{N_\theta} \to \R$ is a known function while the
+normalizing constant $Z = \int \exp (-V(\theta)) \dd \theta$ is intractable.
+Markov chain Monte Carlo (MCMC) methods \cite{brooks2011handbook} aim to sample
+from the target distribution $\rho_\post$ asymptotically, but can be
+computationally expensive in high-dimensional or ill-conditioned settings
+\cite{JMLR:v23:20-357}. Variational inference (VI) \cite{blei2017variational},
+on the other hand, replaces exact sampling by optimization over a tractable
+family of probability distributions on its Kullback--Leibler (KL) divergence to
+the true target posterior, which is often more scalable than MCMC
+\cite{JMLR:v14:hoffman13a}.
 
-The main conclusion is a global-to-local rate picture with three distinct
-bottlenecks.  First, a small initial covariance suppresses the mean motion and
-creates a covariance burn-in.  Second, after the covariance has reached the
-target curvature scale, global localization is controlled by an intrinsic
-condition number obtained by whitening with the optimizing covariance.  Third,
-inside a neighborhood of the optimizer, the rate is governed by a score-
-operator spectral gap that measures non-Gaussian coupling between the mean and
-covariance modes.  These mechanisms are logically independent.  A transport
-warm start removes the first, but neither the global lower construction nor the
-local spectral obstruction disappears.
+We focus on the Gaussian variational family
+\begin{equation*}
+    \PG := \left\{ \rho_a = \N(m,C) : a=(m,C)\in \Aspace := \R^{N_\theta} \times \SPD(N_\theta) \right\},
+\end{equation*}
+which is the simplest nontrivial VI family, where the Gaussian variational
+inference problem is
+\begin{equation*}
+    a_\star = (m_\star,C_\star) \in \argmin_{a\in\Aspace} \calE(a),
+    \qquad \calE(a) := \KL(\rho_a\,\|\,\rho_{\post}).
+\end{equation*}
 
-\subsection{The three bottlenecks}
-\label{sec:introduction-bottlenecks}
-
-Assume initially that
-\begin{equation}
-  \alpha\Id\preceq\nabla^2V(x)\preceq\beta\Id,
-  \qquad \kappa:=\beta/\alpha.
-  \label{eq:introduction-curvature}
+Recent theoretical work has studied Gaussian variational inference through
+Wasserstein and Bures--Wasserstein geometry
+\cite{lambert2022variational, diao2023forward}. This viewpoint connects Gaussian
+variational inference with optimal transport and constrained Wasserstein
+gradient flows, and yields a convergence theory for both the Wasserstein
+gradient flow and its forward--backward discretizations. On the other side,
+the Fisher--Rao gradient flow \cite{carrillo2026fisher} develops a complementary
+information-geometric viewpoint \cite{amari2016information}. When the
+Fisher--Rao gradient flow is restricted to the Gaussian family, we obtain the
+natural gradient flow \cite{amari1998natural} for Gaussian variational
+inference \cite{chen2023sampling},
+\begin{equation}\label{ODEs:NG}
+    \begin{aligned}
+        \frac{\dd m_t}{\dd t} &= C_t\E_{\rho_{a_t}}[\nabla_\theta \log \rho_{\post}(\theta)], \\
+        \frac{\dd C_t}{\dd t} &= C_t + C_t \E_{\rho_{a_t}}[\nabla_\theta \nabla_\theta \log \rho_{\post}(\theta)] C_t.
+    \end{aligned}
 \end{equation}
-Let \(a_\star=(m_\star,C_\star)\) be the optimizing Gaussian.  In the
-optimizer-whitened coordinates
-\[
-  z=C_\star^{-1/2}(x-m_\star),\qquad
-  \widehat V(z)=V(m_\star+C_\star^{1/2}z),
-\]
-write \(\alphastar,\betastar\) for the best curvature bounds of
-\(\widehat V\), and \(\kappastar=\betastar/\alphastar\).  These quantities are
-affine invariant, satisfy \(1\leq\kappastar\leq\kappa^2\), and equal one for
-every Gaussian target, even if its original precision is arbitrarily
-ill-conditioned.
+The Fisher--Rao metric restricted to the Gaussian family is affine invariant
+\cite{chen2023sampling}: the flow \eqref{ODEs:NG} commutes with every invertible
+affine change of variables $\theta \mapsto A\theta + b$, so that its behavior is
+unchanged by an arbitrary linear reparameterization of the target. This is the
+structural property that distinguishes it from the Bures--Wasserstein flow, and
+it is why we expect natural gradient methods to be insensitive to the
+conditioning of the target. It also determines which quantities can appear in a
+sharp convergence rate. However,
+while the natural gradient flow is useful in practice, its convergence theory
+for Gaussian variational inference remains underexplored. We develop that theory
+here, for the flow \eqref{ODEs:NG} and for two discretizations of it, in both
+the deterministic and the stochastic setting.
 
-The covariance bootstrap is visible directly in precision coordinates.  If
-\(\widehat C_0=C_\star^{-1/2}C_0C_\star^{-1/2}\) and
-\(\lambda_{0,\star}=\lambda_{\min}(\widehat C_0)\), then the Fisher--Rao flow
-satisfies
-\begin{equation}
-  \calE(a_t)-\calE(a_\star)
-  \leq
-  \Delta_0
-  \left[1+\betastar\lambda_{0,\star}(e^t-1)\right]^{-1/\kappastar}.
-  \label{eq:introduction-global-rate}
+The convergence of \eqref{ODEs:NG} and of its discretizations proceeds in three
+stages,
+\begin{equation}\label{eq:three-stage}
+    \boxed{\;
+    \text{covariance burn-in}
+    \;+\;
+    \text{global localization}
+    \;+\;
+    \text{local convergence},
+    \;}
 \end{equation}
-The first logarithm in the resulting hitting time depends on
-\(\lambda_{0,\star}\); the subsequent localization time is proportional to
-\(\kappastar\).  A two-dimensional logarithmic spiral forces
-\(\Omega(\kappastar)\) continuous time under an admissible anisotropic
-initialization.  For fixed-step Riemannian and KL schemes, a one-dimensional
-bump train, run with \(h=\gamma/\kappa\) for
-\(0<\gamma\leq1/2\), forces \(\Omega(\kappa/h)\) iterations for a
-constant-factor reduction even after covariance burn-in.  The two
-constructions therefore isolate distinct continuous-time and fixed-step
-obstructions.
+each governed by a different mechanism and each carrying its own sharp rate. The
+first stage is an artifact of the geometry rather than of the target. In the
+covariance equation of \eqref{ODEs:NG} the growth of a small covariance is
+multiplicative, and the mean equation carries the factor $C_t$, so an
+underdispersed initialization suppresses the mean motion until the covariance
+has reached the curvature scale of the target. The second stage is the global
+descent proper, and it is controlled not by the curvature ratio
+$\kappa = \beta/\alpha$ of the target but by the intrinsic ratio $\kappastar$
+obtained after whitening by the optimizing covariance $C_\star$; the two agree
+for a poorly conditioned Gaussian target only in the sense that $\kappastar = 1$
+there, however ill-conditioned $\kappa$ may be. The third stage is local, and its
+rate is governed neither by $\kappa$ nor by $\kappastar$ but by the spectral gap
+of a self-adjoint operator built from the first- and second-Hermite components
+of the whitened Hessian, which measures the non-Gaussian coupling between the
+mean and covariance modes. The three mechanisms are logically independent: a
+transport warm start removes the first without touching the other two.
 
-At the optimizer, strong log-concavity alone does not reduce the problem to a
-Gaussian quadratic.  The first- and second-Hermite components of the whitened
-Hessian form a self-adjoint linearized generator.  We prove the spectral
-sandwich
-\begin{equation}
-  \max\!\left\{\alphastar,\frac1{4+\Gamma}\right\}
-  \leq\gstar\leq\Lstar
-  \leq\min\!\left\{\betastar,\frac{4+\Gamma}{2}\right\},
-  \qquad
-  \Gamma=O(1+\sqrt d\log\kappastar).
-  \label{eq:introduction-local-gap}
-\end{equation}
-The lower bound is dimension dependent, and this is not merely a proof
-artifact in growing dimension.  A smooth convex-ridge family with
-\(d=\Theta(\kappastar^2)\) satisfies
-\(\gstar=\Theta(\kappastar^{-1/2})\) and a squared first-Hermite coupling of
-order \(\kappastar^{1/2}\).  It saturates the
-\(\betastar-1\) branch of \(\Gamma\).  It does not settle whether a stronger
-bound holds in fixed dimension or whether the
-\(\sqrt d\log\kappastar\) branch is sharp.
-
-\subsection{Contributions}
-\label{sec:introduction-contributions}
-
-The deterministic theory gives both upper and lower bounds.  The continuous
-estimate \eqref{eq:introduction-global-rate} is affine invariant and separates
-initial covariance from intrinsic conditioning.  The two deterministic
-discretizations admit two-sided covariance bootstraps and have the common
-complexity
-\[
-  O\!\left(
-    h^{-1}\logp\frac1{\beta\lambda_{\min}(C_0)}
-    +\frac{\kappa}{h}\logp\frac{\Delta_0}{\delta}
-  \right),
-\]
-with a lower bound matching the \(\kappa/h\) factor for constant-factor
-reduction.  A Bures--Wasserstein warm start or one pointwise
-gradient--Hessian quadratic rescue can remove the covariance term, but not the
-other two stages.
+The deterministic theory occupies \Cref{sec:global,sec:local} and gives matching
+upper and lower bounds at every stage. We prove in \Cref{thm:glob-cont} an
+affine-invariant continuous-time estimate that separates the initial covariance
+from the intrinsic conditioning, and we show in \Cref{thm:sharp-cont} that its
+$\kappastar$ dependence cannot be improved, by means of a two-dimensional
+logarithmic-spiral potential. For the two discretizations, a Riemannian
+retraction scheme and a KL/Bregman resolvent scheme, we prove in
+\Cref{thm:glob-Riem,thm:glob-KL} global complexity bounds of a common form, and
+we show in \Cref{thm:sharp-disc} that their factor $\kappa/\Delta t$ is sharp at
+a fixed stepsize, by means of a one-dimensional bump-train potential that is
+even, strongly convex, and uniformly Hessian-Lipschitz. The covariance burn-in,
+and only the covariance burn-in, can be removed algorithmically: we give in
+\Cref{thm:burnin-BW} a Bures--Wasserstein transport warm start and in
+\Cref{thm:burnin-rescue} a single gradient--Hessian query that lands the
+covariance on the curvature band, which for a Gaussian target recovers the exact
+optimizer in one query by \Cref{thm:rescue-Gauss}.
 
 The local theory keeps the nonlinear Gaussian covariance dynamics exactly and
-perturbs only the non-Gaussian part.  This Gaussian-core decomposition gives an
-explicit energy-sublevel region for the flow, constructive local regions for
-both maps, exact continuous and KL invariant regions on Gaussian targets, and
-an online residual gate for entry.  For general discrete targets, the radius
-depends on a supremum of second derivatives of the update map over a compact
-hull.  The result is constructive but is not advertised as a closed-form
-practical radius.
+perturbs only the non-Gaussian remainder. We prove in
+\Cref{prop:spectral-sandwich} a two-sided spectral estimate for the linearized
+generator, and we show in \Cref{thm:loc-sharp} that its $\betastar-1$ branch is
+attained: a smooth convex-ridge family in dimension
+$N_\theta = \Theta(\kappastar^2)$, with a dimension-free Hessian-Lipschitz
+constant, has local gap $\Theta(\kappastar^{-1/2})$, which rules out every
+dimension-free logarithmic local rate. The Gaussian-core decomposition gives in
+\Cref{thm:loc-flow,thm:loc-disc} certified local regions that are exact for
+Gaussian targets in every dimension and degrade continuously for general
+strongly log-concave targets, together with an optimizer-free entry test in
+\Cref{prop:entry-residual}. \Cref{thm:three-stage} assembles the three stages
+into a single complexity statement for the flow and for both schemes.
 
-The stochastic theory uses a joint Price/Hessian oracle and a
-sticking-the-landing mean estimator \citep{roeder2017sticking}.  It supplies
-pathwise covariance safety after the quadratic rescue under the stated
-stepsizes and global constant-step bounds with explicit residual levels.  Under
-Hessian-Lipschitzness it also gives a floor-free \(O(1/N)\) decreasing-step
-guarantee.  Under the same assumption, the local result is deliberately
-separated into a killed-process mean-square contraction and a finite-horizon
-containment probability.  Under the universal spectral certificate its
-iteration dependence is quadratic, rather than linear, in \(4+\Gamma\).
-Infinite-horizon containment is not claimed.
+The stochastic theory occupies \Cref{sec:stochastic} and reproduces the same
+three stages under a joint Price/Hessian oracle with a sticking-the-landing
+mean estimator \cite{roeder2017sticking}. Because the sampled Hessian obeys an
+almost-sure spectral bound, the covariance bands hold pathwise with no clipping
+and no stopping time, and the global theorems
+\Cref{thm:stoch-glob-Riem,thm:stoch-glob-KL} therefore hold in plain expectation,
+with explicit residual floors in two variance regimes. The local statement is
+weaker than its deterministic counterpart: we prove in
+\Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL} a mean-square contraction on the
+non-exit event together with a finite-horizon containment bound in
+\Cref{prop:exit-prob}, and we do not claim infinite-horizon containment, since
+the mean-score noise has unbounded support. The additive floors vanish for
+Gaussian targets, and a decreasing stepsize removes them in general by
+\Cref{thm:decreasing}. \Cref{cor:stoch-three-stage} is the stochastic mirror of
+\Cref{thm:three-stage}.
 
-Two extensions mark the scope of the theory.  First, for \(d\geq2\) we
-classify the complete three-parameter family of affine-invariant Riemannian
-metrics on Gaussians.  On a Gaussian target the parameters precondition the
-mean, trace, and traceless covariance modes separately; Fisher--Rao is the
-unique choice, up to scale, that balances all three.  This modal statement does
-not extend every sharp rate theorem to every metric.  Second, a smooth
-non-log-concave double well produces a Riemannian covariance cascade and a pole
-in the KL resolvent.  A covariance-constrained KL step nevertheless has an
-\(O(1/N)\) stationarity guarantee in a corrected split displacement.  General
-Wasserstein--Fisher--Rao dynamics are left to a separate paper.
+Two further results mark the boundaries of the theory. Beyond log-concavity, the
+unprojected schemes genuinely fail: a smooth double well with uniformly bounded
+Hessian produces the covariance cascade of \Cref{prop:cascade-Riem} and the
+resolvent pole of \Cref{prop:pole-KL}, while a covariance-constrained KL step
+retains an $O(1/N)$ stationarity guarantee by \Cref{thm:clip-KL}. Finally, in
+\Cref{sec:geometry} we classify, for $N_\theta \geq 2$, the complete
+three-parameter family of affine-invariant Riemannian metrics on the Gaussian
+manifold, compute in \Cref{thm:aff-modes} the exact rates at which each metric
+preconditions the mean, trace, and traceless covariance modes on a Gaussian
+target, and show in \Cref{thm:aff-balanced} that Fisher--Rao is the unique
+member of the family, up to scale, that balances all three. This recovers the
+metric with which we began.
 
-\subsection{Relation to prior work}
-\label{sec:introduction-related}
+\subsection*{Related work}
 
-Natural gradients and information geometry provide the classical background
-for the Fisher--Rao metric \citep{rao1945information,amari1998natural,amari2016information}.
-Gaussian variational inference and stochastic variational inference are
-reviewed in \citet{blei2017variational} and
-\citet{JMLR:v14:hoffman13a}.  The present analysis differs from a generic
-natural-gradient convergence argument by exploiting the exact Gaussian
-covariance equation and by retaining affine-invariant, optimizer-whitened
-quantities throughout.
+Natural gradients and information geometry provide the classical background for
+the Fisher--Rao metric \cite{rao1945information, amari1998natural,
+amari2016information}, and Gaussian and stochastic variational inference are
+surveyed in \citet{blei2017variational} and \citet{JMLR:v14:hoffman13a}. The
+Fisher--Rao gradient flow and its Gaussian restriction are studied in
+\citet{carrillo2026fisher} and \citet{chen2023sampling}, the latter establishing
+the affine invariance we exploit throughout. Our analysis differs from a generic
+natural-gradient convergence argument in that it uses the exact Gaussian
+covariance equation rather than a smoothness surrogate, and keeps every constant
+in optimizer-whitened, affine-invariant form.
 
-Wasserstein Gaussian variational methods offer a complementary geometry.
-\citet{lambert2022variational} study variational inference through Wasserstein
-gradient flows, while \citet{diao2023forward} analyze a Bures--Wasserstein
-forward--backward scheme.  We use Bures--Wasserstein only as a warm start and
-as a nonconvex comparison; it is not blended with Fisher--Rao into a general
-WFR algorithm here.  Affine-invariant metrics on positive-definite matrices
-were classified in several forms by
-\citet{thanwerdas2019affine,thanwerdas2023n}.  Our classification includes the
-mean block of the Gaussian family and, for \(d\geq2\), uses it to expose the
-exact trace and traceless modal rates.
+Wasserstein Gaussian variational methods supply a complementary geometry.
+\citet{lambert2022variational} study variational inference through
+Bures--Wasserstein gradient flows and analyze a stochastic scheme with
+non-asymptotic guarantees, and \citet{diao2023forward} analyze a forward--backward
+scheme with state-of-the-art rates and the first stationarity guarantees beyond
+log-concavity. We use the Bures--Wasserstein flow in two limited roles, as a
+warm start that removes the covariance burn-in and as a point of comparison
+beyond log-concavity; we do not blend the two geometries into a
+Wasserstein--Fisher--Rao method here. Affine-invariant metrics on the cone of
+positive-definite matrices were classified in several forms by
+\citet{thanwerdas2019affine, thanwerdas2023n}; our classification includes the
+mean block of the Gaussian family and, for $N_\theta \geq 2$, uses it to expose
+the exact modal rates.
 
-The Price/Hessian stochastic construction is related to the sticking-the-
-landing principle of \citet{roeder2017sticking}.  Recent natural-gradient VI
-work also studies nonconjugate models and constrained covariance schemes
-\citep{sun2025natural}.  Our stochastic results focus on the joint geometry of
-the mean and full covariance, distinguish constant-step residual bounds from
+The stochastic construction rests on the sticking-the-landing principle of
+\citet{roeder2017sticking}, and natural-gradient variational inference with
+nonconjugate models and constrained covariance parameterizations is studied in
+\citet{sun2025natural}. Our stochastic results treat the joint geometry of the
+mean and the full covariance, separate constant-step residual levels from
 decreasing-step convergence, and keep local containment separate from local
 contraction.
 
-\subsection{Organization and notation}
-\label{sec:introduction-organization}
+\subsection*{Organization and notation}
 
-\Cref{sec:geometry} introduces the objective, the affine metric family, and the
-algorithms.  \Cref{sec:global} develops the deterministic global theory and its
-lower bounds.  \Cref{sec:local} gives the local spectral and nonlinear theory.
-\Cref{sec:stochastic} treats Price/Hessian algorithms.
-\Cref{sec:nonconvex} identifies the non-log-concave boundary, and
-\Cref{sec:numerics} presents focused numerical illustrations.
+\Cref{sec:global} develops the global deterministic theory, its two
+discretizations, the removal of the covariance burn-in, and the non-log-concave
+boundary. \Cref{sec:local} gives the local spectral and nonlinear theory and the
+three-stage complexity theorem. \Cref{sec:stochastic} treats the Price/Hessian
+stochastic algorithms. \Cref{sec:geometry} classifies the affine-invariant
+metrics, \Cref{sec:numerics} presents numerical illustrations, and
+\Cref{sec:discussion} collects open problems. Longer proofs and the three lower
+constructions are given in the appendices.
 
-We write \(d\) for the ambient dimension, \(\norm{\cdot}_{\op}\) and
-\(\norm{\cdot}_{\Frob}\) for the operator and Frobenius norms, and
-\(\Delta(a)=\calE(a)-\calE(a_\star)\).  The symbol \(\kappa\) always denotes
-the original-coordinate curvature ratio in
-\eqref{eq:introduction-curvature}; \(\kappastar\) denotes its
-optimizer-whitened counterpart.  Constants hidden by \(O(\cdot)\) are
-numerical unless their dependence is stated, and
-\(\logp x:=\max\{\log x,0\}\).
+We write $N_\theta$ for the dimension, $\norm{\cdot}_\op$ and
+$\norm{\cdot}_\Frob$ for the operator and Frobenius norms, and
+$\DeltaE(a) = \calE(a) - \calE(a_\star)$ for the energy gap, with
+$\DeltaE_0 = \DeltaE(a_0)$. The symbol $\kappa = \beta/\alpha$ always denotes the
+curvature ratio in the original coordinates and $\kappastar$ its
+optimizer-whitened counterpart, and similarly for $\alphastar$ and $\betastar$.
+We write $\Delta t$ for the stepsize, $B$ for the batch size, and
+$\logp x := \max\{\log x, 0\}$. Constants hidden by $O(\cdot)$ are numerical
+unless their dependence is displayed.

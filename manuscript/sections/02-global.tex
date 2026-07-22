@@ -1,0 +1,1178 @@
+\section{Global convergence and discretization}
+\label{sec:global}
+
+We study the Gaussian natural gradient flow where the target posterior distribution
+$\rho_\post$ is logconcave, and then propose practical discretization algorithms.
+
+\subsection{Setup and the flow}
+
+\begin{assumption}\label{assump:logconcave-smooth}
+    We assume that $\rho_\post$ is $\alpha$-strongly logconcave and $\beta$-smooth, i.e.
+    \begin{equation*}
+        \alpha \Id \preceq -\nabla_\theta \nabla_\theta \log \rho_\post (\theta) \preceq \beta \Id,
+        \qquad \theta\in\R^{N_\theta},
+    \end{equation*}
+    which is equivalent to
+    \begin{equation*}
+        \alpha \Id \preceq \nabla^2 V(\theta) \preceq \beta \Id .
+    \end{equation*}
+    We write $\kappa := \beta/\alpha \geq 1$ for the condition number.
+\end{assumption}
+
+A third of our results, all of them stated where they are used, need in addition that the
+Hessian varies slowly.
+
+\begin{assumption}[Hessian-Lipschitzness]
+\label{assump:hess-lip}
+There is $\LH<\infty$ with $\norm{\nabla^2V(x)-\nabla^2V(y)}_\op\leq\LH\norm{x-y}$ for all
+$x,y\in\R^{N_\theta}$. We write the dimensionless parameter $\barLH:=\LH/\alpha^{3/2}$; a Gaussian
+target has $\LH=\barLH=0$.
+\end{assumption}
+
+For a Gaussian parameter $a=(m,C)\in\Aspace$ we abbreviate the averaged score and the
+averaged curvature,
+\begin{equation}\label{eq:gA}
+    g(a) := \E_{\rho_a}[\nabla_\theta\log\rho_\post(\theta)]
+          = -\E_{\rho_a}[\nabla V(\theta)],
+    \qquad
+    A(a) := \E_{\rho_a}[\nabla^2V(\theta)],
+\end{equation}
+and the precision residual $R(a) := C^{-1}-A(a)$. Under
+\Cref{assump:logconcave-smooth} we have $\alpha\Id\preceq A(a)\preceq\beta\Id$ for every
+$a\in\Aspace$, and at the minimizer the first-order conditions read
+\begin{equation}\label{eq:first-order}
+    g(a_\star)=0,
+    \qquad
+    A(a_\star)=C_\star^{-1},
+    \qquad\text{that is}\qquad
+    R(a_\star)=0 .
+\end{equation}
+In this notation the Gaussian natural gradient flow \eqref{ODEs:NG} reads
+\begin{equation}\label{eq:NG-compact}
+    \frac{\dd m_t}{\dd t}=C_tg(a_t),
+    \qquad
+    \frac{\dd C_t}{\dd t}=C_t-C_tA(a_t)C_t .
+\end{equation}
+We also use the energy splitting $\calE = \calE_1+\calE_2$ with
+\begin{equation}\label{eq:E-split}
+    \calE_1(a)=\int\rho_a\log\rho_a
+    =-\tfrac12\log\det C+\mathrm{const.},
+    \qquad
+    \calE_2(a)=-\E_{\rho_a}[\log\rho_\post]
+    =\E_{\rho_a}[V]+\mathrm{const.}
+\end{equation}
+
+The Fisher--Rao metric induced on the Gaussian family, at $a=(m,C)$ and for tangent vectors
+$(u,U),(v,W)\in\R^{N_\theta}\times\Sym(N_\theta)$, is
+\begin{equation}\label{eq:FR-metric}
+    \inner{(u,U)}{(v,W)}_a
+    :=
+    u^\top C^{-1}v+\tfrac12\Tr\bigl(C^{-1}UC^{-1}W\bigr),
+    \qquad
+    \norm{(u,U)}_a^2
+    =
+    u^\top C^{-1}u+\tfrac12\norm{C^{-1/2}UC^{-1/2}}_\Frob^2,
+\end{equation}
+which is the Fisher information inner product of the Gaussian family. We first identify the
+flow \eqref{ODEs:NG} as the gradient flow of $\calE$ in this metric. Writing
+$\theta=m+C^{1/2}Z$ with $Z\sim\N(0,\Id)$ and differentiating under the integral sign, which
+is justified by dominated convergence since $\norm{\nabla^2V}_\op\leq\beta$ forces
+$\norm{\nabla V(\theta)}\leq\norm{\nabla V(0)}+\beta\norm\theta$, we obtain
+$\partial_m\calE_2=-g(a)$ and, by Price's theorem,
+$\partial_C\calE_2=\tfrac12A(a)$. Together with
+$\partial_C\calE_1=-\tfrac12C^{-1}$ this gives the differential
+\begin{equation}\label{eq:differential}
+    D\calE(a)[(u,U)]
+    =
+    -g(a)^\top u+\tfrac12\Tr\bigl((A(a)-C^{-1})U\bigr).
+\end{equation}
+Matching \eqref{eq:differential} against \eqref{eq:FR-metric} block by block, the Riemannian
+gradient is
+\begin{equation}\label{eq:FR-gradient}
+    \grad\calE(a)=\bigl(-Cg(a),\;CA(a)C-C\bigr),
+\end{equation}
+so that $\dot a_t=-\grad\calE(a_t)$ is exactly \eqref{ODEs:NG}. Its squared norm is
+\begin{equation}\label{eq:grad-norm}
+    \norm{\grad\calE(a)}_a^2
+    =
+    \Gradnorm(a)^2
+    :=
+    g(a)^\top Cg(a)+\tfrac12\norm{C^{1/2}R(a)C^{1/2}}_\Frob^2,
+\end{equation}
+because $C^{-1}(CA(a)C-C)=A(a)C-\Id$ and cyclicity of the trace turn the covariance block
+into $\Tr(CR(a)CR(a))$. The chain rule then gives the exact dissipation identity
+\begin{equation}\label{eq:dissipation}
+    \frac{\dd}{\dd t}\DeltaE(a_t)
+    =
+    D\calE(a_t)[-\grad\calE(a_t)]
+    =
+    -\Gradnorm(a_t)^2 .
+\end{equation}
+
+Two inequalities convert \eqref{eq:dissipation} into a rate. The first is the Wasserstein
+Polyak--{\L}ojasiewicz inequality induced by the $\alpha$-strong convexity of $V$ and
+restricted to the Gaussian family \citep{lambert2022variational}: for every $a\in\Aspace$,
+\begin{equation}\label{eq:W2-PL}
+    \norm{\grad^{W_2}\calE(a)}_{W_2}^2
+    =
+    \norm{g(a)}^2+\Tr\bigl(R(a)CR(a)\bigr)
+    \geq
+    2\alpha\,\DeltaE(a).
+\end{equation}
+The second compares the two gradient norms. If $C\succeq\ell\Id$, then
+$g(a)^\top Cg(a)\geq\ell\norm{g(a)}^2\geq\tfrac\ell2\norm{g(a)}^2$, while
+$R(a)CR(a)\succeq0$ gives
+$\tfrac12\Tr(CR(a)CR(a))=\tfrac12\Tr(C[R(a)CR(a)])\geq\tfrac\ell2\Tr(R(a)CR(a))$; adding the
+two estimates and inserting \eqref{eq:W2-PL},
+\begin{equation}\label{eq:FR-W2}
+    \Gradnorm(a)^2
+    \geq
+    \frac\ell2\norm{\grad^{W_2}\calE(a)}_{W_2}^2
+    \geq
+    \alpha\ell\,\DeltaE(a),
+\end{equation}
+and the same computation with $\norm C_\op$ in place of $\ell$ gives the reverse comparison
+$\Gradnorm(a)^2\leq\norm C_\op\norm{\grad^{W_2}\calE(a)}_{W_2}^2$. We combine \eqref{eq:dissipation} and \eqref{eq:FR-W2} with a lower bound on the
+covariance.
+
+\subsection{Continuous-time global convergence}
+
+The covariance lower bound is cleanest in the precision variable $P_t:=C_t^{-1}$, along which
+\eqref{ODEs:NG} is affine: differentiating $P_t=C_t^{-1}$ and using \eqref{eq:NG-compact},
+\begin{equation}\label{eq:precision-duhamel}
+    \dot P_t=A(a_t)-P_t,
+    \qquad
+    P_t=e^{-t}P_0+\int_0^te^{-(t-s)}A(a_s)\,\dd s .
+\end{equation}
+
+\begin{lemma}[Continuous covariance bootstrap]\label{lem:cov-cont}
+    Under \Cref{assump:logconcave-smooth}, if the initial covariance satisfies
+    $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$, then along \eqref{ODEs:NG},
+    with $\lambda_0:=\lambda_{0,\min}$ and
+    $\lambda_{\max}:=\max\{\lambda_{0,\max},1/\alpha\}$,
+    \begin{equation*}
+        C_t\succeq\ell(t)\Id,
+        \qquad
+        \ell(t):=\frac{\lambda_0e^t}{1+\beta\lambda_0(e^t-1)},
+        \qquad
+        C_t\preceq\lambda_{\max}\Id .
+    \end{equation*}
+    In particular $C_t\succeq(2\beta)^{-1}\Id$ for all
+    $t\geq\logp\bigl(1/(\beta\lambda_0)\bigr)$.
+\end{lemma}
+
+\begin{proof}
+    By \eqref{eq:precision-duhamel} and $A(a_s)\preceq\beta\Id$,
+    \begin{equation*}
+        P_t\preceq\bigl(e^{-t}\lambda_0^{-1}+\beta(1-e^{-t})\bigr)\Id,
+    \end{equation*}
+    which gives the lower bound after inversion. For the upper bound, $A(a_t)\succeq\alpha\Id$
+    shows that no eigenvalue of $C_t$ can cross $1/\alpha$ from below and that any eigenvalue
+    above $1/\alpha$ is pushed downward. The curvature-scale consequence follows by requiring
+    the decaying initial-precision term to be no larger than $\beta$.
+\end{proof}
+
+The rate produced by \eqref{eq:FR-W2} and \Cref{lem:cov-cont} still carries the affine
+anisotropy of the target, which the flow itself does not see. We therefore whiten by the
+optimizing Gaussian covariance. Let $a_\star=(m_\star,C_\star)$ be the optimizing Gaussian and
+set
+\begin{equation}\label{eq:whitening}
+    \widehat m:=C_\star^{-1/2}(m-m_\star),
+    \qquad
+    \widehat C:=C_\star^{-1/2}CC_\star^{-1/2},
+    \qquad
+    \widehat V(z):=V(m_\star+C_\star^{1/2}z),
+\end{equation}
+so that the optimizer becomes $(\widehat m_\star,\widehat C_\star)=(0,\Id)$, and define the
+optimal whitened curvature constants and the whitened initial covariance floor,
+\begin{equation}\label{eq:star-curvature}
+    \alphastar:=\inf_{z}\lambda_{\min}(\nabla^2\widehat V(z)),
+    \qquad
+    \betastar:=\sup_{z}\lambda_{\max}(\nabla^2\widehat V(z)),
+    \qquad
+    \kappastar:=\frac{\betastar}{\alphastar},
+\end{equation}
+\begin{equation}\label{eq:lamzstar}
+    \lamzstar:=\lambda_{\min}(\widehat C_0)
+    =\lambda_{\min}\bigl(C_\star^{-1/2}C_0C_\star^{-1/2}\bigr).
+\end{equation}
+Writing $S=C_\star^{1/2}$ we have $\nabla\widehat V(z)=S\nabla V(m_\star+Sz)$ and
+$\nabla^2\widehat V(z)=S\nabla^2V(m_\star+Sz)S$, hence $\widehat g=Sg$ and
+$\widehat A=SAS$, so the whitened parameters solve the same Fisher--Rao system
+$\dot{\widehat m}=\widehat C\widehat g$,
+$\dot{\widehat C}=\widehat C-\widehat C\widehat A\widehat C$. The first-order conditions
+\eqref{eq:first-order} become
+$\E_{Z\sim\N(0,\Id)}[\nabla\widehat V(Z)]=0$ and
+$\E_{Z\sim\N(0,\Id)}[\nabla^2\widehat V(Z)]=\Id$, so that
+$\alphastar\leq1\leq\betastar$. Under an invertible affine change $y=Bx+b$ the transformed
+optimizer covariance is $BC_\star B^\top$, and
+$O:=(BC_\star B^\top)^{-1/2}BC_\star^{1/2}$ is orthogonal; whitening before and after the
+change therefore differs by an orthogonal map only, so $\alphastar$, $\betastar$,
+$\kappastar$ and the spectrum of $\widehat C_0$, hence also the product
+$\betastar\lamzstar$, are affine invariants. Finally, $C_\star^{-1}=A(a_\star)$ and
+$\alpha\Id\preceq A(a_\star)\preceq\beta\Id$ give
+$\beta^{-1}\Id\preceq C_\star\preceq\alpha^{-1}\Id$, so
+$\kappa^{-1}\Id\preceq\nabla^2\widehat V(z)\preceq\kappa\Id$ and
+\begin{equation}\label{eq:kappa-star-kappa}
+    1\leq\kappastar\leq\kappa^2 .
+\end{equation}
+
+\begin{theorem}[Affine-invariant continuous-time global convergence]\label{thm:glob-cont}
+    Under \Cref{assump:logconcave-smooth}, the Gaussian natural gradient flow
+    \eqref{ODEs:NG} satisfies, for every $t\geq0$,
+    \begin{equation*}
+        \DeltaE(a_t)
+        \leq
+        \DeltaE_0\bigl[1+\betastar\lamzstar(e^t-1)\bigr]^{-1/\kappastar}.
+    \end{equation*}
+    Consequently, for every $\delta\in(0,\DeltaE_0)$ the hitting time
+    $T^{\glob}(\delta):=\inf\{t\geq0:\DeltaE(a_t)\leq\delta\}$ obeys
+    \begin{equation*}
+        T^{\glob}(\delta)
+        \leq
+        \log\left(1+\frac{(\DeltaE_0/\delta)^{\kappastar}-1}{\betastar\lamzstar}\right)
+        \leq
+        \logp\frac1{\betastar\lamzstar}
+        +\kappastar\log\frac{\DeltaE_0}{\delta}.
+    \end{equation*}
+    The original-coordinate estimate remains valid as well, so we may take the minimum of the
+    two, replacing $(\betastar,\lamzstar,\kappastar)$ by $(\beta,\lambda_0,\kappa)$.
+\end{theorem}
+
+\begin{proof}
+    The energy and the Fisher--Rao dissipation are invariant under the whitening
+    \eqref{eq:whitening}, so we work in whitened coordinates and omit hats. Applying
+    \Cref{lem:cov-cont} with the whitened constants gives
+    $C_t\succeq\ell_\star(t)\Id$ with
+    $\ell_\star(t)=\lamzstar e^t/(1+\betastar\lamzstar(e^t-1))$, and \eqref{eq:FR-W2}
+    gives $\Gradnorm(a_t)^2\geq\alphastar\ell_\star(t)\DeltaE(a_t)$. With
+    \eqref{eq:dissipation} this yields
+    $\dot\DeltaE_t\leq-\alphastar\ell_\star(t)\DeltaE_t$, and by Gronwall's inequality
+    \begin{equation*}
+        \DeltaE_t
+        \leq
+        \DeltaE_0\exp\left(-\alphastar\int_0^t\ell_\star(s)\,\dd s\right).
+    \end{equation*}
+    The scalar integral is exact,
+    $\int_0^t\ell_\star(s)\,\dd s=\betastar^{-1}\log[1+\betastar\lamzstar(e^t-1)]$, and
+    $\alphastar/\betastar=1/\kappastar$, which gives the decay estimate. Solving the equality
+    in it gives the exact hitting time. For the simplified form, set
+    $R=(\DeltaE_0/\delta)^{\kappastar}\geq1$ and $b=\betastar\lamzstar$: if $b\leq1$ then
+    $1+(R-1)/b\leq R/b$, and if $b\geq1$ then $1+(R-1)/b\leq R$; taking logarithms in the two
+    cases gives the bound.
+\end{proof}
+
+\begin{remark}[What is and is not encoded by $\kappastar$]
+    The intrinsic condition number removes anisotropy that can be eliminated by an affine
+    reparametrization. It does not, by itself, encode the initialization size: the factor
+    $\log(\DeltaE_0/\delta)$, or an equivalent radius term, is indispensable, since if
+    arbitrary initial means are allowed then the worst-case time to reach a fixed energy level
+    is infinite even for a quadratic target. The comparison in \eqref{eq:kappa-star-kappa} can
+    be very loose in the useful direction: for an anisotropic quadratic target
+    $\kappastar=1$ while $\kappa$ is arbitrarily large.
+\end{remark}
+
+\begin{remark}
+\label{rem:FR-init-cov}
+From Corollary 3 of \citet{lambert2022variational}, the convergence rate of Gaussian
+approximate Wasserstein gradient flow does not depend on the initial covariance, while in
+\Cref{thm:glob-cont} the convergence rate of the Gaussian approximate natural gradient flow
+depends on the spectral bound of the initial covariance through \Cref{lem:cov-cont}.
+We show by example that the dependence on the lower spectral bound of the initial covariance is
+not a proof artifact, instead, it is determined by the properties of the Fisher--Rao gradient
+flow. For the one-dimensional Gaussian target
+\[
+    \rho_{\post}=\N(0,1),
+    \qquad
+    V(\theta)=\frac12\theta^2,
+\]
+with $a=(m,c)$, the Gaussian variational objective is
+\[
+    \calE(m,c)-\calE(a_\star)
+    =
+    \frac12\bigl(m^2+c-1-\log c\bigr),
+    \qquad
+    a_\star=(0,1).
+\]
+Since
+\[
+    \nabla\log\rho_{\post}(\theta)=-\theta,
+    \qquad
+    \nabla^2\log\rho_{\post}(\theta)=-1,
+\]
+the Gaussian natural gradient flow becomes
+\[
+    \dot m_t=-c_tm_t,
+    \qquad
+    \dot c_t=c_t(1-c_t).
+\]
+Let $c_0=\varepsilon\in(0,1)$. Then the covariance equation is exactly solvable:
+\[
+    c_t=\frac{\varepsilon e^t}{1-\varepsilon+\varepsilon e^t}.
+\]
+Consequently,
+\[
+    m_t
+    =
+    m_0\exp\left(-\int_0^tc_s\,\dd s\right)
+    =
+    \frac{m_0}{1-\varepsilon+\varepsilon e^t}.
+\]
+Therefore, for every fixed $t>0$,
+\[
+    \lim_{m_0\to\infty}
+    \frac{\calE(m_t,c_t)-\calE(a_\star)}{\calE(m_0,c_0)-\calE(a_\star)}
+    =
+    \frac1{(1-\varepsilon+\varepsilon e^t)^2}.
+\]
+Taking $\varepsilon\downarrow0$ gives
+\[
+    \lim_{\varepsilon\downarrow0}\lim_{m_0\to\infty}
+    \frac{\calE(m_t,c_t)-\calE(a_\star)}{\calE(m_0,c_0)-\calE(a_\star)}
+    =1 .
+\]
+Hence no estimate of the form
+\[
+    \calE(a_t)-\calE(a_\star)
+    \leq
+    e^{-rt}\bigl(\calE(a_0)-\calE(a_\star)\bigr),
+    \qquad r>0,
+\]
+with $r$ depending only on the log-concavity and smoothness constants, can hold uniformly over
+all initial covariances. In this example $\alpha=\beta=1$, and the rate in the preceding result
+depends on
+\[
+    \lambda_{\min}=\min\{\varepsilon,1\}=\varepsilon,
+\]
+which correctly degenerates as $\varepsilon\downarrow0$.
+
+This should be contrasted with the Gaussian Bures--Wasserstein gradient flow for the same
+target. In one dimension it satisfies
+\[
+    \dot{\widetilde m}_t=-\widetilde m_t,
+    \qquad
+    \dot{\widetilde c}_t=2(1-\widetilde c_t),
+\]
+and hence
+\[
+    \widetilde m_t=\widetilde m_0e^{-t},
+    \qquad
+    \widetilde c_t=1+(\widetilde c_0-1)e^{-2t}.
+\]
+Thus the mean component contracts immediately at the target curvature rate, independently of
+the initial covariance. This illustrates the structural difference between the Fisher--Rao and
+Bures--Wasserstein geometries: in the Fisher--Rao Gaussian flow, small covariance preconditions
+and slows down the mean dynamics, while the Bures--Wasserstein flow does not contain this
+covariance prefactor in the mean equation. The same contrast is what makes a short transport
+warm start remove the covariance burn-in term altogether, as we show in
+\Cref{subsec:burnin}.
+\end{remark}
+
+The linear dependence on $\kappastar$ in \Cref{thm:glob-cont} cannot be improved, up to
+logarithmic initialization and localization factors, under the general spectral initialization
+class.
+
+\begin{theorem}[Continuous-time logarithmic-spiral lower bound]\label{thm:sharp-cont}
+    For every $K\geq16$ there is an even potential $V_K\in C^3(\R^2)$, given explicitly in
+    \eqref{eq:spiral-potential}, and a scale $r_0$ with
+    $r_0\sqrt\alpha\geq10^{25}K^{3/2}\sqrt{\log(eK)}$, such that
+    $\alpha\Id\preceq\nabla^2V_K\preceq\beta\Id$ with $\kappa=2K+1$ and
+    \begin{equation*}
+        K\leq\kappastar(V_K)\leq1.03K .
+    \end{equation*}
+    There is an initial mean $m_0$ with $\norm{m_0}=e^2r_0$ and an anisotropic initial
+    covariance $C_0$, admissible under the general spectral condition
+    $\beta^{-1}\Id\preceq C_0\preceq\alpha^{-1}\Id$, such that for every local level
+    $\delta_{\loc}<\tfrac\alpha2e^{-0.08}\norm{m_0}^2$ the exact Gaussian Fisher--Rao flow
+    obeys
+    \begin{equation*}
+        T_{\loc}:=\inf\{t\geq0:\DeltaE(a_t)\leq\delta_{\loc}\}
+        \geq\frac K{100}
+        \geq\frac{\kappastar(V_K)}{103}.
+    \end{equation*}
+    Moreover $\betastar\lamzstar\geq(1-\eta_K)/(1+\eta_K)$ with
+    $\eta_K:=Ke^{-\alpha r_0^2/2}\leq10^{-3}$, so the covariance-initialization term
+    $\logp(1/(\betastar\lamzstar))$ in \Cref{thm:glob-cont} is smaller than $0.003$ for this
+    family.
+\end{theorem}
+
+The proof is given in \Cref{app:spiral}.
+
+\begin{corollary}[Sharp polynomial dependence in dimension at least two]\label{cor:sharp-cont}
+    For $N_\theta\geq2$, the worst-case polynomial dependence of the continuous-time
+    global-localization phase on the affine-invariant condition number is
+    \begin{equation*}
+        T_{\loc}=\widetilde\Theta(\kappastar)
+    \end{equation*}
+    under the general spectral initialization class, where the tilde suppresses logarithmic
+    dependence on initialization size and localization accuracy. For the spiral family,
+    $\kappastar=\Theta(\kappa)$ and $T_{\loc}\geq(\kappa-1)/200$.
+\end{corollary}
+
+\begin{remark}[Scope of the sharpness theorem]
+    The matching construction uses an admissible anisotropic initial covariance. It does not
+    establish an $\Omega(\kappastar)$ lower bound under the stricter initialization
+    $C_0=\beta^{-1}\Id$. It also allows the initial radius to grow with $K$, and the logarithm
+    of that radius is part of the input size charged by \Cref{thm:glob-cont}. A
+    Hessian-Lipschitz version of the construction is available for every prescribed
+    $\LH>0$ by enlarging $r_0$, and is recorded in \Cref{app:spiral}.
+\end{remark}
+
+\subsection{Discretization with Riemannian distance}
+
+We decompose the objective as $\calE=\calE_1+\calE_2$ as in \eqref{eq:E-split}, and define
+the squared Riemannian distance at the current iterate $a_n=(m_n,C_n)$ as
+\begin{equation}\label{eq:Riem-dist}
+    d(a,a_n)^2
+    =
+    (m-m_n)^\top C_n^{-1}(m-m_n)+\frac12\norm Z_\Frob^2,
+    \qquad
+    Z=\log\bigl(C_n^{-1/2}CC_n^{-1/2}\bigr),
+\end{equation}
+which is the distance of the metric \eqref{eq:FR-metric}. As the entropy term $\calE_1$ is
+often non-smooth, we apply the proximal algorithm \citep{parikh2014proximal} for optimization.
+In the forward step,
+\begin{equation*}
+    a_{n+1/2}
+    =
+    \argmin_{a\in\Aspace}
+    \left\{
+        \calE_2(a_n)+\inner{\grad\calE_2(a_n)}{\Log_{a_n}(a)}+\frac1{2\Delta t}d(a,a_n)^2
+    \right\},
+\end{equation*}
+which gives
+\begin{equation*}
+    m_{n+1/2}=m_n+\Delta t\,C_ng(a_n),
+    \qquad
+    C_{n+1/2}=C_n^{1/2}\exp\bigl(-\Delta t\,C_n^{1/2}A(a_n)C_n^{1/2}\bigr)C_n^{1/2}.
+\end{equation*}
+The backward step reads
+\begin{equation*}
+    a_{n+1}
+    =
+    \argmin_{a\in\Aspace}
+    \left\{\calE_1(a)+\frac1{2\Delta t}d(a,a_{n+1/2})^2\right\},
+\end{equation*}
+which gives
+\begin{equation*}
+    m_{n+1}=m_{n+1/2},
+    \qquad
+    C_{n+1}=e^{\Delta t}C_{n+1/2}.
+\end{equation*}
+These collectively give the update through Riemannian geometry:
+\begin{equation}\label{upd:Riem}
+    \boxed{
+    \begin{aligned}
+        m_{n+1} &= m_n+\Delta t\,C_ng(a_n), \\
+        C_{n+1} &= C_n^{1/2}
+        \exp\bigl(\Delta t(\Id-C_n^{1/2}A(a_n)C_n^{1/2})\bigr)C_n^{1/2}.
+    \end{aligned}}
+\end{equation}
+
+We proceed to show the convergence theory of \eqref{upd:Riem} under
+\Cref{assump:logconcave-smooth}. We first show that the update for each step is exactly a
+gradient descent step along the exponential retraction of the Gaussian manifold.
+
+\begin{proposition}\label{prop:upd-map-Riem}
+    For $a=(m,C)\in\Aspace$ and $(u,U)\in T_a\Aspace$ define
+    \begin{equation*}
+        \Retr_{(m,C)}(u,U)
+        :=
+        \left(m+u,\;C^{1/2}\exp\bigl(C^{-1/2}UC^{-1/2}\bigr)C^{1/2}\right).
+    \end{equation*}
+    Then the discrete algorithm with Riemannian distance \eqref{upd:Riem} gives the one-step
+    update
+    \begin{equation*}
+        a_{n+1}=\Retr_{a_n}\bigl(-\Delta t\grad\calE(a_n)\bigr).
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    By \eqref{eq:FR-gradient}, in the mean direction
+    \begin{equation*}
+        m_{n+1}=m_n+\Delta t\,C_ng(a_n)=m_n-\Delta t\grad_m\calE(a_n).
+    \end{equation*}
+    In the covariance direction,
+    \begin{align*}
+        -\Delta t\grad_C\calE(a_n)
+        &=\Delta t\,C_n-\Delta t\,C_nA(a_n)C_n\\
+        &=C_n^{1/2}\bigl(\Delta t\,\Id-\Delta t\,C_n^{1/2}A(a_n)C_n^{1/2}\bigr)C_n^{1/2},
+    \end{align*}
+    so that $C_n^{-1/2}(-\Delta t\grad_C\calE(a_n))C_n^{-1/2}
+    =\Delta t(\Id-C_n^{1/2}A(a_n)C_n^{1/2})$, which is exactly the exponent appearing in the
+    covariance component of \eqref{upd:Riem}. This completes the proof.
+\end{proof}
+
+\begin{remark}
+    The covariance block of $\Retr$ is the exponential map of the affine-invariant metric on
+    $\SPD(N_\theta)$, so the covariance update follows a genuine geodesic of the covariance
+    factor. The joint mean--covariance map is nevertheless a retraction and not the exponential
+    map of the Fisher--Rao metric on $\Aspace$, whose geodesics couple the mean and the
+    covariance. All estimates below are proved for the retraction directly, so no geodesic
+    smoothness statement is used.
+\end{remark}
+
+We then prove the spectral bounds of the covariance along \eqref{upd:Riem}.
+
+\begin{lemma}[Riemannian covariance bootstrap]\label{lem:cov-Riem}
+    Under \Cref{assump:logconcave-smooth}, if
+    $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$ and
+    $0<\Delta t\leq\min\{1,1/(\beta\lambda_{\max})\}$, then along \eqref{upd:Riem} one has
+    $C_n\preceq\lambda_{\max}\Id$ for all $n\geq0$, and $C_n\succeq L_n\Id$ where
+    \begin{equation*}
+        L_0:=\min\left\{\lambda_0,\frac1{2\beta}\right\},
+        \qquad
+        L_{n+1}:=\frac{e^{\Delta t}L_n}{1+(e-1)\Delta t\,\beta L_n}.
+    \end{equation*}
+    With $y_n:=(\beta L_n)^{-1}$, $y_0=1/(\beta L_0)$ and
+    $y_\infty:=(e-1)\Delta t/(e^{\Delta t}-1)\in[1,e-1)$, the envelope solves the affine
+    recursion $y_n=y_\infty+(y_0-y_\infty)e^{-n\Delta t}$. Hence
+    $C_n\succeq\tfrac1{2\beta}\Id$ for all
+    \begin{equation*}
+        n\geq
+        N_{\cov,-}^{\Riem}
+        :=
+        \left\lceil\frac1{\Delta t}\logp\frac{y_0-y_\infty}{2-y_\infty}\right\rceil
+        =
+        O\!\left(\frac1{\Delta t}\logp\frac1{\beta\lambda_0}\right).
+    \end{equation*}
+    Moreover, with $z_0:=1/(\alpha\lambda_{0,\max})$ and
+    $z_\infty:=\Delta t/(e^{\Delta t}-1)\in[\tfrac1{e-1},1)$, one has
+    $z_n:=\lambda_{\min}(C_n^{-1})/\alpha\geq z_\infty+(z_0-z_\infty)e^{-n\Delta t}$, hence
+    $C_n\preceq\tfrac2\alpha\Id$ for all $n\geq N_{\cov,+}^{\Riem}$, where
+    $N_{\cov,+}^{\Riem}:=0$ if $z_0\geq\tfrac12$ and
+    $N_{\cov,+}^{\Riem}:=\lceil\Delta t^{-1}\log\frac{z_\infty-z_0}{z_\infty-1/2}\rceil
+    =O(\Delta t^{-1}\logp(\alpha\lambda_{0,\max}))$ otherwise.
+\end{lemma}
+
+\begin{proof}
+    Write $B_n:=C_n^{1/2}A(a_n)C_n^{1/2}$, so that
+    $C_{n+1}^{-1}=C_n^{-1/2}\exp(\Delta t(B_n-\Id))C_n^{-1/2}$. Using $e^X\succeq\Id+X$ for
+    symmetric $X$ and $C_n^{-1/2}B_nC_n^{-1/2}=A(a_n)$,
+    \begin{equation*}
+        C_{n+1}^{-1}\succeq(1-\Delta t)C_n^{-1}+\Delta t\,A(a_n).
+    \end{equation*}
+    If $C_n\preceq\lambda_{\max}\Id$ then $C_n^{-1}\succeq\lambda_{\max}^{-1}\Id$ and
+    $A(a_n)\succeq\alpha\Id\succeq\lambda_{\max}^{-1}\Id$, and since $\Delta t\leq1$ this gives
+    $C_{n+1}^{-1}\succeq\lambda_{\max}^{-1}\Id$, which proves the upper bound by induction.
+    For the lower envelope, $0\preceq\Delta t\,B_n\preceq\Id$ because
+    $\Delta t\leq1/(\beta\lambda_{\max})$, and the scalar inequality $e^x\leq1+(e-1)x$ on
+    $[0,1]$ gives $\exp(\Delta t\,B_n)\preceq\Id+(e-1)\Delta t\,B_n$ by functional calculus,
+    hence
+    \begin{equation*}
+        C_{n+1}^{-1}
+        =e^{-\Delta t}C_n^{-1/2}\exp(\Delta t\,B_n)C_n^{-1/2}
+        \preceq e^{-\Delta t}\bigl[C_n^{-1}+(e-1)\Delta t\,A(a_n)\bigr]
+        \preceq e^{-\Delta t}\bigl(L_n^{-1}+(e-1)\Delta t\,\beta\bigr)\Id,
+    \end{equation*}
+    that is $C_{n+1}\succeq L_{n+1}\Id$. In the variable $y_n$ the recursion is
+    $y_{n+1}=e^{-\Delta t}(y_n+(e-1)\Delta t)$, whose solution is the stated affine one, and
+    $\Delta t\mapsto y_\infty$ is continuous and monotone on $(0,1]$ with limit $e-1$ at
+    $0$ and value $1$ at $\Delta t=1$, so $y_\infty\in[1,e-1)$. The condition
+    $C_n\succeq\tfrac1{2\beta}\Id$ is $y_n\leq2$, which gives $N_{\cov,-}^{\Riem}$. For the
+    upper envelope, $e^X\succeq\Id+X$ again gives
+    $C_{n+1}^{-1}\succeq e^{-\Delta t}(C_n^{-1}+\Delta t\,\alpha\Id)$, so
+    $z_{n+1}\geq e^{-\Delta t}(z_n+\Delta t)$ and $z_n$ dominates the stated affine sequence.
+    Since $z_\infty>\tfrac12$, if $z_0\geq\tfrac12$ then $z_n\geq\tfrac12$ for all $n$ as a
+    convex combination of two numbers at least $\tfrac12$; if $z_0<\tfrac12$ then
+    $z_0<\tfrac12<z_\infty$, the sequence increases to $z_\infty$, and $z_n\geq\tfrac12$
+    first holds at the stated index. The case split is genuine, since the one-line form with
+    $\logp$ is undefined for $z_0>z_\infty$.
+\end{proof}
+
+The descent estimate is proved for the retraction itself, using only a Gaussian coupling,
+smoothness of the potential, Gaussian integration by parts, and a scalar exponential
+inequality.
+
+\begin{lemma}[Retraction smoothness and one-step descent]\label{lem:descent-Riem}
+    Assume $0\preceq\nabla^2V\preceq\beta\Id$ and $C\preceq\Lambda\Id$, and set
+    $K:=\beta\Lambda\geq1$. For a tangent vector $\zeta=(u,U)$ at $a=(m,C)$ write
+    $W:=C^{-1/2}UC^{-1/2}$. If $\norm W_\op\leq1$, then
+    \begin{equation}\label{eq:Riem-retraction-smooth}
+        \calE\bigl(\Retr_a(\zeta)\bigr)
+        \leq
+        \calE(a)+\inner{\grad\calE(a)}{\zeta}_a+K\norm\zeta_a^2 .
+    \end{equation}
+    Consequently, for the update \eqref{upd:Riem} with $0<\Delta t\leq1/K$,
+    \begin{equation*}
+        \calE(a_{n+1})\leq\calE(a_n)-\Delta t(1-K\Delta t)\Gradnorm(a_n)^2,
+    \end{equation*}
+    and in particular $\calE(a_{n+1})\leq\calE(a_n)-\tfrac{\Delta t}2\Gradnorm(a_n)^2$ whenever
+    $\Delta t\leq1/(2K)$.
+\end{lemma}
+
+The proof is given in \Cref{app:det-proofs}.
+
+We proceed to prove the global convergence rate of \eqref{upd:Riem}.
+
+\begin{theorem}[Global hitting time, Riemannian scheme]\label{thm:glob-Riem}
+    Under \Cref{assump:logconcave-smooth}, with
+    $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$ and
+    \begin{equation*}
+        0<\Delta t\leq\frac1{2\beta\lambda_{\max}},
+    \end{equation*}
+    the iterates of \eqref{upd:Riem} satisfy
+    $\DeltaE(a_{n+1})\leq(1-\tfrac12\alpha L_n\Delta t)\DeltaE(a_n)$ with $L_n$ the covariance
+    envelope of \Cref{lem:cov-Riem}, and
+    $\DeltaE(a_{n+1})\leq(1-\tfrac{\Delta t}{4\kappa})\DeltaE(a_n)$ once
+    $n\geq N_{\cov,-}^{\Riem}$. In particular, for every $\delta\in(0,\DeltaE_0)$ the hitting
+    time $N_{\Riem}^{\glob}(\delta):=\inf\{n\geq0:\DeltaE(a_n)\leq\delta\}$ satisfies
+    \begin{equation*}
+        N_{\Riem}^{\glob}(\delta)
+        =
+        O\!\left(
+            \frac1{\Delta t}\logp\frac1{\beta\lambda_0}
+            +\frac\kappa{\Delta t}\logp\frac{\DeltaE_0}\delta
+        \right).
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    Apply \Cref{lem:descent-Riem} with $\Lambda=\lambda_{\max}$ and $K=\beta\lambda_{\max}$.
+    Since $\Delta t\leq1/(2K)$,
+    $\DeltaE(a_{n+1})\leq\DeltaE(a_n)-\tfrac{\Delta t}2\Gradnorm(a_n)^2$. If
+    $C_n\succeq L_n\Id$, then \eqref{eq:FR-W2} gives
+    $\Gradnorm(a_n)^2\geq\alpha L_n\DeltaE(a_n)$, and therefore
+    $\DeltaE(a_{n+1})\leq(1-\tfrac12\alpha L_n\Delta t)\DeltaE(a_n)$. After
+    $N_{\cov,-}^{\Riem}$ iterations \Cref{lem:cov-Riem} gives $L_n\geq1/(2\beta)$, so the
+    per-step factor is at most $1-\Delta t/(4\kappa)$. The covariance burn-in costs
+    $O(\Delta t^{-1}\logp(1/(\beta\lambda_0)))$ iterations, and reducing the energy gap from
+    $\DeltaE_0$ to $\delta$ afterwards costs
+    $O((\kappa/\Delta t)\logp(\DeltaE_0/\delta))$ iterations, using $-\log(1-x)\geq x$.
+\end{proof}
+
+\subsection{Discretization with KL divergence}
+
+The discrete algorithm with Riemannian distance \eqref{upd:Riem} is geometrically natural but
+computationally expensive, which requires to compute a matrix exponential at every step, for
+the ease in computation, we develop the following discretization scheme with KL divergence.
+
+At the forward step, we compute
+\begin{equation*}
+    a_{n+1/2}
+    =
+    \argmin_{a\in\Aspace}
+    \left\{
+        \calE_2(a_n)+\inner{\nabla\calE_2(a_n)}{a-a_n}+\frac1{\Delta t}\KL(\rho_a\|\rho_{a_n})
+    \right\},
+\end{equation*}
+which gives
+\begin{equation*}
+    m_{n+1/2}=m_n+\Delta t\,C_ng(a_n),
+    \qquad
+    C_{n+1/2}=\bigl(C_n^{-1}+\Delta t\,A(a_n)\bigr)^{-1}.
+\end{equation*}
+For the backward step, the update reads
+\begin{equation*}
+    a_{n+1}
+    =
+    \argmin_{a\in\Aspace}
+    \left\{\calE_1(a)+\frac1{\Delta t}\KL(\rho_a\|\rho_{a_{n+1/2}})\right\},
+\end{equation*}
+which gives
+\begin{equation*}
+    m_{n+1}=m_{n+1/2},
+    \qquad
+    C_{n+1}=(1+\Delta t)C_{n+1/2}.
+\end{equation*}
+
+Hence, the discrete algorithm with KL divergence reads
+\begin{equation}\label{upd:KL}
+    \boxed{
+    \begin{aligned}
+        m_{n+1} &= m_n+\Delta t\,C_ng(a_n), \\
+        C_{n+1} &= (1+\Delta t)\bigl(C_n^{-1}+\Delta t\,A(a_n)\bigr)^{-1},
+    \end{aligned}}
+\end{equation}
+or equivalently $C_{n+1}^{-1}=\tfrac1{1+\Delta t}(C_n^{-1}+\Delta t\,A(a_n))$.
+
+We denote $D(a,a_n)=\KL(\rho_a\|\rho_{a_n})$ and take note that $D(a,a_n)$ is a Bregman
+divergence because
+\begin{equation}\label{eq:Bregman}
+    D_\psi(\xi,\xi_n)
+    =\psi(\xi)-\psi(\xi_n)-\inner{\nabla\psi(\xi_n)}{\xi-\xi_n}
+    =\KL(\rho_a\|\rho_{a_n}),
+\end{equation}
+where we define
+\begin{equation}\label{eq:Bregman-potential}
+    \psi(\xi)=-\frac12\log\det\bigl(\xi_2-\xi_1\xi_1^\top\bigr),
+    \qquad
+    \xi=(\xi_1,\xi_2)=(m,C+mm^\top).
+\end{equation}
+Thus \eqref{upd:KL} is a forward--backward mirror step in the expectation parameters, which
+linearizes the potential part $\calE_2$ explicitly and treats the entropy $\calE_1$
+implicitly; only one linear solve is required per iteration. The step is the natural one for
+this divergence because $\calE_2$ is relatively smooth with respect to $D$ with constant
+$\beta\lambda_{\max}$, which we record as \Cref{prop:smooth-Bregman} in \Cref{app:det-proofs}.
+
+We proceed to prove the convergence rate of the discretization algorithm with KL divergence
+\eqref{upd:KL}, under the standard \Cref{assump:logconcave-smooth}. We first prove the
+spectral bounds of the covariance along \eqref{upd:KL}.
+
+\begin{lemma}[KL covariance bootstrap]\label{lem:cov-KL}
+    Under \Cref{assump:logconcave-smooth}, if
+    $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$, then along \eqref{upd:KL} one
+    has $C_n\preceq\lambda_{\max}\Id$ for all $n\geq0$, and $C_n\succeq L_n\Id$ with
+    \begin{equation*}
+        L_0:=\min\left\{\lambda_0,\frac1{2\beta}\right\},
+        \qquad
+        L_{n+1}=\frac{(1+\Delta t)L_n}{1+\Delta t\,\beta L_n},
+        \qquad
+        L_n=\frac1{\beta\bigl[1+(\tfrac1{\beta L_0}-1)(1+\Delta t)^{-n}\bigr]} .
+    \end{equation*}
+    Hence $C_n\succeq\tfrac1{2\beta}\Id$ for all
+    \begin{equation*}
+        n\geq
+        N_{\cov,-}^{\KL}
+        :=\left\lceil\frac{\logp(\tfrac1{\beta L_0}-1)}{\log(1+\Delta t)}\right\rceil
+        =O\!\left(\frac1{\Delta t}\logp\frac1{\beta\lambda_0}\right),
+    \end{equation*}
+    and $C_n\preceq\tfrac2\alpha\Id$ for all
+    $n\geq N_{\cov,+}^{\KL}:=\lceil\log2/\log(1+\Delta t)\rceil=O(1/\Delta t)$.
+\end{lemma}
+
+\begin{proof}
+    The update is $C_{n+1}^{-1}=\tfrac1{1+\Delta t}(C_n^{-1}+\Delta t\,A(a_n))$ with
+    $\alpha\Id\preceq A(a_n)\preceq\beta\Id$. If $C_n\preceq\lambda_{\max}\Id$ then
+    $C_n^{-1}\succeq\lambda_{\max}^{-1}\Id$ and
+    $A(a_n)\succeq\alpha\Id\succeq\lambda_{\max}^{-1}\Id$, so
+    $C_{n+1}^{-1}\succeq\lambda_{\max}^{-1}\Id$. If $C_n\succeq L_n\Id$ then
+    $C_{n+1}^{-1}\preceq\tfrac1{1+\Delta t}(L_n^{-1}+\Delta t\beta)\Id$, that is
+    $C_{n+1}\succeq L_{n+1}\Id$; with $y_n=(\beta L_n)^{-1}$ the recursion is
+    $y_{n+1}=1+(y_n-1)/(1+\Delta t)$, so $y_n=1+(y_0-1)(1+\Delta t)^{-n}$, which is the stated
+    closed form, and $y_n\leq2$ gives $N_{\cov,-}^{\KL}$. For the upper envelope,
+    $A(a_n)\succeq\alpha\Id$ gives $z_{n+1}\geq1+(z_n-1)/(1+\Delta t)$ for
+    $z_n:=\lambda_{\min}(C_n^{-1})/\alpha$, so $z_n=1+(z_0-1)(1+\Delta t)^{-n}$; if $z_0\geq1$
+    then $z_n\geq1$ for all $n$, and if $z_0<1$ then $z_n\geq\tfrac12$ as soon as
+    $(1+\Delta t)^{-n}\leq\tfrac12$, since $1-z_0\leq1$.
+\end{proof}
+
+The covariance band of \Cref{lem:cov-KL} holds for every $\Delta t>0$, in contrast with
+the Riemannian bootstrap of \Cref{lem:cov-Riem}, which needs
+$\Delta t\leq\min\{1,1/(\beta\lambda_{\max})\}$; the rational resolvent is unconditionally
+stable in the covariance variable, and the stepsize restriction below is used only for the
+descent estimate.
+
+\begin{proposition}[Forward-KL descent and Wasserstein-gradient control]\label{prop:onestep-KL}
+    Assume $0\preceq\nabla^2V\preceq\beta\Id$ and $L\Id\preceq C_n\preceq\Lambda\Id$, put
+    $K:=\beta\Lambda\geq1$, and let $0<\Delta t\leq1/K$. Then the update \eqref{upd:KL}
+    satisfies
+    \begin{equation*}
+        \calE(a_{n+1})\leq\calE(a_n)-\frac1{\Delta t}\KL(\rho_{a_{n+1}}\|\rho_{a_n}),
+    \end{equation*}
+    and
+    \begin{equation*}
+        \KL(\rho_{a_{n+1}}\|\rho_{a_n})
+        \geq
+        \frac{L\Delta t^2}{4(1+\Delta t\,K)^2}
+        \norm{\grad^{W_2}\calE(a_n)}_{W_2}^2 .
+    \end{equation*}
+\end{proposition}
+
+The proof is given in \Cref{app:det-proofs}. The relevant descent divergence is the
+forward divergence $\KL(\rho_{a_{n+1}}\|\rho_{a_n})$; the reverse divergence does not
+satisfy the corresponding descent inequality for arbitrary mean displacement.
+
+\begin{theorem}[Global hitting time, KL scheme]\label{thm:glob-KL}
+    Under \Cref{assump:logconcave-smooth}, with
+    $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$ and
+    $0<\Delta t\leq1/(\beta\lambda_{\max})$, the iterates of \eqref{upd:KL} satisfy
+    \begin{equation*}
+        \DeltaE(a_{n+1})
+        \leq
+        \left(1-\frac{\alpha L_n\Delta t}{2(1+\Delta t\beta\lambda_{\max})^2}\right)
+        \DeltaE(a_n)
+    \end{equation*}
+    with $L_n$ the covariance envelope of \Cref{lem:cov-KL}, and
+    $\DeltaE(a_{n+1})\leq(1-\tfrac{\Delta t}{16\kappa})\DeltaE(a_n)$ once
+    $n\geq N_{\cov,-}^{\KL}$. In particular, for every $\delta\in(0,\DeltaE_0)$ the hitting
+    time $N_{\KL}^{\glob}(\delta):=\inf\{n\geq0:\DeltaE(a_n)\leq\delta\}$ satisfies
+    \begin{equation*}
+        N_{\KL}^{\glob}(\delta)
+        =
+        O\!\left(
+            \frac1{\Delta t}\logp\frac1{\beta\lambda_0}
+            +\frac\kappa{\Delta t}\logp\frac{\DeltaE_0}\delta
+        \right).
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    Apply \Cref{prop:onestep-KL} with $L=L_n$, $\Lambda=\lambda_{\max}$ and
+    $K=\beta\lambda_{\max}$. Combining the two displays of \Cref{prop:onestep-KL} with the
+    Wasserstein Polyak--{\L}ojasiewicz inequality \eqref{eq:W2-PL} gives the stated per-step
+    contraction. After $N_{\cov,-}^{\KL}$ iterations \Cref{lem:cov-KL} gives
+    $L_n\geq1/(2\beta)$, and $\Delta t\beta\lambda_{\max}\leq1$ gives
+    $(1+\Delta t\beta\lambda_{\max})^2\leq4$, so the per-step factor is at most
+    $1-\Delta t/(16\kappa)$. The hitting-time bound follows by adding the covariance burn-in
+    and using $-\log(1-x)\geq x$.
+\end{proof}
+
+\begin{remark}[Comparing the two schemes]
+    The two schemes carry the same hitting-time bound and differ in cost and in stability
+    range. The Riemannian update requires one symmetric matrix exponential per iteration,
+    whereas the KL update requires only the rational resolvent
+    $(C_n^{-1}+\Delta t\,A(a_n))^{-1}$, that is one linear solve. The covariance band of
+    \eqref{upd:KL} is unconditional in $\Delta t$, while that of \eqref{upd:Riem} requires
+    $\Delta t\leq\min\{1,1/(\beta\lambda_{\max})\}$; the certified descent ranges are
+    $\Delta t\leq1/(2\beta\lambda_{\max})$ and $\Delta t\leq1/(\beta\lambda_{\max})$
+    respectively, so the KL scheme also admits the larger certified step.
+\end{remark}
+
+\subsection{Sharpness of fixed-step localization}
+
+Both hitting times carry the global-localization scale
+$(\kappa/\Delta t)\log(\DeltaE_0/\delta)$, which at the globally certified stepsize
+$\Delta t=\Theta(\kappa^{-1})$ becomes $\Theta(\kappa^2)$ iterations for a constant-factor
+reduction of the objective. This polynomial dependence is sharp for both schemes.
+
+\begin{theorem}[Sharp fixed-step global localization]\label{thm:sharp-disc}
+    Fix $\gamma\in(0,1/2]$ and $\LH>0$. There exist constants $T,Y,q>0$ and $\kappa_0\geq1$,
+    depending only on $\gamma$, $\LH$ and one fixed flat-top bump profile, such that for every
+    $\kappa\geq\kappa_0$ there is an even potential $V_\kappa\in C^\infty(\R)$ with
+    \begin{equation*}
+        1\leq V_\kappa''\leq\kappa,
+        \qquad
+        \norm{V_\kappa'''}_\infty\leq\LH,
+    \end{equation*}
+    and an initialization
+    \begin{equation*}
+        m_0=\frac{Y\kappa^4}\gamma,
+        \qquad
+        c_0=\frac1\kappa,
+    \end{equation*}
+    such that, when either \eqref{upd:Riem} or \eqref{upd:KL} is run with exact expectations
+    and stepsize $\Delta t=\gamma/\kappa$, one has
+    \begin{equation*}
+        \DeltaE(a_n)\geq q\,\DeltaE_0
+        \qquad\text{for every }
+        0\leq n\leq\left\lfloor\frac{T\kappa^2}\gamma\right\rfloor.
+    \end{equation*}
+    Consequently, for a constant-factor reduction of the objective both schemes require
+    \begin{equation*}
+        \Omega\!\left(\frac{\kappa^2}\gamma\right)=\Omega\!\left(\frac\kappa{\Delta t}\right)
+    \end{equation*}
+    iterations. The lower bound holds with $\kappastar=\kappa$, with the covariance initially
+    in the curvature-scale band, and with a dimension-free Hessian-Lipschitz constant.
+\end{theorem}
+
+The construction and the proof are given in \Cref{app:bump}.
+
+\begin{corollary}[Sharpness of the global-localization prefactor]\label{cor:sharp-disc}
+    For the globally fixed-step schemes \eqref{upd:Riem} and \eqref{upd:KL}, the factor
+    $\kappa/\Delta t$ in \Cref{thm:glob-Riem,thm:glob-KL} is sharp, up to constants independent
+    of $\kappa$ for each fixed $\gamma=\kappa\Delta t$, for a constant-factor reduction of the
+    energy. In particular, with $\Delta t=\Theta(\kappa^{-1})$, both methods have worst-case
+    global-localization complexity $\Theta(\kappa^2)$ in the condition-number exponent, and
+    this remains true under the additional assumption $\norm{V'''}_\infty=O(1)$.
+\end{corollary}
+
+\begin{remark}[Why the construction is slow]
+    Along the shadowed trajectory $c_nA(m_n,c_n)=1+o(1)$, so both covariance maps are almost
+    stationary, while $c_n\simeq1/\kappa$ and $b(m_n,c_n)/m_n=\Theta(1)$. Hence the relative
+    mean displacement per step is
+    $\Delta t\,c_nb(m_n,c_n)/m_n=\Theta(\gamma/\kappa^2)$, and a constant-factor motion of the
+    mean requires $\Theta(\kappa^2/\gamma)$ steps. The lower bound is the product of the
+    globally safe fixed-step scale $\Delta t=\Theta(\kappa^{-1})$ and a Fisher--Rao global mean
+    scale of order $\kappa^{-1}$.
+\end{remark}
+
+\begin{remark}[Limitations of the lower bound]
+    The theorem proves sharpness of the polynomial condition-number dependence for explicit
+    methods committed to one globally fixed step. It does not rule out an $O(\kappa)$
+    global-localization result for an adaptive relative-curvature step, an Armijo or
+    backtracking line search, or an implicit or Rosenbrock-stabilized mean update. Indeed the
+    construction has $c_nA(m_n,c_n)\simeq1$, so a method whose stability test is based on the
+    current relative curvature could accept a step of order one and avoid this particular
+    slowdown.
+\end{remark}
+
+\subsection{Removing the covariance burn-in}
+\label{subsec:burnin}
+
+The remaining $\logp(1/(\beta\lambda_0))$ term in
+\Cref{thm:glob-cont,thm:glob-Riem,thm:glob-KL} is a genuine Fisher--Rao warm-up cost when
+$C_0$ is severely underdispersed, and two optional deterministic initializers remove it. The
+reason a transport step helps is the one already visible in \Cref{rem:FR-init-cov}: along the
+Fisher--Rao covariance equation an eigenvalue obeys $\dot\mu_i=\mu_i(1-\mu_ih_i)$ with
+$h_i\in[\alpha,\beta]$, so growth from $\lambda_0\ll1/\beta$ is multiplicative and costs time
+of order $\log(1/(\beta\lambda_0))$, whereas along the Bures--Wasserstein flow
+\begin{equation}\label{eq:W-flow}
+    \dot m_t=g(a_t),
+    \qquad
+    \dot C_t=2\Id-C_tA(a_t)-A(a_t)C_t
+\end{equation}
+the same eigenvalue obeys $\dot\mu_i=2(1-\mu_ih_i)\approx2$, which is additive and
+scale-independent.
+
+\begin{lemma}[Wasserstein covariance bootstrap]\label{lem:cov-BW}
+    Under \Cref{assump:logconcave-smooth} and
+    $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$, along \eqref{eq:W-flow} one has
+    $C_t\preceq\lambda_{\max}\Id$ and
+    \begin{equation*}
+        C_t\succeq\ell_{\BW}(t)\Id,
+        \qquad
+        \ell_{\BW}(t):=\frac1\beta+\left(\lambda_0-\frac1\beta\right)e^{-2\beta t}.
+    \end{equation*}
+    Consequently, for $c\in(0,1)$, the time
+    $T_{\BW}(c):=\tfrac1{2\beta}\log\tfrac{1-\beta\lambda_0}{1-c}$ if $\lambda_0<c/\beta$, and
+    $T_{\BW}(c):=0$ otherwise, satisfies $C_{T_{\BW}(c)}\succeq\tfrac c\beta\Id$. For fixed
+    $c$ the warm-up time is $O(1/\beta)$, with no logarithmic dependence on $\lambda_0$.
+
+    Discretely, given $a=(m,C)$ with $C\preceq\lambda_{\max}\Id$ and a transport stepsize
+    $0<\eta\leq1/\beta$, the Bures--Wasserstein forward--backward step
+    \begin{equation}\label{eq:BW-step}
+        m^+:=m+\eta g(a),
+        \qquad
+        \widetilde C:=(\Id-\eta A(a))C(\Id-\eta A(a)),
+        \qquad
+        C^+:=\tfrac12\Bigl(\widetilde C+2\eta\Id+\bigl[\widetilde C(\widetilde C+4\eta\Id)\bigr]^{1/2}\Bigr)
+    \end{equation}
+    satisfies $C^+\succeq\eta\Id$, $C^+\preceq\lambda_{\max}\Id$, and
+    $\calE(m^+,C^+)\leq\calE(m,C)$.
+\end{lemma}
+
+\begin{proof}
+    For an eigenvalue $\mu_i$ of $C_t$ with normalized eigenvector $u_i$,
+    $\dot\mu_i=2(1-\mu_ih_i)$ with $h_i=u_i^\top A(a_t)u_i\in[\alpha,\beta]$, hence
+    $\dot\mu_i\geq2(1-\beta\mu_i)$, and scalar comparison with
+    $\dot\ell_{\BW}=2(1-\beta\ell_{\BW})$, $\ell_{\BW}(0)=\lambda_0$, gives
+    $\mu_i\geq\ell_{\BW}$. If $\mu_i\geq1/\alpha$ then $\dot\mu_i\leq2(1-\alpha\mu_i)\leq0$,
+    which gives the upper bound. Finally $\ell_{\BW}(t)\geq c/\beta$ is equivalent to
+    $e^{-2\beta t}\leq(1-c)/(1-\beta\lambda_0)$.
+
+    For the discrete step, $\psi_\eta(x):=\tfrac12(x+2\eta+\sqrt{x(x+4\eta)})$ is increasing
+    with $\psi_\eta(0)=\eta$ and \eqref{eq:BW-step} applies it to the eigenvalues of
+    $\widetilde C\succeq0$, so $C^+\succeq\eta\Id$. Since
+    $0\preceq\Id-\eta A(a)\preceq(1-\eta\alpha)\Id$ and $\lambda_{\max}\geq1/\alpha$,
+    $\widetilde C\preceq(1-\eta\alpha)^2\lambda_{\max}\Id
+    \preceq(1-\eta/\lambda_{\max})^2\lambda_{\max}\Id$, and the scalar identity
+    $\psi_\eta((1-\eta/L)^2L)=L$ at $L=\lambda_{\max}$ with monotonicity gives
+    $C^+\preceq\lambda_{\max}\Id$. The step is the Bures--Wasserstein forward--backward step
+    for the splitting \eqref{eq:E-split} with the entropy treated backward, so under
+    $\eta\leq1/\beta$ the forward--backward descent inequality of \citet{diao2023forward}
+    gives the energy decrease.
+\end{proof}
+
+\begin{theorem}[Transport-warm-started natural gradient]\label{thm:burnin-BW}
+    Assume \Cref{assump:logconcave-smooth} and fix $c\in(0,1]$, with $c<1$ for the continuous
+    statement, since $T_{\BW}(c)$ is finite only there.
+
+    In continuous time, run \eqref{eq:W-flow} until $T_{\BW}(c)$ and then switch permanently to
+    \eqref{ODEs:NG}. Then, for every $\delta\in(0,\DeltaE_0)$,
+    \begin{equation*}
+        T_{\BW\to\FR}(\delta;c)
+        \leq
+        T_{\BW}(c)
+        +\min\left\{
+            \frac\kappa c\logp\frac{\DeltaE_0}\delta,\;
+            \logp\frac\kappa{c\betastar}+\kappastar\logp\frac{\DeltaE_0}\delta
+        \right\}
+        =
+        O\!\left(\frac1\beta+\frac\kappa c\logp\frac{\DeltaE_0}\delta\right)
+    \end{equation*}
+    suffices for $\DeltaE(a_t)\leq\delta$.
+
+    Discretely, set $\eta:=c/\beta$, perform one step \eqref{eq:BW-step} if
+    $\lambda_0<c/\beta$ and skip it otherwise, and then run \eqref{upd:Riem} with
+    $0<\Delta t\leq1/(2\beta\lambda_{\max})$, or \eqref{upd:KL} with
+    $0<\Delta t\leq1/(\beta\lambda_{\max})$. Then
+    \begin{equation*}
+        N_{\BW\to\bullet}(\delta;c)
+        =
+        \mathbf1_{\{\lambda_0<c/\beta\}}
+        +O\!\left(\frac\kappa{c\Delta t}\logp\frac{\DeltaE_0}\delta\right),
+        \qquad \bullet\in\{\Riem,\KL\},
+    \end{equation*}
+    iterations suffice for $\DeltaE(a_n)\leq\delta$. In either case the covariance burn-in term
+    $\logp(1/(\beta\lambda_0))$ is replaced by a single transport step, respectively by a
+    warm-start time of order $1/\beta$.
+\end{theorem}
+
+\begin{proof}
+    The Bures--Wasserstein stage decreases $\calE$ \citep{lambert2022variational}, so at the
+    switching state $a_{\mathrm b}$ we have $\DeltaE(a_{\mathrm b})\leq\DeltaE_0$ and
+    $C_{\mathrm b}\succeq(c/\beta)\Id$ by \Cref{lem:cov-BW}. In continuous time the lower
+    envelope $\ell$ of \Cref{lem:cov-cont} started from $\lambda=c/\beta\leq1/\beta$ is
+    nondecreasing, since
+    $\ell'(t)=\lambda e^t(1-\beta\lambda)/(1+\beta\lambda(e^t-1))^2\geq0$, so
+    $C_t\succeq(c/\beta)\Id$ for the whole Fisher--Rao stage; then \eqref{eq:FR-W2} and
+    \eqref{eq:dissipation} give
+    $\tfrac{\dd}{\dd t}\DeltaE(a_t)\leq-\tfrac c\kappa\DeltaE(a_t)$, whence the first entry in
+    the minimum. Alternatively
+    $\widehat C_{\mathrm b}\succeq\tfrac c\beta C_\star^{-1}\succeq\tfrac c\kappa\Id$, so
+    \Cref{thm:glob-cont} restarted at $a_{\mathrm b}$ gives the second entry. The big-$O$ form
+    uses $T_{\BW}(c)\leq(2\beta)^{-1}\log(1/(1-c))$ for fixed $c$.
+
+    Discretely, \Cref{lem:cov-BW} gives $C_{\mathrm b}\succeq(c/\beta)\Id$,
+    $C_{\mathrm b}\preceq\lambda_{\max}\Id$ and $\DeltaE(a_{\mathrm b})\leq\DeltaE_0$, and the
+    covariance envelopes of \Cref{lem:cov-Riem,lem:cov-KL} started from
+    $L_0=\min\{c/\beta,1/(2\beta)\}\geq c/(2\beta)$ are nondecreasing in $n$, since their
+    $y$-variables are nonincreasing. Freezing the floor at $c/(2\beta)$ in the per-step
+    contractions of \Cref{thm:glob-Riem,thm:glob-KL} gives
+    $\DeltaE(a_{n+1})\leq(1-\tfrac{c\Delta t}{4\kappa})\DeltaE(a_n)$ for \eqref{upd:Riem} and
+    $\DeltaE(a_{n+1})\leq(1-\tfrac{c\Delta t}{16\kappa})\DeltaE(a_n)$ for \eqref{upd:KL},
+    whence the stated count.
+\end{proof}
+
+The second initializer is available whenever a pointwise Hessian can be queried at a single
+point, and it lands on the full curvature band rather than only on its lower edge.
+
+\begin{definition}[Quadratic rescue]\label{def:rescue}
+    Given $m_{\mathrm{in}}\in\R^{N_\theta}$, query the oracle once at $m_{\mathrm{in}}$,
+    \begin{equation*}
+        G_{\mathrm{in}}:=\nabla V(m_{\mathrm{in}}),
+        \qquad
+        H_{\mathrm{in}}:=\nabla^2V(m_{\mathrm{in}}),
+    \end{equation*}
+    and set
+    \begin{equation*}
+        \boxed{\;
+        m_0:=m_{\mathrm{in}}-H_{\mathrm{in}}^{-1}G_{\mathrm{in}},
+        \qquad
+        C_0:=H_{\mathrm{in}}^{-1}.\;}
+    \end{equation*}
+\end{definition}
+
+\begin{lemma}[Curvature-scale covariance rescue]\label{lem:rescue-band}
+    Under \Cref{assump:logconcave-smooth}, \Cref{def:rescue} gives
+    $\tfrac1\beta\Id\preceq C_0\preceq\tfrac1\alpha\Id$.
+\end{lemma}
+
+\begin{proof}
+    We have $\alpha\Id\preceq H_{\mathrm{in}}\preceq\beta\Id$, and the matrix inverse is
+    operator antitone on $\SPD(N_\theta)$, so
+    $\tfrac1\beta\Id\preceq H_{\mathrm{in}}^{-1}\preceq\tfrac1\alpha\Id$.
+\end{proof}
+
+\begin{theorem}[Exact one-query recovery of Gaussian targets]\label{thm:rescue-Gauss}
+    Suppose $V(\theta)=\tfrac12(\theta-\mu)^\top H(\theta-\mu)+\mathrm{const.}$ with $H\succ0$.
+    Then \Cref{def:rescue} gives $m_0=\mu$ and $C_0=H^{-1}$, so $a_0=a_\star$ and
+    $\DeltaE(a_0)=0$, and both \eqref{upd:Riem} and \eqref{upd:KL} remain at $a_\star$. Over
+    the class of unknown Gaussian targets the oracle complexity is exactly one query.
+\end{theorem}
+
+\begin{proof}
+    For a quadratic potential $\nabla V(m_{\mathrm{in}})=H(m_{\mathrm{in}}-\mu)$ and
+    $\nabla^2V(m_{\mathrm{in}})=H$, so
+    $m_0=m_{\mathrm{in}}-H^{-1}H(m_{\mathrm{in}}-\mu)=\mu$ and $C_0=H^{-1}$. The target belongs
+    to the Gaussian family, so $a_\star=(\mu,H^{-1})=a_0$; there $g(a_\star)=0$ and
+    $A(a_\star)=H=C_\star^{-1}$, so both covariance maps preserve $H^{-1}$ and both mean maps
+    preserve $\mu$. For necessity, an algorithm making zero queries is independent of
+    $(\mu,H)$, while one query at any $\theta$ returns $H(\theta-\mu)$ and $H$, from which
+    $\mu=\theta-H^{-1}G$ and $C_\star=H^{-1}$.
+\end{proof}
+
+\begin{theorem}[Burn-in-free complexity after quadratic rescue]\label{thm:burnin-rescue}
+    Assume \Cref{assump:logconcave-smooth} and initialize by \Cref{def:rescue}. Then
+    $\lambda_0\geq1/\beta$, so in the covariance envelopes of \Cref{lem:cov-Riem,lem:cov-KL}
+    one has $L_0=\min\{\lambda_0,\tfrac1{2\beta}\}=\tfrac1{2\beta}$ and $y_0=2$; the envelopes
+    decrease from $y_0=2$ to their limits, so $C_n\succeq\tfrac1{2\beta}\Id$ for all $n\geq0$
+    and $N_{\cov,-}^{\Riem}=N_{\cov,-}^{\KL}=0$. Consequently, running \eqref{upd:Riem} with
+    $0<\Delta t\leq1/(2\beta\lambda_{\max})$, or \eqref{upd:KL} with
+    $0<\Delta t\leq1/(\beta\lambda_{\max})$, gives for every $\delta\in(0,\DeltaE_0)$
+    \begin{equation*}
+        N_{\mathrm{rescue}\to\bullet}(\delta)
+        =
+        1+O\!\left(\frac\kappa{\Delta t}\logp\frac{\DeltaE_0}\delta\right),
+        \qquad \bullet\in\{\Riem,\KL\},
+    \end{equation*}
+    where the additive $1$ counts the single deterministic Hessian query and
+    $\DeltaE_0=\DeltaE(a_0)$ is finite, and equals $0$ for Gaussian targets by
+    \Cref{thm:rescue-Gauss}. The stage of length $\logp(1/(\beta\lambda_0))$ is eliminated.
+\end{theorem}
+
+\begin{proof}
+    By \Cref{lem:rescue-band}, $C_0\succeq\tfrac1\beta\Id\succ\tfrac1{2\beta}\Id$, so
+    $L_0=\tfrac1{2\beta}$ and $y_0=2$. For \eqref{upd:Riem} the envelope of
+    \Cref{lem:cov-Riem} is $y_n=y_\infty+(2-y_\infty)e^{-n\Delta t}$ with
+    $y_\infty\in[1,e-1)\subset[1,2)$, which decreases from $2$; for \eqref{upd:KL} the envelope
+    of \Cref{lem:cov-KL} is $y_n=1+(1+\Delta t)^{-n}$, which decreases from $2$ to $1$. In both
+    cases $y_n\leq2$, that is $C_n\succeq\tfrac1{2\beta}\Id$, for every $n\geq0$, and the
+    counts $N_{\cov,-}^\bullet=\lceil\Delta t^{-1}\logp1\rceil=0$. With the covariance floor
+    $\tfrac1{2\beta}$ in force from $n=0$, the per-step contractions of
+    \Cref{thm:glob-Riem,thm:glob-KL} apply from $n=0$, which gives the stated count.
+\end{proof}
+
+\begin{remark}[Two initializers, one oracle distinction]
+    Both warm starts delete the $\logp(1/(\beta\lambda_0))$ stage but sit in different oracle
+    models and geometries. The transport warm start of \Cref{thm:burnin-BW} is
+    expectation-level: it uses only $g(a)$ and $A(a)$, never a pointwise Hessian, and inflates
+    the covariance additively, so it guarantees only the floor $C_0\succeq\tfrac c\beta\Id$ at
+    the lower band edge without matching the pointwise curvature. The quadratic rescue of
+    \Cref{def:rescue} is a single pointwise-Hessian query and lands directly on the full
+    curvature band $[\tfrac1\beta,\tfrac1\alpha]$, exactly recovering Gaussian targets. Thus
+    transport trades a weaker oracle for a coarser landing scale, while the rescue trades one
+    Hessian evaluation for exact Gaussian recovery; the ensuing Fisher--Rao iterations are
+    identical.
+\end{remark}
+
+\begin{remark}[What the warm starts do not remove]
+    Both devices remove only the covariance burn-in stage. They do not improve the fixed-step
+    global-localization factor $\kappa/\Delta t$, since the lower construction of
+    \Cref{thm:sharp-disc} already starts at $c_0=1/\kappa$, after the covariance has reached
+    the curvature scale; and they do not improve the local stiffness factor of
+    \Cref{sec:local}. Covariance warm-up, fixed-step global localization and local stiffness
+    are three distinct issues.
+\end{remark}
+
+\input{sections/02-nonconvex-part}
+
+% SOURCES:
+%   §2.1
+%     natural-gradient.tex l.111-124 (Assumption, section opening prose) -> assump:logconcave-smooth
+%     improved-global-local.tex l.339-395 (g(a), A(a), R(a), first-order conditions, splitting) -> eq:gA, eq:first-order, eq:E-split
+%     improved-global-local.tex l.494-616 (lem:metric-dissipation) -> eq:FR-metric, eq:differential, eq:FR-gradient, eq:grad-norm, eq:dissipation
+%     natural-gradient.tex l.329-332 (FR metric display, voice) -> eq:FR-metric
+%     improved-global-local.tex l.620-691 (lem:W2-PL, lem:FR-W2) -> eq:W2-PL, eq:FR-W2
+%       [these supersede the red TODO tcolorbox at natural-gradient.tex l.155, which is dropped]
+%   §2.2
+%     improved-global-local.tex l.821-843 (lem:precision-duhamel) -> eq:precision-duhamel
+%     improved-global-local.tex l.845-883 (lem:cont-cov) -> lem:cov-cont
+%     improved-global-local.tex l.700-817 (lem:optimizer-whitening, lem:kappa-star-kappa) -> eq:whitening, eq:star-curvature, eq:lamzstar, eq:kappa-star-kappa
+%     improved-global-local.tex l.885-962 (thm:cont-global) -> thm:glob-cont
+%       [supersedes natural-gradient.tex thm:glob-conv, which is not carried]
+%     improved-global-local.tex l.964-971 (rem: what kappa_star encodes) -> remark after thm:glob-cont
+%     natural-gradient.tex l.222-305 (rem:FR-init-cov, kept verbatim modulo notation;
+%       final sentence redirected from the cut WFR section to §2.6) -> rem:FR-init-cov
+%     improved-global-local.tex l.1614-1655 (thm:spiral-sharp) + l.1550-1612 (lem:spiral-kappa-star)
+%       + l.1236-1262 (lem:spiral-shadowing radius condition) -> thm:sharp-cont
+%     improved-global-local.tex l.1657-1683 (cor:cont-sharp) -> cor:sharp-cont
+%     improved-global-local.tex l.1685-1715 (Hessian-Lipschitz and scope remarks) -> scope remark
+%   §2.3
+%     natural-gradient.tex l.308-362 (splitting, Riemannian distance, forward/backward steps,
+%       boxed update; kept near-verbatim) -> eq:Riem-dist, upd:Riem
+%     natural-gradient.tex l.366-397 (prop:upd-map-Riem) -> prop:upd-map-Riem
+%     improved-global-local.tex l.1845-1847 ("exponential retraction") -> retraction remark
+%     improved-global-local.tex l.1719-1839 (lem:Riem-cov) -> lem:cov-Riem
+%     improved-global-local.tex l.1879-1991 (lem:Riem-descent) -> lem:descent-Riem (proof in app:det-proofs)
+%     improved-global-local.tex l.1993-2037 (thm:Riem-global) -> thm:glob-Riem
+%       [supersedes natural-gradient.tex thm:conv-Riem, which is not carried]
+%   §2.4
+%     natural-gradient.tex l.504-541 (motivating sentence, forward/backward steps, boxed update,
+%       Bregman identification with psi; kept near-verbatim) -> upd:KL, eq:Bregman, eq:Bregman-potential
+%     improved-global-local-stoch.tex l.3994-4025 (lem:KL-argmin) -> forward-backward mirror sentence
+%     improved-global-local.tex l.2041-2104 (lem:KL-cov) -> lem:cov-KL
+%     improved-global-local.tex l.2164-2285 (prop:KL-onestep) -> prop:onestep-KL (proof in app:det-proofs)
+%     improved-global-local.tex l.2110-2113 (forward vs reverse divergence) -> sentence after prop:onestep-KL
+%     improved-global-local.tex l.2287-2325 (thm:KL-global) -> thm:glob-KL
+%       [supersedes natural-gradient.tex thm:conv-KL, which is not carried]
+%   §2.5
+%     improved-global-local.tex l.2918-2969 (thm:disc-global-sharp) -> thm:sharp-disc
+%     improved-global-local.tex l.2971-2983 (cor:disc-global-sharp) -> cor:sharp-disc
+%     improved-global-local.tex l.2985-2999 (rem: why the construction is slow) -> mechanism remark
+%     improved-global-local.tex l.3001-3008 (rem: limitations) -> scope remark
+%     improved-global-local.tex l.2330-2342 (localization scale, lead-in) -> lead-in sentence
+%   §2.6
+%     improved-global-local.tex l.4315-4351 / improved-global-local-stoch.tex l.1818-1829
+%       (multiplicative vs additive covariance growth) -> lead-in contrast sentence
+%     improved-global-local.tex l.4382-4452 (lem:W-cov-bootstrap) + l.4587-4642 (lem:one-step-W-bootstrap)
+%       -> lem:cov-BW, eq:W-flow, eq:BW-step
+%     improved-global-local.tex l.4454-4554 (thm:cont-W-to-FR, global stage only)
+%       + l.4644-4751 (thm:disc-W-to-FR, global stage only) -> thm:burnin-BW
+%     improved-global-local-stoch.tex l.1908-1931 (def:rescue, lem:rescue-band) -> def:rescue, lem:rescue-band
+%     improved-global-local-stoch.tex l.1933-1948 (thm:gauss-recovery) -> thm:rescue-Gauss
+%     improved-global-local-stoch.tex l.1950-2004 (thm:disc-rescue-to-FR, global stage only)
+%       + l.2231-2234 (lem:rescue-energy, finiteness of Delta_0) -> thm:burnin-rescue
+%     improved-global-local-stoch.tex l.2006-2018 (rem:two-initializers) -> oracle-tradeoff remark
+%     improved-global-local.tex l.4753-4764 (rem:transport-bootstrap-caveat) -> caveat remark

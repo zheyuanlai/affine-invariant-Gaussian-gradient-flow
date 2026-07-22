@@ -1,0 +1,401 @@
+\section{Deterministic one-step estimates}
+\label{app:det-proofs}
+
+We prove the two one-step estimates used in \Cref{sec:global}, namely
+\Cref{lem:descent-Riem} for the Riemannian retraction and \Cref{prop:onestep-KL} for the
+KL/Bregman step, together with the relative smoothness of $\calE_2$ that identifies the
+Bregman geometry of the latter. Throughout $a=(m,C)$ is a Gaussian parameter, $g:=g(a)$,
+$A:=A(a)$, $R:=R(a)=C^{-1}-A$, and $\calE=\calE_1+\calE_2$ as in \eqref{eq:E-split}. Only
+convexity and $\beta$-smoothness of $V$, that is $0\preceq\nabla^2V\preceq\beta\Id$, are used;
+both hold under \Cref{assump:logconcave-smooth}.
+
+\subsection{Two scalar inequalities}
+
+\begin{lemma}\label{lem:scalar-retraction}
+    For every $w\in[-1,1]$,
+    \begin{equation*}
+        \left(e^{w/2}-1-\frac w2\right)+\frac12\left(e^{w/2}-1\right)^2
+        \leq\frac{w^2}2 .
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    Put $v=w/2\in[-1/2,1/2]$. Since
+    $(e^v-1)+\tfrac12(e^v-1)^2=\tfrac12(e^{2v}-1)$, the desired inequality is equivalent, with
+    $x=2v=w\in[-1,1]$, to $e^x\leq1+x+x^2$. Indeed
+    \begin{equation*}
+        e^x-1-x=\sum_{k\geq2}\frac{x^k}{k!}
+        \leq x^2\sum_{k\geq2}\frac{|x|^{k-2}}{k!}
+        \leq(e-2)x^2<x^2,
+    \end{equation*}
+    which proves the claim.
+\end{proof}
+
+\begin{lemma}\label{lem:scalar-KL}
+    Let $K\geq1$, $0<\Delta t\leq1/K$, $\mu\in[0,K]$, and
+    $b:=\sqrt{(1+\Delta t)/(1+\Delta t\,\mu)}$. Then
+    \begin{equation}\label{eq:scalar-KL}
+        \mu(b-1)-\log b+\frac K2(b-1)^2
+        \leq
+        -\frac1{2\Delta t}\bigl(b^2-1-2\log b\bigr).
+    \end{equation}
+\end{lemma}
+
+\begin{proof}
+    Because $K\leq1/\Delta t$ and $(b-1)^2\geq0$, it suffices to replace $K$ on the left by
+    $1/\Delta t$. The relation between $b$ and $\mu$ is
+    $\mu=((1+\Delta t)b^{-2}-1)/\Delta t$. Multiplying the resulting inequality by $\Delta t$
+    and moving all terms to the left, define
+    \begin{equation*}
+        G(b):=\Delta t\,\mu(b-1)-\Delta t\log b+\tfrac12(b-1)^2+\tfrac12(b^2-1-2\log b),
+    \end{equation*}
+    so that $G(1)=0$ and a direct differentiation gives
+    \begin{equation*}
+        G'(b)=\frac{(b-1)\bigl(2b^3-(1+\Delta t)(b+2)\bigr)}{b^3}.
+    \end{equation*}
+    Since $0\leq\Delta t\,\mu\leq\Delta t\,K\leq1$, we have
+    $b\in[\sqrt{(1+\Delta t)/2},\sqrt{1+\Delta t}]$. The polynomial
+    $p(b):=2b^3-(1+\Delta t)(b+2)$ is convex on $(0,\infty)$, and at the two endpoints of this
+    interval
+    \begin{equation*}
+        p\bigl(\sqrt{(1+\Delta t)/2}\bigr)=-2(1+\Delta t)<0,
+        \qquad
+        p\bigl(\sqrt{1+\Delta t}\bigr)=(1+\Delta t)\bigl(\sqrt{1+\Delta t}-2\bigr)<0,
+    \end{equation*}
+    using $\Delta t\leq1$. Convexity therefore implies $p(b)<0$ throughout the interval, so
+    $G'(b)\geq0$ for $b\leq1$ and $G'(b)\leq0$ for $b\geq1$. Thus $G$ attains its maximum at
+    $b=1$, where it vanishes, proving \eqref{eq:scalar-KL}.
+\end{proof}
+
+\subsection{Retraction smoothness and the Riemannian descent estimate}
+
+\begin{proof}[Proof of \Cref{lem:descent-Riem}]
+    Let $Z\sim\N(0,\Id)$ and introduce the coupling
+    \begin{equation*}
+        X:=m+C^{1/2}Z\sim\rho_a,
+        \qquad
+        Y:=m+u+C^{1/2}e^{W/2}Z\sim\rho_{\Retr_a(\zeta)},
+    \end{equation*}
+    which is legitimate because $e^{W/2}$ is symmetric, so $Y$ is Gaussian with mean $m+u$ and
+    covariance $C^{1/2}e^WC^{1/2}$. Write $E_W:=e^{W/2}-\Id$ and $M:=C^{1/2}AC^{1/2}$. The
+    entropy change is exact,
+    \begin{equation*}
+        \calE_1(\Retr_a(\zeta))-\calE_1(a)=-\tfrac12\Tr W,
+    \end{equation*}
+    and by $\beta$-smoothness of $V$,
+    \begin{equation*}
+        \calE_2(\Retr_a(\zeta))-\calE_2(a)
+        \leq
+        \E\bigl[\nabla V(X)^\top(Y-X)\bigr]+\frac\beta2\E\norm{Y-X}^2 .
+    \end{equation*}
+    Because $Y-X=u+C^{1/2}E_WZ$, $\E[\nabla V(X)]=-g$, and Gaussian integration by parts gives
+    $\E[Z\nabla V(X)^\top]=C^{1/2}A$, the first-order contribution equals
+    $-g^\top u+\Tr(E_WM)$. The cross term in the quadratic contribution vanishes, and
+    $C\preceq\Lambda\Id$ yields
+    \begin{equation*}
+        \frac\beta2\E\norm{Y-X}^2
+        \leq
+        \frac K2u^\top C^{-1}u+\frac K2\norm{E_W}_\Frob^2 .
+    \end{equation*}
+    On the other hand, since $\grad\calE(a)=(-Cg,-CRC)$ and $C^{1/2}RC^{1/2}=\Id-M$,
+    \begin{equation*}
+        \inner{\grad\calE(a)}\zeta_a=-g^\top u-\tfrac12\Tr((\Id-M)W).
+    \end{equation*}
+    Subtracting this linear term from the entropy and covariance contributions leaves
+    \begin{equation*}
+        \Theta
+        :=\Tr\left[\left(e^{W/2}-\Id-\frac W2\right)M\right]
+          +\frac K2\norm{e^{W/2}-\Id}_\Frob^2 .
+    \end{equation*}
+    The matrix $N_W:=e^{W/2}-\Id-W/2$ is positive semidefinite while $0\preceq M\preceq K\Id$,
+    hence $\Tr(N_WM)\leq K\Tr N_W$. Diagonalizing $W$ and applying
+    \Cref{lem:scalar-retraction} eigenvalue by eigenvalue gives
+    \begin{equation*}
+        \Theta
+        \leq K\sum_i\left[e^{w_i/2}-1-\frac{w_i}2+\frac12(e^{w_i/2}-1)^2\right]
+        \leq\frac K2\norm W_\Frob^2 .
+    \end{equation*}
+    Combining the mean and covariance estimates and using
+    $\norm\zeta_a^2=u^\top C^{-1}u+\tfrac12\norm W_\Frob^2$ proves
+    \eqref{eq:Riem-retraction-smooth}.
+
+    For the deterministic step take $\zeta=-\Delta t\grad\calE(a)=(\Delta t\,Cg,\Delta t\,CRC)$,
+    so that
+    \begin{equation*}
+        W=\Delta t\,C^{1/2}RC^{1/2}=\Delta t\bigl(\Id-C^{1/2}AC^{1/2}\bigr).
+    \end{equation*}
+    The eigenvalues of the matrix in parentheses lie in $[1-K,1]$, so
+    $\norm W_\op\leq\Delta t\,K\leq1$. Moreover
+    $\inner{\grad\calE(a)}\zeta_a=-\Delta t\,\Gradnorm(a)^2$ and
+    $\norm\zeta_a^2=\Delta t^2\Gradnorm(a)^2$, and substitution into
+    \eqref{eq:Riem-retraction-smooth} gives
+    \begin{equation*}
+        \calE(a_{n+1})\leq\calE(a_n)-\Delta t(1-K\Delta t)\Gradnorm(a_n)^2 .
+    \end{equation*}
+    The final assertion is the case $\Delta t\leq1/(2K)$.
+\end{proof}
+
+\subsection{The KL/Bregman step: variational characterization}
+
+\begin{lemma}\label{lem:KL-argmin}
+    The update \eqref{upd:KL} is the forward--backward proximal step
+    \begin{equation}\label{eq:KL-argmin}
+        a_{n+1}
+        =\argmin_{a'=(m',C')}
+        \Bigl\{
+            \Delta t\inner{\nabla\calE_2(a_n)}{a'-a_n}
+            +\Delta t\,\calE_1(a')
+            +\KL(\rho_{a'}\|\rho_{a_n})
+        \Bigr\},
+    \end{equation}
+    which linearizes the potential $\calE_2$ explicitly and treats the entropy $\calE_1$
+    implicitly, and its minimizer is
+    \begin{equation*}
+        m_{n+1}=m_n+\Delta t\,C_ng(a_n),
+        \qquad
+        C_{n+1}=(1+\Delta t)\bigl(C_n^{-1}+\Delta t\,A(a_n)\bigr)^{-1}.
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    The Gaussian KL splits as
+    \begin{equation*}
+        \KL(\rho_{a'}\|\rho_{a_n})
+        =\tfrac12(m_n-m')^\top C_n^{-1}(m_n-m')
+        +\tfrac12\bigl[\Tr(C_n^{-1}C')-N_\theta+\log\det C_n-\log\det C'\bigr],
+    \end{equation*}
+    so the objective in \eqref{eq:KL-argmin} decouples in $m'$ and $C'$. The $m'$-part is
+    $-\Delta t\,g(a_n)^\top(m'-m_n)+\tfrac12(m'-m_n)^\top C_n^{-1}(m'-m_n)$, minimized at
+    $m'-m_n=\Delta t\,C_ng(a_n)$. The $C'$-part, dropping $C'$-independent terms and using
+    $\nabla_C\calE_2=\tfrac12A$ and $\calE_1(C')=-\tfrac12\log\det C'$, is
+    \begin{equation*}
+        \tfrac{\Delta t}2\Tr(A(a_n)C')+\tfrac12\Tr(C_n^{-1}C')
+        -\tfrac{1+\Delta t}2\log\det C'
+        =\tfrac12\Tr\bigl((C_n^{-1}+\Delta t\,A(a_n))C'\bigr)
+        -\tfrac{1+\Delta t}2\log\det C',
+    \end{equation*}
+    whose stationarity condition
+    $\tfrac12(C_n^{-1}+\Delta t\,A(a_n))=\tfrac{1+\Delta t}2(C')^{-1}$ gives the stated
+    covariance. Both objectives are strictly convex in their arguments, since $C_n^{-1}\succ0$
+    and $-\log\det$ is convex, so the stationary points are the minimizers.
+\end{proof}
+
+\subsection{Relative smoothness of the potential part}
+
+\begin{proposition}\label{prop:smooth-Bregman}
+    Under \Cref{assump:logconcave-smooth}, let $a_n=(m_n,C_n)$ satisfy
+    $\lambda_{\min}\Id\preceq C_n\preceq\lambda_{\max}\Id$. Then $\calE_2$ is $L$-smooth with
+    respect to the local Bregman divergence $D(\cdot,a_n)=\KL(\rho_\cdot\|\rho_{a_n})$ of
+    \eqref{eq:Bregman}: for every $a=(m,C)$ with
+    $\lambda_{\min}\Id\preceq C\preceq\lambda_{\max}\Id$,
+    \begin{equation*}
+        \calE_2(a)\leq\calE_2(a_n)+\inner{\nabla\calE_2(a_n)}{a-a_n}+L\,D(a,a_n),
+        \qquad
+        L=\beta\lambda_{\max}.
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    We consider the displacement from $a_n=(m_n,C_n)$ to $a=(m,C)$ and denote the direction
+    $u=m-m_n$ and $H=B-B_n$, where $M:=C_n^{-1/2}CC_n^{-1/2}$, $B_n:=C_n^{1/2}$ and
+    $B:=C_n^{1/2}M^{1/2}$, so that $BB^\top=C$. Under this formulation we write
+    $\calE_2(m,B):=\E_{\xi\sim\N(0,\Id)}[V(m+B\xi)]$ and denote the trajectory
+    \begin{equation*}
+        \varphi(t)=\E_{\xi\sim\N(0,\Id)}\bigl[V(m_n+tu+(B_n+tH)\xi)\bigr].
+    \end{equation*}
+    Writing $X_t=m_n+tu+(B_n+tH)\xi$,
+    \begin{equation*}
+        \varphi'(t)=\E\bigl[\nabla V(X_t)^\top(u+H\xi)\bigr],
+        \qquad
+        \varphi''(t)=\E\bigl[(u+H\xi)^\top\nabla^2V(X_t)(u+H\xi)\bigr],
+    \end{equation*}
+    and $\nabla^2V\preceq\beta\Id$ gives $\varphi''(t)\leq\beta(\norm u^2+\norm H_\Frob^2)$. As
+    Taylor's expansion gives $\varphi(1)=\varphi(0)+\varphi'(0)+\int_0^1(1-s)\varphi''(s)\dd s$,
+    \begin{equation*}
+        \varphi(1)-\varphi(0)-\varphi'(0)\leq\frac\beta2\bigl(\norm u^2+\norm H_\Frob^2\bigr),
+    \end{equation*}
+    which is equivalent to
+    \begin{equation*}
+        \calE_2(a)-\calE_2(a_n)
+        -\inner{\nabla_m\calE_2(a_n)}u
+        -\inner{\nabla_B\calE_2(a_n)}H
+        \leq\frac\beta2\bigl(\norm u^2+\norm H_\Frob^2\bigr).
+    \end{equation*}
+    Denote the gradient of $\calE_2$ with respect to $C$ by
+    \begin{equation*}
+        G_n:=\nabla_C\calE_2(a_n)=\tfrac12\E_{\rho_{a_n}}[\nabla^2V(\theta)]=\tfrac12A(a_n),
+    \end{equation*}
+    where $G_n\succeq0$ because $V$ is convex. Since
+    $\nabla_B\calE_2(a_n)=\nabla_C\calE_2(a_n)\cdot2B_n=2G_nB_n$,
+    \begin{align*}
+        \inner{\nabla_B\calE_2(a_n)}H
+        &=\Tr\bigl((2G_nB_n)^\top H\bigr)=\Tr\bigl(G_n(B_nH+HB_n)\bigr)\\
+        &\leq\Tr\bigl(G_n(B_nH^\top+HB_n+HH^\top)\bigr)
+        =\inner{\nabla_C\calE_2(a_n)}{C-C_n},
+    \end{align*}
+    the inequality coming from $G_n\succeq0$ and $HH^\top\succeq0$. We therefore obtain
+    \begin{equation*}
+        \calE_2(a)
+        \leq\calE_2(a_n)+\inner{\nabla\calE_2(a_n)}{a-a_n}
+        +\frac\beta2\bigl(\norm u^2+\norm H_\Frob^2\bigr).
+    \end{equation*}
+
+    It remains to connect $\tfrac\beta2(\norm u^2+\norm H_\Frob^2)$ to the divergence $D$. For
+    the mean part,
+    \begin{equation*}
+        \frac\beta2\norm u^2
+        \leq\beta\lambda_{\max}\cdot\frac12u^\top C_n^{-1}u
+        \leq\beta\lambda_{\max}D^m(m,m_n).
+    \end{equation*}
+    For the covariance part, $D^C(C,C_n)=\tfrac12(\Tr M-\log\det M-N_\theta)$, and the
+    eigenvalues $\eta_1,\ldots,\eta_{N_\theta}$ of $M$ satisfy
+    $\eta_i\in[\lambda_{\min}/\lambda_{\max},\lambda_{\max}/\lambda_{\min}]$. This gives
+    \begin{equation*}
+        D^C(C,C_n)
+        =\frac12\sum_{i=1}^{N_\theta}(\eta_i-\log\eta_i-1)
+        \geq\frac12\sum_{i=1}^{N_\theta}(\sqrt{\eta_i}-1)^2
+        =\frac12\norm{M^{1/2}-\Id}_\Frob^2
+        \geq\frac1{2\lambda_{\max}}\norm H_\Frob^2,
+    \end{equation*}
+    where the first inequality comes from $\log x\leq x-1$ and the second from
+    $H=B-B_n=C_n^{1/2}(M^{1/2}-\Id)$ together with $C_n\preceq\lambda_{\max}\Id$. These
+    collectively give
+    $\tfrac\beta2(\norm u^2+\norm H_\Frob^2)\leq L\,D(a,a_n)$ with $L=\beta\lambda_{\max}$,
+    which completes the proof.
+\end{proof}
+
+\subsection{Forward-KL descent and the Wasserstein-gradient lower bound}
+
+\begin{proof}[Proof of \Cref{prop:onestep-KL}]
+    Set
+    \begin{equation*}
+        M:=C_n^{1/2}A(a_n)C_n^{1/2},
+        \qquad
+        B:=\sqrt{1+\Delta t}\,(\Id+\Delta t\,M)^{-1/2},
+    \end{equation*}
+    so that $0\preceq M\preceq K\Id$, $B$ is a symmetric function of $M$, and
+    $C_{n+1}=C_n^{1/2}B^2C_n^{1/2}$ by \Cref{lem:KL-argmin}. With $\xi\sim\N(0,\Id)$, couple
+    \begin{equation*}
+        X:=m_n+C_n^{1/2}\xi\sim\rho_{a_n},
+        \qquad
+        Y:=m_n+\Delta t\,C_ng+C_n^{1/2}B\xi\sim\rho_{a_{n+1}} .
+    \end{equation*}
+    The entropy change is $\calE_1(a_{n+1})-\calE_1(a_n)=-\log\det B$. Writing
+    $E:=B-\Id$, the $\beta$-smoothness estimate of the proof of \Cref{lem:descent-Riem} applies
+    verbatim with $E$ in place of $e^{W/2}-\Id$, since both are symmetric functions of $M$ and
+    the computation uses only
+    $V(Y)\leq V(X)+\nabla V(X)^\top(Y-X)+\tfrac\beta2\norm{Y-X}^2$, $\E[\nabla V(X)]=-g$, the
+    Price identity $\E[\xi\nabla V(X)^\top]=C_n^{1/2}A$, and $C_n\preceq\Lambda\Id$. It gives
+    \begin{equation*}
+        \calE_2(a_{n+1})-\calE_2(a_n)
+        \leq
+        -\Delta t\,g^\top C_ng+\Tr(EM)
+        +\frac{K\Delta t^2}2g^\top C_ng+\frac K2\norm E_\Frob^2 .
+    \end{equation*}
+    Because $K\Delta t\leq1$, the mean contribution is at most
+    $-\tfrac{\Delta t}2g^\top C_ng$, which is exactly $-\Delta t^{-1}$ times the mean part
+    $\tfrac{\Delta t^2}2g^\top C_ng$ of $\KL(\rho_{a_{n+1}}\|\rho_{a_n})$. For the covariance
+    part, let $\mu_i$ be the eigenvalues of $M$ and
+    $b_i=\sqrt{(1+\Delta t)/(1+\Delta t\,\mu_i)}$ the aligned eigenvalues of $B$; adding the
+    entropy change, the covariance contribution is
+    \begin{equation*}
+        \sum_i\left[\mu_i(b_i-1)-\log b_i+\frac K2(b_i-1)^2\right],
+    \end{equation*}
+    which by \Cref{lem:scalar-KL} is at most
+    $-\tfrac1{2\Delta t}\sum_i(b_i^2-1-2\log b_i)$. Since $C_n^{-1}C_{n+1}$ has eigenvalues
+    $b_i^2$, this is exactly $-\Delta t^{-1}$ times the covariance part
+    $\tfrac12\sum_i(b_i^2-1-\log b_i^2)$ of $\KL(\rho_{a_{n+1}}\|\rho_{a_n})$. Adding the mean
+    and covariance parts proves the descent inequality.
+
+    For the lower bound, the mean part of the forward divergence is
+    \begin{equation*}
+        \frac12(m_{n+1}-m_n)^\top C_n^{-1}(m_{n+1}-m_n)
+        =\frac{\Delta t^2}2g^\top C_ng
+        \geq\frac{L\Delta t^2}2\norm g^2 .
+    \end{equation*}
+    For the covariance part, set $S:=C_n^{1/2}RC_n^{1/2}=\Id-M$ and
+    \begin{equation*}
+        Q:=C_n^{1/2}C_{n+1}^{-1}C_n^{1/2}=\frac{\Id+\Delta t\,M}{1+\Delta t}.
+    \end{equation*}
+    For $q>0$ one has
+    \begin{equation}\label{eq:KL-scalar-lower}
+        q^{-1}-1+\log q\geq\frac{(q-1)^2}{2\max\{q,1\}^2},
+    \end{equation}
+    since for $q\geq1$ the left side is $\int_1^q(t-1)t^{-2}\dd t\geq(q-1)^2/(2q^2)$, while for
+    $q\leq1$ it is $\int_q^1(1-t)t^{-2}\dd t\geq(1-q)^2/2$. The eigenvalues of $Q$ satisfy
+    \begin{equation*}
+        q_i-1=-\frac{\Delta t}{1+\Delta t}s_i,
+        \qquad
+        \max\{q_i,1\}\leq\frac{1+\Delta t\,K}{1+\Delta t},
+    \end{equation*}
+    with $s_i=1-\mu_i$ the eigenvalues of $S$, so applying \eqref{eq:KL-scalar-lower}
+    eigenvalue by eigenvalue gives
+    \begin{equation*}
+        \KL_C(\rho_{a_{n+1}}\|\rho_{a_n})
+        =\frac12\sum_i(q_i^{-1}-1+\log q_i)
+        \geq\frac{\Delta t^2}{4(1+\Delta t\,K)^2}\norm S_\Frob^2 .
+    \end{equation*}
+    Finally $\norm S_\Frob^2=\Tr(C_nRC_nR)=\Tr(C_n[RC_nR])\geq L\Tr(RC_nR)$, because
+    $RC_nR\succeq0$ and $C_n\succeq L\Id$. Adding the mean and covariance parts gives
+    \begin{equation*}
+        \KL(\rho_{a_{n+1}}\|\rho_{a_n})
+        \geq
+        \frac{L\Delta t^2}{4(1+\Delta t\,K)^2}
+        \bigl(\norm g^2+\Tr(RC_nR)\bigr)
+        =\frac{L\Delta t^2}{4(1+\Delta t\,K)^2}
+        \norm{\grad^{W_2}\calE(a_n)}_{W_2}^2,
+    \end{equation*}
+    which is the stated bound.
+\end{proof}
+
+\subsection{The computable entry gates}
+
+We prove \Cref{prop:entry-residual}. The two gates are the two basic inequalities of
+\Cref{sec:global} read in the direction of a stopping test.
+
+\begin{proof}[Proof of \Cref{prop:entry-residual}]
+    Write $R(a)=C^{-1}-A(a)$ for the precision residual, so that the Bures--Wasserstein
+    residual of the statement is
+    \[
+        \mathcal R_{\BW}(a)^2
+        =\norm{g(a)}^2+\Tr\bigl(R(a)CR(a)\bigr)
+        =\norm{\grad^{W_2}\calE(a)}_{W_2}^2 ,
+    \]
+    which is exactly the left-hand side of the Wasserstein
+    Polyak--{\L}ojasiewicz inequality \eqref{eq:W2-PL}. That inequality therefore reads
+    $\mathcal R_{\BW}(a)^2\geq2\alpha\,\DeltaE(a)$, and consequently
+    $\mathcal R_{\BW}(a_n)^2\leq2\alpha\,\delta_{\loc}$ forces
+    $\DeltaE(a_n)\leq\delta_{\loc}$. Every quantity entering
+    $\mathcal R_{\BW}(a_n)$ is an expectation under $\rho_{a_n}$ together with $C_n$ and
+    $\alpha$, so the test uses no information about $a_\star$.
+
+    For the intrinsic test, suppose $C_n\succeq\ell_n\Id$. The comparison
+    \eqref{eq:FR-W2} gives $\Gradnorm(a_n)^2\geq\alpha\ell_n\DeltaE(a_n)$, so
+    $\Gradnorm(a_n)^2\leq\alpha\ell_n\delta_{\loc}$ again forces
+    $\DeltaE(a_n)\leq\delta_{\loc}$. The first inequality in \eqref{eq:FR-W2} also gives
+    $\mathcal R_{\BW}(a_n)^2\leq2\Gradnorm(a_n)^2/\ell_n$, so a triggered Fisher--Rao gate
+    triggers the Bures--Wasserstein gate as well, which is the asserted comparison between
+    the two tests.
+
+    Finally, both deterministic schemes decrease the energy at the stepsizes of
+    \Cref{thm:glob-Riem,thm:glob-KL}, and the flow decreases it by
+    \eqref{eq:dissipation}. Hence $\DeltaE(a_k)\leq\DeltaE(a_n)\leq\delta_{\loc}$ for every
+    $k\geq n$, so once either test triggers the iterate remains in the certified sublevel
+    set permanently.
+\end{proof}
+
+% SOURCES:
+%   Proof of prop:entry-residual assembled from the two basic inequalities of Section 2
+%   (eq:W2-PL, eq:FR-W2, both proved there) plus the energy-descent property of the two
+%   schemes; cf. improved-global-local.tex l.4088-4176 (prop:entry-residual).
+%   improved-global-local.tex l.1850-1877 (lem:scalar-retraction) -> lem:scalar-retraction
+%   improved-global-local.tex l.2115-2162 (lem:scalar-KL), identical to
+%     improved-global-local-stoch.tex l.4030-4058 -> lem:scalar-KL
+%   improved-global-local.tex l.1879-1991 (lem:Riem-descent, retraction smoothness for
+%     arbitrary tangent directions and the deterministic descent step) -> proof of lem:descent-Riem
+%   improved-global-local-stoch.tex l.3994-4025 (lem:KL-argmin) -> lem:KL-argmin
+%   natural-gradient.tex l.564-644 (prop:conv-smooth-D, the author's own square-root-factor
+%     argument with the G_0 >= 0 step, base point renamed a_0 -> a_n) -> prop:smooth-Bregman
+%   improved-global-local.tex l.2164-2285 (prop:KL-onestep) and
+%     improved-global-local-stoch.tex l.4063-4118 (lem:KL-onestep-app, the self-contained
+%     version) -> proof of prop:onestep-KL

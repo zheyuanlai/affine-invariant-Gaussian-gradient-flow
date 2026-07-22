@@ -1,0 +1,188 @@
+\subsection{Stationary guarantees for non-logconcave targets}
+
+The convergence theory above uses \Cref{assump:logconcave-smooth} twice, once through the Wasserstein Polyak--{\L}ojasiewicz inequality on Gaussians and once through the covariance bootstrap. When $\rho_\post$ is not logconcave neither ingredient is available, but the flow \eqref{ODEs:NG} still dissipates energy at the rate of its own squared gradient norm, and this alone yields a stationarity guarantee.
+
+\begin{corollary}\label{cor:stationary-cont}
+    Suppose $\inf_{\Aspace} \calE > -\infty$. If the target distribution $\rho_\post$ is not logconcave, then along \eqref{ODEs:NG} we have the following stationary guarantee:
+    \begin{equation*}
+        \min_{0 \le t \le T} \| \grad^\FR \calE (a_t) \|_{a_t}^2 \le \frac{\calE (a_0) - \inf_{\Aspace} \calE}{T}.
+    \end{equation*}
+\end{corollary}
+
+\begin{proof}
+    Since \eqref{ODEs:NG} is a Riemannian gradient flow over the Gaussian manifold, then
+    \begin{equation*}
+        \frac{\dd \calE (a_t)}{\dd t} = - \| \grad^\FR \calE (a_t) \|_{a_t}^2
+    \end{equation*}
+    and hence
+    \begin{equation*}
+        \int_0^T \| \grad^\FR \calE (a_t) \|_{a_t}^2 \dd t = \calE (a_0) - \calE (a_T) \leq \calE (a_0) - \inf_{\Aspace} \calE,
+    \end{equation*}
+    this gives
+    \begin{equation*}
+        \min_{0 \le t \le T} \| \grad^\FR \calE (a_t) \|_{a_t}^2 \le \frac{\calE (a_0) - \inf_{\Aspace} \calE}{T}.
+    \end{equation*}
+\end{proof}
+
+The discretizations \eqref{upd:Riem} and \eqref{upd:KL} inherit no such statement. Without \Cref{assump:logconcave-smooth} the covariance is no longer confined to the band $[L_n, \lambda_{\max}]$ of \Cref{lem:cov-Riem} and \Cref{lem:cov-KL}, and a two-sided bound on $\nabla^2 V$ alone does not restore it. We exhibit the mechanism on a smooth one-dimensional target. For $R > 0$ let
+\begin{equation}\label{eq:double-well}
+    V_R (\theta) := \frac{\theta^2}{2} - 2R^2 \log \cosh (\theta / R), \qquad \theta \in \R,
+\end{equation}
+whose derivatives are
+\begin{equation*}
+    V_R' (\theta) = \theta - 2R \tanh (\theta/R), \qquad V_R'' (\theta) = 1 - 2\,\mathrm{sech}^2 (\theta/R),
+\end{equation*}
+so that $-1 \leq V_R'' \leq 1$ uniformly in $R$. For $X \sim \N (0, c)$ we write $A_R (c) := \E [V_R'' (X)]$. Since $V_R'' = -1 + 2 \tanh^2 (\cdot / R)$ and $\tanh^2 (y) \leq y^2$, we have the quantitative curvature bound
+\begin{equation}\label{eq:curvature-gap}
+    0 \leq A_R (c) + 1 = 2 \E \tanh^2 (\sqrt{c} Z / R) \leq \frac{2c}{R^2}, \qquad Z \sim \N (0,1),
+\end{equation}
+so that $A_R (c) \to -1$ as $R \to \infty$, uniformly on compact intervals of $c$. The potential \eqref{eq:double-well} is even, hence the symmetric mean $m = 0$ is invariant under all the covariance dynamics below and only the scalar covariance moves.
+
+\begin{proposition}[Riemannian covariance cascade]\label{prop:cascade-Riem}
+    Fix $\Delta t > 0$ and let
+    \begin{equation}\label{eq:cascade-map}
+        c_{n+1}^{(R)} = c_n^{(R)} \exp \left\{ \Delta t \left( 1 - c_n^{(R)} A_R (c_n^{(R)}) \right) \right\}, \qquad c_0^{(R)} = 1,
+    \end{equation}
+    be the covariance component of \eqref{upd:Riem} for the target $\exp (-V_R)$. For every $M > 0$ there are $R$ and a finite $n$ such that $c_n^{(R)} \geq M$. Consequently no bound depending only on $\sup_\theta |V_R'' (\theta)|$, $\Delta t$ and $c_0$ can control all trajectories of \eqref{upd:Riem} uniformly over this family.
+\end{proposition}
+
+\begin{proof}
+    Replacing $A_R$ by its limit $-1$ in \eqref{eq:cascade-map} gives the recursion
+    \begin{equation*}
+        \bar c_{n+1} = \bar c_n e^{\Delta t (1 + \bar c_n)}, \qquad \bar c_0 = 1,
+    \end{equation*}
+    which is increasing and diverges, so there is a finite $N$ with $\bar c_N > 2M$. By \eqref{eq:curvature-gap} the map $(R, c) \mapsto A_R (c)$ converges to $-1$ uniformly on every compact $c$-interval, and an induction over the first $N$ steps gives $c_n^{(R)} \to \bar c_n$ for $0 \leq n \leq N$ as $R \to \infty$. For $R$ sufficiently large we therefore have $c_N^{(R)} > M$.
+\end{proof}
+
+\begin{proposition}[Pole of the KL covariance resolvent]\label{prop:pole-KL}
+    For $\Delta t = 1$ the covariance component of \eqref{upd:KL} for the target $\exp (-V_R)$ reads
+    \begin{equation}\label{eq:KL-cov-map}
+        c_1 = \frac{2 c_0}{1 + c_0 A_R (c_0)}.
+    \end{equation}
+    There are sequences $\varepsilon \downarrow 0$ and $R_\varepsilon \to \infty$ such that, with $c_0 = 1 - \varepsilon$,
+    \begin{equation*}
+        c_1 = \Theta (\varepsilon^{-1}), \qquad \left( 1 - c_1 A_{R_\varepsilon} (c_1) \right)^2 = \Theta (\varepsilon^{-2}).
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    Take $0 < \varepsilon \leq 1/4$ and choose $R_\varepsilon^2 \geq 2 \varepsilon^{-2}$. By \eqref{eq:curvature-gap}, $0 \leq A_{R_\varepsilon} (1 - \varepsilon) + 1 \leq \varepsilon^2$, so the denominator of \eqref{eq:KL-cov-map} is
+    \begin{equation*}
+        1 + (1 - \varepsilon) A_{R_\varepsilon} (1 - \varepsilon) = \varepsilon + (1 - \varepsilon) \left( A_{R_\varepsilon} (1 - \varepsilon) + 1 \right) = \varepsilon + O (\varepsilon^2),
+    \end{equation*}
+    which is positive and gives $c_1 = \Theta (\varepsilon^{-1})$, in particular $c_1 \leq 2 / \varepsilon$. Applying \eqref{eq:curvature-gap} once more at $c_1$,
+    \begin{equation*}
+        0 \leq A_{R_\varepsilon} (c_1) + 1 \leq \frac{2 c_1}{R_\varepsilon^2} \leq 2 \varepsilon \leq \frac{1}{2},
+    \end{equation*}
+    whence $1 + c_1 / 2 \leq 1 - c_1 A_{R_\varepsilon} (c_1) = 1 + c_1 - c_1 (A_{R_\varepsilon} (c_1) + 1) \leq 1 + c_1$, and the residual scaling follows.
+\end{proof}
+
+The blow-up in \eqref{eq:KL-cov-map} is caused by the approaching loss of positive definiteness of the rational resolvent, and it occurs despite the uniform Hessian bound $|V_R''| \leq 1$; taken together, the two propositions show that a global smoothness constant cannot replace covariance control in a trajectory-wise Fisher--Rao theorem.
+
+\begin{remark}
+    The Bures--Wasserstein forward--backward method carries a different guarantee beyond log-concavity. Under the assumptions and stepsize $\eta$ of \citet[Theorem~5.5]{diao2023forward}, its iterates satisfy the running-minimum bound
+    \begin{equation*}
+        \min_{0 \leq n < N} \| \grad^\BW \calE (a_n) \|_\BW^2 \leq \frac{150 \{ \calE (a_0) - \inf \calE \}}{\eta N}.
+    \end{equation*}
+    This is a stationarity statement in the Bures--Wasserstein geometry and does not control the pointwise Fisher--Rao residual appearing in \Cref{prop:cascade-Riem,prop:pole-KL}. We use it only as a comparison between the two geometries.
+\end{remark}
+
+\subsection{A covariance-constrained KL scheme}
+
+\Cref{prop:cascade-Riem,prop:pole-KL} suggest constraining the covariance directly, as in \citet{sun2025natural}. Fix constants $0 < \lambda_- \leq \lambda_+ < \infty$ and define the covariance-truncated Gaussian parameter space
+\begin{equation*}
+    \Aspace' := \left\{ a = (m, C) \in \R^{N_\theta} \times \SPD (N_\theta) : \lambda_- I \preceq C \preceq \lambda_+ I \right\},
+\end{equation*}
+and assume the following global smoothness condition throughout this subsection.
+
+\begin{assumption}\label{assump:smooth}
+    The potential $V \in C^2 (\R^{N_\theta})$ satisfies
+    \begin{equation*}
+        \| \nabla^2 V (\theta) \|_\op \leq \beta, \qquad \forall \theta \in \R^{N_\theta},
+    \end{equation*}
+    equivalently $-\beta I \preceq \nabla^2 V (\theta) \preceq \beta I$.
+\end{assumption}
+
+For $C \in \SPD (N_\theta)$ with spectral decomposition $C = Q \diag (c_1, \ldots, c_{N_\theta}) Q^\top$ we define the clipping operator
+\begin{equation*}
+    \Clip_{[\lambda_-, \lambda_+]} (C) := Q \diag \left( \min \{ \lambda_+, \max \{ \lambda_-, c_1 \} \}, \ldots, \min \{ \lambda_+, \max \{ \lambda_-, c_{N_\theta} \} \} \right) Q^\top.
+\end{equation*}
+Clipping the spectrum is exactly the Bregman projection onto the covariance interval for the log-determinant divergence $D_\Phi (\cdot, \cdot)$ generated by $\Phi (C) = -\frac{1}{2} \log \det C$, which is the mechanism that lets the projected step retain a descent certificate.
+
+At $a_n = (m_n, C_n)$ we write
+\begin{equation*}
+    b_n := \E_{\N (m_n, C_n)} [\nabla_\theta V (\theta)], \qquad A_n := \E_{\N (m_n, C_n)} [\nabla_\theta \nabla_\theta V (\theta)],
+\end{equation*}
+so that \eqref{upd:KL} followed by the projection reads
+\begin{equation}\label{upd:clip-KL}
+    \begin{aligned}
+        m_{n+1} &= m_n - \Delta t\, C_n b_n, \\
+        \widetilde{C}_{n+1} &= (1 + \Delta t) (C_n^{-1} + \Delta t A_n)^{-1}, \qquad C_{n+1} = \Clip_{[\lambda_-, \lambda_+]} (\widetilde{C}_{n+1}).
+    \end{aligned}
+\end{equation}
+The inverse is well defined at the stepsizes considered below. The one-step stationarity measure of this split scheme is
+\begin{equation}\label{eq:split-stationarity}
+    \mathsf{S}_n := \frac{1}{2} \| m_{n+1} - m_n \|_{C_n^{-1}}^2 + \KL \left( \N (0, C_n) \, \middle\| \, \N (0, C_{n+1}) \right),
+\end{equation}
+where the orientation of the covariance divergence matters: the forward divergence, with $C_{n+1}$ in the first slot, carries the smoothness remainder, while the reverse one appearing in \eqref{eq:split-stationarity} is what the descent certificate leaves behind.
+
+\begin{theorem}\label{thm:clip-KL}
+    Under \Cref{assump:smooth}, if $a_0 \in \Aspace'$ and the stepsize satisfies $0 < \Delta t \leq \frac{1}{2 \beta \lambda_+}$, then the iterates of \eqref{upd:clip-KL} are well defined, remain in $\Aspace'$, and satisfy
+    \begin{equation}\label{eq:clip-descent}
+        \calE (a_{n+1}) \leq \calE (a_n) - \frac{1}{\Delta t} \mathsf{S}_n.
+    \end{equation}
+    Consequently, for every $N \geq 1$,
+    \begin{equation}\label{eq:clip-runmin}
+        \min_{0 \leq n < N} \mathsf{S}_n \leq \frac{\Delta t}{N} \left\{ \calE (a_0) - \calE (a_N) \right\}.
+    \end{equation}
+\end{theorem}
+
+\begin{proof}
+    Since $\lambda_- I \preceq C_n \preceq \lambda_+ I$ and $\| A_n \|_\op \leq \beta$, the stepsize restriction gives
+    \begin{equation*}
+        C_n^{-1} + \Delta t A_n \succeq (\lambda_+^{-1} - \Delta t \beta) I \succeq (2 \lambda_+)^{-1} I,
+    \end{equation*}
+    so $\widetilde{C}_{n+1}$ is well defined, and $C_{n+1} \in [\lambda_- I, \lambda_+ I]$ by construction. Writing $\calE = \Phi + \calE_2 + \mathrm{const}$ with $\Phi (C) = -\frac{1}{2} \log \det C$ and $\calE_2 (a) = \E_{\rho_a} [V (\theta)]$, a square-root coupling of $\rho_{a_n}$ and $\rho_{a_{n+1}}$ together with the scalar inequality $x - 1 - \log x \geq (\sqrt{x} - 1)^2$ shows that $\calE_2$ is relatively smooth with constant $L = 2 \beta \lambda_+$ with respect to the split divergence built from $\frac12 \| \cdot \|_{C_n^{-1}}^2$ and $\KL (\N (0, \cdot) \| \N (0, C_n))$. The pair $(m_{n+1}, C_{n+1})$ is the unique minimizer over $\Aspace'$ of the associated proximal model, because the covariance part of that model is, up to an additive constant, a multiple of $D_\Phi (\cdot, \widetilde{C}_{n+1})$, whose Bregman projection onto $[\lambda_- I, \lambda_+ I]$ is spectral clipping. Mean optimality then contributes $b_n^\top (m_{n+1} - m_n) = -\frac{2}{\Delta t} \cdot \frac12 \| m_{n+1} - m_n \|_{C_n^{-1}}^2$, while the constrained log-determinant three-point inequality contributes the reverse covariance divergence in \eqref{eq:split-stationarity}. Since $L \Delta t \leq 1$, the forward remainder is absorbed and the two estimates combine to \eqref{eq:clip-descent}. Summing \eqref{eq:clip-descent} over $0 \leq n < N$ and bounding the minimum by the average gives \eqref{eq:clip-runmin}. The details are given in \Cref{app:nonconvex}.
+\end{proof}
+
+\begin{corollary}\label{cor:clip-KL-full}
+    Under the assumptions of \Cref{thm:clip-KL}, the full successive-Gaussian reverse KL divergence satisfies
+    \begin{equation*}
+        \min_{0 \leq n < N} \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) \leq \frac{\lambda_+}{\lambda_-} \frac{\Delta t}{N} \left\{ \calE (a_0) - \calE (a_N) \right\}.
+    \end{equation*}
+\end{corollary}
+
+\begin{proof}
+    The reverse KL divergence between successive Gaussians splits as
+    \begin{equation*}
+        \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) = \KL \left( \N (0, C_n) \, \middle\| \, \N (0, C_{n+1}) \right) + \frac{1}{2} \| m_{n+1} - m_n \|_{C_{n+1}^{-1}}^2,
+    \end{equation*}
+    and the mean block is measured in $C_{n+1}^{-1}$ rather than $C_n^{-1}$. Feasibility gives
+    \begin{equation*}
+        C_{n+1}^{-1} \preceq \lambda_-^{-1} I \preceq \frac{\lambda_+}{\lambda_-} C_n^{-1},
+    \end{equation*}
+    so the full divergence is at most $(\lambda_+ / \lambda_-) \mathsf{S}_n$, and \eqref{eq:clip-runmin} completes the proof.
+\end{proof}
+
+For centered scalar trajectories the mean term vanishes, so the factor-one bound \eqref{eq:clip-runmin} is the quantity plotted in \Cref{sec:numerics-nonconvex}.
+
+\begin{remark}
+    \Cref{thm:clip-KL} certifies stationarity of the projected split map on the covariance-truncated set $\Aspace'$. If an iterate is pinned at the upper clip $\lambda_+ I$, then $\mathsf{S}_n$ can vanish while the unconstrained Fisher--Rao gradient points outward. The theorem therefore does not imply that the unconstrained gradient is small, nor that the iterates converge to the unconstrained Gaussian optimizer $a_\star$.
+\end{remark}
+
+% SOURCES:
+% natural-gradient.tex l.198-220 (Corollary, continuous stationarity) -> cor:stationary-cont (verbatim modulo notation/labels)
+% codex-draft/sections/06-nonconvex.tex l.13-36 (eq:nonconvex-potential, A_R, limit) -> eq:double-well, A_R
+% codex-draft/sections/06-nonconvex.tex l.92-98 (eq:nonconvex-curvature-quantitative) -> eq:curvature-gap (hoisted out of the pole proof, used by both propositions)
+% codex-draft/sections/06-nonconvex.tex l.39-67 (prop:nonconvex-riemannian-cascade + proof) -> prop:cascade-Riem, eq:cascade-map
+% codex-draft/sections/06-nonconvex.tex l.69-119 (prop:nonconvex-kl-pole + proof) -> prop:pole-KL, eq:KL-cov-map
+% codex-draft/sections/06-nonconvex.tex l.121-125 (closing moral) -> single closing sentence
+% codex-draft/sections/06-nonconvex.tex l.127-145 (eq:nonconvex-bw-running-min, Diao Thm 5.5) -> BW comparison remark
+% natural-gradient.tex l.1048-1073 (Aspace', assump:smooth, Clip) -> Aspace', assump:smooth, Clip
+% codex-draft/sections/06-nonconvex.tex l.150-201 (split update, split stationarity measure) -> upd:clip-KL, eq:split-stationarity
+% codex-draft/sections/06-nonconvex.tex l.203-251 (thm:nonconvex-clipped-stationarity + proof) -> thm:clip-KL
+%   (supersedes natural-gradient.tex l.1095-1122, whose proof does not handle the clipping/three-point interaction)
+% codex-draft/sections/06-nonconvex.tex l.253-286 (cor:nonconvex-full-kl + proof) -> cor:clip-KL-full
+%   (its closing sentence -> pointer to \Cref{sec:numerics-nonconvex} in sections/06-numerics.tex)
+% codex-draft/sections/06-nonconvex.tex l.288-296 (rem:nonconvex-scope) -> scope remark
+%   (the stochastic clipped theorem of natural-gradient.tex l.1137-1195 is deliberately not carried)

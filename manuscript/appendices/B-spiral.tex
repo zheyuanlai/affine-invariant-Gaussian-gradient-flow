@@ -1,0 +1,585 @@
+\section{The logarithmic-spiral construction}
+\label{app:spiral}
+
+We construct the planar family announced in \Cref{thm:sharp-cont} and prove the lower bound.
+Throughout $\theta=(\theta_1,\theta_2)\in\R^2$ denotes the state, $(r,\vartheta)$ its polar
+coordinates, and $R_\vartheta$ the planar rotation through the angle $\vartheta$.
+
+\subsection{The spiral potential}
+
+Fix $K\geq16$ and set
+\begin{equation}\label{eq:spiral-parameters}
+    h:=2\alpha,
+    \qquad
+    c:=\frac{\sqrt{K-2}}3,
+    \qquad
+    \delta_K:=\frac{10^{-4}}K,
+    \qquad
+    D_K:=\frac{18h(K-1)}{K+7},
+    \qquad
+    \beta:=\alpha(2K+1),
+\end{equation}
+so that the original-coordinate condition number is $\kappa=2K+1$. Define
+\begin{equation*}
+    s(u):=35u^4-84u^5+70u^6-20u^7,
+    \qquad 0\leq u\leq1,
+\end{equation*}
+and the even $C^3$ cutoff
+\begin{equation}\label{eq:phase-bump}
+    \rho(u):=
+    \begin{cases}
+        1, & |u|\leq\tfrac12,\\[1mm]
+        s(2-2|u|), & \tfrac12<|u|<1,\\[1mm]
+        0, & |u|\geq1.
+    \end{cases}
+\end{equation}
+Extend $\rho_{\delta_K}(\phi):=\rho(\phi/\delta_K)$ periodically with period $\pi$, and set
+\begin{equation*}
+    \bar\rho_{\delta_K}:=\frac1\pi\int_{-\pi/2}^{\pi/2}\rho_{\delta_K}(\phi)\,\dd\phi,
+    \qquad
+    g_K(\phi):=\frac{\rho_{\delta_K}(\phi)-\bar\rho_{\delta_K}}{1-\bar\rho_{\delta_K}} .
+\end{equation*}
+Let $f_K$ be the even $\pi$-periodic solution of
+\begin{equation}\label{eq:fK}
+    f_K''=g_K,
+    \qquad
+    f_K(0)=f_K'(0)=0 .
+\end{equation}
+Then
+\begin{equation}\label{eq:fK-core-bounds}
+    f_K(\phi)=\frac12\phi^2
+    \quad\text{for }|\phi|\leq\frac{\delta_K}2,
+    \qquad
+    \norm{f_K'}_\infty\leq3\delta_K,
+    \qquad
+    \norm{f_K}_\infty\leq2\pi\delta_K .
+\end{equation}
+Define the radial cutoff
+\begin{equation}\label{eq:radial-cutoff}
+    \chi(\ell):=
+    \begin{cases}
+        0, & \ell\leq0,\\
+        35\ell^4-84\ell^5+70\ell^6-20\ell^7, & 0<\ell<1,\\
+        1, & \ell\geq1,
+    \end{cases}
+\end{equation}
+and, for a scale $r_0>0$, put
+\begin{equation}\label{eq:spiral-coords}
+    \ell:=\log\frac r{r_0},
+    \qquad
+    \phi:=\vartheta+c\ell .
+\end{equation}
+The spiral potential is
+\begin{equation}\label{eq:spiral-potential}
+    \boxed{
+    V_K(r,\vartheta)
+    :=\frac12r^2\bigl[h+D_K\chi(\ell)f_K(\phi)\bigr].}
+\end{equation}
+For $r\leq r_0$ one has $V_K(\theta)=\tfrac h2\norm\theta^2$. The matching of the first three
+derivatives of $\rho$ and $\chi$ at their endpoints gives $V_K\in C^3(\R^2)$, and the
+$\pi$-periodicity of $f_K$ makes $V_K$ even.
+
+\begin{lemma}[Global Hessian certificate]\label{lem:spiral-hessian}
+    The potential \eqref{eq:spiral-potential} satisfies
+    \begin{equation}\label{eq:spiral-Hessian-bounds}
+        0.98h\Id\preceq\nabla^2V_K(\theta)\preceq h(K+0.02)\Id
+        \qquad\text{for every }\theta\in\R^2 .
+    \end{equation}
+    Consequently $\alpha\Id\preceq\nabla^2V_K\preceq\beta\Id$ with $\beta=\alpha(2K+1)$. On the
+    flat part of a spiral valley the two Hessian eigenvalues are exactly $h$ and $hK$.
+\end{lemma}
+
+\begin{proof}
+    Put $q(\ell,\vartheta):=\chi(\ell)f_K(\vartheta+c\ell)$. For a general profile
+    $A=A(\ell,\vartheta)$, differentiation in the orthonormal polar frame gives
+    \begin{equation*}
+        \nabla^2\left(\frac12r^2A\right)
+        =
+        \begin{pmatrix}
+            A+\frac32A_\ell+\frac12A_{\ell\ell}
+            &\frac12A_\vartheta+\frac12A_{\ell\vartheta}\\[1mm]
+            \frac12A_\vartheta+\frac12A_{\ell\vartheta}
+            &A+\frac12A_\ell+\frac12A_{\vartheta\vartheta}
+        \end{pmatrix}.
+    \end{equation*}
+    Consequently,
+    \begin{equation}\label{eq:spiral-Hessian-decomposition}
+        \nabla^2V_K-h\Id
+        =\frac{D_K}2\chi g_K\begin{pmatrix}c^2&c\\c&1\end{pmatrix}
+        +D_K\{\chi B_K+E_K\},
+    \end{equation}
+    where all functions are evaluated at $(\ell,\phi)$ and
+    \begin{equation*}
+        B_K=
+        \begin{pmatrix}
+            f_K+\frac32cf_K'&\frac12f_K'\\
+            \frac12f_K'&f_K+\frac12cf_K'
+        \end{pmatrix},
+        \qquad
+        E_K=
+        \begin{pmatrix}
+            (\frac32\chi'+\frac12\chi'')f_K+c\chi'f_K'&\frac12\chi'f_K'\\
+            \frac12\chi'f_K'&\frac12\chi'f_K
+        \end{pmatrix}.
+    \end{equation*}
+    This identity covers both the uncut region and the transition annulus.
+
+    The normalization of the phase cutoff is explicit. Since
+    $\int_{-1}^1\rho(u)\,\dd u=3/2$,
+    \begin{equation*}
+        \bar\rho_{\delta_K}=\frac{3\delta_K}{2\pi},
+        \qquad
+        -\frac{\bar\rho_{\delta_K}}{1-\bar\rho_{\delta_K}}\leq g_K\leq1,
+    \end{equation*}
+    and for $K\geq16$,
+    \begin{equation}\label{eq:spiral-negative-background}
+        (K-1)\frac{\bar\rho_{\delta_K}}{1-\bar\rho_{\delta_K}}<4.8\cdot10^{-5} .
+    \end{equation}
+    Moreover the polynomial cutoff satisfies
+    $0\leq\chi\leq1$, $\norm{\chi'}_\infty=\tfrac{35}{16}$ and
+    $\norm{\chi''}_\infty<7.514$. Using \eqref{eq:fK-core-bounds}, $D_K/h\leq18$ and
+    $c\leq\sqrt K/3$, the maximum-row-sum bound in
+    \eqref{eq:spiral-Hessian-decomposition} gives
+    \begin{align*}
+        \frac{D_K}h\norm{\chi B_K+E_K}_\op
+        &\leq18\Bigl[
+            \left(1+\frac32\frac{35}{16}+\frac{7.514}2\right)2\pi\delta_K\\
+        &\hspace{27mm}
+            +\left(\frac32c+\frac12+c\frac{35}{16}+\frac12\frac{35}{16}\right)3\delta_K
+        \Bigr]
+        <0.0078 .
+    \end{align*}
+    Every term on the right decreases when $K$ increases, so it is enough to insert $K=16$.
+
+    The rank-one matrix in \eqref{eq:spiral-Hessian-decomposition} has nonzero eigenvalue
+    $1+c^2=(K+7)/9$, and $\tfrac{D_K}2(1+c^2)=h(K-1)$. Its positive part is therefore at most
+    $h(K-1)\Id$, while \eqref{eq:spiral-negative-background} bounds its negative part by
+    $4.8\cdot10^{-5}h\Id$. Thus, in fact,
+    \begin{equation*}
+        0.992h\Id\preceq\nabla^2V_K\preceq h(K+0.0078)\Id,
+    \end{equation*}
+    which implies \eqref{eq:spiral-Hessian-bounds}. On an uncut valley core $g_K=1$ and
+    $f_K(0)=f_K'(0)=0$, so the two eigenvalues are exactly $h$ and $hK$. Finally
+    $0.98h=1.96\alpha>\alpha$ and $h(K+0.02)<\alpha(2K+1)=\beta$.
+\end{proof}
+
+\subsection{Reference orbit and Gaussian shadowing}
+
+Set $s_K:=\sqrt{K-2}$ and
+\begin{equation}\label{eq:QK}
+    Q_K:=\frac1{K+7}
+    \begin{pmatrix}
+        (K+1)^2 & 2s_K(K+1)\\
+        2s_K(K+1) & 6(K+1)
+    \end{pmatrix}.
+\end{equation}
+A principal-minor calculation gives
+\begin{equation}\label{eq:QK-band}
+    \frac32\Id\prec Q_K\prec K\Id,
+    \qquad
+    Q_K^{-1}e_1=\frac1{K+1}\begin{pmatrix}3\\-\sqrt{K-2}\end{pmatrix}.
+\end{equation}
+Indeed $\Tr Q_K=K+1$, $\det Q_K=2(K+1)^2/(K+7)$, and
+\begin{equation*}
+    \det\left(Q_K-\frac32\Id\right)=\frac{2K^2-23K+29}{4(K+7)}>0
+    \qquad(K\geq16),
+\end{equation*}
+while the first diagonal entry of $Q_K-\tfrac32\Id$ is positive; the upper bound follows in the
+same way from the principal minors of $K\Id-Q_K$.
+
+Choose $m_0$ with $\norm{m_0}=e^2r_0$ and polar angle $\vartheta_0$ satisfying
+\begin{equation}\label{eq:valley-phase-init}
+    \vartheta_0+c\log\frac{\norm{m_0}}{r_0}\equiv0\pmod\pi,
+\end{equation}
+and initialize the precision by
+\begin{equation}\label{eq:spiral-P0}
+    P_0:=C_0^{-1}:=hR_{\vartheta_0}Q_KR_{\vartheta_0}^\top .
+\end{equation}
+Then \eqref{eq:QK-band} gives
+\begin{equation}\label{eq:spiral-C0-band}
+    \frac1\beta\Id\preceq C_0\preceq\frac1\alpha\Id .
+\end{equation}
+The point-system reference orbit is
+\begin{equation}\label{eq:reference-orbit}
+    r_t^{\mathrm{ref}}:=e^2r_0\exp\left(-\frac{3t}{K+1}\right),
+    \qquad
+    \vartheta_t^{\mathrm{ref}}:=\vartheta_0+\frac{\sqrt{K-2}}{K+1}t,
+    \qquad
+    P_t^{\mathrm{ref}}:=hR_{\vartheta_t^{\mathrm{ref}}}Q_KR_{\vartheta_t^{\mathrm{ref}}}^\top .
+\end{equation}
+Indeed, on the valley $\nabla V_K(m)=hm$, and \eqref{eq:QK-band} gives
+$\dot r=-\tfrac3{K+1}r$ and $r\dot\vartheta=\tfrac{\sqrt{K-2}}{K+1}r$; a direct substitution
+also verifies $\dot P^{\mathrm{ref}}=\nabla^2V_K(m^{\mathrm{ref}})-P^{\mathrm{ref}}$.
+
+\begin{lemma}[Gaussian shadowing certificate]\label{lem:spiral-shadow}
+    Assume
+    \begin{equation}\label{eq:r0-shadowing}
+        r_0\sqrt\alpha\geq10^{25}K^{3/2}\sqrt{\log(eK)} .
+    \end{equation}
+    Let $(m_t,C_t)$ be the exact Gaussian Fisher--Rao flow \eqref{ODEs:NG} for $V_K$
+    initialized by \eqref{eq:valley-phase-init}--\eqref{eq:spiral-P0}. Then, for
+    $0\leq t\leq K/100$,
+    \begin{equation}\label{eq:radial-shadowing}
+        -\frac4K\leq\frac{\dd}{\dd t}\log\norm{m_t}\leq-\frac2K,
+    \end{equation}
+    and in particular
+    \begin{equation}\label{eq:mean-lower-shadowing}
+        \norm{m_t}\geq e^{-0.04}\norm{m_0}
+        \qquad(0\leq t\leq K/100).
+    \end{equation}
+\end{lemma}
+
+\begin{proof}
+    Write $P_t=C_t^{-1}$ and choose the continuous lift of the polar angle starting at
+    $\vartheta_0$. Set
+    \begin{equation}\label{eq:spiral-transverse-coordinates}
+        z_t:=\vartheta_t+c\log\frac{r_t}{r_0},
+        \qquad
+        S_t:=\frac1hR_{\vartheta_t}^\top P_tR_{\vartheta_t},
+        \qquad
+        E_t:=S_t-Q_K,
+    \end{equation}
+    where $z_t$ is represented near $0$ modulo $\pi$. Put
+    \begin{equation*}
+        w:=\begin{pmatrix}c\\1\end{pmatrix},
+        \qquad
+        J:=\begin{pmatrix}0&-1\\1&0\end{pmatrix},
+        \qquad
+        d_K:=\frac{D_K}h=\frac{18(K-1)}{K+7} .
+    \end{equation*}
+    On the uncut flat phase core $f_K(z)=z^2/2$, and the normalized point gradient and Hessian
+    are
+    \begin{align}
+    \label{eq:spiral-core-point-fields}
+        b_K(z)
+        &:=\frac1{hr}R_\vartheta^\top\nabla V_K(m)
+        =\begin{pmatrix}1+\frac{d_K}2z^2+\frac{d_Kc}2z\\[1mm]\frac{d_K}2z\end{pmatrix},\\
+        \mathsf H_K(z)
+        &:=\frac1hR_\vartheta^\top\nabla^2V_K(m)R_\vartheta\notag\\
+        &=\Id+\frac{d_K}2ww^\top
+          +d_K\begin{pmatrix}
+              \frac12z^2+\frac32cz&\frac12z\\[1mm]
+              \frac12z&\frac12z^2+\frac12cz
+          \end{pmatrix}.\notag
+    \end{align}
+    For the exact Gaussian flow define
+    \begin{equation*}
+        \bar b_t:=\frac1{hr_t}R_{\vartheta_t}^\top\E[\nabla V_K(X_t)],
+        \qquad
+        \bar H_t:=\frac1hR_{\vartheta_t}^\top\E[\nabla^2V_K(X_t)]R_{\vartheta_t},
+        \qquad
+        q_t:=S_t^{-1}\bar b_t .
+    \end{equation*}
+    The mean and precision equations become
+    \begin{equation}\label{eq:spiral-rotated-system}
+        \frac{\dot r_t}{r_t}=-(q_t)_1,
+        \qquad
+        \dot\vartheta_t=-(q_t)_2,
+        \qquad
+        \dot z_t=-w^\top q_t,
+        \qquad
+        \dot S_t=\bar H_t-S_t-(q_t)_2(S_tJ-JS_t).
+    \end{equation}
+    If the Gaussian averages in \eqref{eq:spiral-rotated-system} are replaced by the point
+    fields \eqref{eq:spiral-core-point-fields}, then $(z,S)=(0,Q_K)$ is an equilibrium: with
+    $\omega_K=s_K/(K+1)$,
+    \begin{equation*}
+        Q_K^{-1}e_1=\begin{pmatrix}3/(K+1)\\-\omega_K\end{pmatrix},
+        \qquad
+        w^\top Q_K^{-1}e_1=0,
+        \qquad
+        \mathsf H_K(0)-Q_K+\omega_K(Q_KJ-JQ_K)=0 .
+    \end{equation*}
+
+    We next give the linear and nonlinear certificates explicitly. Let
+    \begin{equation}\label{eq:spiral-y-scaling}
+        \mathsf T_K:=\diag(K,\sqrt K,1,\sqrt K),
+        \qquad
+        y:=\mathsf T_K(z,E_{11},E_{12},E_{22})^\top .
+    \end{equation}
+    For $S=Q_K+E$, let $\mathcal F_K(y)$ be the scaled point vector field obtained from
+    \eqref{eq:spiral-rotated-system} with $\bar b=b_K(z)$ and $\bar H=\mathsf H_K(z)$, and set
+    $A_K:=D\mathcal F_K(0)$ and $\mathcal N_K(y):=\mathcal F_K(y)-A_Ky$. If $s=s_K=\sqrt{K-2}$,
+    direct differentiation gives
+    \begin{equation}\label{eq:spiral-linear-matrix}
+        A_K=\mathsf T_K\mathsf B_K\mathsf T_K^{-1},
+    \end{equation}
+    where, in the order $(z,E_{11},E_{12},E_{22})$,
+    {\scriptsize
+    \begin{equation*}
+        \mathsf B_K=
+        \begin{pmatrix}
+        -\frac{3(K-1)}{2(K+1)}&0&\frac{K+7}{2(K+1)^2}&-\frac{s(K+7)}{6(K+1)^2}\\[1mm]
+        \frac{3s(K-1)}{K+7}&-\frac{K^2+20K-17}{(K+1)(K+7)}&\frac{12s}{K+7}&-\frac{2(K-2)}{K+7}\\[1mm]
+        \frac{3(K-1)(K+1)}{2(K+7)}&\frac{2(K-11)s}{(K+1)(K+7)}&-\frac{7K^2-10K+19}{2(K+1)(K+7)}&\frac{s(K^2-2K+9)}{2(K+1)(K+7)}\\[1mm]
+        \frac{9s(K-1)}{K+7}&\frac{12(K-2)}{(K+1)(K+7)}&-\frac{12s}{K+7}&\frac{K-11}{K+7}
+        \end{pmatrix}.
+    \end{equation*}
+    }
+    Its characteristic polynomial has the factorization
+    \begin{equation}\label{eq:spiral-characteristic}
+        \det(\lambda\Id-A_K)=\frac{\lambda+1}{2(K+1)^3}\,p_K(\lambda+1),
+    \end{equation}
+    where
+    \begin{equation*}
+        p_K(\mu)=2(K+1)^3\mu^3+2(K-5)(K+1)^2\mu^2+4(K-2)(K+1)^2\mu+(K-2)(K^2-10K-23).
+    \end{equation*}
+    For $K\geq16$ all coefficients are positive and the cubic Routh--Hurwitz determinant is
+    $6(K-2)(K-1)^2(K+1)^3>0$, so every eigenvalue of $A_K$ has real part at most $-1$. The
+    entries of the scaled matrix obey
+    \begin{equation*}
+        \bigl(|(A_K)_{ij}|\bigr)
+        \preceq
+        \begin{pmatrix}
+            3/2&0&2/3&1/4\\
+            3&3/2&12&2\\
+            3/2&1/8&7/2&1/2\\
+            9&3/4&12&1
+        \end{pmatrix},
+    \end{equation*}
+    so $\norm{A_K}_\op<21$. In a complex Schur decomposition $A_K=U(D+N)U^*$, the matrix $N$ is
+    strictly upper triangular with $\norm N_\op\leq42$ and $\norm{e^{Dt}}_\op\leq e^{-t}$;
+    iterating Duhamel's formula terminates after three factors of $N$ and yields
+    \begin{equation}\label{eq:spiral-semigroup}
+        \norm{e^{A_Kt}}_\op
+        \leq e^{-t}\sum_{j=0}^3\frac{(42t)^j}{j!}
+        <2\cdot10^6e^{-t/2}.
+    \end{equation}
+
+    The nonlinear estimate is also an elementary finite-dimensional calculation. Inserting the
+    explicit inverse of the $2\times2$ matrix $S$ into
+    \eqref{eq:spiral-core-point-fields} gives, for $\norm y\leq10^{-12}$ and $K\geq16$,
+    \begin{equation}\label{eq:spiral-second-derivative-table}
+        \sup\sum_{j,\ell=1}^4\left|\partial_{j\ell}^2(\mathcal F_K)_i\right|
+        \leq(100,2000,500,2000)_i .
+    \end{equation}
+    The bounds follow term by term from $d_K\leq18$, $c/\sqrt K\leq1/3$,
+    $Q_K\succeq\tfrac32\Id$, and
+    \begin{equation*}
+        E=\begin{pmatrix}y_2/\sqrt K&y_3\\y_3&y_4/\sqrt K\end{pmatrix},
+    \end{equation*}
+    the largest denominator being controlled by $\norm{(Q_K+E)^{-1}}_\op\leq1$. Taylor's
+    theorem and \eqref{eq:spiral-second-derivative-table} imply
+    \begin{equation}\label{eq:spiral-nonlinear}
+        \norm{\mathcal N_K(y)}
+        \leq\frac12\sqrt{100^2+2000^2+500^2+2000^2}\,\norm y^2
+        <4000\norm y^2 .
+    \end{equation}
+
+    It remains to bound the Gaussian-versus-point error at the actual state. Define the
+    stopping time
+    \begin{equation}\label{eq:spiral-stopping-time}
+        \tau:=\frac K{100}\wedge
+        \inf\left\{t\geq0:\norm{y_t}=10^{-12}
+        \ \text{or}\ r_t\notin[e^{3/2}r_0,e^{5/2}r_0]\right\}.
+    \end{equation}
+    On $[0,\tau]$, \eqref{eq:QK-band} and \eqref{eq:spiral-y-scaling} give $S_t\succeq\Id$,
+    hence $C_t\preceq h^{-1}\Id$. Put $Z_t:=X_t-m_t$ and
+    \begin{equation*}
+        \mathcal G_t:=\left\{\norm{Z_t}\leq\frac{\delta_Kr_t}{8\sqrt K}\right\},
+        \qquad
+        p_K:=\sup_{t\leq\tau}\Prob(\mathcal G_t^c),
+        \qquad
+        M_K:=\sup_{t\leq\tau}\E\left[\sqrt h\norm{Z_t}\one_{\mathcal G_t^c}\right].
+    \end{equation*}
+    For every point on the segment $m_t+uZ_t$, $0\leq u\leq1$, the logarithmic radius and angle
+    obey, on $\mathcal G_t$,
+    \begin{equation*}
+        |\Delta\vartheta|+c|\Delta\ell|
+        \leq2(1+c)\frac{\norm{Z_t}}{r_t}<\frac{\delta_K}4 .
+    \end{equation*}
+    Since $|z_t|\leq10^{-12}/K<\delta_K/4$ and $r_t\geq e^{3/2}r_0$, the whole segment lies in
+    the uncut flat phase core. If $G\sim\N(0,\Id_2)$, the covariance bound implies
+    $\sqrt h\norm{Z_t}\leq\norm G$ under a common Gaussian representation, and the exact radial
+    tail in dimension two gives
+    \begin{equation}\label{eq:spiral-tail-certificate}
+        p_K\leq\exp\left(-\frac{\delta_K^2hr_0^2}{128K}\right)\leq10^{-50}K^{-30},
+        \qquad
+        M_K\leq\sqrt{2p_K}\leq\sqrt2\,10^{-25}K^{-15}.
+    \end{equation}
+
+    On the flat core, differentiating \eqref{eq:spiral-core-point-fields} in Cartesian
+    coordinates gives
+    \begin{equation}\label{eq:spiral-core-Hessian-Lipschitz}
+        \Lip_\op(\nabla^2V_K)\leq\frac{15hK}{r_t}
+    \end{equation}
+    along these segments: $\norm{\partial_z\mathsf H_K}_\op\leq12\sqrt K$,
+    $\norm{\nabla z}\leq2\sqrt K/(5r)$, rotation of the polar frame contributes at most
+    $2h(K+0.02)/r$, and allowing a factor two for the radius along the segment gives
+    \eqref{eq:spiral-core-Hessian-Lipschitz}.
+
+    Let
+    \begin{align*}
+        \varepsilon_b(t)
+        &:=\left\|\frac1{hr_t}R_{\vartheta_t}^\top
+            \bigl(\E[\nabla V_K(X_t)]-\nabla V_K(m_t)\bigr)\right\|,\\
+        \varepsilon_H(t)
+        &:=\left\|\frac1hR_{\vartheta_t}^\top
+            \bigl(\E[\nabla^2V_K(X_t)]-\nabla^2V_K(m_t)\bigr)R_{\vartheta_t}\right\|_\op .
+    \end{align*}
+    Put $A_0:=\sqrt\alpha\,r_0$. Splitting at $\mathcal G_t$, using
+    \eqref{eq:spiral-core-Hessian-Lipschitz} for the Taylor remainder on $\mathcal G_t$, the
+    global Hessian bound on its complement, $\E Z_t=0$ and $\E\norm{Z_t}^2\leq2/h$, gives
+    \begin{equation}\label{eq:spiral-average-errors}
+        \varepsilon_b(t)\leq8\frac K{A_0^2}+3\frac K{A_0}M_K,
+        \qquad
+        \varepsilon_H(t)\leq15\frac K{A_0}+3Kp_K .
+    \end{equation}
+    The forcing $\xi_K(t)$ in the scaled transverse system is, by definition, the contribution
+    of these actual-state Gaussian-versus-point errors. Since $\norm{S_t^{-1}}_\op\leq1$,
+    $\norm{S_t}_\op\leq2K$ and $\norm w\leq2\sqrt K/5$, equations
+    \eqref{eq:spiral-rotated-system} and \eqref{eq:spiral-y-scaling} imply
+    \begin{align}\label{eq:smoothing-certificate}
+        \norm{\xi_K(t)}
+        &\leq\frac25K^{3/2}\varepsilon_b(t)
+          +\sqrt{2K}\bigl(\varepsilon_H(t)+4K\varepsilon_b(t)\bigr)\notag\\
+        &\leq23\frac{K^{3/2}}{A_0}+5K^{3/2}p_K
+          +52\frac{K^{5/2}}{A_0^2}+20\frac{K^{5/2}}{A_0}M_K .
+    \end{align}
+    The radius condition \eqref{eq:r0-shadowing} and \eqref{eq:spiral-tail-certificate} make
+    the last line smaller than $3\cdot10^{-24}$, and in particular smaller than $10^{-22}$, on
+    $[0,\tau]$.
+
+    The exact transverse equation is
+    \begin{equation}\label{eq:transverse-system}
+        \dot y_t=A_Ky_t+\mathcal N_K(y_t)+\xi_K(t),
+        \qquad y_0=0 .
+    \end{equation}
+    Variation of constants, \eqref{eq:spiral-semigroup}, \eqref{eq:spiral-nonlinear} and
+    \eqref{eq:smoothing-certificate} yield, for $t\leq\tau$,
+    \begin{equation*}
+        \norm{y_t}
+        \leq2\cdot10^6\int_0^te^{-(t-s)/2}
+        \bigl(4000\cdot10^{-24}+10^{-22}\bigr)\,\dd s
+        <2\cdot10^{-14},
+    \end{equation*}
+    so the transverse component cannot cause the exit in \eqref{eq:spiral-stopping-time}.
+
+    Finally, define the point radial field $\mathcal R_K(y):=-e_1^\top S^{-1}b_K(z)$.
+    Differentiating the same explicit $2\times2$ inverse gives
+    \begin{equation*}
+        \sup_{\norm y\leq10^{-12}}\norm{\nabla\mathcal R_K(y)}\leq\frac{20}K,
+        \qquad
+        \mathcal R_K(0)=-\frac3{K+1} .
+    \end{equation*}
+    The Gaussian correction is at most $\varepsilon_b(t)$, so on $[0,\tau]$,
+    \begin{equation*}
+        \left|\frac{\dd}{\dd t}\log r_t+\frac3{K+1}\right|
+        \leq\frac{20}K\norm{y_t}+\varepsilon_b(t)
+        <\frac1{4K},
+    \end{equation*}
+    which already implies $-4/K\leq\dot r_t/r_t\leq-2/K$. Hence the radius cannot reach the
+    upper barrier in \eqref{eq:spiral-stopping-time}, and before time $K/100$ it remains above
+    $e^{2-0.04}r_0>e^{3/2}r_0$. Therefore $\tau=K/100$, which proves
+    \eqref{eq:radial-shadowing}; integration gives \eqref{eq:mean-lower-shadowing}.
+\end{proof}
+
+\subsection{Intrinsic conditioning and the lower bound}
+
+\begin{lemma}[Optimizer covariance and intrinsic condition number]\label{lem:spiral-kappa}
+    Let $C_\star$ be the optimizing covariance for $V_K$ and set
+    $\eta_K:=K\exp(-\alpha r_0^2/2)$. Under \eqref{eq:r0-shadowing}, $\eta_K\leq10^{-3}$ and
+    \begin{equation}\label{eq:spiral-Pstar}
+        h(1-\eta_K)\Id\preceq C_\star^{-1}\preceq h(1+\eta_K)\Id .
+    \end{equation}
+    Moreover
+    \begin{equation}\label{eq:spiral-kappa-star}
+        K\leq\kappastar(V_K)\leq1.03K,
+    \end{equation}
+    and the whitened initial covariance satisfies
+    \begin{equation}\label{eq:spiral-initial-product}
+        \betastar\lamzstar\geq\frac{1-\eta_K}{1+\eta_K},
+    \end{equation}
+    so the covariance-initialization term in \Cref{thm:glob-cont} is smaller than $0.003$.
+\end{lemma}
+
+\begin{proof}
+    The potential is exactly quadratic with Hessian $h\Id$ on $\{\norm\theta\leq r_0\}$. Since
+    $C_\star\preceq\alpha^{-1}\Id$, write $X_\star=C_\star^{1/2}Z$ with $Z\sim\N(0,\Id_2)$;
+    then $\norm{X_\star}>r_0$ implies $\norm Z>\sqrt\alpha r_0$, and for a standard
+    two-dimensional Gaussian $\Prob(\norm Z>s)=e^{-s^2/2}$. Using
+    $\norm{\nabla^2V_K-h\Id}_\op\leq hK$ and $C_\star^{-1}=\E[\nabla^2V_K(X_\star)]$ gives
+    \eqref{eq:spiral-Pstar}.
+
+    Combining \eqref{eq:spiral-Hessian-bounds} with \eqref{eq:spiral-Pstar} gives
+    \begin{equation*}
+        \alphastar\geq\frac{0.98}{1+\eta_K},
+        \qquad
+        \betastar\leq\frac{K+0.02}{1-\eta_K},
+    \end{equation*}
+    and hence $\kappastar\leq1.03K$. At the origin the Hessian is $h\Id$, whereas at a valley
+    point it has an eigenvalue $hK$; therefore
+    $\alphastar\leq h\lambda_{\min}(C_\star)$ and $\betastar\geq hK\lambda_{\min}(C_\star)$,
+    which gives $\kappastar\geq K$.
+
+    Finally \eqref{eq:spiral-C0-band} gives $C_0\succeq(hK)^{-1}\Id$, while
+    $C_\star^{-1}\succeq h(1-\eta_K)\Id$, so $\lamzstar\geq(1-\eta_K)/K$; the valley Hessian and
+    \eqref{eq:spiral-Pstar} also give $\betastar\geq K/(1+\eta_K)$, proving
+    \eqref{eq:spiral-initial-product}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:sharp-cont}]
+    The potential is even, so the optimizing mean is $m_\star=0$. Strong convexity in the mean
+    and global optimality of $(0,C_\star)$ imply
+    $\DeltaE(m,C)\geq\tfrac\alpha2\norm m^2$ for every $(m,C)$. By \Cref{lem:spiral-shadow},
+    for $0\leq t\leq K/100$,
+    \begin{equation*}
+        \DeltaE(a_t)
+        \geq\frac\alpha2e^{-0.08}\norm{m_0}^2
+        >\delta_{\loc},
+    \end{equation*}
+    so $T_{\loc}\geq K/100$, and $\kappastar\leq1.03K$ from \Cref{lem:spiral-kappa} gives
+    $T_{\loc}\geq\kappastar/103$. The regularity and curvature claims are
+    \Cref{lem:spiral-hessian}, the admissibility of the initialization is
+    \eqref{eq:spiral-C0-band}, and the remaining assertions are \Cref{lem:spiral-kappa}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{cor:sharp-cont}]
+    The upper bound is \Cref{thm:glob-cont} and the lower bound is \Cref{thm:sharp-cont}. For
+    dimensions larger than two, add independent quadratic coordinates,
+    \begin{equation*}
+        V_K^{(N_\theta)}(\theta):=V_K(\theta_1,\theta_2)+\frac h2\sum_{j=3}^{N_\theta}\theta_j^2,
+    \end{equation*}
+    and initialize those coordinates at equilibrium. The block-diagonal subsystem is
+    dynamically invariant. Moreover Hadamard's determinant inequality shows that a
+    cross-covariance block can only decrease the Gaussian determinant while leaving the
+    separated potential expectation unchanged, hence the optimizing covariance is block
+    diagonal. The two-dimensional slow subsystem and its condition-number comparison are
+    therefore unchanged. For the spiral family $\kappa=2K+1$ and $\kappastar\geq K$, so
+    $T_{\loc}\geq K/100\geq(\kappa-1)/200$.
+\end{proof}
+
+\begin{remark}[Hessian-Lipschitz version]
+    Differentiating \eqref{eq:spiral-Hessian-decomposition} once more and using
+    $\norm{\chi'''}_\infty\leq52.5$ and $\norm{g_K'}_\infty\leq4.376/\delta_K$ gives the
+    explicit bound
+    \begin{equation*}
+        \Lip_\op(\nabla^2V_K)\leq10^8\frac{hK^{5/2}}{r_0}.
+    \end{equation*}
+    Hence, for every prescribed $\LH>0$, choosing
+    \begin{equation*}
+        r_0\geq
+        \max\left\{
+            \frac{10^8hK^{5/2}}{\LH},
+            \frac{10^{25}K^{3/2}\sqrt{\log(eK)}}{\sqrt\alpha}
+        \right\}
+    \end{equation*}
+    preserves the lower bound while ensuring $\Lip_\op(\nabla^2V_K)\leq\LH$. At the endpoint
+    $\LH=0$ the target is quadratic, so the linear lower bound is not asserted under a radius
+    budget fixed independently of $\LH$.
+\end{remark}
+
+% SOURCES:
+%   improved-global-local.tex l.982-1065 (spiral parameters, phase bump, radial cutoff, potential)
+%     -> eq:spiral-parameters, eq:phase-bump, eq:fK, eq:fK-core-bounds, eq:radial-cutoff, eq:spiral-potential
+%   improved-global-local.tex l.1067-1166 (lem:spiral-Hessian) -> lem:spiral-hessian
+%   improved-global-local.tex l.1170-1234 (Q_K, valley initialization, reference orbit)
+%     -> eq:QK, eq:QK-band, eq:valley-phase-init, eq:spiral-P0, eq:spiral-C0-band, eq:reference-orbit
+%   improved-global-local.tex l.1236-1546 (lem:spiral-shadowing, full proof with all certificates)
+%     -> lem:spiral-shadow
+%   improved-global-local.tex l.1550-1612 (lem:spiral-kappa-star) -> lem:spiral-kappa
+%   improved-global-local.tex l.1614-1655 (thm:spiral-sharp) -> proof of thm:sharp-cont
+%   improved-global-local.tex l.1657-1683 (cor:cont-sharp) -> proof of cor:sharp-cont
+%   improved-global-local.tex l.1685-1706 (rem: Hessian-Lipschitz version) -> final remark
+%   Notation: the planar polar angle is written \vartheta because \theta denotes the state;
+%   all numerical certificates are reproduced unchanged.

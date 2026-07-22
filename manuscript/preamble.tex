@@ -16,6 +16,7 @@
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{enumitem}
 \usepackage{aliascnt}
+\usepackage{tcolorbox}
 \usepackage{hyperref}
 \usepackage[nameinlink,capitalize,noabbrev]{cleveref}
 
@@ -24,7 +25,7 @@
   linkcolor=blue!55!black,
   citecolor=blue!55!black,
   urlcolor=blue!55!black,
-  pdftitle={Sharp Global-to-Local Theory for Fisher--Rao Gaussian Variational Inference},
+  pdftitle={Gaussian Natural Gradient Flows for Variational Inference},
   pdfauthor={}
 }
 
@@ -49,6 +50,9 @@
 \crefname{algorithm}{Algorithm}{Algorithms}
 \Crefname{algorithm}{Algorithm}{Algorithms}
 
+% ------------------------------------------------------------------
+% Basic sets and operators
+% ------------------------------------------------------------------
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Prob}{\mathbb{P}}
@@ -62,42 +66,68 @@
 \newcommand{\one}{\mathbf{1}}
 \newcommand{\dd}{\mathrm{d}}
 \newcommand{\grad}{\operatorname{grad}}
+\newcommand{\Exp}{\operatorname{Exp}}
+\newcommand{\Log}{\operatorname{Log}}
+\newcommand{\Retr}{\operatorname{Retr}}
 \newcommand{\op}{\mathrm{op}}
 \newcommand{\Frob}{\mathrm{F}}
 \newcommand{\Lip}{\operatorname{Lip}}
 \newcommand{\rank}{\operatorname{rank}}
 \newcommand{\diag}{\operatorname{diag}}
 \newcommand{\argmin}{\operatorname*{arg\,min}}
-\newcommand{\FR}{\mathrm{FR}}
-\newcommand{\BW}{\mathrm{BW}}
-\newcommand{\Riem}{\mathrm{R}}
-\newcommand{\glob}{\mathrm{glob}}
-\newcommand{\loc}{\mathrm{loc}}
-\newcommand{\cov}{\mathrm{cov}}
-\newcommand{\calE}{\mathcal{E}}
-\newcommand{\Aspace}{\mathcal{A}}
-\newcommand{\Fil}{\mathcal{F}}
-\newcommand{\STL}{\mathrm{STL}}
-\newcommand{\Retr}{\operatorname{Retr}}
-\newcommand{\FGauss}{F_{\mathrm G}}
-\newcommand{\Kng}{K_{\mathrm{ng}}}
-\newcommand{\Kdisc}{K_{\mathrm{disc}}}
-\newcommand{\Gradnorm}{\mathsf{G}}
-\newcommand{\LH}{L_H}
-\newcommand{\barLH}{\overline L_H}
-\newcommand{\LHs}{L_{H,\star}}
-\newcommand{\PsiH}{\Psi}
+\newcommand{\Clip}{\operatorname{Clip}}
+\newcommand{\logp}{\log_+}
 \newcommand{\norm}[1]{\left\lVert #1\right\rVert}
 \newcommand{\abs}[1]{\left\lvert #1\right\rvert}
 \newcommand{\inner}[2]{\left\langle #1,#2\right\rangle}
-\newcommand{\logp}{\log_+}
+
+% ------------------------------------------------------------------
+% Gaussian variational family and objective (natural-gradient.tex conventions)
+% ------------------------------------------------------------------
+\newcommand{\post}{\mathrm{post}}
+\newcommand{\PG}{\mathcal{P}_{\mathrm{G}}}
+\newcommand{\Aspace}{\mathcal{A}}
+\newcommand{\calE}{\mathcal{E}}
+\newcommand{\rhoa}{\rho_a}
+\newcommand{\rhoapost}{\rho_{a_\star}}
+\newcommand{\DeltaE}{\Delta}
+\newcommand{\Fil}{\mathcal{F}}
+
+% Geometry labels
+\newcommand{\FR}{\mathrm{FR}}
+\newcommand{\BW}{\mathrm{BW}}
+\newcommand{\Riem}{\mathrm{R}}
+\newcommand{\Wtwo}{W_2}
+
+% ------------------------------------------------------------------
+% Whitened / intrinsic quantities (imported unchanged from the notes)
+% ------------------------------------------------------------------
 \newcommand{\alphastar}{\alpha_\star}
 \newcommand{\betastar}{\beta_\star}
 \newcommand{\kappastar}{\kappa_\star}
 \newcommand{\gstar}{\gamma_\star}
-\newcommand{\Lstar}{L_\star}
-\newcommand{\DeltaE}{\Delta}
-\newcommand{\rhoq}{\rho_{m,C}}
-\newcommand{\post}{\mathrm{post}}
+\newcommand{\Lstar}{\Lambda_\star}
+\newcommand{\lamzstar}{\lambda_{0,\star}}
+
+% ------------------------------------------------------------------
+% Local theory
+% ------------------------------------------------------------------
+\newcommand{\FGauss}{F_{\mathrm G}}
+\newcommand{\Kng}{K_{\mathrm{ng}}}
+\newcommand{\Kdisc}{K_{\mathrm{disc}}}
+\newcommand{\Ureg}{\mathcal{U}}
+\newcommand{\Gradnorm}{\mathsf{G}}
+\newcommand{\sharpthr}{\Delta^{\#}}
+
+% ------------------------------------------------------------------
+% Stochastic theory
+% ------------------------------------------------------------------
+\newcommand{\STL}{\mathrm{STL}}
+\newcommand{\LH}{L_H}
+\newcommand{\barLH}{\overline{L}_H}
+\newcommand{\LHs}{L_{H,\star}}
+\newcommand{\glob}{\mathrm{glob}}
+\newcommand{\loc}{\mathrm{loc}}
+\newcommand{\cov}{\mathrm{cov}}
 
 \allowdisplaybreaks

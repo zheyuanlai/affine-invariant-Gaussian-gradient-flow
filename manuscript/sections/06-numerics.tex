@@ -1,0 +1,209 @@
+\section{Numerical illustrations}
+\label{sec:numerics}
+
+We illustrate the mechanisms established above on a small number of diagnostic
+examples, each tied to a specific statement of the preceding sections. The
+deterministic Gaussian and separable log-concave expectations are evaluated
+analytically or by fixed Gauss--Hermite quadrature, and the nonseparable
+affine-mode target uses a fixed scrambled Sobol design. The stochastic runs use
+float64 arithmetic with explicit seeds, and each baseline and sticking-the-landing
+pair is driven by the same random-number stream, so that the comparison is
+paired. The target formulas, grids, seeds, quadrature rules, and stopping
+conditions are recorded in \Cref{app:experiments}.
+
+\subsection{The three stages}
+\label{sec:numerics-three-stage}
+
+The covariance-scaling sweep uses diagonal Gaussian targets with initial
+covariances as small as $\lambda_{0,\min} = 10^{-10}$, and we record as the
+burn-in endpoint the first iterate with $\lambda_{\min}(C_n) \geq 1/(2\beta)$.
+Across the sweep this time is linear in $\logp (1/(\beta \lambda_{0,\min}))$,
+which is the burn-in count of the two-sided covariance recursions in
+\Cref{lem:cov-Riem,lem:cov-KL}. \Cref{fig:num-three-stage} shows one hard KL run
+in dimension $N_\theta = 20$ with $\kappa = 1000$, where the three stages of
+\Cref{thm:three-stage} are visible in sequence: the covariance calibrates, the
+energy then decays rapidly, and the Fisher--Rao mean-block drift
+$\| C_n^{1/2} g(a_n) \|$ decays last.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.47\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_covboot_three_stage}
+  \caption{A hard KL trajectory.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.51\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_covboot_wasserstein_bootstrap}
+  \caption{One transport step, then a Fisher--Rao tail.}
+\end{subfigure}
+\caption{Covariance initialization and the three stages. On the left, a Gaussian
+run with $N_\theta = 20$, $\kappa = 1000$, and $\lambda_{0,\min} = 10^{-10}$
+separates covariance burn-in, global energy localization, and the local regime.
+On the right, one Bures--Wasserstein step with $c = 1/2$, hence transport
+stepsize $\eta = c/\beta$, lifts the smallest covariance eigenvalue to the
+curvature scale irrespective of the initial underdispersion, and the subsequent
+Fisher--Rao warm-up is essentially flat in $\lambda_{0,\min}$, as in
+\Cref{thm:burnin-BW}.}
+\label{fig:num-three-stage}
+\end{figure}
+
+The transport panel supports one claim only. One Bures--Wasserstein
+step removes the small-covariance cost and hands the trajectory back to a
+Fisher--Rao scheme; it does not change the $\kappastar$-scale obstruction of
+\Cref{thm:sharp-cont}, and it is not a blended Wasserstein--Fisher--Rao flow.
+
+\subsection{The two discretizations}
+\label{sec:numerics-discretization}
+
+The deterministic comparison uses two-dimensional Gaussian and smooth
+log-concave targets together with a convex quartic target that satisfies neither half of
+\Cref{assump:logconcave-smooth}, its Hessian being unbounded above and degenerate along one
+direction. Both schemes use the same explicit mean
+update and evaluate the same population score and Hessian. We report the
+iteration count and the elapsed flow time $n \Delta t$ separately, the latter
+being a discretization diagnostic rather than a timing measurement.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.58\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_convergence_speed_smooth_logconcave}
+  \caption{Matched-step trajectories on a smooth target.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.39\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_iterations_vs_stepsize}
+  \caption{Iterations to tolerance.}
+\end{subfigure}
+\caption{The Riemannian and KL discretizations. At matched stable stepsizes the
+two trajectories have comparable first-order behavior, and the Riemannian map
+often contracts faster per step in the tested range, while the KL covariance
+resolvent remains well defined at every stepsize and avoids a matrix
+exponential. The stepsize windows of \Cref{thm:glob-Riem,thm:glob-KL} are
+sufficient and conservative in these low-dimensional examples.}
+\label{fig:num-discretization}
+\end{figure}
+
+The robustness recorded here is a property of the covariance map alone. On a
+log-concave target one has $C_n^{-1} + \Delta t A_n \succ 0$ for every
+$\Delta t > 0$, so the KL covariance update cannot leave the positive-definite
+cone, which is the content of \Cref{lem:cov-KL}. The full algorithm can still
+fail at a large stepsize through the explicit mean update, which carries the
+factor $\Delta t\, C_n$.
+
+\subsection{Sticking-the-landing variance and the constant-step floors}
+\label{sec:numerics-stl}
+
+The stochastic grid uses Gaussian targets with
+$N_\theta \in \{2, 8, 32\}$ and $\kappa \in \{10, 100, 10^4\}$, together with
+smooth $\log \cosh$ targets with $N_\theta \in \{2, 8, 32\}$ and
+$\kappa \in \{10, 100\}$, each cell using twenty seeds. The energy plotted is
+evaluated independently of the update sample.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.48\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_stl_variance_by_distance_to_optimum}
+  \caption{Variance ratio versus mean displacement.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_stl_batchsize_effect}
+  \caption{Tail energy versus batch size.}
+\end{subfigure}
+\caption{Price/Hessian sticking-the-landing diagnostics. On a non-Gaussian
+$\log\cosh$ target, the mean-block Fisher--Rao variance ratio is positive at the
+optimizer and increases with the mean displacement in every plotted
+configuration, which is the displacement-dependent part $V_1 \| a - a_\star \|^2$
+of the local variance decomposition in \Cref{lem:loc-variance}. Mini-batching
+reduces the median tail energy gap approximately as $1/B$, which is the batch
+scaling of the Hessian-Lipschitz residual floors in
+\Cref{thm:stoch-glob-Riem,thm:stoch-glob-KL}; the assumption-minimal floors of the
+same theorems do not scale in $B$ at their prescribed stepsizes. The runs start from a
+generic initialization at a fixed stepsize rather than from the quadratic rescue those
+theorems assume, so the panels illustrate the scaling rather than instantiate the
+bounds.}
+\label{fig:num-stl}
+\end{figure}
+
+These panels support the variance decomposition of \Cref{sec:stochastic}. They
+do not test the finite-horizon containment bound of \Cref{prop:exit-prob}, whose
+horizon-dependent batch requirement is a worst-case statement and not a
+prediction for the median trajectory.
+
+\subsection{Affine-invariant modes}
+\label{sec:numerics-affine}
+
+The affine-metric experiment varies $\tau \in \{-\omega/(2N_\theta), 0,
+\omega/(2N_\theta)\}$ for several values of $\omega$, with five initializations
+isolating mean, volume-high, volume-low, traceless shape, and mixed
+perturbations. \Cref{fig:num-affine} reports the time-to-tolerance ratio
+$T(\tau)/T(0)$. At $\tau = -\omega/(2N_\theta)$ the trace rate
+$1/(2(\omega + N_\theta \tau))$ of \Cref{thm:aff-modes} doubles, and the
+volume-dominated runs take about half as long; at $\tau = \omega/(2N_\theta)$
+their time scale grows by about $3/2$. The mean- and traceless-dominated runs
+remain near one, as the corresponding modal rates $1/\eta$ and $1/(2\omega)$ do
+not involve $\tau$.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.49\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_ot_gaussian_tau_speedup}
+  \caption{Gaussian target.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_ot_logconcave_tau_speedup}
+  \caption{Strongly log-concave target.}
+\end{subfigure}
+\caption{Mode preconditioning in the affine-invariant family. The Gaussian panel
+calibrates the exact modal computation of \Cref{thm:aff-modes}; the
+non-Gaussian panel is an illustration of the same preconditioning effect and
+not a convergence theorem for the full metric family, in the sense of
+\Cref{rem:aff-scope}.}
+\label{fig:num-affine}
+\end{figure}
+
+\subsection{Beyond log-concavity}
+\label{sec:numerics-nonconvex}
+
+For the double well of \Cref{sec:global}, all expectations are deterministic
+Gauss--Hermite quadratures and all trajectories are centered, so that the mean
+term of the split stationarity measure vanishes by symmetry and the plotted
+quantity is its covariance term.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.32\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_nonconvex_riemannian_cascade}
+  \caption{Riemannian cascade.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.32\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_nonconvex_kl_pole}
+  \caption{KL pole.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.32\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_nonconvex_clipped_kl_stationarity}
+  \caption{Clipped KL stationarity.}
+\end{subfigure}
+\caption{The non-log-concave boundary. Although the Hessian satisfies
+$\abs{V_R''} \leq 1$, negative curvature drives the covariance cascade of
+\Cref{prop:cascade-Riem} and the rational pole of \Cref{prop:pole-KL}. With the
+covariance constrained to $[\lambda_-, \lambda_+]$ and a stepsize in the window
+of \Cref{thm:clip-KL}, the running minimum of the centered covariance KL stays
+below the energy-drop envelope. Once the upper constraint binds, the iterate
+remains pinned and the next displacement vanishes, which is constrained
+stationarity and not a small unconstrained Fisher--Rao gradient.}
+\label{fig:num-nonconvex}
+\end{figure}
+
+% SOURCES:
+% codex-draft/sections/07-numerics.tex (all subsections) -> re-voiced, compressed
+%   from five to five figures with the affine-mode panel retained as support for
+%   thm:aff-modes; all cross-references retargeted to the new label namespace.

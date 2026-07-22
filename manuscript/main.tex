@@ -1,6 +1,6 @@
 \input{preamble}
 
-\title{Sharp Global-to-Local Theory for Fisher--Rao Gaussian Variational Inference}
+\title{Gaussian Natural Gradient Flows for Variational Inference}
 \author{}
 \date{}
 
@@ -8,57 +8,60 @@
 \maketitle
 
 \begin{abstract}
-We study full-covariance Gaussian variational inference for a target
-\(\pi\propto e^{-V}\) through the Fisher--Rao natural gradient.  For strongly
-log-concave targets, optimizer whitening separates three rate-limiting
-mechanisms.  An underdispersed initialization first incurs a covariance
-bootstrap cost.  Global localization then occurs on an intrinsic condition
-scale \(\kappastar\), and, in dimension at least two, a logarithmic-spiral
-construction shows that this dependence is unavoidable for an admissible
-anisotropic initialization.  Near the optimizing Gaussian, the rate is
-instead controlled by a self-adjoint score operator.  Its spectral gap satisfies
-\[
- \max\!\left\{\alphastar,\frac{1}{4+\Gamma}\right\}
- \leq \gstar\leq\Lstar
- \leq\min\!\left\{\betastar,\frac{4+\Gamma}{2}\right\},
- \qquad
- \Gamma=O\!\left(1+\sqrt d\log\kappastar\right).
-\]
-A smooth convex-ridge family with \(d=\Theta(\kappastar^2)\) has
-\(\gstar=\Theta(\kappastar^{-1/2})\), showing that the
-\(\betastar-1\) branch of the universal spectral certificate is sharp up to
-constants while leaving the fixed-dimensional question open.  For two
-discretizations---a Riemannian matrix-exponential retraction and a KL/Bregman
-resolvent---we prove global upper bounds and a fixed-step lower bound matching
-the \(\kappa/h\) dependence for constant-factor reduction.  We also develop a
-joint Price/Hessian oracle with a sticking-the-landing score estimator, prove
-global geometric bounds with explicit constant-step residual levels, and,
-under Hessian-Lipschitzness, a floor-free decreasing-step rate and a
-finite-horizon local non-exit theory.  Finally, for \(d\geq2\) we classify all
-affine-invariant Gaussian metrics, identify Fisher--Rao as the unique balanced
-Gaussian choice up to scale, and show by a smooth double-well example why
-covariance control can become essential beyond log-concavity.
+We study Gaussian variational inference for a target
+$\rho_\post\propto e^{-V}$ through the natural gradient flow induced by the
+Fisher--Rao metric, together with two discretizations of it: a Riemannian
+retraction scheme and a KL/Bregman resolvent scheme. Our results are organized by
+a single phenomenon. Convergence proceeds in three stages, a covariance burn-in,
+a global localization phase, and a local phase, and each stage is governed by a
+different mechanism and carries its own sharp rate. An underdispersed
+initialization costs a burn-in time logarithmic in the initial covariance, which
+a Bures--Wasserstein warm start or a single gradient--Hessian query removes. The
+global phase is controlled by the condition number obtained after whitening by
+the optimizing covariance rather than by that of the target, and we show by a
+logarithmic-spiral construction in dimension two that this dependence cannot be
+improved, and by a one-dimensional bump train that the factor $\kappa/\Delta t$
+of both fixed-step schemes is sharp. The local phase runs at a rate set by the
+spectral gap of a self-adjoint score operator, for which we prove a two-sided
+estimate; a smooth convex-ridge family in dimension $\Theta(\kappastar^2)$, with
+a dimension-free Hessian-Lipschitz constant, has gap
+$\Theta(\kappastar^{-1/2})$ and thereby rules out every dimension-free
+logarithmic local rate. The same three stages persist for stochastic algorithms
+built from a joint Price/Hessian oracle with a sticking-the-landing mean
+estimator, where the covariance bands hold pathwise without clipping, the
+constant-step guarantees carry explicit variance floors that vanish for Gaussian
+targets, and the local statement is a non-exit contraction together with a
+finite-horizon containment bound. Beyond log-concavity, a smooth double well
+makes both unprojected schemes unstable, while a covariance-constrained KL step
+retains an $O(1/N)$ stationarity guarantee. Finally, we classify all
+affine-invariant Riemannian metrics on the Gaussian manifold, compute the exact
+rates at which each preconditions the mean, trace, and traceless covariance
+modes, and show that Fisher--Rao is the unique member of the family, up to scale,
+that balances all three.
 \end{abstract}
 
 \noindent\textbf{Keywords.}
-Gaussian variational inference; natural gradient; Fisher--Rao geometry;
-affine invariance; stochastic gradient; local convergence.
+Gaussian variational inference; natural gradient flow; Fisher--Rao geometry;
+affine invariance; convergence rates; stochastic gradient.
 
 \input{sections/01-introduction}
-\input{sections/02-geometry}
-\input{sections/03-global-deterministic}
-\input{sections/04-local}
-\input{sections/05-stochastic}
-\input{sections/06-nonconvex}
-\input{sections/07-numerics}
-\input{sections/08-discussion}
+\input{sections/02-global}
+\input{sections/03-local}
+\input{sections/04-stochastic}
+\input{sections/05-geometry}
+\input{sections/06-numerics}
+\input{sections/07-discussion}
 
 \appendix
-\input{appendices/A-affine-geometry}
-\input{appendices/B-deterministic-lower-bounds}
-\input{appendices/C-local-counterexample}
-\input{appendices/D-nonconvex-details}
-\input{appendices/E-experimental-details}
+\input{appendices/A-identities}
+\input{appendices/B-spiral}
+\input{appendices/C-bump-train}
+\input{appendices/D-ridge}
+\input{appendices/E-deterministic-proofs}
+\input{appendices/F-stochastic-proofs}
+\input{appendices/G-nonconvex}
+\input{appendices/H-classification}
+\input{appendices/I-experiments}
 
 \begingroup
 \small

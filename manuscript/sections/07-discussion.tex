@@ -1,0 +1,49 @@
+\section{Discussion}
+\label{sec:discussion}
+
+The convergence theory of Gaussian natural gradient flows separates into three
+stages, and the separation persists from the continuous dynamics to the
+deterministic discretizations and to the stochastic algorithms. An underdispersed
+initial covariance costs a burn-in time logarithmic in
+$\beta \lambda_{0,\min}$; the global phase localizes the iterate at the intrinsic
+condition number obtained after whitening by the optimizing covariance; and the
+local phase runs at a rate set by the spectral gap of a self-adjoint score
+operator rather than by the curvature ratio of the target. The three stages have
+different sharpness certificates. The logarithmic spiral shows that the
+$\kappastar$ dependence of the global phase cannot be improved under the general
+spectral initialization, the bump train shows that the factor $\kappa/\Delta t$
+of the fixed-step schemes is sharp for a constant-factor reduction, and the
+convex ridge shows that the $\betastar-1$ branch of the local spectral scale is
+attained, so that no dimension-free logarithmic local rate can hold.
+
+The stochastic theory preserves this structure with the sticking-the-landing and
+Price/Hessian estimators, at the cost of explicit variance floors that scale as
+$1/B$ in the batch size and vanish for Gaussian targets. The stochastic local result is a killed-process contraction together with a
+finite-horizon exit-probability bound; because the mean-score noise has
+unbounded support, we do not claim pathwise invariance of a bounded local region
+at a fixed stepsize, and we do not claim infinite-horizon containment. The
+discrete local radius for a general target is constructive through a supremum of
+second derivatives of the update map, and is not a closed-form quantity that a
+practitioner can evaluate.
+
+Several questions remain open. The local spectral bound degrades with dimension
+through the factor $\sqrt{N_\theta} \log \kappastar$, and the convex-ridge
+family lives in dimension
+$N_\theta = \Theta(\kappastar^2)$. We do not know whether a stronger bound holds
+in fixed dimension, nor whether the $\sqrt{N_\theta} \log \kappastar$ branch is
+itself sharp. The fixed-step lower bound is stated for one globally
+fixed stepsize, and it leaves open whether an adaptive, line-search, or implicit
+scheme can evade the factor $\kappa/\Delta t$. A closed-form discrete local
+radius, and sharper stepsize windows for the stochastic local phase, would make
+the local theory usable as a stopping rule rather than as an existence
+statement. We prove a stationarity guarantee for the covariance-constrained KL
+scheme in the deterministic setting only; its stochastic counterpart requires a
+separate treatment of the interaction between the clipping step and the noise,
+which we do not treat. Finally, the classification of
+\Cref{sec:geometry} exhibits a three-parameter family of affine-invariant
+metrics whose modal rates we compute exactly on Gaussian targets, but the sharp
+global and local theory of \Cref{sec:global,sec:local} is developed for
+Fisher--Rao alone; extending it to unbalanced members of the family, and
+developing the Wasserstein--Fisher--Rao dynamics, which the transport warm start
+of \Cref{sec:global} does not develop, are natural directions for subsequent
+work.
