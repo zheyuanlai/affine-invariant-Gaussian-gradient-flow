@@ -1,0 +1,1012 @@
+\section{Price/Hessian stochastic Fisher--Rao algorithms}
+\label{sec:stochastic}
+
+The deterministic maps of \Cref{sec:geometry-fr-algorithms} require Gaussian
+expectations.  We now replace them by minibatch estimates built from a joint
+gradient--Hessian oracle.  The sampled Hessian is not merely a convenient
+representation of Price's identity: its samplewise curvature bounds preserve
+the covariance bands pathwise.  This makes the global stochastic theory
+unconditional.  Locally, the score noise has unbounded support, so the
+appropriate statement is instead a contraction of the killed second moment,
+paired with a separate finite-horizon containment estimate.
+
+Throughout this section,
+\(\alpha\Id\preceq\nabla^2V\preceq\beta\Id\),
+\(\kappa=\beta/\alpha\), and \(a_n=(m_n,C_n)\).  We write
+\[
+  g(a):=-\E_{\N(m,C)}\nabla V,
+  \qquad
+  A(a):=\E_{\N(m,C)}\nabla^2V,
+  \qquad
+  R(a):=C^{-1}-A(a),
+\]
+and recall the Fisher--Rao gradient norm
+\[
+  \Gradnorm(a)^2
+  =g(a)^\top Cg(a)
+   +\frac12\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2.
+\]
+
+\subsection{Oracle, estimators, and covariance safety}
+\label{sec:stoch-oracle}
+
+\begin{definition}[Price/Hessian oracle]
+\label{def:stoch-oracle}
+At a query point \(x\in\R^d\), the oracle returns the pair
+\((\nabla V(x),\nabla^2V(x))\).
+\end{definition}
+
+Fix a batch size \(B\geq1\).  Conditionally on
+\(\Fil_n:=\sigma(a_0,\ldots,a_n)\), draw independent
+\(Z_{n,s}\sim\N(0,\Id)\) and set
+\(X_{n,s}=m_n+C_n^{1/2}Z_{n,s}\).  The sticking-the-landing
+score and Price/Hessian covariance estimates are
+\begin{align}
+  \overline b_n
+  &:=\frac1B\sum_{s=1}^B
+  \left[-\nabla V(X_{n,s})+C_n^{-1/2}Z_{n,s}\right],
+  \label{eq:stoch-score}\\
+  \overline H_n
+  &:=\frac1B\sum_{s=1}^B\nabla^2V(X_{n,s}),
+  \qquad
+  \overline R_n:=C_n^{-1}-\overline H_n.
+  \label{eq:stoch-hessian-estimator}
+\end{align}
+Gaussian integration by parts and Price's identity give
+\begin{equation}
+  \E[\overline b_n\mid\Fil_n]=g(a_n),
+  \qquad
+  \E[\overline R_n\mid\Fil_n]=R(a_n).
+  \label{eq:stoch-unbiased}
+\end{equation}
+The same samples may be used in both averages.  None of the arguments below
+assumes conditional independence between the score and Hessian components.
+Independence is used only across the \(B\) sample pairs.
+
+For a stepsize \(h_n>0\), the two stochastic maps are
+\begin{align}
+  m_{n+1}&=m_n+h_nC_n\overline b_n,
+  &
+  C_{n+1}
+  &=C_n^{1/2}\exp\!\left(
+    h_n(\Id-C_n^{1/2}\overline H_nC_n^{1/2})
+  \right)C_n^{1/2},
+  \label{eq:stoch-riemannian}\\
+  m_{n+1}&=m_n+h_nC_n\overline b_n,
+  &
+  C_{n+1}
+  &=(1+h_n)(C_n^{-1}+h_n\overline H_n)^{-1},
+  \label{eq:stoch-kl}
+\end{align}
+for the Riemannian and KL variants, respectively.  Strong log-concavity
+holds samplewise:
+\begin{equation}
+  \alpha\Id\preceq\overline H_n\preceq\beta\Id
+  \qquad\text{almost surely.}
+  \label{eq:stoch-sampled-band}
+\end{equation}
+This property would be lost for the gradient-only Price representation of
+\(A(a)\), whose individual matrices need not have bounded spectrum.
+
+We initialize the stochastic phase by the quadratic rescue from
+\Cref{sec:global}.  One deterministic oracle query at \(m_{\rm in}\) gives
+\begin{equation}
+  H_{\rm in}=\nabla^2V(m_{\rm in}),
+  \qquad
+  m_0=m_{\rm in}-H_{\rm in}^{-1}\nabla V(m_{\rm in}),
+  \qquad
+  C_0=H_{\rm in}^{-1}.
+  \label{eq:stoch-rescue}
+\end{equation}
+Thus \(\beta^{-1}\Id\preceq C_0\preceq\alpha^{-1}\Id\).
+For a quadratic potential, \eqref{eq:stoch-rescue} is the exact optimizing
+Gaussian.
+
+\begin{proposition}[Pathwise covariance bands]
+\label{prop:stoch-covariance-bands}
+Initialize by \eqref{eq:stoch-rescue}.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item If \eqref{eq:stoch-riemannian} is run with
+  \(0<h_n\leq1/\kappa\) for every \(n\), then almost surely
+  \[
+    \frac1{2\beta}\Id\preceq C_n\preceq\frac1\alpha\Id
+    \qquad(n\geq0).
+  \]
+\item If \eqref{eq:stoch-kl} is run with arbitrary \(h_n>0\), then almost
+  surely
+  \[
+    \frac1\beta\Id\preceq C_n\preceq\frac1\alpha\Id
+    \qquad(n\geq0).
+  \]
+\end{enumerate}
+No stopping, projection, clipping, or local-containment hypothesis is used.
+\end{proposition}
+
+\begin{proof}
+Condition on an arbitrary realization satisfying
+\eqref{eq:stoch-sampled-band}.  For the KL update, the induction hypothesis
+gives
+\[
+  (1+h_n)\alpha\Id
+  \preceq C_n^{-1}+h_n\overline H_n
+  \preceq(1+h_n)\beta\Id.
+\]
+Inversion proves the claimed KL band for every positive stepsize.
+
+For the Riemannian update, put
+\(B_n=C_n^{1/2}\overline H_nC_n^{1/2}\).  Since
+\(e^M\succeq\Id+M\) for symmetric \(M\),
+\[
+  C_{n+1}^{-1}
+  =C_n^{-1/2}e^{h_n(B_n-\Id)}C_n^{-1/2}
+  \succeq(1-h_n)C_n^{-1}+h_n\overline H_n
+  \succeq\alpha\Id,
+\]
+where \(h_n\leq1/\kappa\leq1\).  This proves the upper covariance bound.
+It also implies \(B_n\preceq\kappa\Id\), hence
+\(0\preceq h_nB_n\preceq\Id\).  Convexity of the scalar exponential on
+\([0,1]\), transferred spectrally, gives
+\[
+  e^{h_nB_n}\preceq\Id+(e-1)h_nB_n.
+\]
+If \(C_n^{-1}\preceq2\beta\Id\), then
+\[
+  C_{n+1}^{-1}
+  \preceq e^{-h_n}
+  \left[C_n^{-1}+(e-1)h_n\overline H_n\right]
+  \preceq\beta e^{-h_n}\left[2+(e-1)h_n\right]\Id
+  \preceq2\beta\Id.
+\]
+The last scalar inequality holds for \(0\leq h_n\leq1\).  The rescue lies
+in the stronger initial band, so induction completes the proof.
+\end{proof}
+
+\subsection{Intrinsic sticking-the-landing variance}
+\label{sec:stoch-variance}
+
+For one draw \(X\sim\N(m,C)\), write
+\[
+  \widehat b=-\nabla V(X)+C^{-1}(X-m),
+  \qquad
+  \varepsilon_b=\widehat b-g(a),
+  \qquad
+  \varepsilon_H=\nabla^2V(X)-A(a).
+\]
+The intrinsic quantity controlling the additive error is the fluctuation of
+the relative Hessian.
+
+\begin{definition}[Intrinsic Hessian fluctuation]
+\label{def:stoch-intrinsic-fluctuation}
+For \(a=(m,C)\), define
+\begin{equation}
+  \Psi(a)
+  :=\E\norm{
+    C^{1/2}\bigl(\nabla^2V(X)-A(a)\bigr)C^{1/2}
+  }_{\Frob}^2,
+  \qquad X\sim\N(m,C).
+  \label{eq:stoch-Psi}
+\end{equation}
+\end{definition}
+
+\begin{lemma}[Intrinsic STL variance]
+\label{lem:stoch-intrinsic-variance}
+The single-sample score satisfies
+\begin{equation}
+  \E[\varepsilon_b^\top C\varepsilon_b]
+  \leq
+  \norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2+\Psi(a).
+  \label{eq:stoch-score-variance}
+\end{equation}
+If \(\zeta(a;X)=(-C\varepsilon_b,C\varepsilon_HC)\) denotes the
+single-sample tangent noise, then
+\begin{equation}
+  \E\norm{\zeta(a;X)}_{a,\FR}^2
+  \leq2\Gradnorm(a)^2+\frac32\Psi(a).
+  \label{eq:stoch-tangent-variance}
+\end{equation}
+Consequently, the conditional tangent variance of a batch average is at
+most \(B^{-1}(2\Gradnorm(a_n)^2+3\Psi(a_n)/2)\).
+\end{lemma}
+
+\begin{proof}
+Set \(F(x)=-\nabla V(x)+C^{-1}(x-m)\).  The Gaussian Poincar\'e inequality,
+applied componentwise to \(C^{1/2}F(X)\), yields
+\[
+  \E[\varepsilon_b^\top C\varepsilon_b]
+  \leq\E\norm{C^{1/2}(C^{-1}-\nabla^2V(X))C^{1/2}}_{\Frob}^2.
+\]
+Decompose the matrix on the right as
+\(C^{1/2}R(a)C^{1/2}-C^{1/2}\varepsilon_HC^{1/2}\).
+The cross term has zero expectation, proving
+\eqref{eq:stoch-score-variance}.  The Fisher--Rao covariance block has
+weight \(1/2\), so
+\[
+  \E\norm{\zeta}_{a,\FR}^2
+  =\E[\varepsilon_b^\top C\varepsilon_b]+\frac12\Psi(a)
+  \leq\norm{C^{1/2}RC^{1/2}}_{\Frob}^2+\frac32\Psi(a).
+\]
+The covariance residual term is at most \(2\Gradnorm(a)^2\).  Centering and
+independence across the batch divide the variance by \(B\).
+\end{proof}
+
+There are two useful ways to control \(\Psi\).  The first uses only the
+curvature bounds and is self-bounding.  The second uses a Lipschitz Hessian
+and retains the exact Gaussian cancellation.
+
+\begin{lemma}[Two fluctuation regimes]
+\label{lem:stoch-fluctuation-regimes}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item If \(C\preceq\Lambda\Id\) and \(L_\Lambda=\beta\Lambda\), then
+\begin{equation}
+  \Psi(a)
+  \leq2L_\Lambda d
+    +L_\Lambda\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2
+  \leq2L_\Lambda d+2L_\Lambda\Gradnorm(a)^2.
+  \label{eq:stoch-Psi-selfbound}
+\end{equation}
+In particular, on either rescued upper band, \(L_\Lambda=\kappa\), and
+\begin{equation}
+  \E[\norm{\widehat{\grad}\calE(a)}_{a,\FR}^2\mid a]
+  \leq\rho_B\Gradnorm(a)^2+\frac{3\kappa d}{B},
+  \qquad
+  \rho_B:=1+\frac{2+3\kappa}{B}.
+  \label{eq:stoch-selfbounded-second-moment}
+\end{equation}
+\item Suppose
+\(\norm{\nabla^2V(x)-\nabla^2V(y)}_{\op}\leq
+L_H\norm{x-y}\).  Then
+\begin{equation}
+  \Psi(a)
+  \leq L_H^2\Tr(C^2)\Tr C
+  \leq L_H^2\norm C_{\op}(\Tr C)^2.
+  \label{eq:stoch-Psi-anisotropic}
+\end{equation}
+On \(C\preceq\alpha^{-1}\Id\), writing
+\(\overline L_H:=L_H/\alpha^{3/2}\),
+\begin{equation}
+  \Psi(a)\leq\Psi_H:=d^2\overline L_H^2.
+  \label{eq:stoch-Psi-Hlip}
+\end{equation}
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+For the first part, let
+\(B_X=C^{1/2}\nabla^2V(X)C^{1/2}\) and
+\(S_A=\E B_X=C^{1/2}A(a)C^{1/2}\).  Since
+\(0\preceq B_X\preceq L_\Lambda\Id\),
+\[
+  \Psi=\E\Tr(B_X^2)-\Tr(S_A^2)
+  \leq L_\Lambda\Tr S_A.
+\]
+The scalar inequality \(s\leq2+(s-1)^2\), applied to the eigenvalues of
+\(S_A\), gives
+\(\Tr S_A\leq2d+\norm{S_A-\Id}_{\Frob}^2\).  Since
+\(S_A-\Id=-C^{1/2}RC^{1/2}\), this proves
+\eqref{eq:stoch-Psi-selfbound}.  Combining it with
+\eqref{eq:stoch-tangent-variance} gives
+\eqref{eq:stoch-selfbounded-second-moment}.
+
+For the second part, put
+\(F(Z)=C^{1/2}\nabla^2V(m+C^{1/2}Z)C^{1/2}\).  Componentwise Gaussian
+Poincar\'e gives
+\(\Psi\leq\E\norm{D_ZF(Z)}_{\rm HS}^2\).  For a unit vector \(u\),
+\[
+  D_ZF(Z)[u]=C^{1/2}M_uC^{1/2},
+  \qquad
+  \norm{M_u}_{\op}\leq L_H(u^\top Cu)^{1/2}.
+\]
+In an eigenbasis of \(C\), symmetry of \(M_u\) and
+\(2c_ic_j\leq c_i^2+c_j^2\) imply
+\[
+  \norm{C^{1/2}M_uC^{1/2}}_{\Frob}^2
+  \leq\Tr(C^2M_u^2)
+  \leq\norm{M_u}_{\op}^2\Tr(C^2).
+\]
+Summing over an orthonormal basis of directions \(u\) proves the first
+inequality in \eqref{eq:stoch-Psi-anisotropic}.  The remaining inequalities
+follow from
+\(\Tr(C^2)\leq\norm C_{\op}\Tr C\) and the rescued upper band.
+\end{proof}
+
+The anisotropic form in \eqref{eq:stoch-Psi-anisotropic} can be much smaller
+than \(d^2\overline L_H^2\) when the covariance spectrum decays.  The
+worst-case \(d^2\) bound is nevertheless the uniform consequence of the
+band.  For a quadratic target, \(L_H=0\) and, more strongly, the integrand in
+\eqref{eq:stoch-Psi} is identically zero.
+
+\subsection{Global stochastic convergence}
+\label{sec:stoch-global}
+
+On the Riemannian band of \Cref{prop:stoch-covariance-bands}, the global
+gradient-domination estimate from \Cref{sec:global} reads
+\(\Gradnorm(a_n)^2\geq\Delta_n/(2\kappa)\).  On the tighter KL band it reads
+\(\Gradnorm(a_n)^2\geq\Delta_n/\kappa\), where
+\(\Delta_n=\calE(a_n)-\calE(a_\star)\).
+
+\begin{lemma}[Intrinsic one-step inequalities]
+\label{lem:stoch-global-onestep}
+Conditionally on \(\Fil_n\), the Riemannian update with
+\(0<h\leq1/\kappa\) satisfies
+\begin{equation}
+  \E[\Delta_{n+1}\mid\Fil_n]
+  \leq\Delta_n
+  -h\left[1-\kappa h\left(1+\frac2B\right)\right]
+     \Gradnorm(a_n)^2
+  +\frac{3\kappa h^2}{2B}\Psi(a_n).
+  \label{eq:stoch-riemannian-onestep}
+\end{equation}
+The KL update with \(0<h\leq1/(8\kappa)\) satisfies
+\begin{equation}
+  \E[\Delta_{n+1}\mid\Fil_n]
+  \leq\Delta_n-\frac h2\Gradnorm(a_n)^2
+  +\frac{7\kappa h^2}{4B}\Psi(a_n).
+  \label{eq:stoch-kl-onestep}
+\end{equation}
+Both estimates remain valid when the score and Hessian use the same batch.
+\end{lemma}
+
+\begin{proof}
+The retraction smoothness estimate from the deterministic analysis gives,
+pathwise on \(C_n\preceq\alpha^{-1}\Id\),
+\[
+  \calE(a_{n+1})
+  \leq\calE(a_n)
+  -h\inner{\grad\calE(a_n)}{\widehat{\grad}\calE(a_n)}_{a_n}
+  +\kappa h^2\norm{\widehat{\grad}\calE(a_n)}_{a_n,\FR}^2.
+\]
+Taking conditional expectation, using unbiasedness and
+\Cref{lem:stoch-intrinsic-variance}, proves
+\eqref{eq:stoch-riemannian-onestep}.
+
+For the KL map, suppress the time index and set
+\[
+  S=C^{1/2}R(a)C^{1/2},
+  \quad
+  D=C^{1/2}(\overline H-A(a))C^{1/2},
+  \quad
+  P=C^{1/2}\overline HC^{1/2},
+  \quad
+  \overline S=S-D.
+\]
+The covariance update has the exponential-retraction representation
+\begin{equation}
+  C^+=C^{1/2}e^{W(P)}C^{1/2},
+  \qquad
+  W(P)=\log(1+h)\Id-\log(\Id+hP).
+  \label{eq:stoch-kl-logarithmic-tangent}
+\end{equation}
+For every eigenvalue \(p\in[1/\kappa,\kappa]\), the integral formula
+\(W(p)=\int_p^1h(1+hr)^{-1}\dd r\) gives
+\begin{equation}
+  \norm{W(P)}_{\Frob}\leq h\norm{\overline S}_{\Frob},
+  \qquad
+  \norm{W(P)-h\overline S}_{\Frob}
+  \leq\kappa h^2\norm{\overline S}_{\Frob}.
+  \label{eq:stoch-kl-tangent-bounds}
+\end{equation}
+Write
+\(M=g^\top Cg\), \(V=\norm S_{\Frob}^2\), and
+\(\sigma^2=\Psi(a)/B\).  Then
+\(\E\norm D_{\Frob}^2=\sigma^2\) and
+\eqref{eq:stoch-score-variance} gives
+\(\E[\overline b^\top C\overline b]\leq M+V/B+\sigma^2\).
+Applying the same retraction smoothness bound to the logarithmic tangent in
+\eqref{eq:stoch-kl-logarithmic-tangent}, and then using
+\eqref{eq:stoch-kl-tangent-bounds}, yields
+\[
+\begin{split}
+  \E[\Delta^+\mid\Fil]
+  \leq{}&\Delta-h(1-\kappa h)M
+  -h\left[\frac12-\kappa h\left(1+\frac1B\right)\right]V
+  +\frac74\kappa h^2\sigma^2.
+\end{split}
+\]
+This calculation uses only \(\E D=0\) and the two marginal second moments;
+there is no score--Hessian independence step.  If
+\(h\leq1/(8\kappa)\), the coefficients of \(M\) and \(V\) are at least
+\(h/2\) and \(h/4\), respectively.  Since
+\(\Gradnorm^2=M+V/2\), \eqref{eq:stoch-kl-onestep} follows.
+\end{proof}
+
+The next result displays the two fluctuation regimes side by side.  Every
+constant-step conclusion is a geometric approach to the stated residual
+upper bound.  It is not a claim of convergence to arbitrary accuracy, nor a
+matching lower bound on the algorithm's stationary error.
+
+\begin{theorem}[Constant-step global rates and residual floors]
+\label{thm:stoch-global-constant-step}
+Initialize by \eqref{eq:stoch-rescue} and let \(B\geq1\).
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item Under the Hessian-Lipschitz assumption, the Riemannian method with
+\(h=[2\kappa(1+2/B)]^{-1}\) satisfies
+\begin{equation}
+  \E\Delta_N
+  \leq
+  \left(1-\frac1{8\kappa^2(1+2/B)}\right)^N\Delta_0
+  +\frac{3\kappa}{B+2}\,d^2\overline L_H^2.
+  \label{eq:stoch-global-riemannian-Hlip}
+\end{equation}
+\item Under the same assumption, the KL method with
+\(h=1/(8\kappa)\) satisfies
+\begin{equation}
+  \E\Delta_N
+  \leq
+  \left(1-\frac1{16\kappa^2}\right)^N\Delta_0
+  +\frac{7\kappa}{16B}\,d^2\overline L_H^2.
+  \label{eq:stoch-global-kl-Hlip}
+\end{equation}
+\item Without Hessian-Lipschitzness, set
+\(\rho_B=1+(2+3\kappa)/B\).  The Riemannian method with
+\(h=(2\kappa\rho_B)^{-1}\) satisfies
+\begin{equation}
+  \E\Delta_N
+  \leq
+  \left(1-\frac1{8\kappa^2\rho_B}\right)^N\Delta_0
+  +\frac{6\kappa^2d}{B+2+3\kappa}.
+  \label{eq:stoch-global-riemannian-selfbound}
+\end{equation}
+\item Without Hessian-Lipschitzness, the KL method with
+\(h=\min\{1/(8\kappa),B/(14\kappa^2)\}\) satisfies
+\begin{equation}
+  \E\Delta_N
+  \leq
+  \left(1-\frac h{4\kappa}\right)^N\Delta_0
+  +\frac{14\kappa^3hd}{B}.
+  \label{eq:stoch-global-kl-selfbound}
+\end{equation}
+If \(B\leq7\kappa/4\), the last floor is exactly \(\kappa d\) and the
+contraction factor is \(1-B/(56\kappa^3)\).
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+For (i), the bracket in
+\eqref{eq:stoch-riemannian-onestep} equals \(1/2\).  Use
+\(\Psi\leq\Psi_H=d^2\overline L_H^2\) and
+\(\Gradnorm^2\geq\Delta/(2\kappa)\), then sum the geometric recursion.
+Its additive increment is \(3\kappa h^2\Psi_H/(2B)\), and division by the
+drift \(h/(4\kappa)\) gives the floor in
+\eqref{eq:stoch-global-riemannian-Hlip}.  Part (ii) follows in the same way
+from \eqref{eq:stoch-kl-onestep} and
+\(\Gradnorm^2\geq\Delta/\kappa\); the drift is
+\(h/(2\kappa)\).
+
+For (iii), substitute
+\(\Psi\leq2\kappa d+2\kappa\Gradnorm^2\) into
+\eqref{eq:stoch-riemannian-onestep}.  This gives
+\[
+  \E[\Delta_{n+1}\mid\Fil_n]
+  \leq\Delta_n-h(1-\kappa h\rho_B)\Gradnorm(a_n)^2
+  +\frac{3\kappa^2h^2d}{B}.
+\]
+At \(h=(2\kappa\rho_B)^{-1}\), the first bracket is \(1/2\).  Applying
+the Riemannian-band gradient domination and unrolling gives
+\eqref{eq:stoch-global-riemannian-selfbound}.  For (iv), substitution into
+\eqref{eq:stoch-kl-onestep} gives
+\[
+  \E[\Delta_{n+1}\mid\Fil_n]
+  \leq\Delta_n
+  -\frac h2\left(1-\frac{7\kappa^2h}{B}\right)\Gradnorm(a_n)^2
+  +\frac{7\kappa^2h^2d}{2B}.
+\]
+The chosen stepsize makes the bracket at least \(1/2\).  The KL-band
+gradient domination and a geometric sum prove
+\eqref{eq:stoch-global-kl-selfbound}.
+\end{proof}
+
+For \(B=1\), the Hessian-Lipschitz bounds require
+\(\widetilde O(\kappa^2)\) rounds to reach an accuracy above their displayed
+floors.  Under curvature bounds alone, both single-sample bounds require
+\(\widetilde O(\kappa^3)\) rounds.  Taking
+\(B=\Theta(\kappa)\) reduces the latter round complexity to
+\(\widetilde O(\kappa^2)\), but the number of Price/Hessian oracle pairs
+remains \(\widetilde O(\kappa^3)\).  The one-time rescue adds one oracle
+pair.
+
+Constant steps are not necessary if convergence all the way to zero is
+required in the Hessian-Lipschitz regime.
+
+\begin{theorem}[Floor-free decreasing steps]
+\label{thm:stoch-global-decreasing}
+Under the Hessian-Lipschitz assumption, initialize by
+\eqref{eq:stoch-rescue} and run either method with
+\begin{equation}
+  h_n=\frac{8\kappa}{n+n_0},
+  \qquad n_0\geq64\kappa^2.
+  \label{eq:stoch-decreasing-schedule}
+\end{equation}
+Then, for all \(N\geq0\),
+\begin{equation}
+  \E\Delta_N\leq\frac K{N+n_0},
+  \qquad
+  K:=\max\left\{
+    \frac{112\kappa^3d^2\overline L_H^2}{B},
+    n_0\Delta_0
+  \right\}.
+  \label{eq:stoch-decreasing-rate}
+\end{equation}
+Thus \eqref{eq:stoch-decreasing-rate} is a genuine \(O(N^{-1})\) decay to
+zero.  The algorithm does not need to know \(L_H\); that constant appears
+only in the certificate.
+\end{theorem}
+
+\begin{proof}
+The schedule satisfies \(h_n\leq1/(8\kappa)\).  The KL band persists for
+all positive steps.  The proof of
+\Cref{prop:stoch-covariance-bands} also works step by step for the
+Riemannian schedule because each \(h_n\leq1/\kappa\).  Hence
+\eqref{eq:stoch-riemannian-onestep} and
+\eqref{eq:stoch-kl-onestep} apply at every iteration.  In both cases, using
+the weaker of the two band-dependent drift constants and
+\(\Psi\leq\Psi_H\),
+\begin{equation}
+  \E\Delta_{n+1}
+  \leq
+  \left(1-\frac{h_n}{4\kappa}\right)\E\Delta_n
+  +\frac{7\kappa h_n^2}{4B}\Psi_H.
+  \label{eq:stoch-decreasing-recursion}
+\end{equation}
+With \(t=n+n_0\), this is
+\[
+  \E\Delta_{n+1}
+  \leq\left(1-\frac2t\right)\E\Delta_n+\frac S{t^2},
+  \qquad
+  S=\frac{112\kappa^3\Psi_H}{B}.
+\]
+If \(K=\max\{S,n_0\Delta_0\}\), induction gives
+\(\E\Delta_n\leq K/(n+n_0)\): assuming the claim at \(n\),
+\[
+  \E\Delta_{n+1}
+  \leq \frac Kt-\frac{2K-S}{t^2}
+  \leq \frac{K(t-1)}{t^2}
+  \leq \frac K{t+1}.
+\]
+This proves \eqref{eq:stoch-decreasing-rate}.
+\end{proof}
+
+\subsection{Local killed-process contraction and containment}
+\label{sec:stoch-local}
+
+We now work in the optimizer-whitened coordinates of \Cref{sec:local}, so
+\(a_\star=(0,\Id)\).  The two equilibrium norms are
+\begin{equation}
+  \norm{(m,C)-a_\star}_{\star,\Riem}^2
+  :=\norm m^2+\frac12\norm{C-\Id}_{\Frob}^2,
+  \qquad
+  \norm{(m,C)-a_\star}_{\star,\KL}^2
+  :=\norm m^2+\frac{1+h}{2}\norm{C-\Id}_{\Frob}^2.
+  \label{eq:stoch-local-norms}
+\end{equation}
+If the original Hessian has Lipschitz modulus \(L_H\), then the whitened
+potential has modulus
+\begin{equation}
+  L_{H,\star}
+  \leq L_H\norm{C_\star}_{\op}^{3/2}
+  \leq \frac{L_H}{\alpha^{3/2}}
+  =\overline L_H.
+  \label{eq:stoch-whitened-Hlip}
+\end{equation}
+
+For a fixed method and stepsize, call a local energy level
+\(\delta_\bullet\) stochastically admissible if the deterministic
+second-derivative criterion of \Cref{sec:local-discrete} holds and, on
+\(\mathcal U_{\delta_\bullet}\),
+\begin{equation}
+  \frac12\Id\preceq C\preceq\frac32\Id,
+  \qquad
+  \norm{a-a_\star}_{\star,\bullet}\leq1.
+  \label{eq:stoch-local-admissible}
+\end{equation}
+Equivalently, one may require
+\(K_{\mathrm{disc},\bullet}(\delta_\bullet)
+\mathfrak b_\bullet(\delta_\bullet)\sqrt{\delta_\bullet}
+\leq\gamma_\bullet\), with
+\(\gamma_{\Riem}=1/(4+\Gamma)\) and
+\(\gamma_{\KL}=1/(4+2h+\Gamma)\), together with
+\eqref{eq:stoch-local-admissible}.  Such levels exist for every fixed
+admissible \(h\) by shrinking \(\delta_\bullet\).  As in
+\Cref{rem:local-discrete-explicitness}, this is a constructive existence
+statement through \(K_{\mathrm{disc},\bullet}\), not a closed-form radius in the target
+parameters.
+
+The local noise consists of the Euclidean score error
+\(\varepsilon_b\) and the whitened Hessian error \(\varepsilon_H\).
+
+\begin{lemma}[Local variance decomposition]
+\label{lem:stoch-local-variance}
+If \(\Id/2\preceq C\preceq3\Id/2\), then
+\begin{equation}
+  \E\left[\norm{\varepsilon_b}^2
+    +\frac12\norm{\varepsilon_H}_{\Frob}^2\right]
+  \leq V_0+V_1\norm{a-a_\star}_{\star,\Riem}^2,
+  \qquad
+  V_0:=3d^2L_{H,\star}^2,
+  \quad
+  V_1:=24+6dL_{H,\star}^2.
+  \label{eq:stoch-local-variance}
+\end{equation}
+For a batch average, the right-hand side is divided by \(B\).  At
+\(a_\star\), the sharper bound is
+\[
+  \E\left[\norm{\varepsilon_b}^2
+    +\frac12\norm{\varepsilon_H}_{\Frob}^2\right]
+  \leq\frac32d^2L_{H,\star}^2.
+\]
+\end{lemma}
+
+\begin{proof}
+Gaussian Poincar\'e applied to the Hessian entries gives
+\(\E\norm{\varepsilon_H}_{\Frob}^2\leq(3/2)d^2L_{H,\star}^2\).
+Applying it to
+\(F(x)=-\nabla\widehat V(x)+C^{-1}(x-m)\) gives
+\[
+  \E\norm{\varepsilon_b}^2
+  \leq\frac32\left(
+    \norm{C^{-1}-A(a)}_{\Frob}^2
+    +\E\norm{\varepsilon_H}_{\Frob}^2
+  \right).
+\]
+On the stated band,
+\(\norm{C^{-1}-\Id}_{\Frob}\leq2\norm{C-\Id}_{\Frob}\).
+Moreover, coupling \(m+C^{1/2}Z\) with \(Z\) and using
+\(A(a_\star)=\Id\) yields
+\[
+  \norm{A(a)-\Id}_{\Frob}^2
+  \leq dL_{H,\star}^2
+  \left(\norm m^2+\norm{C^{1/2}-\Id}_{\Frob}^2\right).
+\]
+Since
+\(\norm{C^{1/2}-\Id}_{\Frob}\leq\norm{C-\Id}_{\Frob}\), collecting the
+terms gives \eqref{eq:stoch-local-variance}.  At equilibrium the residual
+\(C^{-1}-A(a)\) vanishes and \(\norm C_{\op}=1\), which gives the sharper
+constant.  Batch averaging divides centered second moments by \(B\).
+\end{proof}
+
+Let \(T_{\bullet,h}\) denote the corresponding deterministic local map.
+The following perturbation estimate records the constants needed below.
+
+\begin{lemma}[One-step stochastic perturbation]
+\label{lem:stoch-local-perturbation}
+Suppose \eqref{eq:stoch-local-admissible} holds and
+\(\norm{T_{\bullet,h}(a)-a_\star}_{\star,\bullet}\leq1\), with
+\(0<h\leq1\).  One stochastic step satisfies
+\begin{align}
+  \E[\norm{a^+-a_\star}_{\star,\Riem}^2\mid a]
+  &\leq
+  \norm{T_{\Riem,h}(a)-a_\star}_{\star,\Riem}^2
+  +\frac{64h^2}{B}\left(V_0+V_1\norm{a-a_\star}_{\star,\Riem}^2\right),
+  \label{eq:stoch-local-perturb-riemannian}\\
+  \E[\norm{a^+-a_\star}_{\star,\KL}^2\mid a]
+  &\leq
+  \norm{T_{\KL,h}(a)-a_\star}_{\star,\KL}^2
+  +\frac{68h^2}{B}\left(V_0+V_1\norm{a-a_\star}_{\star,\Riem}^2\right).
+  \label{eq:stoch-local-perturb-kl}
+\end{align}
+\end{lemma}
+
+\begin{proof}
+For the Riemannian covariance update, put
+\(S=\Id-C^{1/2}A(a)C^{1/2}\) and replace it in the stochastic map by
+\(\widehat S=S-C^{1/2}\overline\varepsilon_HC^{1/2}\).  For
+\(S,\widehat S\preceq\Id\) and \(h\leq1\), the Fr\'echet derivative and its
+integral remainder give
+\begin{align*}
+  \norm{e^{h\widehat S}-e^{hS}}_{\Frob}
+  &\leq eh\norm{\widehat S-S}_{\Frob},\\
+  \norm{e^{h\widehat S}-e^{hS}
+       -D\exp(hS)[h(\widehat S-S)]}_{\Frob}
+  &\leq\frac e2h^2
+  \norm{\widehat S-S}_{\op}\norm{\widehat S-S}_{\Frob}.
+\end{align*}
+The linear term is centered.  Expanding the squared norm around the
+deterministic update, the second-moment and bias coefficients are bounded by
+\(81e^2/16\) and \(27e/(4\sqrt2)\), whose sum is less than \(64\).
+
+For KL, write
+\(P=C^{-1}+hA(a)\) and
+\(\widehat P=P+h\overline\varepsilon_H\).  The identities
+\[
+  \widehat P^{-1}-P^{-1}
+  =-P^{-1}(h\overline\varepsilon_H)\widehat P^{-1}
+\]
+and
+\[
+  \widehat P^{-1}-P^{-1}
+  =-P^{-1}(h\overline\varepsilon_H)P^{-1}
+   +P^{-1}(h\overline\varepsilon_H)P^{-1}
+    (h\overline\varepsilon_H)\widehat P^{-1}
+\]
+control the second moment and the second-order bias.  On the covariance
+band, their aggregate coefficient is
+\(81/2+27=67.5<68\).  The score increment is linear and centered in both
+maps.  Applying \Cref{lem:stoch-local-variance} completes the proof; in the
+KL case one also uses
+\(\norm{a-a_\star}_{\star,\Riem}\leq
+\norm{a-a_\star}_{\star,\KL}\).
+\end{proof}
+
+Set
+\begin{equation}
+\begin{array}{c|c|c|c}
+  \bullet&A_\bullet&c_\bullet&
+  \eta_\bullet\\ \hline
+  \Riem&4+\Gamma&64&
+  192h^2d^2L_{H,\star}^2/B\\[1mm]
+  \KL&4+2h+\Gamma&68&
+  204h^2d^2L_{H,\star}^2/B
+\end{array}
+\qquad
+\mu_\bullet:=\frac1{2A_\bullet}.
+\label{eq:stoch-local-constants}
+\end{equation}
+
+\begin{theorem}[Local non-exit mean-square contraction]
+\label{thm:stoch-local-killed}
+Fix \(\bullet\in\{\Riem,\KL\}\) and suppose
+\begin{equation}
+  0<h\leq
+  \min\left\{
+    \frac2{4+\Gamma},
+    \frac{B}{4c_\bullet A_\bullet V_1}
+  \right\}.
+  \label{eq:stoch-local-stepsize}
+\end{equation}
+Let \(\delta_\bullet\) be stochastically admissible for this \(h\), start
+in \(\mathcal U_{\delta_\bullet}\), and define
+\(\tau_\bullet=\inf\{n\geq0:a_n\notin
+\mathcal U_{\delta_\bullet}\}\).  Then, for every \(N\geq0\),
+\begin{equation}
+  \E\left[
+    \norm{a_N-a_\star}_{\star,\bullet}^2
+    \one_{\{\tau_\bullet>N\}}
+  \right]
+  \leq
+  (1-\mu_\bullet h)^N
+  \norm{a_0-a_\star}_{\star,\bullet}^2
+  +\frac{\eta_\bullet}{\mu_\bullet h}.
+  \label{eq:stoch-local-killed}
+\end{equation}
+In particular, the two residual terms are
+\begin{align}
+  \frac{\eta_{\Riem}}{\mu_{\Riem}h}
+  &=\frac{384h(4+\Gamma)d^2L_{H,\star}^2}{B},
+  \label{eq:stoch-local-floor-riemannian}\\
+  \frac{\eta_{\KL}}{\mu_{\KL}h}
+  &=\frac{408h(4+2h+\Gamma)d^2L_{H,\star}^2}{B}.
+  \label{eq:stoch-local-floor-kl}
+\end{align}
+The left-hand side of \eqref{eq:stoch-local-killed} is a killed, or
+non-exit, second moment.  It is not
+\(\E\norm{a_{N\wedge\tau_\bullet}-a_\star}_{\star,\bullet}^2\).
+\end{theorem}
+
+\begin{proof}
+Write \(r_n=\norm{a_n-a_\star}_{\star,\bullet}\).  On
+\(\{n<\tau_\bullet\}\), the deterministic second-derivative criterion and
+the linearized bounds of \Cref{cor:local-linear-maps} give
+\[
+  \norm{T_{\bullet,h}(a_n)-a_\star}_{\star,\bullet}
+  \leq(1-\mu_\bullet h)r_n.
+\]
+Apply \Cref{lem:stoch-local-perturbation}.  Since
+\(\mu_\bullet h\leq1/2\),
+\((1-\mu_\bullet h)^2\leq1-3\mu_\bullet h/2\).  The second restriction in
+\eqref{eq:stoch-local-stepsize} gives
+\(c_\bullet h^2V_1/B\leq\mu_\bullet h/2\).  Therefore
+\begin{equation}
+  \E[r_{n+1}^2\mid\Fil_n]
+  \leq(1-\mu_\bullet h)r_n^2+\eta_\bullet
+  \qquad\text{on }\{n<\tau_\bullet\}.
+  \label{eq:stoch-local-one-step-recursion}
+\end{equation}
+Let
+\(M_n=\E[r_n^2\one_{\{\tau_\bullet>n\}}]\).  Because
+\(\{\tau_\bullet>n+1\}\subseteq\{\tau_\bullet>n\}\),
+\(M_{n+1}\leq(1-\mu_\bullet h)M_n+\eta_\bullet\).
+Summing this geometric recursion proves
+\eqref{eq:stoch-local-killed}; substituting
+\eqref{eq:stoch-local-constants} gives
+\eqref{eq:stoch-local-floor-riemannian}--\eqref{eq:stoch-local-floor-kl}.
+\end{proof}
+
+The missing mass in \eqref{eq:stoch-local-killed} must be controlled
+separately.  The next proposition does so without a union bound over all
+possible exit times.
+
+\begin{proposition}[Finite-horizon containment]
+\label{prop:stoch-local-containment}
+Choose \(r\leq1/(2\sqrt2)\) such that the closed
+\(\norm{\cdot}_{\star,\bullet}\)-ball of radius \(r\) about \(a_\star\) is
+contained in \(\mathcal U_{\delta_\bullet}\), and set
+\[
+  \tau_r:=\inf\{n\geq0:
+    \norm{a_n-a_\star}_{\star,\bullet}>r\}.
+\]
+Under the assumptions of \Cref{thm:stoch-local-killed}, if
+\(r_0:=\norm{a_0-a_\star}_{\star,\bullet}\leq r\), then
+\begin{equation}
+  \Prob(\tau_r\leq N)
+  \leq\frac{r_0^2+N\eta_\bullet}{r^2}
+  \qquad(N\geq1).
+  \label{eq:stoch-local-exit-probability}
+\end{equation}
+Consequently, \(\Prob(\tau_r\leq N)\leq\varepsilon_{\rm exit}\) follows
+from the two separate conditions
+\begin{equation}
+  r_0^2\leq\frac{\varepsilon_{\rm exit}}2r^2,
+  \qquad
+  B\geq
+  \frac{2c'_\bullet Nh^2d^2L_{H,\star}^2}
+       {\varepsilon_{\rm exit}r^2},
+  \quad
+  c'_{\Riem}=192,
+  \quad c'_{\KL}=204.
+  \label{eq:stoch-local-containment-conditions}
+\end{equation}
+Thus increasing the batch cannot compensate for an initial point near the
+outer boundary.  Deep entry is necessary in this argument, and the batch
+needed for survival grows linearly with the prescribed horizon \(N\).
+\end{proposition}
+
+\begin{proof}
+Freeze the radial process at the exit time:
+\(R_n=r_{n\wedge\tau_r}\).  On \(\{\tau_r>n\}\),
+\eqref{eq:stoch-local-one-step-recursion} and
+\(1-\mu_\bullet h\leq1\) give
+\(\E[R_{n+1}^2\mid\Fil_n]\leq R_n^2+\eta_\bullet\).  After exit, the
+process is constant, so the same inequality remains true.  Hence
+\(\E R_N^2\leq r_0^2+N\eta_\bullet\).  On
+\(\{\tau_r\leq N\}\), one has \(R_N>r\); Markov's inequality proves
+\eqref{eq:stoch-local-exit-probability}.  Substitution of
+\eqref{eq:stoch-local-constants} gives
+\eqref{eq:stoch-local-containment-conditions}.
+\end{proof}
+
+The certified local round complexity follows directly.  Up to numerical
+constants, the largest permitted stepsize is
+\[
+  h_\bullet^\star
+  =\Theta\!\left(
+    \frac1{4+\Gamma}\min\left\{1,\frac B{V_1}\right\}
+  \right),
+\]
+where the KL choice may use \(4+\Gamma+1\) in place of its mildly implicit
+\(A_{\KL}\).  Therefore
+\begin{equation}
+  N_{\rm loc}
+  =O\!\left(
+    (4+\Gamma)^2
+    \max\left\{1,\frac{V_1}{B}\right\}
+    \log\frac{r_0^2}{\varepsilon}
+  \right).
+  \label{eq:stoch-local-complexity}
+\end{equation}
+In the large-batch branch and with the universal spectral certificate
+\(\Gamma=O(1+\sqrt d\log\kappastar)\), this becomes
+\[
+  O\!\left((1+d\log^2\kappastar)
+  \log\frac{r_0^2}{\varepsilon}\right).
+\]
+The dependence is quadratic in \(4+\Gamma\), not linear.  In particular,
+the present theorem does not prove an unqualified logarithmic dependence on
+\(\kappastar\).  Moreover, \eqref{eq:stoch-local-complexity} is a round
+count for contraction of the killed moment.  Enforcing survival over those
+rounds may increase the batch according to
+\eqref{eq:stoch-local-containment-conditions}, so it is not by itself a
+high-probability oracle complexity.
+
+The global and local statements can nevertheless be composed without
+hiding these qualifications.
+
+\begin{corollary}[Stochastic global-to-local composition]
+\label{cor:stoch-global-to-local}
+Let an inner level \(\delta_{\rm in}\) and an outer radius \(r\) satisfy
+\[
+  \mathfrak b_\bullet(\delta_{\rm in})^2\delta_{\rm in}
+  \leq\frac{\varepsilon_{\rm exit}}2r^2,
+\]
+with the radius-\(r\) ball contained in a stochastically admissible outer
+level.  Suppose a global phase produces
+\begin{equation}
+  \E\Delta_{N_1}
+  \leq\varepsilon_{\rm ent}\delta_{\rm in}.
+  \label{eq:stoch-global-to-local-entry}
+\end{equation}
+For a constant-step global method, its residual floor in
+\Cref{thm:stoch-global-constant-step} must be below the right-hand side of
+\eqref{eq:stoch-global-to-local-entry}; the decreasing schedule of
+\Cref{thm:stoch-global-decreasing} has no such obstruction.  Run the local
+method for \(N_2\) further steps with the batch required by
+\eqref{eq:stoch-local-containment-conditions}.  Then, with
+\(E_{\rm in}=\{a_{N_1}\in\mathcal U_{\delta_{\rm in}}\}\) and the local
+exit time shifted to \(N_1\),
+\begin{equation}
+  \Prob(E_{\rm in}\text{ and no exit through }N_2)
+  \geq1-\varepsilon_{\rm ent}-\varepsilon_{\rm exit}.
+  \label{eq:stoch-global-to-local-survival}
+\end{equation}
+The entry-restricted killed second moment satisfies
+\begin{equation}
+  \E\!\left[
+    \norm{a_{N_1+N_2}-a_\star}_{\star,\bullet}^2;
+    E_{\rm in},\ \text{no exit through }N_2
+  \right]
+  \leq(1-\mu_\bullet h)^{N_2}
+  \mathfrak b_\bullet(\delta_{\rm in})^2\delta_{\rm in}
+  +\frac{\eta_\bullet}{\mu_\bullet h}.
+  \label{eq:stoch-global-to-local-moment}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+Markov's inequality and \eqref{eq:stoch-global-to-local-entry} give
+\(\Prob(E_{\rm in}^c)\leq\varepsilon_{\rm ent}\).  On
+\(E_{\rm in}\), the norm-conversion estimate of \Cref{sec:local} gives
+the deep-entry condition in
+\eqref{eq:stoch-local-containment-conditions}; that proposition bounds the
+conditional exit mass by \(\varepsilon_{\rm exit}\).  A union bound proves
+\eqref{eq:stoch-global-to-local-survival}.  Iterating
+\eqref{eq:stoch-local-one-step-recursion} after time \(N_1\), with the
+indicator of \(E_{\rm in}\) retained, gives
+\eqref{eq:stoch-global-to-local-moment}.
+\end{proof}
+
+\subsection{Gaussian calibration}
+\label{sec:stoch-gaussian}
+
+The preceding floors measure nonconstant Hessian fluctuations, not Monte
+Carlo noise in the abstract.  Gaussian targets make the distinction exact.
+
+\begin{proposition}[Gaussian target calibration]
+\label{prop:stoch-gaussian-calibration}
+Let
+\(V(x)=\tfrac12(x-\mu)^\top H(x-\mu)+c\), \(H\succ0\).
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item The Hessian is constant, hence \(\Psi(a)=0\) for every \(a\).  The
+additive terms in the intrinsic one-step inequalities
+\eqref{eq:stoch-riemannian-onestep} and
+\eqref{eq:stoch-kl-onestep} vanish exactly.  The nonzero floors displayed by
+the coarse self-bounding bounds are artifacts of substituting
+\eqref{eq:stoch-Psi-selfbound}, not actual Gaussian floors.
+\item In optimizer-whitened coordinates, the single-sample score noise is
+\begin{equation}
+  \varepsilon_b=(C^{-1/2}-C^{1/2})Z.
+  \label{eq:stoch-gaussian-score-noise}
+\end{equation}
+It is nonzero and has unbounded support whenever \(C\neq\Id\).  Thus zero
+additive floor does not imply pathwise deterministic evolution from an
+arbitrary covariance.
+\item If \(C_0=C_\star\), then \(C_n=C_\star\) for both methods, all sampled
+noise vanishes, and in whitened coordinates
+\begin{equation}
+  m_{n+1}=(1-h_n)m_n
+  \label{eq:stoch-gaussian-matched-covariance}
+\end{equation}
+pathwise.  If the quadratic rescue is used, it returns
+\((m_0,C_0)=(\mu,H^{-1})=a_\star\) after its single query, so there is no
+iterative phase.
+\item Locally, \(L_{H,\star}=0\), hence \(V_0=\eta_\bullet=0\).  The killed
+contraction has no additive term and the containment bound loses its
+\(N\)-growing term.  For a generic unmatched covariance, however, these
+remain mean-square and probability statements rather than pathwise
+containment because of \eqref{eq:stoch-gaussian-score-noise}.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Constancy of \(\nabla^2V=H\) makes the integrand in
+\eqref{eq:stoch-Psi} zero.  After whitening, the target is standard
+Gaussian and \(X=m+C^{1/2}Z\).  Since \(g(a)=-m\),
+\[
+  \widehat b-g(a)
+  =-C^{1/2}Z+C^{-1/2}Z,
+\]
+which proves \eqref{eq:stoch-gaussian-score-noise}.  When \(C=\Id\), this
+noise vanishes and \(\overline H=\Id\) pathwise.  Both covariance maps then
+fix \(\Id\), while their common mean update is
+\eqref{eq:stoch-gaussian-matched-covariance}.  Finally, direct substitution
+into \eqref{eq:stoch-rescue} gives \(m_0=\mu\), \(C_0=H^{-1}\), and
+substitution of \(L_{H,\star}=0\) into the local constants proves the last
+claim.
+\end{proof}

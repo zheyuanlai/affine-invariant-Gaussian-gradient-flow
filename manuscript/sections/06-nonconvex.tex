@@ -1,0 +1,296 @@
+\section{Beyond log-concavity}
+\label{sec:nonconvex}
+
+Strong log-concavity plays two roles in the preceding theory: it supplies a
+global functional inequality and it keeps the covariance equation away from
+negative-curvature amplification.  A globally bounded Hessian alone supplies
+neither.  We make the failure explicit on a smooth one-dimensional target and
+then recover a constrained stationarity statement by clipping the covariance.
+
+\subsection{A smooth double well}
+\label{sec:nonconvex-double-well}
+
+For \(R>0\), consider
+\begin{equation}
+  V_R(x)
+  :=
+  \frac{x^2}{2}-2R^2\log\cosh(x/R).
+  \label{eq:nonconvex-potential}
+\end{equation}
+Its derivatives are
+\[
+  V_R'(x)=x-2R\tanh(x/R),
+  \qquad
+  V_R''(x)=1-2\operatorname{sech}^2(x/R),
+\]
+so \(-1\leq V_R''\leq1\) uniformly in \(R\).  For
+\(X\sim\N(0,c)\), write
+\[
+  A_R(c):=\E[V_R''(X)].
+\]
+For every fixed \(c>0\), dominated convergence gives
+\begin{equation}
+  A_R(c)\longrightarrow-1
+  \quad\text{as }R\to\infty.
+  \label{eq:nonconvex-negative-curvature-limit}
+\end{equation}
+The symmetric mean \(m=0\) is invariant for all the covariance dynamics below.
+
+\begin{proposition}[Riemannian covariance cascade]
+\label{prop:nonconvex-riemannian-cascade}
+Fix \(h>0\), and let
+\begin{equation}
+  c_{n+1}^{(R)}
+  =
+  c_n^{(R)}
+  \exp\!\left\{h\bigl(1-c_n^{(R)}A_R(c_n^{(R)})\bigr)\right\},
+  \qquad c_0^{(R)}=1.
+  \label{eq:nonconvex-riemannian-map}
+\end{equation}
+For every \(M>0\), there are \(R\) and a finite \(n\) such that
+\(c_n^{(R)}\geq M\).  Consequently, no bound depending only on
+\(\sup_x|V_R''(x)|\), \(h\), and \(c_0\) can control all trajectories of the
+unprojected Riemannian scheme uniformly over this family.
+\end{proposition}
+
+\begin{proof}
+The limiting recursion obtained from
+\eqref{eq:nonconvex-negative-curvature-limit} is
+\[
+  \bar c_{n+1}=\bar c_n e^{h(1+\bar c_n)},\qquad \bar c_0=1,
+\]
+and diverges.  Choose a finite \(N\) with \(\bar c_N>2M\).
+The map \((R,c)\mapsto A_R(c)\) converges uniformly to \(-1\) on every
+compact \(c\)-interval.  An induction over the first \(N\) steps therefore
+gives \(c_n^{(R)}\to\bar c_n\) for \(0\leq n\leq N\).
+For sufficiently large \(R\), \(c_N^{(R)}>M\).
+\end{proof}
+
+\begin{proposition}[Pole of the KL covariance resolvent]
+\label{prop:nonconvex-kl-pole}
+For \(h=1\), the unprojected KL covariance map is
+\begin{equation}
+  c_1
+  =
+  \frac{2c_0}{1+c_0A_R(c_0)}.
+  \label{eq:nonconvex-kl-map}
+\end{equation}
+There are sequences \(\varepsilon\downarrow0\) and \(R_\varepsilon\to\infty\)
+such that, with \(c_0=1-\varepsilon\),
+\[
+  c_1=\Theta(\varepsilon^{-1}),
+  \qquad
+  \bigl(1-c_1A_{R_\varepsilon}(c_1)\bigr)^2
+  =\Theta(\varepsilon^{-2}).
+  \label{eq:nonconvex-kl-pole-scaling}
+\]
+Thus the pole is caused by approaching loss of positive definiteness in the
+rational resolvent, despite the uniform Hessian bound.
+\end{proposition}
+
+\begin{proof}
+For every \(c>0\), writing \(X=\sqrt c Z\) gives the quantitative bound
+\begin{equation}
+  0\leq A_R(c)+1
+  =2\E\tanh^2(\sqrt c Z/R)
+  \leq \frac{2c}{R^2}.
+  \label{eq:nonconvex-curvature-quantitative}
+\end{equation}
+Take \(0<\varepsilon\leq1/4\) and choose, for example,
+\(R_\varepsilon^2\geq2\varepsilon^{-2}\).  Then
+\(0\leq A_{R_\varepsilon}(1-\varepsilon)+1\leq\varepsilon^2\), and the
+denominator in
+\eqref{eq:nonconvex-kl-map} is then
+\[
+  1-(1-\varepsilon)+O(\varepsilon^2)
+  =\varepsilon+O(\varepsilon^2),
+\]
+which is positive and gives \(c_1=\Theta(\varepsilon^{-1})\); in particular,
+\(c_1\leq2/\varepsilon\).  Applying
+\eqref{eq:nonconvex-curvature-quantitative} once more,
+\[
+  0\leq A_{R_\varepsilon}(c_1)+1
+  \leq \frac{2c_1}{R_\varepsilon^2}
+  \leq2\varepsilon\leq\frac12.
+\]
+This curvature bound yields
+\(\abs{1-c_1A_{R_\varepsilon}(c_1)}=\Theta(c_1)\), proving the
+residual scaling.
+\end{proof}
+
+These propositions concern the two discrete maps.  They do not say that every
+bounded-Hessian nonconvex target diverges, nor do they preclude local stability
+around a favorable stationary point.  They show that a global smoothness
+constant cannot replace covariance control in a trajectory-wise
+Fisher--Rao theorem.
+
+\subsection{A Bures--Wasserstein comparison}
+\label{sec:nonconvex-bw}
+
+The Bures--Wasserstein forward--backward method has a different nonconvex
+guarantee.  Under the assumptions and stepsize of
+\citet[Theorem~5.5]{diao2023forward}, its iterates satisfy a running-minimum
+bound of the form
+\begin{equation}
+  \min_{0\leq n<N}
+  \norm{\grad_{\BW}\calE(a_n)}_{\BW}^2
+  \leq
+  \frac{150\{\calE(a_0)-\inf\calE\}}{\eta N}.
+  \label{eq:nonconvex-bw-running-min}
+\end{equation}
+This is a stationarity statement in the Bures--Wasserstein geometry.  It does
+not control the pointwise Fisher--Rao residual from
+\Cref{prop:nonconvex-riemannian-cascade,prop:nonconvex-kl-pole}.
+We use it only as a comparison between geometries, not as the first stage of a
+general WFR method.
+
+\subsection{Covariance-constrained KL stationarity}
+\label{sec:nonconvex-clipped}
+
+Fix \(0<\lambda_-\leq\lambda_+<\infty\) and
+\[
+  \mathcal A_{[\lambda_-,\lambda_+]}
+  :=
+  \{(m,C):\lambda_-\Id\preceq C\preceq\lambda_+\Id\}.
+\]
+For a symmetric matrix \(C=Q\diag(c_i)Q^\top\), let
+\[
+  \operatorname{Clip}_{[\lambda_-,\lambda_+]}(C)
+  :=
+  Q\diag\!\left(
+    \min\{\lambda_+,\max\{\lambda_-,c_i\}\}
+  \right)Q^\top.
+\]
+Assume only
+\begin{equation}
+  -\beta\Id\preceq\nabla^2V(x)\preceq\beta\Id
+  \qquad\text{for all }x.
+  \label{eq:nonconvex-smoothness}
+\end{equation}
+At \(a_n=(m_n,C_n)\), set
+\[
+  b_n:=\E_{\N(m_n,C_n)}\nabla V(X),
+  \qquad
+  A_n:=\E_{\N(m_n,C_n)}\nabla^2V(X),
+\]
+and apply the split update
+\begin{align}
+  m_{n+1}
+  &=m_n-hC_nb_n,
+  \label{eq:nonconvex-clipped-mean}\\
+  \widetilde C_{n+1}
+  &=(1+h)(C_n^{-1}+hA_n)^{-1},
+  \qquad
+  C_{n+1}
+  =\operatorname{Clip}_{[\lambda_-,\lambda_+]}
+    (\widetilde C_{n+1}).
+  \label{eq:nonconvex-clipped-covariance}
+\end{align}
+The inverse is well defined at the stepsizes below.  The natural one-step
+stationarity measure for this split scheme is
+\begin{equation}
+  \mathsf S_n
+  :=
+  \frac12\norm{m_{n+1}-m_n}_{C_n^{-1}}^2
+  +
+  \KL\!\left(
+    \N(0,C_n)\,\middle\|\,\N(0,C_{n+1})
+  \right).
+  \label{eq:nonconvex-split-stationarity}
+\end{equation}
+The covariance orientation in the KL term is important.
+
+\begin{theorem}[Constrained split stationarity]
+\label{thm:nonconvex-clipped-stationarity}
+Suppose \eqref{eq:nonconvex-smoothness} holds,
+\(a_0\in\mathcal A_{[\lambda_-,\lambda_+]}\), and
+\[
+  0<h\leq\frac1{2\beta\lambda_+}.
+\]
+Then the iterates
+\eqref{eq:nonconvex-clipped-mean}--\eqref{eq:nonconvex-clipped-covariance}
+are well defined, remain feasible, and satisfy
+\begin{equation}
+  \calE(a_{n+1})
+  \leq
+  \calE(a_n)-\frac1h\mathsf S_n.
+  \label{eq:nonconvex-clipped-descent}
+\end{equation}
+Consequently, for every \(N\geq1\),
+\begin{equation}
+  \boxed{
+  \min_{0\leq n<N}\mathsf S_n
+  \leq
+  \frac{h}{N}
+  \bigl\{\calE(a_0)-\calE(a_N)\bigr\}.}
+  \label{eq:nonconvex-clipped-running-min}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The spectral bounds imply
+\[
+  C_n^{-1}+hA_n
+  \succeq
+  (\lambda_+^{-1}-h\beta)\Id
+  \succeq(2\lambda_+)^{-1}\Id.
+\]
+The smooth part of the Gaussian objective is relatively smooth with respect
+to the forward split divergence with constant \(2\beta\lambda_+\).  The
+mean optimality equation leaves
+\(\frac12\norm{m_{n+1}-m_n}_{C_n^{-1}}^2\), while the constrained
+log-determinant three-point inequality leaves the reverse covariance
+divergence
+\(\KL(\N(0,C_n)\|\N(0,C_{n+1}))\).  Spectral clipping is precisely the
+log-determinant Bregman projection onto the covariance interval.  Since
+\(h(2\beta\lambda_+)\leq1\), the forward remainder is absorbed and the two
+estimates combine to
+\eqref{eq:nonconvex-clipped-descent}.  Summing over \(n\) and taking the
+smallest term gives \eqref{eq:nonconvex-clipped-running-min}.
+Full details are recorded in \Cref{app:nonconvex-details}.
+\end{proof}
+
+\begin{corollary}[Full successive-Gaussian KL]
+\label{cor:nonconvex-full-kl}
+Under the assumptions of
+\Cref{thm:nonconvex-clipped-stationarity},
+\begin{equation}
+  \min_{0\leq n<N}
+  \KL\!\left(
+    \N(m_n,C_n)\,\middle\|\,\N(m_{n+1},C_{n+1})
+  \right)
+  \leq
+  \frac{\lambda_+}{\lambda_-}
+  \frac{h}{N}
+  \{\calE(a_0)-\calE(a_N)\}.
+  \label{eq:nonconvex-full-kl-bound}
+\end{equation}
+For centered scalar trajectories the mean term vanishes, so the factor-one
+bound \eqref{eq:nonconvex-clipped-running-min} is the quantity plotted in
+\Cref{sec:numerics-nonconvex}.
+\end{corollary}
+
+\begin{proof}
+The reverse KL between successive Gaussians splits into the covariance KL in
+\eqref{eq:nonconvex-split-stationarity} and
+\(\frac12\norm{m_{n+1}-m_n}_{C_{n+1}^{-1}}^2\).
+Feasibility gives
+\[
+  C_{n+1}^{-1}
+  \preceq\lambda_-^{-1}\Id
+  \preceq\frac{\lambda_+}{\lambda_-}C_n^{-1}.
+\]
+Therefore the full KL is at most
+\((\lambda_+/\lambda_-)\mathsf S_n\), and the conclusion follows from
+\Cref{thm:nonconvex-clipped-stationarity}.
+\end{proof}
+
+\begin{remark}[Scope]
+\label{rem:nonconvex-scope}
+The result certifies stationarity of the projected split map on the
+covariance-truncated set.  If an iterate is pinned at
+\(\lambda_+\Id\), \(\mathsf S_n\) can vanish while the unconstrained
+Fisher--Rao gradient points outward.  The theorem therefore does not imply
+small unconstrained gradient, convergence to the unconstrained Gaussian
+optimizer, or a stochastic clipped guarantee.
+\end{remark}

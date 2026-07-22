@@ -1,0 +1,1671 @@
+\documentclass[11pt]{article}
+
+% ============================================================
+% Packages
+% ============================================================
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black,citecolor=blue!55!black]{hyperref}
+\usepackage[nameinlink,capitalize]{cleveref}
+
+% ============================================================
+% Theorem environments
+% ============================================================
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ============================================================
+% Macros
+% ============================================================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\Sym}{\mathbb{S}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\inj}{\mathrm{inj}}
+\newcommand{\Lip}{\operatorname{Lip}}
+\newcommand{\Id}{I}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,#2\right\rangle}
+
+% ============================================================
+% Title
+% ============================================================
+\title{A Convex-Ridge Counterexample to Dimension-Free Logarithmic Local Rates for Gaussian Fisher--Rao Variational Inference}
+\author{}
+\date{15 July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We construct a sequence of strongly convex potentials satisfying exact Gaussian
+equilibrium whitening and a dimension-free global Lipschitz bound on the Hessian,
+for which the first-Hermite Hessian coupling grows polynomially in the condition
+number and the local Gaussian Fisher--Rao spectral gap is at most of order
+$\kappa^{-1/2}$. The construction is a high-dimensional convex ridge whose
+orientation is weakly tilted toward one distinguished coordinate. Its averaged
+Hessian is tuned to be exactly isotropic. A distributional Codazzi identity,
+equivalently a direct radial Gaussian integration-by-parts identity, exposes a
+collective radial fluctuation that produces a large first-Hermite coupling. The
+same coupling produces an explicit nearly-null
+Rayleigh direction for the packed local generator. Consequently, neither a
+dimension-free Codazzi--Chang logarithmic estimate for the first-Hermite coupling
+nor a dimension-free $(1+\log\kappa)^{-1}$ lower bound on the local convergence
+rate can hold under a globally Lipschitz Hessian assumption alone.
+\end{abstract}
+
+\tableofcontents
+
+% ============================================================
+\section{Setting and main result}
+% ============================================================
+
+Let $n\geq1$, let $Z\sim\N(0,\Id_n)$, and let
+$V:\R^n\to\R$ be a $C^2$ potential. We consider the assumptions
+\begin{align}
+    \alpha\Id_n
+    \preceq
+    \nabla^2V(x)
+    \preceq
+    \beta\Id_n,
+    \qquad x\in\R^n,
+    \qquad
+    0<\alpha\leq1\leq\beta,
+    \label{eq:H1}\\
+    \E[\nabla V(Z)]=0,
+    \qquad
+    \E[\nabla^2V(Z)]=\Id_n.
+    \label{eq:H2}
+\end{align}
+We write
+\[
+    \kappa:=\frac{\beta}{\alpha},
+    \qquad
+    W(z):=\nabla^2V(z),
+    \qquad
+    A(z):=W(z)-\alpha\Id_n,
+    \qquad
+    a:=1-\alpha,
+    \qquad
+    L:=\beta-\alpha.
+\]
+Then
+\[
+    0\preceq A(z)\preceq L\Id_n,
+    \qquad
+    \E[A(Z)]=a\Id_n.
+\]
+
+For $X\in\Sym(n)$, define the first-Hermite contraction
+\begin{equation}
+    T[X]
+    :=
+    \E\!\left[\Tr(XW(Z))Z\right]
+    \in\R^n.
+    \label{eq:T-def}
+\end{equation}
+For any $w\in\R^n$ and $X\in\Sym(n)$, the scalar $\inner{w}{T[X]}$ equals
+\[
+    \E[(w^\top Z)\Tr(XW(Z))]
+    =\inner{X}{\E[(w^\top Z)W(Z)]}_{\mathrm F},
+\]
+so the adjoint of $T$ (with respect to the Frobenius and Euclidean inner
+products) is
+\begin{equation}
+    T^*w
+    =
+    \E\!\left[(w^\top Z)W(Z)\right],
+    \qquad w\in\R^n.
+    \label{eq:Tstar-def}
+\end{equation}
+Hence the first-Hermite coupling norm is
+\begin{equation}
+    \tau_H
+    :=
+    \sup_{\norm{w}=1}
+    \norm{\E[(w^\top Z)W(Z)]}_{\mathrm F}
+    =
+    \norm{T^*}_{\R^n\to\Sym(n)}
+    =
+    \norm{T}_{\Sym(n)\to\R^n}.
+    \label{eq:tau-def}
+\end{equation}
+
+We also define the second-Hermite operator
+\begin{equation}
+    H[X]
+    :=
+    \E\!\left[
+        \bigl(Z^\top XZ-\Tr X\bigr)\bigl(W(Z)-\Id_n\bigr)
+    \right],
+    \qquad X\in\Sym(n).
+    \label{eq:H-def}
+\end{equation}
+That $H$ is self-adjoint on $\Sym(n)$ is proved in
+\Cref{lem:second-Hermite} below; it is used implicitly in the definition of
+$L_\star$ and explicitly in the variational argument of \Cref{sec:gap}.
+At the whitened equilibrium, the packed self-adjoint local generator is
+\begin{equation}
+    L_\star
+    :=
+    \begin{pmatrix}
+        \Id_n & T/\sqrt2\\[2mm]
+        T^*/\sqrt2 & \Id+H/2
+    \end{pmatrix}
+    \quad\text{on}\quad
+    \R^n\oplus\Sym(n),
+    \label{eq:Lstar-def}
+\end{equation}
+where the packed norm is
+\[
+    \norm{(v,X)}_{\mathrm{pack}}^2
+    :=
+    \norm v^2+\norm X_{\mathrm F}^2.
+\]
+The off-diagonal blocks of $L_\star$ are mutually adjoint by
+\eqref{eq:Tstar-def}, and the diagonal blocks are self-adjoint, so $L_\star$
+is self-adjoint and its spectrum is real. The local convergence rate is
+\[
+    \gamma_{\mathrm{loc}}
+    :=
+    \lambda_{\min}(L_\star).
+\]
+
+The optional regularity assumption considered below is
+\begin{equation}
+    \norm{\nabla^2V(x)-\nabla^2V(y)}_{\op}
+    \leq
+    L_H\norm{x-y},
+    \qquad x,y\in\R^n.
+    \label{eq:H3}
+\end{equation}
+
+\begin{theorem}[Failure of both dimension-free logarithmic conclusions]
+\label{thm:main}
+There are numerical constants $K_0,c_0,C_0,C_1,C_1'>0$ with the following
+property. For every integer $m$ with $(8m)^{1/4}\geq K_0$, set
+\[
+    K:=(8m)^{1/4},
+    \qquad
+    n:=m+1,
+\]
+so that $K\to\infty$ as $m\to\infty$. There is a potential $V:\R^n\to\R$
+satisfying \eqref{eq:H1}--\eqref{eq:H2} such that
+\begin{align}
+    c_0K^2
+    \leq
+    \kappa
+    \leq
+    C_0K^2,
+    \label{eq:kappa-main}\\
+    \tau_H^2
+    \geq
+    \frac{K}{2}-C_1,
+    \label{eq:tau-main}\\
+    \gamma_{\mathrm{loc}}
+    \leq
+    \frac{C_1}{K}
+    \leq
+    \frac{C_1'}{\sqrt\kappa}.
+    \label{eq:gap-main}
+\end{align}
+Moreover, every potential in the sequence satisfies \eqref{eq:H3} with the
+same admissible constant
+\[
+    L_H=64.
+\]
+
+Consequently:
+
+\begin{enumerate}
+\item There is no absolute constant $C$ such that
+\[
+    \tau_H^2
+    \leq
+    C a^2\left(1+\log\frac{eL}{a}\right)
+\]
+holds in every dimension under \eqref{eq:H1}--\eqref{eq:H2}.
+
+\item There is no positive function $c(L_H)$ such that
+\[
+    \gamma_{\mathrm{loc}}
+    \geq
+    \frac{c(L_H)}{1+\log\kappa}
+\]
+holds in every dimension under \eqref{eq:H1}--\eqref{eq:H3}.
+\end{enumerate}
+\end{theorem}
+
+The remainder of the note proves \Cref{thm:main}. All constants implicit in
+$O(\cdot)$ are numerical and independent of the dimension and of $K$. The
+assembly of the individual lemmas into the theorem is recorded at the end of
+\Cref{sec:gap}.
+
+% ============================================================
+\section{Construction and exact whitening}
+% ============================================================
+
+\subsection{A one-dimensional convex profile}
+
+Let $m\in\mathbb N$ be large and define
+\begin{equation}
+    K:=(8m)^{1/4},
+    \qquad
+    n:=m+1.
+    \label{eq:K-m}
+\end{equation}
+Thus
+\[
+    m=\frac{K^4}{8}.
+\]
+Write $z=(t,y)\in\R\times\R^m$, and set
+\begin{equation}
+    r:=\norm y,
+    \qquad
+    \rho(y):=\sqrt{m+r^2},
+    \qquad
+    \rho_0:=\sqrt{2m}=\frac{K^2}{2},
+    \qquad
+    c:=\rho_0+\frac12.
+    \label{eq:rho-def}
+\end{equation}
+
+Define a convex $C^2$ function $F:\R\to\R$ by
+\begin{equation}
+    F''(x):=(K-\abs{x-c})_+,
+    \qquad
+    F'(-\infty)=0.
+    \label{eq:F-def}
+\end{equation}
+An additive constant in $F$ is irrelevant and may be fixed arbitrarily. The
+profile satisfies
+\begin{equation}
+    0\leq F''\leq K,
+    \qquad
+    0\leq F'\leq K^2,
+    \qquad
+    \Lip(F'')\leq1.
+    \label{eq:F-basic}
+\end{equation}
+Indeed $F''$ is supported in $[c-K,c+K]$ with $\int_\R F''=K^2$, whence the
+bound on $F'=\int_{-\infty}^{\,\cdot}F''$; and $\abs{F'''}\leq1$ almost
+everywhere, since $F'''(x)=-\operatorname{sgn}(x-c)$ on
+$0<\abs{x-c}<K$ and $F'''=0$ elsewhere. For $s\geq0$, define
+\begin{equation}
+    U_s(t,y):=F(\rho(y)+st),
+    \qquad
+    x:=\rho(y)+st,
+    \qquad
+    g:=\nabla x=\left(s,\frac{y}{\rho}\right).
+    \label{eq:Us-def}
+\end{equation}
+Since
+\[
+    D^2\rho(y)
+    =
+    \frac{\Id_m}{\rho}
+    -
+    \frac{yy^\top}{\rho^3},
+\]
+the Hessian of $U_s$ is
+\begin{equation}
+    A_s:=D^2U_s
+    =
+    F''(x)gg^\top
+    +
+    F'(x)
+    \begin{pmatrix}
+        0&0\\
+        0&D^2\rho(y)
+    \end{pmatrix}.
+    \label{eq:As}
+\end{equation}
+Both summands are positive semidefinite: $F''\geq0$, $F'\geq0$, and
+$D^2\rho\succeq0$ because $\rho$ is concave-free here, having eigenvalue
+$1/\rho>0$ on $y^\perp$ and $m/\rho^3\geq0$ along $y$.
+
+\subsection{Radial concentration}
+
+Let $(T,Y)\sim\N(0,\Id_1)\otimes\N(0,\Id_m)$ and continue to write
+$r=\norm Y$ and $\rho=\sqrt{m+r^2}$. Define
+\[
+    \xi:=\rho-\rho_0.
+\]
+
+\begin{lemma}[Dimension-free radial fluctuations]
+\label{lem:xi}
+For every fixed $p<\infty$, there is a numerical constant $C_p$ such that
+\begin{equation}
+    \norm{\xi}_{L^p}\leq C_p.
+    \label{eq:xi-Lp}
+\end{equation}
+Moreover,
+\begin{equation}
+    \E\xi
+    =
+    -\frac{\E\xi^2}{2\rho_0}
+    =
+    O(K^{-2}).
+    \label{eq:xi-mean}
+\end{equation}
+Uniformly for $0\leq s\leq2K^{-1/2}$, the variable
+\[
+    d:=\xi+sT-\frac12
+\]
+has dimension-free sub-Gaussian tails. In particular, for every fixed
+$q<\infty$, there are numerical constants $c_q,C_q>0$ such that
+\begin{equation}
+    \sup_{0\leq s\leq2K^{-1/2}}
+    \E\!\left[
+        (1+\abs d)^q\1_{\{\abs d>K\}}
+    \right]
+    \leq
+    C_qe^{-c_qK^2}.
+    \label{eq:d-tail}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The identity
+\[
+    \xi
+    =
+    \frac{r^2-m}{\rho+\rho_0}
+\]
+and the lower bound $\rho+\rho_0\geq\rho_0\asymp\sqrt m$ imply
+\[
+    \norm\xi_{L^p}
+    \leq
+    \frac{\norm{r^2-m}_{L^p}}{\rho_0}.
+\]
+The centered moments of a $\chi_m^2$ random variable satisfy
+$\norm{r^2-m}_{L^p}\leq C_p\sqrt m$ (for instance by writing
+$r^2-m=\sum_{i=1}^m(Y_i^2-1)$ and applying Rosenthal's inequality), which
+proves \eqref{eq:xi-Lp}. Since
+\[
+    \rho^2-\rho_0^2
+    =
+    2\rho_0\xi+\xi^2
+\]
+and $\E(\rho^2-\rho_0^2)=\E(r^2-m)=0$, taking expectations gives
+$2\rho_0\E\xi+\E\xi^2=0$, i.e.\ \eqref{eq:xi-mean}; the final bound uses
+$\E\xi^2\leq C$ from \eqref{eq:xi-Lp} and $\rho_0=K^2/2$.
+
+The map $y\mapsto\sqrt{m+\norm y^2}$ is $1$-Lipschitz, so by Gaussian
+concentration $\rho-\E\rho$ is sub-Gaussian with an absolute variance proxy;
+combined with $\abs{\E\rho-\rho_0}=\abs{\E\xi}=O(K^{-2})$, the centered
+variable $\xi$ is uniformly sub-Gaussian. The independent variable $sT$ is
+sub-Gaussian with variance proxy $s^2\leq4/K$. Hence $d=\xi+sT-\tfrac12$ is
+uniformly sub-Gaussian with an absolute proxy, so
+$\Prob(\abs d>K)\leq2e^{-c K^2}$; the weighted tail estimate
+\eqref{eq:d-tail} follows by Cauchy--Schwarz against the polynomial weight,
+whose $L^2$ norm grows at most polynomially in $K$.
+\end{proof}
+
+\subsection{The averaged Hessian and the tuning equation}
+
+\begin{lemma}[Diagonal average]
+\label{lem:mean-As}
+For every $s\geq0$,
+\begin{equation}
+    \E A_s
+    =
+    \diag\bigl(s^2\overline K(s),G(s)\Id_m\bigr),
+    \label{eq:mean-As}
+\end{equation}
+where
+\begin{align}
+    \overline K(s)
+    &:=
+    \E F''(\rho+sT),
+    \label{eq:barK}\\
+    G(s)
+    &:=
+    \frac1m
+    \E\!\left[
+        F''(\rho+sT)\frac{r^2}{\rho^2}
+        +
+        F'(\rho+sT)
+        \left(
+            \frac m\rho-\frac{r^2}{\rho^3}
+        \right)
+    \right].
+    \label{eq:G-def}
+\end{align}
+\end{lemma}
+
+\begin{proof}
+Write $\E A_s=\E[F''gg^\top]+\E[F'\,\diag(0,D^2\rho)]$ using
+\eqref{eq:As}, and recall $g=(s,y/\rho)$. The $(t,t)$ entry is
+$\E[F''s^2]=s^2\overline K(s)$. The $(t,y_i)$ entry is
+$\E[F''sy_i/\rho]$; since $F''=F''(\rho+sT)$ and $\rho$ depend on $y$ only
+through $r=\norm y$, the integrand is odd under the reflection
+$y_i\mapsto-y_i$, which preserves the Gaussian law, so the entry vanishes.
+For $i\neq j$ the $(y_i,y_j)$ entry is
+$\E[F''y_iy_j/\rho^2-F'y_iy_j/\rho^3]=0$ by the same reflection. The diagonal
+entries $(y_i,y_i)$ are all equal by exchangeability of the coordinates of
+$Y$; their common value equals the average over $i=1,\dots,m$, which by
+\eqref{eq:As} and $\sum_i y_i^2=r^2$ is exactly $G(s)$.
+\end{proof}
+
+\begin{lemma}[Uniform averaged-profile estimates]
+\label{lem:profile-est}
+Uniformly for $0\leq s\leq2K^{-1/2}$,
+\begin{align}
+    \overline K(s)
+    &=
+    K+O(1),
+    \label{eq:barK-est}\\
+    \E F'(\rho+sT)
+    &=
+    \rho_0-\frac K2+O(1),
+    \label{eq:Fprime-est}\\
+    G(s)
+    &=
+    1-\frac1K+O(K^{-2}).
+    \label{eq:G-est}
+\end{align}
+\end{lemma}
+
+\begin{proof}
+With $d=\xi+sT-\tfrac12$, one has $\rho+sT=c+d$. On the event
+$\abs d\leq K$, the definition of $F$ gives the exact formulas
+\begin{align}
+    F''(c+d)&=K-\abs d,
+    \label{eq:Fpp-local}\\
+    F'(c+d)&=\frac{K^2}{2}+Kd-\frac12d\abs d.
+    \label{eq:Fp-local}
+\end{align}
+(For \eqref{eq:Fp-local}, integrate \eqref{eq:Fpp-local} from $c$, using
+$F'(c)=K^2/2$, which holds because $F''$ is symmetric about $c$ with total
+mass $K^2$.) By \Cref{lem:xi}, $\E\abs d=O(1)$ and $\E[d\abs d]=O(1)$
+uniformly in $s$. The contribution from $\{\abs d>K\}$ is exponentially small
+by \eqref{eq:d-tail}, even after multiplication by any fixed polynomial in
+$K$ and $d$. Therefore
+\[
+    \overline K(s)
+    =\E\bigl[(K-\abs d)\1_{\{\abs d\le K\}}\bigr]
+    =K-\E\abs d+O(e^{-cK^2})=K+O(1).
+\]
+Also, by \eqref{eq:xi-mean},
+\[
+    \E d
+    =
+    \E\xi-\frac12
+    =
+    -\frac12+O(K^{-2}),
+\]
+and \eqref{eq:Fp-local}, together with the exponentially small tail
+contribution (here $F'\leq K^2$ on the complement and
+$\E[K^2\1_{\{\abs d>K\}}]=O(1)$), gives
+\[
+    \E F'(\rho+sT)
+    =
+    \frac{K^2}{2}
+    +
+    K\,\E d
+    -
+    \frac12\,\E[d\abs d]
+    +
+    O(1)
+    =
+    \frac{K^2}{2}
+    +
+    K\left(-\frac12+O(K^{-2})\right)
+    +
+    O(1)
+    =
+    \rho_0-\frac K2+O(1),
+\]
+using $\abs{\E[d\abs d]}\leq\E d^2=O(1)$.
+
+It remains to estimate $G(s)$. Decompose \eqref{eq:G-def} as
+$G(s)=(\mathrm I)+(\mathrm{II})-(\mathrm{III})$ with
+\[
+    (\mathrm I)=\frac1m\E\!\left[F''\frac{r^2}{\rho^2}\right],
+    \quad
+    (\mathrm{II})=\E\!\left[\frac{F'}{\rho}\right],
+    \quad
+    (\mathrm{III})=\frac1m\E\!\left[F'\frac{r^2}{\rho^3}\right].
+\]
+The first term satisfies $0\le(\mathrm I)\leq K/m=O(K^{-3})$, since
+$F''\leq K$ and $r^2/\rho^2\leq1$. For the second, using
+\[
+    \left\|
+        \frac1\rho-\frac1{\rho_0}
+    \right\|_{L^2}
+    =
+    \left\|
+        \frac{\xi}{\rho\rho_0}
+    \right\|_{L^2}
+    \le\frac{\norm\xi_{L^2}}{\sqrt2\,m}
+    =
+    O(K^{-4})
+\]
+(because $\rho\ge\sqrt m$, $\rho_0=\sqrt{2m}$, and $\norm\xi_{L^2}=O(1)$) and
+$F'\leq K^2$,
+\[
+    (\mathrm{II})
+    =
+    \E\!\left[\frac{F'}{\rho_0}\right]
+    +
+    K^2\cdot O(K^{-4})
+    =
+    \frac{\E F'}{\rho_0}
+    +
+    O(K^{-2}).
+\]
+Finally $r\mapsto r^2/(m+r^2)^{3/2}$ is maximized at $r^2=2m$ with value
+$2\cdot3^{-3/2}m^{-1/2}\leq m^{-1/2}$, so
+$0\le(\mathrm{III})\leq K^2m^{-3/2}=O(K^{-4})$. Combining with
+\eqref{eq:Fprime-est} and $\rho_0=K^2/2$,
+\[
+    G(s)
+    =
+    \frac{\E F'(\rho+sT)}{\rho_0}
+    +
+    O(K^{-2})
+    =
+    1-\frac{K/2}{\rho_0}+O(\rho_0^{-1})+O(K^{-2})
+    =
+    1-\frac1K+O(K^{-2}).
+    \qedhere
+\]
+\end{proof}
+
+\begin{lemma}[Exact isotropic tuning]
+\label{lem:tuning}
+For all sufficiently large $K$, there exists
+\[
+    s=s_K\in(0,2K^{-1/2})
+\]
+such that
+\begin{equation}
+    s^2\overline K(s)=G(s).
+    \label{eq:tuning}
+\end{equation}
+Writing
+\begin{equation}
+    a:=s^2\overline K(s)=G(s),
+    \qquad
+    \alpha:=1-a,
+    \label{eq:a-alpha}
+\end{equation}
+one has
+\begin{align}
+    s^2
+    &=
+    K^{-1}+O(K^{-2}),
+    \label{eq:s-est}\\
+    a
+    &=
+    1-K^{-1}+O(K^{-2}),
+    \label{eq:a-est}\\
+    \alpha
+    &=
+    K^{-1}+O(K^{-2}),
+    \label{eq:alpha-est}
+\end{align}
+and
+\begin{equation}
+    \E A_s=a\Id_n.
+    \label{eq:exact-mean-As}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The function
+\[
+    \Phi_K(s):=s^2\overline K(s)-G(s)
+\]
+is continuous on $[0,2K^{-1/2}]$. Indeed, the integrands are pointwise
+continuous in $s$. The integrand defining $\overline K(s)$ is bounded by
+$K$, while the absolute value of the full integrand defining $G(s)$ is
+bounded by
+\[
+    \frac Km
+    +
+    K^2\left(\frac1\rho+\frac{r^2}{m\rho^3}\right)
+    \leq
+    \frac Km+\frac{2K^2}{\sqrt m}.
+\]
+Thus dominated convergence applies. Now $\Phi_K(0)=-G(0)$,
+and $G(0)=1-K^{-1}+O(K^{-2})>0$ for large $K$ by \eqref{eq:G-est}, so
+$\Phi_K(0)<0$. At $s=2K^{-1/2}$, \Cref{lem:profile-est} gives
+\[
+    s^2\overline K(s)=\frac4K\bigl(K+O(1)\bigr)=4+O(K^{-1}),
+    \qquad
+    G(s)=1+O(K^{-1}),
+\]
+so $\Phi_K(2K^{-1/2})=3+O(K^{-1})>0$. The intermediate value theorem yields a
+zero $s_K\in(0,2K^{-1/2})$.
+
+At this zero, \eqref{eq:G-est} gives $a=G(s_K)=1-K^{-1}+O(K^{-2})$, hence
+\eqref{eq:a-est} and \eqref{eq:alpha-est}; in particular $0<\alpha<1$ for
+large $K$. Dividing $s_K^2\overline K(s_K)=a$ by \eqref{eq:barK-est} yields
+$s_K^2=a/\overline K(s_K)=(1+O(K^{-1}))/K$, which is \eqref{eq:s-est}.
+Finally, \eqref{eq:mean-As} and the tuning equation
+$s_K^2\overline K(s_K)=G(s_K)=a$ give \eqref{eq:exact-mean-As}.
+\end{proof}
+
+\subsection{The potential}
+
+Fix the tuned value $s=s_K$ from \Cref{lem:tuning}. Since
+$\abs{\nabla U_s}=F'(x)\norm g\leq\sqrt2\,K^2$ is bounded, the vector
+\begin{equation}
+    \ell:=\E[\nabla U_s(Z)]
+    \label{eq:ell-def}
+\end{equation}
+is well defined, and we set
+\begin{equation}
+    V(z):=\frac{\alpha}{2}\norm z^2+U_s(z)-\ell^\top z.
+    \label{eq:V-def}
+\end{equation}
+
+\begin{lemma}[Exact whitened equilibrium]
+\label{lem:whitening}
+The potential \eqref{eq:V-def} satisfies
+\[
+    \E[\nabla V(Z)]=0,
+    \qquad
+    \E[\nabla^2V(Z)]=\Id_n.
+\]
+\end{lemma}
+
+\begin{proof}
+Since $\E Z=0$,
+\[
+    \E[\nabla V(Z)]
+    =
+    \alpha\E Z+\E[\nabla U_s(Z)]-\ell
+    =
+    0.
+\]
+Also, by \eqref{eq:exact-mean-As},
+\[
+    \E[\nabla^2V(Z)]
+    =
+    \alpha\Id_n+\E A_s
+    =
+    (\alpha+a)\Id_n
+    =
+    \Id_n.
+\]
+\end{proof}
+
+% ============================================================
+\section{Ellipticity and a dimension-free Lipschitz Hessian}
+% ============================================================
+
+\begin{lemma}[Uniform ellipticity and condition number]
+\label{lem:ellipticity}
+Let
+\[
+    L_K:=\sup_{z\in\R^n}\norm{A_s(z)}_{\op},
+    \qquad
+    \beta:=\alpha+L_K.
+\]
+For all sufficiently large $K$,
+\begin{equation}
+    \frac K2
+    \leq
+    L_K
+    \leq
+    3K.
+    \label{eq:LK-bounds}
+\end{equation}
+Consequently,
+\[
+    \alpha\Id_n
+    \preceq
+    \nabla^2V(z)
+    \preceq
+    \beta\Id_n,
+    \qquad z\in\R^n,
+\]
+and
+\begin{equation}
+    \kappa=\frac{\beta}{\alpha}=\Theta(K^2).
+    \label{eq:kappa-K}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since $\rho\geq\sqrt m=K^2/\sqrt8$ and
+$s^2\leq4/K$, for large $K$,
+\[
+    \norm g^2
+    =
+    s^2+\frac{r^2}{\rho^2}
+    \leq
+    1+s^2
+    \leq2,
+    \qquad
+    \norm{D^2\rho}_{\op}
+    \leq
+    \frac1\rho
+    \leq
+    \frac{\sqrt8}{K^2}.
+\]
+Using \eqref{eq:F-basic} in \eqref{eq:As},
+\[
+    0\preceq A_s
+    \preceq
+    \left(F''\norm g^2+F'\norm{D^2\rho}_{\op}\right)\Id_n
+    \preceq
+    \left(2K+\sqrt8\right)\Id_n
+    \preceq
+    3K\Id_n
+\]
+for large $K$. This proves the upper bound in \eqref{eq:LK-bounds}.
+
+For the lower bound, choose $y$ with $r^2=m$, so $\rho=\rho_0$, and
+choose $t=(c-\rho_0)/s=1/(2s)$, so that $x=c$. Then $F''(x)=K$ and
+\[
+    \norm g^2
+    =
+    s^2+\frac{r^2}{\rho_0^2}
+    =
+    s^2+\frac12
+    \geq
+    \frac12.
+\]
+Therefore the rank-one matrix $F''(x)gg^\top=Kgg^\top$ has an eigenvalue
+$K\norm g^2\geq K/2$, and since the second summand in \eqref{eq:As} is
+positive semidefinite, $\norm{A_s(z)}_{\op}\geq K/2$ at this point; hence
+$L_K\geq K/2$.
+
+Since $A_s\succeq0$, the lower Hessian bound is $\alpha\Id_n$. It is
+also attained: for any fixed $y$, choose $t$ sufficiently negative so
+that $\rho(y)+st\leq c-K$; then $F'=F''=0$ and $A_s=0$, so no smaller
+$\alpha$ is admissible. Finally, \eqref{eq:alpha-est} and
+\eqref{eq:LK-bounds} give $\kappa=\beta/\alpha=(\alpha+L_K)/\alpha=\Theta(K^2)$,
+which is \eqref{eq:kappa-K}.
+\end{proof}
+
+For a trilinear form $B$, write
+\[
+    \norm B_{\inj}
+    :=
+    \sup_{\norm u=\norm v=\norm w=1}\abs{B[u,v,w]}.
+\]
+
+\begin{lemma}[Dimension-free Hessian Lipschitz bound]
+\label{lem:H3}
+The potential \eqref{eq:V-def} belongs to $C^{2,1}(\R^n)$ and satisfies
+\begin{equation}
+    \norm{\nabla^2V(x)-\nabla^2V(y)}_{\op}
+    \leq
+    64\norm{x-y},
+    \qquad x,y\in\R^n.
+    \label{eq:H3-64}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The function $F''$ is globally Lipschitz and differentiable almost
+everywhere, with $\abs{F'''}\leq1$. At every point of differentiability,
+and for unit vectors $u,v,w\in\R^n$,
+\begin{align}
+    D^3U_s[u,v,w]
+    ={}&
+    F'''(x)g[u]g[v]g[w]
+    \nonumber\\
+    &+
+    F''(x)\Bigl(
+        g[u]D^2\rho[v,w]
+        +
+        g[v]D^2\rho[u,w]
+        +
+        g[w]D^2\rho[u,v]
+    \Bigr)
+    \nonumber\\
+    &+
+    F'(x)D^3\rho[u,v,w].
+    \label{eq:D3U}
+\end{align}
+Here $\rho$ is viewed as a function of $(t,y)$ independent of $t$, and the
+middle line collects the three product-rule terms in which exactly one
+differentiation falls on the factor $gg^\top$.
+
+A direct differentiation gives, for $u,v,w\in\R^m$,
+\begin{align}
+    D^3\rho[u,v,w]
+    ={}&
+    -\frac{
+        (u^\top v)(y^\top w)
+        +(u^\top w)(y^\top v)
+        +(v^\top w)(y^\top u)
+    }{\rho^3}
+    \nonumber\\
+    &+
+    \frac{
+        3(y^\top u)(y^\top v)(y^\top w)
+    }{\rho^5}.
+    \label{eq:D3rho}
+\end{align}
+Therefore
+\[
+    \norm{D^3\rho}_{\inj}
+    \leq
+    \frac{3r}{\rho^3}+\frac{3r^3}{\rho^5}
+    \leq
+    \frac6{\rho^2}
+    \leq
+    \frac6m
+    =
+    \frac{48}{K^4}.
+\]
+Using $\norm g\leq\sqrt2$,
+$\norm{D^2\rho}_{\op}\leq\sqrt8/K^2$, and
+\eqref{eq:F-basic}, \eqref{eq:D3U} gives, almost everywhere,
+\[
+    \norm{D^3U_s}_{\inj}
+    \leq
+    \abs{F'''}\norm g^3
+    +3F''\norm g\,\norm{D^2\rho}_{\op}
+    +F'\norm{D^3\rho}_{\inj}
+    \leq
+    2\sqrt2+\frac{12}{K}+\frac{48}{K^2}
+    \leq
+    64
+\]
+for all sufficiently large $K$.
+
+We now integrate this almost-everywhere bound into a global Lipschitz bound.
+Fix unit vectors $u,v\in\R^n$ and set
+$f_{u,v}(z):=u^\top A_s(z)v$. Each entry of $A_s=D^2U_s$ is locally Lipschitz
+(the profile $F''$ is Lipschitz, $F'$ is $C^{1,1}$, and $\rho,g,D^2\rho$ are
+smooth on $\{\rho\geq\sqrt m\}$), so $f_{u,v}$ is locally Lipschitz, hence
+differentiable almost everywhere with
+$\abs{\nabla f_{u,v}(z)}=\abs{D^3U_s(z)[u,v,\cdot]}\leq\norm{D^3U_s(z)}_{\inj}
+\leq64$ wherever it exists. For a locally Lipschitz function on $\R^n$ the
+global Lipschitz constant equals the essential supremum of $\abs{\nabla f}$:
+mollifying, $f_{u,v}*\eta_\varepsilon$ is smooth with
+$\abs{\nabla(f_{u,v}*\eta_\varepsilon)}\leq64$ everywhere, hence
+$64$-Lipschitz, and letting $\varepsilon\downarrow0$ preserves the
+inequality. Thus
+\[
+    \abs{u^\top\bigl(A_s(x)-A_s(y)\bigr)v}\leq64\norm{x-y},
+\]
+and taking the supremum over unit $u,v$ yields
+$\norm{A_s(x)-A_s(y)}_{\op}\leq64\norm{x-y}$. The quadratic and linear terms
+in \eqref{eq:V-def} contribute a constant Hessian $\alpha\Id_n$, which does
+not affect the Hessian Lipschitz seminorm, proving \eqref{eq:H3-64}.
+\end{proof}
+
+% ============================================================
+\section{A large first-Hermite coupling}
+% ============================================================
+
+Define
+\begin{equation}
+    X
+    :=
+    \diag\left(0,\frac{\Id_m}{\sqrt m}\right)
+    \in\Sym(n),
+    \qquad
+    \norm X_{\mathrm F}=1.
+    \label{eq:X-def}
+\end{equation}
+
+\begin{lemma}[Codazzi conversion of the collective radial mode]
+\label{lem:codazzi}
+The vector $T[X]$ points in the distinguished $t$ direction and
+\begin{equation}
+    \norm{T[X]}
+    =
+    \frac{s}{\sqrt m}
+    \E\!\left[
+        F''(\rho+sT)\frac{r^2}{\rho}
+    \right].
+    \label{eq:TX-exact}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The constant matrix $\alpha\Id_n$ has zero first-Hermite coefficient
+($\E[\Tr(X\cdot\alpha\Id_n)Z]=\alpha\sqrt m\,\E Z=0$, using
+$\Tr X=\sqrt m$), so only $A_s=D^2U_s$ contributes:
+$T[X]=\E[\Tr(XA_s)Z]$. Now
+\[
+    \Tr(XA_s)
+    =\frac1{\sqrt m}\sum_{i=1}^m\partial_{ii}U_s
+    =\frac1{\sqrt m}\left(
+        F''\frac{r^2}{\rho^2}+F'\Bigl(\frac m\rho-\frac{r^2}{\rho^3}\Bigr)
+    \right)
+\]
+is a function of $(T,r)$ alone. For each $i$, the reflection
+$y_i\mapsto-y_i$ preserves the law of $Z$ and the value of $\Tr(XA_s)$ while
+flipping $Y_i$, so $\E[\Tr(XA_s)Y_i]=0$; hence every $y$-component of $T[X]$
+vanishes, and $T[X]=\E[\Tr(XA_s)T]\,e_t$. Its $t$-component is
+\[
+    \frac1{\sqrt m}
+    \sum_{i=1}^m
+    \E\!\left[
+        T\,\partial_{ii}U_s(T,Y)
+    \right].
+\]
+Let $\varphi_n$ denote the standard Gaussian density. Since $A_s=D^2U_s$
+is bounded, its entries define tempered distributions. Commutation of
+distributional derivatives gives
+\[
+    \partial_t(A_s)_{ii}=\partial_i(A_s)_{ti}.
+\]
+Consequently,
+\begin{align*}
+    \E[T(A_s)_{ii}(T,Y)]
+    &=
+    -\int_{\R^n}(A_s)_{ii}\,\partial_t\varphi_n\\
+    &=
+    \left\langle\partial_t(A_s)_{ii},\varphi_n\right\rangle\\
+    &=
+    \left\langle\partial_i(A_s)_{ti},\varphi_n\right\rangle\\
+    &=
+    -\int_{\R^n}(A_s)_{ti}\,\partial_i\varphi_n\\
+    &=
+    \E[Y_i(A_s)_{ti}(T,Y)].
+\end{align*}
+These pairings may equivalently be justified by first inserting compactly
+supported cutoffs of $\varphi_n$ and then letting the cutoff radius tend to
+infinity. From \eqref{eq:As},
+\[
+    (A_s)_{ti}
+    =
+    sF''(\rho+sT)\frac{Y_i}{\rho}.
+\]
+Summing over $i$ therefore yields
+\[
+    e_t^\top T[X]
+    =
+    \frac{s}{\sqrt m}
+    \E\!\left[F''(\rho+sT)\frac{r^2}{\rho}\right].
+\]
+The right-hand side is nonnegative, proving \eqref{eq:TX-exact}.
+\end{proof}
+
+\begin{lemma}[Size of the coupling]
+\label{lem:TX-size}
+There is a numerical constant $C$ such that
+\begin{equation}
+    \norm{T[X]}^2
+    =
+    \frac K2+O(1),
+    \qquad
+    \tau_H^2
+    \geq
+    \frac K2-C.
+    \label{eq:tau-lower}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since $r^2=\rho^2-m$, define
+\[
+    q(\rho):=\frac{r^2}{\rho}=\rho-\frac m\rho.
+\]
+On $[\sqrt m,\infty)$,
+\[
+    q'(\rho)=1+\frac m{\rho^2}\leq2,
+\]
+so $q$ is $2$-Lipschitz there, and
+\[
+    q(\rho_0)
+    =
+    \rho_0-\frac m{\rho_0}
+    =
+    \frac{\rho_0}{2}
+    =
+    \frac{K^2}{4}.
+\]
+Therefore, using $0\leq F''\leq K$, $\abs{q(\rho)-q(\rho_0)}\leq2\abs\xi$,
+and \Cref{lem:xi},
+\begin{align}
+    \E[F''q(\rho)]
+    &=
+    q(\rho_0)\,\E F''
+    +
+    O\!\left(K\,\E\abs{\rho-\rho_0}\right)
+    \nonumber\\
+    &=
+    \overline K(s)\frac{K^2}{4}
+    +
+    O(K).
+    \label{eq:Fppq}
+\end{align}
+Because
+\[
+    \sqrt m=\frac{K^2}{2\sqrt2},
+    \qquad\text{so}\qquad
+    \frac1m\cdot\frac{K^4}{16}=\frac12,
+\]
+substitution into \eqref{eq:TX-exact} yields
+\begin{align*}
+    \norm{T[X]}^2
+    &=
+    \frac{s^2}{m}
+    \left(
+        \overline K(s)\frac{K^2}{4}+O(K)
+    \right)^2\\
+    &=
+    \frac{s^2\overline K(s)^2K^4}{16m}
+    +O\!\left(\frac{s^2\overline K(s)K^3}{m}\right)
+    +O\!\left(\frac{s^2K^2}{m}\right)\\
+    &=
+    \frac{s^2\overline K(s)^2}{2}+O(K^{-1})\\
+    &=
+    \frac{a\,\overline K(s)}{2}+O(K^{-1})\\
+    &=
+    \frac K2+O(1),
+\end{align*}
+where we used $s^2\overline K(s)=a$ (\Cref{lem:tuning}),
+$\overline K(s)=K+O(1)$ and $a=1+O(K^{-1})$ (\Cref{lem:profile-est,lem:tuning}),
+and $s^2=O(K^{-1})$.
+
+Finally, $\norm X_{\mathrm F}=1$ and
+$\tau_H=\norm T_{\Sym(n)\to\R^n}$ by \eqref{eq:tau-def}, so
+\[
+    \tau_H^2
+    \geq
+    \norm{T[X]}^2
+    \geq
+    \frac K2-C.
+    \qedhere
+\]
+\end{proof}
+
+\begin{proof}[Proof that the logarithmic coupling estimate fails]
+By \Cref{lem:tuning}, $a=1+O(K^{-1})\in[\tfrac12,1]$ for large $K$, and by
+\Cref{lem:ellipticity}, $L=L_K\leq3K$. Hence
+\[
+    a^2\left(1+\log\frac{eL}{a}\right)
+    \leq
+    1+\log(6eK)
+    =
+    O(\log K).
+\]
+On the other hand, \eqref{eq:tau-lower} gives
+$\tau_H^2\geq K/2-C$. Therefore no absolute constant can make
+\[
+    \tau_H^2
+    \leq
+    C a^2\left(1+\log\frac{eL}{a}\right)
+\]
+valid for all dimensions.
+\end{proof}
+
+\begin{remark}[Direct cross-check of \eqref{eq:TX-exact}]
+\label{rem:crosscheck}
+The identity can also be checked directly, without commuting mixed weak
+derivatives. Gaussian integration by parts in $T$ gives
+\[
+    e_t^\top T[X]
+    =\frac{s}{\sqrt m}\,
+    \E\!\left[F'''\frac{r^2}{\rho^2}
+        +F''\Bigl(\frac m\rho-\frac{r^2}{\rho^3}\Bigr)\right].
+\]
+Here $F'''$ denotes the almost-everywhere derivative of the Lipschitz
+function $F''$. For fixed $T$, apply Gaussian integration by parts in $Y$
+to the vector field
+\[
+    \Psi_T(y)
+    :=
+    F''(\rho(y)+sT)\frac{y}{\rho(y)}.
+\]
+Since
+\[
+    Y^\top\Psi_T(Y)=F''\frac{r^2}{\rho}
+\]
+and
+\[
+    \operatorname{div}\Psi_T
+    =
+    F'''\frac{r^2}{\rho^2}
+    +
+    F''\left(\frac m\rho-\frac{r^2}{\rho^3}\right),
+\]
+the Gaussian divergence identity
+$\E[Y^\top\Psi_T(Y)]=\E[\operatorname{div}\Psi_T(Y)]$ recovers
+\eqref{eq:TX-exact} exactly.
+
+This direct calculation verifies the identity; it does not distinguish
+Hessian fields from non-gradient matrix fields. Indeed, $T[X]$ depends only
+on $\Tr(XW)$, and for the present $X$ any matrix field with the same $yy$
+block has the same value of $T[X]$, independently of its $ty$ block. Finally,
+\Cref{lem:TX-size,lem:ellipticity} imply
+\[
+    \norm{T[X]}^2=\Theta(K)=\Theta(\kappa^{1/2}),
+    \qquad
+    \norm{T[X]}=\Theta(K^{1/2})=\Theta(\kappa^{1/4}).
+\]
+\end{remark}
+
+% ============================================================
+\section{A nearly-null direction for the packed local generator}
+\label{sec:gap}
+% ============================================================
+
+We first record the exact second-Hermite identity, in polarized form, from
+which self-adjointness of $H$ also follows.
+
+\begin{lemma}[Second-Hermite/Bochner identity]
+\label{lem:second-Hermite}
+Let $V\in C^2(\R^n)$, assume that $W=\nabla^2V$ is bounded, and suppose
+$\E W(Z)=\Id_n$. Then for all $X,Y\in\Sym(n)$,
+\begin{equation}
+    \inner{Y}{H[X]}_{\mathrm F}
+    =
+    \E\!\left[
+        (YZ)^\top\bigl(W(Z)-\Id_n\bigr)(XZ)
+    \right].
+    \label{eq:second-Hermite-id}
+\end{equation}
+In particular the right-hand side is symmetric in $(X,Y)$ (because $W-\Id_n$
+is a symmetric matrix), so $H$ is self-adjoint on $\Sym(n)$; and, taking
+$Y=X$,
+\begin{equation}
+    \inner{X}{H[X]}_{\mathrm F}
+    =
+    \E\!\left[
+        (XZ)^\top\bigl(W(Z)-\Id_n\bigr)(XZ)
+    \right].
+    \label{eq:second-Hermite-quad}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Let $\varphi_n$ denote the standard Gaussian density. Since $W$ is bounded,
+its entries define tempered distributions, and
+\[
+    \partial_{cd}\varphi_n(z)
+    =
+    (z_cz_d-\delta_{cd})\varphi_n(z).
+\]
+Because $W=D^2V$, commutation of distributional derivatives gives
+\[
+    \partial_{cd}W_{ab}
+    =
+    \partial_{bc}W_{ad}.
+\]
+Therefore
+\begin{align*}
+    \E[(Z_cZ_d-\delta_{cd})W_{ab}(Z)]
+    &=
+    \left\langle W_{ab},\partial_{cd}\varphi_n\right\rangle\\
+    &=
+    \left\langle\partial_{cd}W_{ab},\varphi_n\right\rangle\\
+    &=
+    \left\langle\partial_{bc}W_{ad},\varphi_n\right\rangle\\
+    &=
+    \left\langle W_{ad},\partial_{bc}\varphi_n\right\rangle\\
+    &=
+    \E[(Z_bZ_c-\delta_{bc})W_{ad}(Z)].
+\end{align*}
+One may instead insert compactly supported cutoffs of $\varphi_n$; boundedness
+of $W$ makes all cutoff-error terms vanish in the limit.
+
+By \eqref{eq:H-def} and $\E[Z_cZ_d-\delta_{cd}]=0$ (which annihilates the
+constant matrix $-\Id_n$),
+\begin{align}
+    \inner{Y}{H[X]}_{\mathrm F}
+    &=
+    \sum_{a,b,c,d}
+    Y_{ab}X_{cd}
+    \E\!\left[
+        (Z_cZ_d-\delta_{cd})\bigl(W_{ab}(Z)-\delta_{ab}\bigr)
+    \right]
+    \nonumber\\
+    &=
+    \sum_{a,b,c,d}
+    Y_{ab}X_{cd}
+    \E\!\left[
+        (Z_cZ_d-\delta_{cd})W_{ab}(Z)
+    \right].
+    \label{eq:h-indices-1}
+\end{align}
+Substituting into \eqref{eq:h-indices-1},
+\begin{align*}
+    \inner{Y}{H[X]}_{\mathrm F}
+    &=
+    \E\!\left[
+        \sum_{a,b,c,d}
+        Y_{ab}X_{cd}Z_bZ_cW_{ad}
+    \right]
+    -
+    \sum_{a,b,c,d}
+    Y_{ab}X_{cd}\delta_{bc}\,\E W_{ad}\\
+    &=
+    \E[(YZ)^\top W(Z)(XZ)]
+    -
+    \Tr(YX),
+\end{align*}
+where we used $(YZ)_a=\sum_bY_{ab}Z_b$, $(XZ)_d=\sum_cX_{cd}Z_c$, and
+$\sum_bY_{ab}X_{bd}=(YX)_{ad}$, together with $\E W(Z)=\Id_n$. Since
+$\Tr(YX)=\E[(YZ)^\top(XZ)]$, this proves
+\eqref{eq:second-Hermite-id}; the symmetry and
+\eqref{eq:second-Hermite-quad} are immediate.
+\end{proof}
+
+For the normalized matrix $X$ in \eqref{eq:X-def}, define
+\begin{equation}
+    \tau_X^2:=\norm{T[X]}^2,
+    \qquad
+    h_X:=\inner{X}{H[X]}_{\mathrm F}.
+    \label{eq:tau-h-def}
+\end{equation}
+
+\begin{lemma}[Second-Hermite asymptotics]
+\label{lem:hX}
+For the matrix $X$ in \eqref{eq:X-def},
+\begin{equation}
+    h_X
+    =
+    \frac K2+O(1),
+    \qquad
+    h_X-\tau_X^2
+    =
+    O(1).
+    \label{eq:hX-est}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since
+\[
+    XZ=\left(0,\frac{Y}{\sqrt m}\right)
+    \qquad\text{and}\qquad
+    W-\Id_n
+    =
+    \alpha\Id_n+A_s-\Id_n
+    =
+    A_s-a\Id_n,
+\]
+\eqref{eq:second-Hermite-quad} gives
+$h_X=\frac1m\E[Y^\top(A_s)_{yy}Y]-a$, where $(A_s)_{yy}$ is the $yy$ block of
+\eqref{eq:As}:
+\[
+    (A_s)_{yy}=F''\frac{yy^\top}{\rho^2}
+    +F'\left(\frac{\Id_m}{\rho}-\frac{yy^\top}{\rho^3}\right).
+\]
+Using $Y^\top yy^\top Y=r^4$ (with $y=Y$), $Y^\top Y=r^2$, and
+$\rho^2-r^2=m$,
+\[
+    Y^\top(A_s)_{yy}Y
+    =F''\frac{r^4}{\rho^2}
+    +F'\left(\frac{r^2}{\rho}-\frac{r^4}{\rho^3}\right)
+    =F''\frac{r^4}{\rho^2}+F'\frac{m\,r^2}{\rho^3},
+\]
+so that
+\begin{equation}
+    h_X
+    =
+    \frac1m
+    \E\!\left[
+        F''\frac{r^4}{\rho^2}
+    \right]
+    +
+    \E\!\left[
+        F'\frac{r^2}{\rho^3}
+    \right]
+    -
+    a.
+    \label{eq:hX-exact}
+\end{equation}
+
+Let $u:=r^2/m$. Then
+\[
+    \frac{r^4}{m\rho^2}
+    =
+    \frac{(mu)^2}{m(m+mu)}
+    =
+    \frac{u^2}{1+u}.
+\]
+The function $\phi(u)=u^2/(1+u)$ satisfies $0\le\phi'(u)=1-(1+u)^{-2}<1$ on
+$[0,\infty)$, hence is $1$-Lipschitz with $\phi(1)=1/2$. Moreover
+\[
+    \norm{u-1}_{L^2}
+    =
+    \frac{\norm{r^2-m}_{L^2}}{m}
+    =
+    \frac{\sqrt{2m}}{m}
+    =
+    \sqrt{\frac2m}
+    =
+    O(K^{-2}).
+\]
+Therefore
+\begin{align*}
+    \frac1m
+    \E\!\left[
+        F''\frac{r^4}{\rho^2}
+    \right]
+    &=
+    \E[F''\phi(u)]
+    =
+    \frac12\E F''
+    +
+    \E\bigl[F''(\phi(u)-\tfrac12)\bigr]\\
+    &=
+    \frac{\overline K(s)}2
+    +
+    O\!\left(K\,\E\abs{u-1}\right)
+    =
+    \frac{\overline K(s)}2+O(K^{-1})
+    =
+    \frac K2+O(1).
+\end{align*}
+For the second term in \eqref{eq:hX-exact}, since
+$\sup_{r\geq0}r^2(m+r^2)^{-3/2}\leq m^{-1/2}$ and $F'\leq K^2$,
+\[
+    0
+    \leq
+    \E\!\left[
+        F'\frac{r^2}{\rho^3}
+    \right]
+    \leq
+    \frac{K^2}{\sqrt m}
+    =
+    2\sqrt2
+    =
+    O(1).
+\]
+Since $a=O(1)$, this proves $h_X=K/2+O(1)$.
+
+By \Cref{lem:TX-size} and $s^2\overline K=a$,
+$\tau_X^2=\frac{s^2\overline K^2}2+O(K^{-1})=\frac{a\overline K}2+O(K^{-1})
+=\frac{aK}2+O(1)$. Hence
+\[
+    h_X-\tau_X^2
+    =
+    \frac{(1-a)\overline K}{2}+O(1)
+    =
+    \frac{\alpha K}{2}+O(1)
+    =
+    O(1),
+\]
+using \eqref{eq:alpha-est}.
+\end{proof}
+
+\begin{lemma}[Explicit Rayleigh direction]
+\label{lem:Rayleigh}
+Set
+\begin{equation}
+    Y:=\frac{X}{\sqrt2},
+    \qquad
+    v:=-\frac{T[X]}{2}.
+    \label{eq:Rayleigh-vector}
+\end{equation}
+Then
+\begin{equation}
+    \frac{
+        \inner{(v,Y)}{L_\star(v,Y)}_{\mathrm{pack}}
+    }{
+        \norm v^2+\norm Y_{\mathrm F}^2
+    }
+    =
+    \frac{2+h_X-\tau_X^2}{2+\tau_X^2}.
+    \label{eq:Rayleigh-quotient}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since $\norm X_{\mathrm F}=1$,
+\[
+    \norm v^2=\frac{\tau_X^2}{4},
+    \qquad
+    \norm Y_{\mathrm F}^2=\frac12.
+\]
+By \eqref{eq:Lstar-def}, the packed quadratic form is
+\[
+    \inner{(v,Y)}{L_\star(v,Y)}_{\mathrm{pack}}
+    =
+    \norm v^2
+    +
+    2\inner{v}{(T/\sqrt2)Y}
+    +
+    \norm Y_{\mathrm F}^2
+    +
+    \frac12\inner{Y}{H[Y]}_{\mathrm F},
+\]
+where the two off-diagonal contributions combine into
+$2\inner{v}{(T/\sqrt2)Y}$ by self-adjointness of $L_\star$. Now
+$(T/\sqrt2)Y=T[X]/2$ and, by \eqref{eq:tau-h-def},
+$\inner{Y}{H[Y]}_{\mathrm F}=\tfrac12\inner{X}{H[X]}_{\mathrm F}=h_X/2$.
+Hence
+\[
+    \inner{(v,Y)}{L_\star(v,Y)}_{\mathrm{pack}}
+    =
+    \frac{\tau_X^2}{4}
+    +
+    2\cdot\Bigl(-\frac{T[X]}2\Bigr)^{\!\top}\frac{T[X]}2
+    +
+    \frac12
+    +
+    \frac{h_X}{4}
+    =
+    \frac{\tau_X^2}{4}
+    -
+    \frac{\tau_X^2}{2}
+    +
+    \frac12
+    +
+    \frac{h_X}{4}
+    =
+    \frac{2+h_X-\tau_X^2}{4}.
+\]
+The denominator is
+\[
+    \norm v^2+\norm Y_{\mathrm F}^2
+    =
+    \frac{\tau_X^2}{4}+\frac12
+    =
+    \frac{2+\tau_X^2}{4},
+\]
+which proves \eqref{eq:Rayleigh-quotient}.
+\end{proof}
+
+\begin{proof}[Proof of the local-gap upper bound]
+Since $L_\star$ is self-adjoint, the Rayleigh--Ritz variational principle and
+\Cref{lem:Rayleigh} give
+\[
+    \gamma_{\mathrm{loc}}
+    =
+    \lambda_{\min}(L_\star)
+    \leq
+    \frac{2+h_X-\tau_X^2}{2+\tau_X^2}.
+\]
+By \Cref{lem:hX}, the numerator is bounded above by a numerical constant
+$2+C_1$. By \Cref{lem:TX-size}, $\tau_X^2\geq K/2-C$, so the denominator is
+at least a positive multiple of $K$ for large $K$. Hence
+\[
+    \gamma_{\mathrm{loc}}
+    \leq
+    \frac{C_1}{K}.
+\]
+Together with $\kappa=\Theta(K^2)$ from \Cref{lem:ellipticity}, this gives
+$\gamma_{\mathrm{loc}}\leq C_1'/\sqrt\kappa$.
+
+Every member of the sequence satisfies the Hessian-Lipschitz condition
+\eqref{eq:H3} with the common admissible constant $L_H=64$ by
+\Cref{lem:H3}. If a positive function $c(L_H)$ satisfied
+\[
+    \gamma_{\mathrm{loc}}
+    \geq
+    \frac{c(L_H)}{1+\log\kappa}
+\]
+in every dimension, then applying it with $L_H=64$ would give
+\[
+    \frac{c(64)}{1+\log\kappa}
+    \leq
+    \frac{C_1}{K}.
+\]
+But $\log\kappa=\Theta(\log K)$ and
+$K^{-1}=o((\log K)^{-1})$, a contradiction for large $K$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:main}]
+Fix $m$ with $K=(8m)^{1/4}$ large and let $V$ be the potential
+\eqref{eq:V-def}. \Cref{lem:whitening} gives the whitening conditions
+\eqref{eq:H2}, and \Cref{lem:ellipticity} gives \eqref{eq:H1} together with
+\eqref{eq:kappa-main} (with $c_0,C_0$ from $\kappa=\Theta(K^2)$).
+\Cref{lem:TX-size} gives \eqref{eq:tau-main}, and its corollary above shows
+the failure of the logarithmic coupling estimate, i.e.\ conclusion~(1).
+\Cref{lem:H3} gives \eqref{eq:H3} with $L_H=64$. The local-gap upper bound
+above gives \eqref{eq:gap-main}, and hence conclusion~(2). This proves the
+theorem.
+\end{proof}
+
+% ============================================================
+\section{Scope, regularity, and smooth realization}
+% ============================================================
+
+\begin{corollary}[Smooth realization]
+\label{cor:smooth-ridge}
+After increasing the numerical threshold $K_0$ if necessary, the potentials
+in \Cref{thm:main} may be chosen in $C^\infty(\R^n)$ while retaining all
+conclusions of the theorem and the common Hessian-Lipschitz bound $L_H=64$.
+\end{corollary}
+
+\begin{proof}
+Let $f_K(x):=(K-\abs{x-c})_+$ and fix an even, nonnegative
+$\eta\in C_c^\infty((-1,1))$ with $\int\eta=1$. For a fixed
+$\varepsilon\in(0,1]$, set
+\[
+    \eta_\varepsilon(u):=\varepsilon^{-1}\eta(u/\varepsilon),
+    \qquad
+    f_{K,\varepsilon}:=f_K*\eta_\varepsilon,
+\]
+and define $F'_{K,\varepsilon}(-\infty)=0$ with
+$F''_{K,\varepsilon}=f_{K,\varepsilon}$. Then
+\[
+    0\leq f_{K,\varepsilon}\leq K,
+    \qquad
+    \Lip(f_{K,\varepsilon})\leq1,
+    \qquad
+    \int_\R f_{K,\varepsilon}=K^2,
+\]
+and
+\[
+    \norm{f_{K,\varepsilon}-f_K}_{L^\infty}\leq\varepsilon.
+\]
+Moreover, $F'_{K,\varepsilon}=F'_K*\eta_\varepsilon$. Since $F'_K$ has a
+$1$-Lipschitz derivative and $\eta_\varepsilon$ has zero first moment,
+Taylor's formula with Lipschitz remainder gives
+\[
+    \norm{F'_{K,\varepsilon}-F'_K}_{L^\infty}
+    \leq
+    \frac{\varepsilon^2}{2}.
+\]
+Consequently, uniformly for $0\leq s\leq2K^{-1/2}$,
+\[
+    \abs{\overline K_\varepsilon(s)-\overline K(s)}\leq\varepsilon,
+    \qquad
+    \abs{\E F'_{K,\varepsilon}(\rho+sT)-\E F'_K(\rho+sT)}
+    \leq
+    \frac{\varepsilon^2}{2},
+\]
+and
+\[
+    \abs{G_\varepsilon(s)-G(s)}
+    \leq
+    \frac{\varepsilon}{m}
+    +
+    \frac{\varepsilon^2}{2}
+    \left(m^{-1/2}+m^{-3/2}\right).
+\]
+Thus all estimates in \Cref{lem:profile-est} remain unchanged. The same
+intermediate-value argument retunes $s=s_{K,\varepsilon}$ and restores exact
+whitening. Also $f_{K,\varepsilon}(c)\geq K-\varepsilon$, so the ellipticity
+lower bound remains of order $K$. Finally,
+$\norm{f'_{K,\varepsilon}}_{L^\infty}\leq1$, and the proof of
+\Cref{lem:H3} gives the same admissible constant $L_H=64$. Repeating the
+coupling and Rayleigh calculations proves all asserted asymptotics.
+\end{proof}
+
+\begin{remark}[Scaling and dimension scope]
+The construction satisfies
+\[
+    s^2=\Theta(K^{-1}),
+    \qquad
+    \alpha=\Theta(K^{-1}),
+    \qquad
+    \beta=\Theta(K),
+    \qquad
+    \kappa=\Theta(K^2),
+\]
+and
+\[
+    \norm{T[X]}^2=\Theta(K),
+    \qquad
+    \gamma_{\mathrm{loc}}=O(K^{-1}).
+\]
+It uses
+\[
+    n=m+1=\frac{K^4}{8}+1=\Theta(\kappa^2).
+\]
+Thus it rules out estimates uniform over the dimension, but it is not a
+fixed-dimensional counterexample. Whether an analogous obstruction exists
+for fixed $n$, or with $n=o(\kappa^2)$, is not resolved by this construction.
+\end{remark}
+
+\begin{remark}[Where Hessian compatibility enters]
+The direct computation in \Cref{rem:crosscheck} shows that the magnitude of
+$T[X]$ is already encoded in the $t$-dependence of the $yy$ Hessian block.
+Codazzi compatibility supplies an alternative derivation of the same
+identity and, more importantly, yields the polarized second-Hermite identity
+\eqref{eq:second-Hermite-id}. The latter makes $H$ and the packed local
+generator self-adjoint. Changing only the $ty$ block while fixing the $yy$
+block cannot change $T[X]$ for the test matrix used here.
+\end{remark}
+
+\begin{remark}[Minimum regularity]
+The first- and second-Hermite identities use only commutation of
+distributional derivatives. Thus $V\in C^2$ together with the bounded-Hessian
+condition \eqref{eq:H1} is sufficient; no classical third derivative is
+required. The tent-profile potential constructed above is $C^{2,1}$ and has
+a globally Lipschitz Hessian, while \Cref{cor:smooth-ridge} gives a
+$C^\infty$ realization.
+\end{remark}
+
+\begin{remark}[No circularity]
+The local-gap upper bound uses only the explicit Rayleigh vector
+\eqref{eq:Rayleigh-vector}, the independently established asymptotics of
+$h_X$ and $\tau_X$, and Rayleigh--Ritz. It does not invoke a lower
+spectral-gap estimate, a third-derivative moment bound, or a logarithmic
+coupling inequality. A general lower bound may therefore be applied
+afterward to identify order-sharpness without entering the proof above.
+\end{remark}
+
+% INTEGRATION-READY COROLLARY (intentionally inactive in this standalone note):
+% After importing the newer local spectral theorem with
+% Gamma=min{beta_* - 1, sqrt(n)(4sqrt(2t_0)+4t_0+4)}, the present family has
+% Gamma=beta_* - 1=Theta(K). Its Schur bound gives tau_H^2<=1+Gamma, while
+% Lemma~\ref{lem:TX-size} gives tau_H^2>=K/2-O(1); hence
+% tau_H^2=Theta(K)=Theta(kappa_*^{1/2}). Combining the imported lower bound
+% gamma_*>=max{alpha_*,1/(4+Gamma)} with Lemma~\ref{lem:Rayleigh} gives
+% gamma_*=Theta(K^{-1})=Theta(kappa_*^{-1/2}). This saturates the
+% beta_*-1 branch, not the sqrt(n) log(kappa_*) branch, and says nothing about
+% fixed dimension.
+\end{document}

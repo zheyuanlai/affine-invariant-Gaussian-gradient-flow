@@ -1,0 +1,790 @@
+\section{Sharp global deterministic theory under strong log-concavity}
+\label{sec:global}
+
+The global behavior separates into two mechanisms.  An underdispersed covariance must first reach
+the curvature scale; after that, the objective localizes at a rate set by target conditioning.  For
+the Fisher--Rao flow these mechanisms are visible in a single exact estimate, while for the two
+discretizations they appear as a covariance bootstrap followed by geometric descent.  Throughout
+this section we assume
+\begin{equation}
+\label{eq:global:curvature-assumption}
+    \alpha\Id\preceq \nabla^2V(x)\preceq\beta\Id,
+    \qquad x\in\R^d,
+    \qquad
+    \kappa:=\frac{\beta}{\alpha},
+\end{equation}
+and all Gaussian expectations are evaluated exactly.  We write
+\begin{equation}
+\label{eq:global:averaged-derivatives}
+    \begin{aligned}
+        g(a)&=-\E_{\N(m,C)}[\nabla V(X)],
+        &
+        A(a)&=\E_{\N(m,C)}[\nabla^2V(X)],\\
+        R(a)&=C^{-1}-A(a).
+    \end{aligned}
+\end{equation}
+The energy gap is
+\(
+\Delta(a)=\calE(a)-\calE(a_\star)
+\), with \(\Delta_0=\Delta(a_0)\), and
+\(\lambda_0:=\lambda_{\min}(C_0)\).
+
+\subsection{Continuous covariance bootstrap and the intrinsic upper bound}
+\label{sec:global:continuous}
+
+The natural conditioning of the continuous flow is obtained by whitening with the covariance of
+the optimizing Gaussian.  Set
+\begin{equation}
+\label{eq:global:optimizer-whitening}
+    \widehat m=C_\star^{-1/2}(m-m_\star),
+    \qquad
+    \widehat C=C_\star^{-1/2}CC_\star^{-1/2},
+    \qquad
+    \widehat V(z)=V(m_\star+C_\star^{1/2}z).
+\end{equation}
+Then \(a_\star\) becomes \((0,\Id)\), and we define the optimal pointwise curvature constants
+\begin{equation}
+\label{eq:global:intrinsic-curvature}
+    \alphastar
+    :=\inf_z\lambda_{\min}(\nabla^2\widehat V(z)),
+    \qquad
+    \betastar
+    :=\sup_z\lambda_{\max}(\nabla^2\widehat V(z)),
+    \qquad
+    \kappastar:=\frac{\betastar}{\alphastar},
+\end{equation}
+and the initial whitened covariance floor
+\begin{equation}
+\label{eq:global:intrinsic-initial-floor}
+    \lambda_{0,\star}
+    :=\lambda_{\min}(C_\star^{-1/2}C_0C_\star^{-1/2}).
+\end{equation}
+The first-order condition \(C_\star^{-1}=A(a_\star)\) gives
+\(\alphastar\leq1\leq\betastar\).  Moreover,
+\(1\leq\kappastar\leq\kappa^2\), although the upper comparison can be arbitrarily loose: an
+anisotropic Gaussian target has \(\kappastar=1\).  Unlike \(\kappa\), all quantities in
+\eqref{eq:global:intrinsic-curvature}--\eqref{eq:global:intrinsic-initial-floor} are unchanged by
+invertible affine reparametrization.
+
+The covariance floor follows most transparently from the precision.  If \(P_t=C_t^{-1}\), then
+the Fisher--Rao covariance equation gives the exact Duhamel formula
+\begin{equation}
+\label{eq:global:precision-duhamel}
+    \dot P_t=A(a_t)-P_t,
+    \qquad
+    P_t=e^{-t}P_0+\int_0^t e^{-(t-s)}A(a_s)\,\dd s.
+\end{equation}
+The same identity holds after optimizer whitening.
+
+\begin{proposition}[Continuous covariance bootstrap]
+\label{prop:global:continuous-bootstrap}
+Along the Fisher--Rao flow,
+\begin{equation}
+\label{eq:global:continuous-floor}
+    C_t\succeq
+    \frac{\lambda_0e^t}{1+\beta\lambda_0(e^t-1)}\Id,
+    \qquad
+    \widehat C_t\succeq
+    \ell_\star(t)\Id,
+    \qquad
+    \ell_\star(t):=
+    \frac{\lambda_{0,\star}e^t}
+         {1+\betastar\lambda_{0,\star}(e^t-1)}.
+\end{equation}
+Consequently, the two covariance floors are reached after the respective times
+\begin{equation}
+\label{eq:global:continuous-floor-times}
+\begin{split}
+    C_t\succeq(2\beta)^{-1}\Id
+    &\quad\text{for }t\geq \logp\!\left(\frac{1}{\beta\lambda_0}\right),\\
+    \widehat C_t\succeq(2\betastar)^{-1}\Id
+    &\quad\text{for }t\geq
+    \logp\!\left(\frac{1}{\betastar\lambda_{0,\star}}\right).
+\end{split}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Since \(A(a_t)\preceq\beta\Id\), \eqref{eq:global:precision-duhamel} implies
+\(
+P_t\preceq[e^{-t}\lambda_0^{-1}+\beta(1-e^{-t})]\Id
+\); inversion gives the first bound.  Applying the same argument to the whitened flow gives the
+second.  The two hitting times follow by making the decaying initial-precision term no larger than
+the corresponding curvature term.
+\end{proof}
+
+\begin{theorem}[Affine-invariant continuous global rate]
+\label{thm:global:continuous-upper}
+For every \(t\geq0\),
+\begin{equation}
+\label{eq:global:continuous-decay}
+    \boxed{
+    \Delta(a_t)
+    \leq
+    \Delta_0
+    \bigl[1+\betastar\lambda_{0,\star}(e^t-1)\bigr]^{-1/\kappastar}.}
+\end{equation}
+Thus, for \(0<\delta<\Delta_0\), the hitting time
+\(
+T_{\mathrm c}^{\glob}(\delta)
+:=\inf\{t\geq0:\Delta(a_t)\leq\delta\}
+\) satisfies
+\begin{align}
+\label{eq:global:continuous-hitting-exact}
+    T_{\mathrm c}^{\glob}(\delta)
+    &\leq
+    \log\left(
+        1+
+        \frac{(\Delta_0/\delta)^{\kappastar}-1}
+             {\betastar\lambda_{0,\star}}
+    \right),\\
+\label{eq:global:continuous-hitting-split}
+    T_{\mathrm c}^{\glob}(\delta)
+    &\leq
+    \boxed{
+    \logp\frac1{\betastar\lambda_{0,\star}}
+    +\kappastar\log\frac{\Delta_0}{\delta}.}
+\end{align}
+The same argument in the original coordinates gives
+\begin{equation}
+\label{eq:global:continuous-hitting-original}
+    T_{\mathrm c}^{\glob}(\delta)
+    \leq
+    \log\left(
+        1+\frac{(\Delta_0/\delta)^\kappa-1}{\beta\lambda_0}
+    \right);
+\end{equation}
+one may take the smaller of the intrinsic and original-coordinate bounds.
+\end{theorem}
+
+\begin{proof}
+Optimizer whitening preserves both the energy and Fisher--Rao dissipation.  In whitened
+coordinates the exact dissipation identity, the Gaussian Bures--Wasserstein PL inequality, and
+\(\widehat C_t\succeq\ell_\star(t)\Id\) give
+\begin{equation}
+\label{eq:global:continuous-differential-inequality}
+    \dot\Delta(a_t)
+    =-\Gradnorm(a_t)^2
+    \leq-\alphastar\ell_\star(t)\Delta(a_t).
+\end{equation}
+The scalar integral is explicit:
+\begin{equation}
+\label{eq:global:continuous-floor-integral}
+    \int_0^t\ell_\star(s)\,\dd s
+    =\frac1{\betastar}
+      \log\bigl[1+\betastar\lambda_{0,\star}(e^t-1)\bigr].
+\end{equation}
+Gr\"onwall's inequality and \(\alphastar/\betastar=1/\kappastar\) prove
+\eqref{eq:global:continuous-decay}.  Solving that estimate for \(t\) gives
+\eqref{eq:global:continuous-hitting-exact}.  Finally, for \(R\geq1\) and \(b>0\),
+\(
+1+(R-1)/b\leq R/b
+\) when \(b\leq1\), and it is at most \(R\) when \(b\geq1\); this yields
+\eqref{eq:global:continuous-hitting-split}.
+\end{proof}
+
+The two terms in \eqref{eq:global:continuous-hitting-split} have different meanings.  The first is
+the multiplicative covariance burn-in caused by underdispersion.  The second is the global
+localization cost after the covariance reaches the intrinsic curvature scale.  The condition
+number alone cannot encode arbitrary input size: even for a quadratic target, reaching a fixed
+energy level from an unrestricted initial mean takes arbitrarily long.
+
+\subsection{A matching continuous lower bound}
+\label{sec:global:continuous-sharpness}
+
+The intrinsic dependence in \Cref{thm:global:continuous-upper} cannot be replaced by a
+dimension-free logarithmic dependence.  The obstruction already occurs in two dimensions and is
+geometric: an anisotropic covariance can follow a slowly descending spiral valley while remaining
+inside the globally admissible spectral band.
+
+\begin{theorem}[Logarithmic-spiral lower bound]
+\label{thm:global:spiral-lower}
+For every \(K\geq16\), there is a globally \(C^3\) potential \(V_K:\R^2\to\R\) and an
+initialization \(a_0=(m_0,C_0)\) such that
+\begin{equation}
+\label{eq:global:spiral-curvature}
+    \alpha\Id\preceq\nabla^2V_K\preceq\beta\Id,
+    \qquad
+    \kappa=\frac\beta\alpha=2K+1,
+    \qquad
+    \frac1\beta\Id\preceq C_0\preceq\frac1\alpha\Id.
+\end{equation}
+Its optimizer-whitened condition number and initial covariance obey
+\begin{equation}
+\label{eq:global:spiral-intrinsic-data}
+    K\leq\kappastar(V_K)\leq1.03K,
+    \qquad
+    \betastar\lambda_{0,\star}
+    \geq\frac{1-\eta_K}{1+\eta_K},
+    \qquad
+    0\leq\eta_K\leq10^{-3}.
+\end{equation}
+For every level
+\begin{equation}
+\label{eq:global:spiral-local-level}
+    \delta_{\loc}<\frac\alpha2e^{-0.08}\norm{m_0}^2,
+\end{equation}
+the exact Fisher--Rao flow satisfies
+\begin{equation}
+\label{eq:global:spiral-hitting-lower}
+    \boxed{
+    T_{\loc}:=\inf\{t\geq0:\Delta(a_t)\leq\delta_{\loc}\}
+    \geq\frac K{100}
+    \geq\frac{\kappastar(V_K)}{103}.}
+\end{equation}
+The construction extends to every dimension \(d\geq2\) by adjoining independent
+quadratic coordinates initialized at equilibrium.
+\end{theorem}
+
+\begin{proof}[Proof outline]
+The potential has a high-curvature logarithmic-spiral valley outside an isotropic quadratic core.
+Its Hessian is certified globally between \(\alpha\Id\) and \(\beta\Id\).  A rescaled
+four-dimensional system for radial displacement, angular displacement, and the two independent
+covariance errors has a uniformly stable linear part; a semigroup estimate and a stopping-time
+bootstrap control the nonlinear remainder and the Gaussian tails.  The resulting exact trajectory
+obeys
+\(
+\norm{m_t}\geq e^{-0.04}\norm{m_0}
+\) for \(0\leq t\leq K/100\).
+
+The optimizing Gaussian is concentrated inside the quadratic core.  Hence
+\(C_\star^{-1}\) is within relative error \(\eta_K\) of a scalar matrix, which gives
+\eqref{eq:global:spiral-intrinsic-data}.  Strong convexity in the mean then yields
+\(
+\Delta(a_t)\geq(\alpha/2)\norm{m_t}^2
+\), proving \eqref{eq:global:spiral-hitting-lower}.  The Hessian certificate, shadow system,
+semigroup bounds, Gaussian-smoothing estimates, and dimension extension are given in
+\Cref{app:spiral}.
+\end{proof}
+
+\begin{remark}[Scope of continuous sharpness]
+\label{rem:global:spiral-scope}
+The lower bound uses an admissible but anisotropic initial covariance.  It does not prove the same
+bound under the stricter initialization \(C_0=\beta^{-1}\Id\).  The initial radius grows with
+\(K\); if a prescribed positive Hessian-Lipschitz constant is imposed, it also grows with the
+inverse of that constant.  These input-size factors belong to the logarithmic terms suppressed in
+the shorthand statement
+\(
+T_{\loc}=\widetilde\Theta(\kappastar)
+\).  No analogous linear lower bound is asserted for the endpoint of zero Hessian Lipschitz
+constant, where the target is quadratic.
+\end{remark}
+
+\subsection{Covariance bootstraps and descent for the two discretizations}
+\label{sec:global:discrete-upper}
+
+Assume
+\begin{equation}
+\label{eq:global:initial-covariance-band}
+    \lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id,
+    \qquad
+    \lambda_0:=\lambda_{0,\min},
+    \qquad
+    \lambda_{\max}:=\max\left\{\lambda_{0,\max},\frac1\alpha\right\}.
+\end{equation}
+The upper barrier \(\lambda_{\max}\) controls the globally safe explicit stepsize.  The lower
+barrier evolves much more favorably than a frozen estimate suggests.
+
+\begin{proposition}[Two-sided covariance bootstrap]
+\label{prop:global:discrete-bootstrap}
+Let
+\(
+L_0=\min\{\lambda_0,(2\beta)^{-1}\}
+\).
+
+\emph{Riemannian retraction.}
+If
+\(
+0<h\leq\min\{1,(\beta\lambda_{\max})^{-1}\}
+\), then \(C_n\preceq\lambda_{\max}\Id\) and \(C_n\succeq L_n^{\Riem}\Id\), where
+\begin{equation}
+\label{eq:global:riemannian-floor-recurrence}
+    L_{n+1}^{\Riem}
+    =\frac{e^hL_n^{\Riem}}
+           {1+(e-1)h\beta L_n^{\Riem}}.
+\end{equation}
+With
+\begin{equation}
+\label{eq:global:riemannian-floor-variables}
+    y_0=\frac1{\beta L_0},
+    \qquad
+    y_\infty=\frac{(e-1)h}{e^h-1}\in[1,e-1),
+\end{equation}
+one has \(C_n\succeq(2\beta)^{-1}\Id\) for every
+\begin{equation}
+\label{eq:global:riemannian-floor-time}
+    n\geq N_{\cov,-}^{\Riem}
+    :=\left\lceil
+        \frac1h\logp\frac{y_0-y_\infty}{2-y_\infty}
+      \right\rceil
+    =O\!\left(\frac1h\logp\frac1{\beta\lambda_0}\right).
+\end{equation}
+For the upper curvature band, put
+\(
+z_0=(\alpha\lambda_{0,\max})^{-1}
+\) and
+\(
+z_\infty=h/(e^h-1)>1/2
+\).  Then \(C_n\preceq2\alpha^{-1}\Id\) for all
+\begin{equation}
+\label{eq:global:riemannian-upper-band-time}
+    n\geq N_{\cov,+}^{\Riem}:=
+    \begin{cases}
+        0, & z_0\geq\tfrac12,\\[3pt]
+        \left\lceil
+        \dfrac1h\log\dfrac{z_\infty-z_0}{z_\infty-1/2}
+        \right\rceil, & z_0<\tfrac12.
+    \end{cases}
+\end{equation}
+
+\emph{KL/Bregman resolvent.}
+For every \(h>0\), \(C_n\preceq\lambda_{\max}\Id\) and
+\(C_n\succeq L_n^{\KL}\Id\), where
+\begin{equation}
+\label{eq:global:kl-floor-recurrence}
+    L_{n+1}^{\KL}
+    =\frac{(1+h)L_n^{\KL}}{1+h\beta L_n^{\KL}},
+    \qquad
+    L_n^{\KL}
+    =\frac1{\beta[1+(1/(\beta L_0)-1)(1+h)^{-n}]}.
+\end{equation}
+Consequently, \(C_n\succeq(2\beta)^{-1}\Id\) for
+\begin{equation}
+\label{eq:global:kl-floor-time}
+    n\geq N_{\cov,-}^{\KL}
+    :=\left\lceil
+      \frac{\logp(1/(\beta L_0)-1)}{\log(1+h)}
+    \right\rceil.
+\end{equation}
+When \(h\leq1\), this is
+\(
+O(h^{-1}\logp(1/(\beta\lambda_0)))
+\).  In addition, \(C_n\preceq2\alpha^{-1}\Id\) for
+\begin{equation}
+\label{eq:global:kl-upper-band-time}
+    n\geq N_{\cov,+}^{\KL}
+    :=\left\lceil\frac{\log2}{\log(1+h)}\right\rceil.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+For the Riemannian update, let \(B_n=C_n^{1/2}A(a_n)C_n^{1/2}\).  The precision update is
+\(
+C_{n+1}^{-1}=e^{-h}C_n^{-1/2}e^{hB_n}C_n^{-1/2}
+\).  The upper barrier follows from \(e^X\succeq\Id+X\).  Under
+\(0\preceq hB_n\preceq\Id\), the chord bound
+\(e^{hB_n}\preceq\Id+(e-1)hB_n\) gives
+\eqref{eq:global:riemannian-floor-recurrence}.  Inverting the scalar recurrence produces
+\(
+(\beta L_n^{\Riem})^{-1}
+=y_\infty+(y_0-y_\infty)e^{-nh}
+\), which yields \eqref{eq:global:riemannian-floor-time}.  A lower affine recursion for
+\(\lambda_{\min}(C_n^{-1})/\alpha\) gives
+\eqref{eq:global:riemannian-upper-band-time}.
+
+For the KL update the precision recursion is exactly affine:
+\(
+C_{n+1}^{-1}=(C_n^{-1}+hA(a_n))/(1+h)
+\).  Comparing it with \(\alpha\Id\) and \(\beta\Id\) gives
+\eqref{eq:global:kl-floor-recurrence} and the upper barrier.  Solving the resulting scalar
+recurrences proves \eqref{eq:global:kl-floor-time}--\eqref{eq:global:kl-upper-band-time}.
+\end{proof}
+
+The descent mechanisms differ even though both methods share the mean update.  Let
+\(
+K_{\glob}:=\beta\lambda_{\max}\geq1
+\), and suppose at the current iterate that
+\(L\Id\preceq C\preceq\lambda_{\max}\Id\).  We use the Gaussian
+Bures--Wasserstein gradient norm
+\begin{equation}
+\label{eq:global:wasserstein-gradient-norm}
+    \norm{\grad^{W_2}\calE(a)}_{W_2}^2
+    :=\norm{g(a)}^2+\Tr(R(a)C R(a)).
+\end{equation}
+
+\begin{proposition}[One-step deterministic descent]
+\label{prop:global:one-step-descent}
+For the Riemannian retraction, if \(0<h\leq K_{\glob}^{-1}\), then
+\begin{equation}
+\label{eq:global:riemannian-descent}
+    \calE(a^+)
+    \leq\calE(a)-h(1-K_{\glob}h)\Gradnorm(a)^2.
+\end{equation}
+In particular, \(h\leq(2K_{\glob})^{-1}\) gives decrease by at least
+\((h/2)\Gradnorm(a)^2\).
+
+For the KL/Bregman resolvent, if \(0<h\leq K_{\glob}^{-1}\), then the useful orientation of the
+Gaussian divergence is forward:
+\begin{align}
+\label{eq:global:kl-forward-descent}
+    \calE(a^+)
+    &\leq\calE(a)-\frac1h\KL(\rho_{a^+}\,\|\,\rho_a),\\
+\label{eq:global:kl-forward-control}
+    \KL(\rho_{a^+}\,\|\,\rho_a)
+    &\geq
+    \frac{Lh^2}{4(1+hK_{\glob})^2}
+    \norm{\grad^{W_2}\calE(a)}_{W_2}^2.
+\end{align}
+The reverse orientation \(\KL(\rho_a\|\rho_{a^+})\) does not provide the corresponding bound for
+arbitrary mean displacement.
+\end{proposition}
+
+\begin{proof}[Proof idea]
+For the Riemannian map, couple the old and new Gaussians through a shared standard normal variable.
+Smoothness of \(V\), Gaussian integration by parts, and the scalar inequality
+\(
+e^w\leq1+w+w^2
+\) for \(|w|\leq1\) control the exponential covariance retraction and yield
+\eqref{eq:global:riemannian-descent}.
+
+For the KL map, diagonalize
+\(
+C^{1/2}A(a)C^{1/2}
+\).  Its covariance update is a rational function of this matrix, so the covariance part reduces
+to a scalar inequality on eigenvalues; the mean part is controlled by \(hK_{\glob}\leq1\).
+This gives \eqref{eq:global:kl-forward-descent}.  The elementary inequality
+\(
+q^{-1}-1+\log q\geq(q-1)^2/[2\max\{q,1\}^2]
+\) then proves \eqref{eq:global:kl-forward-control}.
+\end{proof}
+
+\begin{theorem}[Global complexity of the deterministic discretizations]
+\label{thm:global:discrete-upper}
+Let
+\(
+N_\bullet^{\glob}(\delta)
+:=\inf\{n\geq0:\Delta(a_n)\leq\delta\}
+\) for \(0<\delta<\Delta_0\).
+
+If the Riemannian retraction is run with
+\begin{equation}
+\label{eq:global:riemannian-global-step}
+    0<h\leq\frac1{2\beta\lambda_{\max}},
+\end{equation}
+then
+\begin{equation}
+\label{eq:global:riemannian-global-complexity}
+    \boxed{
+    N_{\Riem}^{\glob}(\delta)
+    =O\!\left(
+        \frac1h\logp\frac1{\beta\lambda_0}
+        +\frac\kappa h\logp\frac{\Delta_0}{\delta}
+    \right).}
+\end{equation}
+If the KL/Bregman resolvent is run with
+\begin{equation}
+\label{eq:global:kl-global-step}
+    0<h\leq\frac1{\beta\lambda_{\max}},
+\end{equation}
+then
+\begin{equation}
+\label{eq:global:kl-global-complexity}
+    \boxed{
+    N_{\KL}^{\glob}(\delta)
+    =O\!\left(
+        \frac1h\logp\frac1{\beta\lambda_0}
+        +\frac\kappa h\logp\frac{\Delta_0}{\delta}
+    \right).}
+\end{equation}
+The constants hidden by \(O(\cdot)\) are independent of the dimension and the conditioning
+parameters.
+\end{theorem}
+
+\begin{proof}
+After the covariance burn-in established in
+\Cref{prop:global:discrete-bootstrap}, one has
+\(C_n\succeq(2\beta)^{-1}\Id\).  The Fisher--Rao/Bures comparison and the Gaussian
+Bures--Wasserstein PL inequality imply
+\begin{equation}
+\label{eq:global:discrete-pl-after-burnin}
+    \Gradnorm(a_n)^2\geq\frac1{2\kappa}\Delta(a_n).
+\end{equation}
+For the Riemannian scheme,
+\eqref{eq:global:riemannian-descent} therefore gives
+\(
+\Delta_{n+1}\leq(1-h/(4\kappa))\Delta_n
+\).  For the KL scheme,
+\eqref{eq:global:kl-forward-descent}--\eqref{eq:global:kl-forward-control} and
+\(1+hK_{\glob}\leq2\) give
+\(
+\Delta_{n+1}\leq(1-h/(16\kappa))\Delta_n
+\).  Adding the covariance burn-in and summing these geometric contractions proves
+\eqref{eq:global:riemannian-global-complexity} and
+\eqref{eq:global:kl-global-complexity}.
+\end{proof}
+
+The KL covariance recursion is an affine precision resolvent and preserves the global upper
+barrier for every \(h>0\); the global descent theorem certifies \(h\leq
+(\beta\lambda_{\max})^{-1}\).  The Riemannian method uses a matrix exponential and its stated
+descent rate uses the smaller range \(h\leq(2\beta\lambda_{\max})^{-1}\).  These are certified
+theoretical ranges, rather than a claim that either method is stable beyond them on every target.
+
+\subsection{Fixed-step sharpness in one dimension}
+\label{sec:global:discrete-sharpness}
+
+At the globally safe scale \(h=\Theta(\kappa^{-1})\), the localization term in
+\Cref{thm:global:discrete-upper} is \(\Theta(\kappa^2)\) for a constant-factor energy reduction.
+This polynomial dependence is attained even when the covariance starts at the curvature scale and
+the Hessian is Lipschitz with a constant independent of \(\kappa\).
+
+\begin{theorem}[Bump-train lower bound for both fixed-step maps]
+\label{thm:global:bump-lower}
+Fix \(\gamma\in(0,1/2]\) and \(L_0>0\).  There exist constants
+\(T,q,Y>0\) and \(\kappa_0\geq1\), depending only on \(\gamma\), \(L_0\), and a fixed smooth
+bump profile, such that for every \(\kappa\geq\kappa_0\) there is an even potential
+\(V_\kappa\in C^\infty(\R)\) satisfying
+\begin{equation}
+\label{eq:global:bump-regularity}
+    1\leq V_\kappa''\leq\kappa,
+    \qquad
+    \norm{V_\kappa'''}_\infty\leq L_0,
+    \qquad
+    \kappastar(V_\kappa)=\kappa.
+\end{equation}
+Initialize
+\begin{equation}
+\label{eq:global:bump-initialization}
+    m_0=\frac{Y\kappa^4}{\gamma},
+    \qquad
+    C_0=c_0=\frac1\kappa,
+\end{equation}
+and run either deterministic discretization with the fixed step
+\begin{equation}
+\label{eq:global:bump-step}
+    h=\frac\gamma\kappa.
+\end{equation}
+Then
+\begin{equation}
+\label{eq:global:bump-gap-lower}
+    \Delta_n\geq q\Delta_0
+    \qquad
+    \text{for every }0\leq n\leq
+    \left\lfloor\frac{T\kappa^2}{\gamma}\right\rfloor.
+\end{equation}
+Consequently, for a constant-factor objective reduction,
+\begin{equation}
+\label{eq:global:bump-complexity-lower}
+    N_{\Riem}=\Omega\!\left(\frac{\kappa^2}{\gamma}\right)
+    =\Omega\!\left(\frac\kappa h\right),
+    \qquad
+    N_{\KL}=\Omega\!\left(\frac{\kappa^2}{\gamma}\right)
+    =\Omega\!\left(\frac\kappa h\right).
+\end{equation}
+\end{theorem}
+
+\begin{proof}[Proof outline]
+The construction places flat-top curvature bumps along a prescribed scalar reference orbit.  Each
+bump has height \(\kappa-1\) and width \(\Theta(\kappa)\), which keeps
+\(\norm{V_\kappa'''}_\infty\) bounded.  At the matched covariance \(c_\kappa=1/\kappa\), the
+Gaussian-averaged curvature satisfies
+\(
+c_\kappa A(m,c_\kappa)=1+o(1)
+\), so both covariance maps are almost stationary.  Meanwhile
+\(
+b(m,c_\kappa)/m=\Theta(1)
+\), and hence the relative mean displacement per step is only
+\(
+h c_\kappa b(m,c_\kappa)/m=\Theta(\gamma/\kappa^2)
+\).
+
+Gaussian leakage between neighboring bumps is small enough to shadow the reference orbit for
+\(\Theta(\kappa^2/\gamma)\) steps.  Strong convexity in the mean and control of the shadowing error
+then show that the objective gap retains a fixed fraction of its initial value.  The bump
+placement, uniform regularity certificate, simultaneous shadowing of the two covariance maps, and
+objective comparison are proved in \Cref{app:bump}.
+\end{proof}
+
+\begin{remark}[Scope of discrete sharpness]
+\label{rem:global:bump-scope}
+The target in \Cref{thm:global:bump-lower} may depend on the fixed value of \(\gamma\).  The theorem
+proves sharpness of the factor \(\kappa/h\) for a constant-factor reduction by an explicit method
+committed to one globally fixed step.  It does not cover adaptive relative-curvature steps,
+backtracking or Armijo line searches, or implicit and Rosenbrock-stabilized updates, and it does not
+claim that the entire factor \(\log(\Delta_0/\delta)\) is necessary at every target accuracy.
+\end{remark}
+
+\subsection{Removing the covariance burn-in}
+\label{sec:global:warm-starts}
+
+The burn-in can be removed without changing the subsequent Fisher--Rao dynamics.  Two optional
+initializers are useful in different oracle models: a short Bures--Wasserstein transport stage uses
+the averaged quantities \(g(a)\) and \(A(a)\), whereas a quadratic rescue uses one pointwise
+gradient--Hessian query.
+
+\begin{proposition}[Bures--Wasserstein transport warm start]
+\label{prop:global:bures-warm-start}
+Consider first the Gaussian Bures--Wasserstein flow
+\begin{equation}
+\label{eq:global:bures-flow}
+    \dot m_t=g(a_t),
+    \qquad
+    \dot C_t=2\Id-C_tA(a_t)-A(a_t)C_t.
+\end{equation}
+If \(C_0\succeq\lambda_0\Id\), then
+\begin{equation}
+\label{eq:global:bures-floor}
+    C_t\succeq
+    \left[
+        \frac1\beta+\left(\lambda_0-\frac1\beta\right)e^{-2\beta t}
+    \right]\Id.
+\end{equation}
+For \(c\in(0,1)\), define
+\begin{equation}
+\label{eq:global:bures-warm-time}
+    T_W(c):=
+    \begin{cases}
+        0, & \lambda_0\geq c/\beta,\\[3pt]
+        \dfrac1{2\beta}
+        \log\dfrac{1-\beta\lambda_0}{1-c},
+        & \lambda_0<c/\beta.
+    \end{cases}
+\end{equation}
+Then \(C_{T_W(c)}\succeq(c/\beta)\Id\), the energy has not increased, and a permanent switch to
+the Fisher--Rao flow reaches \(\Delta\leq\delta\) within the additional time
+\begin{equation}
+\label{eq:global:bures-to-fr-continuous}
+    \min\left\{
+        \frac\kappa c\logp\frac{\Delta_0}{\delta},
+        \logp\frac\kappa{c\betastar}
+        +\kappastar\logp\frac{\Delta_0}{\delta}
+    \right\}.
+\end{equation}
+For fixed \(c\), the warm-up \eqref{eq:global:bures-warm-time} is \(O(1/\beta)\), independently of
+how small \(\lambda_0\) is.
+
+There is also a one-step discrete version.  For any \(c\in(0,1]\) and \(a=(m,C)\), let
+\begin{equation}
+\label{eq:global:bures-forward-backward}
+    \eta=\frac c\beta,
+    \quad
+    M=\Id-\eta A(a),
+    \quad
+    m^+=m+\eta g(a),
+    \quad
+    \widetilde C=MCM,
+\end{equation}
+and set
+\begin{equation}
+\label{eq:global:bures-forward-backward-covariance}
+    C^+
+    =\frac12\left(
+        \widetilde C+2\eta\Id
+        +[\widetilde C(\widetilde C+4\eta\Id)]^{1/2}
+      \right).
+\end{equation}
+If \(C\preceq\lambda_{\max}\Id\), then
+\(\eta\Id\preceq C^+\preceq\lambda_{\max}\Id\) and
+\(\calE(a^+)\leq\calE(a)\).  Thus, if \(\lambda_0<c/\beta\), one such step followed by either
+Fisher--Rao discretization replaces the burn-in term by one iteration and gives
+\begin{equation}
+\label{eq:global:bures-to-fr-discrete}
+    N_{W\to\bullet}^{\glob}(\delta;c)
+    =1+O\!\left(
+        \frac\kappa{ch}\logp\frac{\Delta_0}{\delta}
+    \right),
+    \qquad \bullet\in\{\Riem,\KL\},
+\end{equation}
+under the corresponding stepsize restriction in
+\eqref{eq:global:riemannian-global-step} or \eqref{eq:global:kl-global-step}.  If the initial floor
+already exceeds \(c/\beta\), the transport step is skipped and the additive one is absent.
+\end{proposition}
+
+\begin{proof}[Proof idea]
+An eigenvalue \(\mu_i(t)\) of \(C_t\) along \eqref{eq:global:bures-flow} satisfies
+\(
+\dot\mu_i=2(1-\mu_i h_i)
+\) for some \(h_i\in[\alpha,\beta]\).  Scalar comparison with
+\(
+\dot\ell=2(1-\beta\ell)
+\) proves \eqref{eq:global:bures-floor}.  The flow is the Gaussian Bures--Wasserstein gradient flow
+of \(\calE\), so its energy decreases \citep{lambert2022variational}.  After the switch, the floor
+\(c/\beta\) persists under Fisher--Rao evolution; the original-coordinate PL estimate gives the
+first term in \eqref{eq:global:bures-to-fr-continuous}, while
+\Cref{thm:global:continuous-upper} applied to
+\(
+\widehat C\succeq(c/\kappa)\Id
+\) gives the second.
+
+For the discrete step, the scalar map
+\(
+\psi_\eta(x)=(x+2\eta+\sqrt{x(x+4\eta)})/2
+\) is increasing and satisfies \(\psi_\eta(0)=\eta\), proving the lower floor.  Its identity
+\(
+\psi_\eta((1-\eta/L)^2L)=L
+\) proves the upper barrier.  Energy decrease is the standard Bures--Wasserstein
+forward--backward inequality for \(\eta\leq1/\beta\) \citep{diao2023forward}.  The bounds in
+\Cref{thm:global:discrete-upper}, restarted from the new floor, yield
+\eqref{eq:global:bures-to-fr-discrete}.
+\end{proof}
+
+The additive covariance growth in \eqref{eq:global:bures-floor} is coordinate-dependent:
+the Bures--Wasserstein flow is not affine invariant.  We use it only as a finite warm start
+followed by a permanent switch; no general Wasserstein--Fisher--Rao dynamics is needed.
+
+\begin{proposition}[One-query quadratic rescue]
+\label{prop:global:quadratic-rescue}
+Suppose a pointwise Hessian oracle is available.  Given \(m_{\mathrm{in}}\), query
+\begin{equation}
+\label{eq:global:quadratic-rescue-query}
+    G_{\mathrm{in}}=\nabla V(m_{\mathrm{in}}),
+    \qquad
+    H_{\mathrm{in}}=\nabla^2V(m_{\mathrm{in}}),
+\end{equation}
+and initialize
+\begin{equation}
+\label{eq:global:quadratic-rescue}
+    \boxed{
+    m_0=m_{\mathrm{in}}-H_{\mathrm{in}}^{-1}G_{\mathrm{in}},
+    \qquad
+    C_0=H_{\mathrm{in}}^{-1}.}
+\end{equation}
+Then
+\begin{equation}
+\label{eq:global:quadratic-rescue-band}
+    \frac1\beta\Id\preceq C_0\preceq\frac1\alpha\Id,
+\end{equation}
+so both deterministic Fisher--Rao schemes start with zero covariance burn-in.  In particular, with
+\(\Delta_0\) denoting the post-rescue gap,
+\begin{equation}
+\label{eq:global:quadratic-rescue-complexity}
+    N_{\mathrm{rescue}\to\bullet}^{\glob}(\delta)
+    =1+O\!\left(
+        \frac\kappa h\logp\frac{\Delta_0}{\delta}
+    \right),
+    \qquad
+    \begin{cases}
+        0<h\leq(2\kappa)^{-1}, & \bullet=\Riem,\\
+        0<h\leq\kappa^{-1}, & \bullet=\KL,
+    \end{cases}
+\end{equation}
+where the additive one counts the gradient--Hessian query.
+
+If
+\(
+V(x)=\tfrac12(x-\mu)^\top H(x-\mu)+c
+\) with \(H\succ0\), then \eqref{eq:global:quadratic-rescue} gives
+\(
+(m_0,C_0)=(\mu,H^{-1})=a_\star
+\) and \(\Delta_0=0\).  Over the class of unknown Gaussian targets, the pointwise
+gradient--Hessian oracle complexity of exact recovery is therefore exactly one.
+\end{proposition}
+
+\begin{proof}
+The inverse map is operator antitone, so
+\eqref{eq:global:curvature-assumption} immediately gives
+\eqref{eq:global:quadratic-rescue-band}.  Hence
+\(\lambda_0\geq1/\beta\), \(\lambda_{\max}=1/\alpha\), and
+\Cref{thm:global:discrete-upper} starts directly in its localization phase, proving
+\eqref{eq:global:quadratic-rescue-complexity}.  For a quadratic potential,
+\(
+G_{\mathrm{in}}=H(m_{\mathrm{in}}-\mu)
+\) and \(H_{\mathrm{in}}=H\), which proves exact recovery.  Zero queries cannot recover every
+unknown pair \((\mu,H)\), while one query returns both \(H\) and \(H(m_{\mathrm{in}}-\mu)\); thus one
+query is also necessary.
+\end{proof}
+
+The transport warm start and quadratic rescue modify only the initialization stage.  They do not
+remove the global-conditioning obstruction: the bump-train lower bound begins at
+\(C_0=\kappa^{-1}\), after covariance burn-in has already ended.  Nor do they change the local
+non-Gaussian stiffness studied in the next section.  Covariance warm-up, global localization, and
+local contraction are therefore distinct parts of the deterministic rate landscape.

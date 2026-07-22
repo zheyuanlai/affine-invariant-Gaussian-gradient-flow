@@ -1,0 +1,463 @@
+\section{Gaussian variational inference and affine-invariant geometry}
+\label{sec:geometry}
+
+Let $d\geq 1$ and
+\[
+    \Aspace:=\R^d\times\SPD(d),
+    \qquad
+    a=(m,C)\in\Aspace,
+    \qquad
+    \rho_a:=\N(m,C).
+\]
+We identify the tangent space $T_a\Aspace$ with
+$\R^d\times\Sym(d)$.  The target distribution has density
+$\pi(x)=Z^{-1}e^{-V(x)}$, and Gaussian variational inference minimizes the
+reverse relative entropy over $\Aspace$.
+
+\subsection{The objective and Gaussian differential identities}
+\label{sec:geometry-objective}
+
+Up to a constant independent of $a$, the variational objective is
+\begin{equation}
+\label{eq:geometry-energy}
+    \calE(a)
+    :=\KL(\rho_a\|\pi)
+    =\E_{\rho_a}[V(X)]-\frac12\log\det C+\mathrm{const}.
+\end{equation}
+The three averaged quantities used throughout the paper are
+\begin{equation}
+\label{eq:geometry-score-curvature-residual}
+    g(a):=-\E_{\rho_a}[\nabla V(X)],
+    \qquad
+    A(a):=\E_{\rho_a}[\nabla^2V(X)],
+    \qquad
+    R(a):=C^{-1}-A(a).
+\end{equation}
+Thus $g$ is the averaged target score, $A$ is the Price curvature, and $R$
+is the precision residual.
+
+We use the following regularity convention.  Whenever a Bonnet or Price
+identity is invoked, differentiation under the Gaussian expectation and the
+corresponding Gaussian integration by parts are assumed to be valid.  It is
+enough, for example, that $V\in C^2$ and $\nabla^2V$ is bounded.  In
+particular, all identities below hold under the strong log-concavity and
+smoothness assumptions imposed in the convergence sections.
+
+\begin{lemma}[Bonnet--Price identities]
+\label{lem:geometry-bonnet-price}
+For $(u,X)\in\R^d\times\Sym(d)$,
+\begin{equation}
+\label{eq:geometry-bonnet-price}
+    D_m\E_{\rho_a}[V][u]
+    =\E_{\rho_a}[\nabla V]^{\mathsf T}u,
+    \qquad
+    D_C\E_{\rho_a}[V][X]
+    =\frac12\Tr\bigl(A(a)X\bigr).
+\end{equation}
+Consequently, the differential of the reverse-KL objective is
+\begin{equation}
+\label{eq:geometry-differential}
+    D\calE(a)[(u,X)]
+    =-g(a)^{\mathsf T}u-\frac12\Tr\bigl(R(a)X\bigr).
+\end{equation}
+If $a_\star=(m_\star,C_\star)$ is an interior minimizer, then
+\begin{equation}
+\label{eq:geometry-first-order}
+    g(a_\star)=0,
+    \qquad
+    R(a_\star)=0,
+    \qquad\text{or equivalently}\qquad
+    A(a_\star)=C_\star^{-1}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For the mean derivative, write $X=m+C^{1/2}\xi$ with
+$\xi\sim\N(0,\Id)$, differentiate the translation $m\mapsto m+\epsilon u$,
+and use dominated convergence.  For the covariance derivative, if $p_C$ is
+the density of $\N(m,C)$, then the Gaussian heat identity gives
+\[
+    D_Cp_C[X]=\frac12\Tr\bigl(X\nabla_x^2p_C\bigr).
+\]
+Twice integrating by parts therefore yields
+$D_C\E_{\rho_a}[V][X]=\frac12\E_{\rho_a}
+[\Tr(X\nabla^2V)]=\frac12\Tr(A(a)X)$.  Jacobi's formula gives
+$D_C(-\frac12\log\det C)[X]=-\frac12\Tr(C^{-1}X)$, proving
+\eqref{eq:geometry-differential}.  Since the trace pairing is nondegenerate
+on $\Sym(d)$, vanishing of the differential in every tangent direction is
+equivalent to \eqref{eq:geometry-first-order}.
+\end{proof}
+
+\subsection{Classification of affine-invariant metrics}
+\label{sec:geometry-classification}
+
+For $B\in\mathrm{GL}(d)$ and $b\in\R^d$, the change of variables
+$x\mapsto Bx+b$ acts on Gaussian parameters and tangent vectors by
+\begin{equation}
+\label{eq:geometry-affine-action}
+    \Phi_{B,b}(m,C)=(Bm+b,BCB^{\mathsf T}),
+    \qquad
+    D\Phi_{B,b}(u,X)=(Bu,BXB^{\mathsf T}).
+\end{equation}
+A Riemannian metric is affine invariant if every map $\Phi_{B,b}$ is an
+isometry.
+
+\begin{theorem}[Classification of affine-invariant Gaussian metrics]
+\label{thm:geometry-classification}
+Suppose $d\geq2$.  Every affine-invariant Riemannian metric on $\Aspace$ is
+uniquely of the form
+\begin{align}
+\label{eq:geometry-metric-family}
+    \bigl\langle (u,X),(v,Y)\bigr\rangle_a^{\eta,\omega,\tau}
+    ={}&\eta\,u^{\mathsf T}C^{-1}v
+      +\omega\Tr\bigl(C^{-1}XC^{-1}Y\bigr) \\
+     &+\tau\Tr(C^{-1}X)\Tr(C^{-1}Y),
+\end{align}
+where
+\begin{equation}
+\label{eq:geometry-metric-positivity}
+    \eta>0,
+    \qquad
+    \omega>0,
+    \qquad
+    \omega+d\tau>0
+    \quad\left(\text{i.e. }\tau>-\frac{\omega}{d}\right).
+\end{equation}
+Conversely, every choice satisfying \eqref{eq:geometry-metric-positivity}
+defines an affine-invariant Riemannian metric.  Multiplication of
+$(\eta,\omega,\tau)$ by a common positive constant only changes the overall
+metric scale.
+\end{theorem}
+
+\begin{proof}
+The affine group acts transitively on $\Aspace$, so the metric is determined
+at $(0,\Id)$ by invariance under its isotropy group $O(d)$.  At that point the
+tangent representation splits as
+\[
+    \R^d\ \oplus\ \Sym_0(d)\ \oplus\ \R\Id,
+    \qquad
+    \Sym_0(d):=\{X\in\Sym(d):\Tr X=0\}.
+\]
+If $L(u,X)$ is a possible mean--covariance cross term, invariance under the
+sign element $Q=-\Id$ gives $L(u,X)=L(-u,X)=-L(u,X)$; hence $L=0$.
+The only $O(d)$-invariant bilinear form on the mean block is
+$\eta u^{\mathsf T}v$.  The trace and traceless decomposition gives the
+two-parameter covariance family
+\[
+    \omega\Tr(XY)+\tau\Tr(X)\Tr(Y),
+\]
+the standard classification of $O(d)$-invariant metrics on symmetric
+matrices \citep{thanwerdas2019affine,thanwerdas2023n}.  Positivity on the
+mean, traceless, and scalar directions respectively gives
+$\eta>0$, $\omega>0$, and
+$d(\omega+d\tau)s^2>0$ for $X=s\Id$.
+
+Finally, transport from $(0,\Id)$ to $(m,C)$ by $B=C^{1/2}$ and $b=m$
+pulls a tangent vector back to
+\[
+    \bigl(C^{-1/2}u,\,C^{-1/2}XC^{-1/2}\bigr).
+\]
+Substitution gives \eqref{eq:geometry-metric-family}.  The displayed
+expression is directly invariant under \eqref{eq:geometry-affine-action},
+proving the converse.
+\end{proof}
+
+\begin{remark}[The one-dimensional family]
+\label{rem:geometry-dimension-one}
+When $d=1$ there is no traceless covariance block.  Formula
+\eqref{eq:geometry-metric-family} still describes every affine-invariant
+metric, but only the sum $\omega+\tau$ is identifiable; positivity requires
+$\eta>0$ and $\omega+\tau>0$.  The uniqueness statements below concern the
+full three-mode geometry and therefore assume $d\geq2$.
+\end{remark}
+
+Because an overall scaling only reparametrizes gradient-flow time, one may
+normalize $\eta=1$.  We retain $\eta$ temporarily so that the relative speeds
+of the mean, trace, and traceless modes remain visible.
+
+\subsection{The general affine-invariant gradient flow}
+\label{sec:geometry-general-flow}
+
+Introduce the covariance-whitened residual and its trace--traceless split,
+\begin{equation}
+\label{eq:geometry-residual-split}
+    S(a):=C^{1/2}R(a)C^{1/2},
+    \qquad
+    s(a):=\Tr S(a),
+    \qquad
+    S_0(a):=S(a)-\frac{s(a)}d\Id.
+\end{equation}
+
+\begin{theorem}[Affine-invariant gradient and exact modal preconditioning]
+\label{thm:geometry-general-flow}
+For the metric \eqref{eq:geometry-metric-family}, the Riemannian gradient of
+$\calE$ is
+\begin{equation}
+\label{eq:geometry-general-gradient}
+    \grad_{\eta,\omega,\tau}\calE(a)
+    =\left(
+       -\frac1\eta Cg(a),
+       -\frac1{2\omega}CR(a)C
+       +\frac{\tau}{2\omega(\omega+d\tau)}
+          \Tr(CR(a))\,C
+      \right).
+\end{equation}
+Hence its negative gradient flow is
+\begin{equation}
+\label{eq:geometry-general-flow}
+    \dot m
+    =\frac1\eta Cg(a),
+    \qquad
+    \dot C
+    =\frac1{2\omega}CR(a)C
+     -\frac{\tau}{2\omega(\omega+d\tau)}\Tr(CR(a))\,C.
+\end{equation}
+Equivalently, the covariance equation has the exact trace--traceless
+decomposition
+\begin{equation}
+\label{eq:geometry-trace-traceless-flow}
+    C^{-1/2}\dot C\,C^{-1/2}
+    =\frac1{2\omega}S_0(a)
+     +\frac{s(a)}{2d(\omega+d\tau)}\Id.
+\end{equation}
+Along this flow,
+\begin{equation}
+\label{eq:geometry-general-dissipation}
+    \frac{\dd}{\dd t}\calE(a_t)
+    =-\frac1\eta g(a_t)^{\mathsf T}C_tg(a_t)
+     -\frac1{4\omega}\norm{S_0(a_t)}_{\Frob}^2
+     -\frac{s(a_t)^2}{4d(\omega+d\tau)}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The mean block follows by matching
+$\eta u^{\mathsf T}C^{-1}v$ with the first term of
+\eqref{eq:geometry-differential}.  For the covariance block, write
+$W=C^{-1/2}(\grad\calE)_C C^{-1/2}$ and
+$Z=C^{-1/2}XC^{-1/2}$.  Gradient duality requires
+\[
+    \omega\Tr(WZ)+\tau\Tr(W)\Tr(Z)
+    =-\frac12\Tr(SZ)
+    \qquad\text{for every }Z\in\Sym(d).
+\]
+Testing separately against traceless matrices and against $\Id$ gives
+\[
+    W_0=-\frac1{2\omega}S_0,
+    \qquad
+    \Tr W=-\frac{s}{2(\omega+d\tau)}.
+\]
+Recombining the two components yields the covariance block in
+\eqref{eq:geometry-general-gradient}.  Negating the gradient gives
+\eqref{eq:geometry-general-flow} and
+\eqref{eq:geometry-trace-traceless-flow}.  Finally,
+$\frac{\dd}{\dd t}\calE=-\norm{\grad\calE}_{a}^{2}$; evaluating the metric
+norm on the three orthogonal blocks gives
+\eqref{eq:geometry-general-dissipation}.
+\end{proof}
+
+\subsection{Gaussian modal rates and the balanced metric}
+\label{sec:geometry-balance}
+
+The metric parameters have a particularly transparent interpretation on a
+Gaussian target.  By an affine change of variables, any nondegenerate
+Gaussian target can be placed in optimizer-whitened coordinates, where
+$\pi=\N(0,\Id)$.
+
+\begin{theorem}[Exact Gaussian modal rates]
+\label{thm:geometry-gaussian-modes}
+Let $\pi=\N(0,\Id)$ and consider the flow
+\eqref{eq:geometry-general-flow}.  Its exact nonlinear equations are
+\begin{equation}
+\label{eq:geometry-gaussian-flow}
+    \dot m=-\frac1\eta Cm,
+    \qquad
+    \dot C=\frac1{2\omega}(C-C^2)
+       -\frac{\tau}{2\omega(\omega+d\tau)}\Tr(\Id-C)\,C.
+\end{equation}
+Write $C=\Id+X$, $\sigma=\Tr(X)/d$, and
+$X_0=X-\sigma\Id$.  Then the covariance equation is exactly
+\begin{align}
+\label{eq:geometry-gaussian-linearization}
+    \dot X
+    ={}&-\frac1{2\omega}X
+       +\frac{\tau}{2\omega(\omega+d\tau)}\Tr(X)\Id
+       +\mathcal Q(X), \\
+    \mathcal Q(X)
+    :={}&-\frac1{2\omega}X^2
+       +\frac{\tau}{2\omega(\omega+d\tau)}\Tr(X)X.
+\end{align}
+Consequently, the Jacobian of the flow at $(0,\Id)$ has the three exact
+decay rates
+\begin{equation}
+\label{eq:geometry-gaussian-modal-rates}
+    \gamma_{\mathrm{mean}}=\frac1\eta,
+    \qquad
+    \gamma_{\mathrm{traceless}}=\frac1{2\omega},
+    \qquad
+    \gamma_{\mathrm{trace}}=\frac1{2(\omega+d\tau)}.
+\end{equation}
+More explicitly,
+$\dot m=-\eta^{-1}m+O(\norm{(m,X)}^2)$,
+$\dot X_0=-(2\omega)^{-1}X_0+O(\norm X^2)$, and
+$\dot\sigma=-[2(\omega+d\tau)]^{-1}\sigma+O(\norm X^2)$.
+\end{theorem}
+
+\begin{proof}
+For the standard Gaussian potential, $g(a)=-m$, $A(a)=\Id$, and
+$R(a)=C^{-1}-\Id$.  Substitution in
+\eqref{eq:geometry-general-flow} gives
+\eqref{eq:geometry-gaussian-flow}.  Expanding at $C=\Id+X$ gives
+\eqref{eq:geometry-gaussian-linearization}.  Projection onto
+$\Sym_0(d)$ and $\R\Id$, together with the linearization of the mean
+equation, yields \eqref{eq:geometry-gaussian-modal-rates}.
+\end{proof}
+
+\begin{theorem}[Fisher--Rao is the unique balanced choice]
+\label{thm:geometry-balanced}
+Assume $d\geq2$.  The three Gaussian modal rates in
+\eqref{eq:geometry-gaussian-modal-rates} are equal if and only if
+\begin{equation}
+\label{eq:geometry-balanced-parameters}
+    (\eta,\omega,\tau)=c\left(1,\frac12,0\right)
+    \qquad\text{for some }c>0.
+\end{equation}
+Thus, up to an overall metric scale, the Fisher--Rao metric is the unique
+affine-invariant Gaussian metric that balances the mean, trace-covariance,
+and traceless-covariance modes.  Under the normalization $\eta=1$, its
+parameters are $\omega=1/2$ and $\tau=0$.
+\end{theorem}
+
+\begin{proof}
+Equality of the mean and traceless rates gives $\eta=2\omega$.
+Equality of the two covariance rates gives $\omega=\omega+d\tau$, hence
+$\tau=0$.  These conditions are also sufficient, and removing the common
+scale gives \eqref{eq:geometry-balanced-parameters}.
+\end{proof}
+
+\begin{remark}[Scope of the balancing statement]
+\label{rem:geometry-balance-scope}
+The rates in \eqref{eq:geometry-gaussian-modal-rates} are exact eigenvalues
+of the Gaussian flow linearization.  They are not asserted to be global
+rates for the nonlinear covariance equation, nor rates for a general
+non-Gaussian target.  A different affine-invariant metric may accelerate a
+particular direction or target; Fisher--Rao is canonical here because it is
+the unique choice that does not privilege any of the three Gaussian modes.
+\end{remark}
+
+\subsection{Canonical Fisher--Rao dynamics and deterministic algorithms}
+\label{sec:geometry-fr-algorithms}
+
+With the balanced normalization, the Gaussian Fisher--Rao metric is
+\begin{equation}
+\label{eq:geometry-fr-metric}
+    \bigl\langle(u,X),(v,Y)\bigr\rangle_{a,\FR}
+    :=u^{\mathsf T}C^{-1}v
+      +\frac12\Tr\bigl(C^{-1}XC^{-1}Y\bigr).
+\end{equation}
+The factor $1/2$ is the covariance block of the Gaussian Fisher information.
+
+\begin{proposition}[Fisher--Rao gradient, flow, and dissipation]
+\label{prop:geometry-fr-flow}
+For the metric \eqref{eq:geometry-fr-metric},
+\begin{equation}
+\label{eq:geometry-fr-gradient-flow}
+    \grad_{\FR}\calE(a)=\bigl(-Cg(a),-CR(a)C\bigr),
+    \qquad
+    \dot m=Cg(a),
+    \qquad
+    \dot C=CR(a)C=C-CA(a)C.
+\end{equation}
+Moreover,
+\begin{equation}
+\label{eq:geometry-fr-dissipation}
+\begin{aligned}
+    \Gradnorm(a)^2
+    :=\norm{\grad_{\FR}\calE(a)}_{a,\FR}^2
+    &=g(a)^{\mathsf T}Cg(a)
+      +\frac12\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2,\\
+    \frac{\dd}{\dd t}\calE(a_t)
+    &=-\norm{\grad_{\FR}\calE(a_t)}_{a_t,\FR}^2.
+\end{aligned}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+This is \Cref{thm:geometry-general-flow} with
+$(\eta,\omega,\tau)=(1,1/2,0)$.
+\end{proof}
+
+We use two first-order discretizations of
+\eqref{eq:geometry-fr-gradient-flow}.  The first is obtained from the map
+\begin{equation}
+\label{eq:geometry-retraction}
+    \Retr_a(u,U)
+    :=\left(m+u,
+      C^{1/2}\exp\bigl(C^{-1/2}UC^{-1/2}\bigr)C^{1/2}\right).
+\end{equation}
+Applying \eqref{eq:geometry-retraction} to
+$-h\grad_{\FR}\calE(a)$ gives the Riemannian matrix-exponential scheme
+\begin{equation}
+\label{eq:geometry-riemannian-step}
+    m^+=m+hCg(a),
+    \qquad
+    C^+=C^{1/2}\exp\!\left(
+       h\bigl[\Id-C^{1/2}A(a)C^{1/2}\bigr]
+       \right)C^{1/2}.
+\end{equation}
+The covariance block in \eqref{eq:geometry-retraction} is the exponential
+map for the affine-invariant metric on $\SPD(d)$.  The combined mean--covariance
+map is, however, only a retraction for the full Gaussian Fisher--Rao
+geometry; it is not the full Gaussian-manifold exponential map.
+
+For the second scheme, split
+$\calE=\calE_1+\calE_2$, where
+$\calE_1(m,C)=-\frac12\log\det C+\mathrm{const}$ and
+$\calE_2(m,C)=\E_{\rho_a}[V]$.  The KL/Bregman forward--backward step is
+\begin{equation}
+\label{eq:geometry-kl-prox}
+    a^+
+    :=\underset{a'=(m',C')\in\Aspace}{\operatorname{argmin}}
+      \left\{
+        hD\calE_2(a)[a'-a]+h\calE_1(a')
+        +\KL(\rho_{a'}\|\rho_a)
+      \right\}.
+\end{equation}
+Whenever $C^{-1}+hA(a)\succ0$, its unique minimizer is the rational
+resolvent
+\begin{equation}
+\label{eq:geometry-kl-step}
+    m^+=m+hCg(a),
+    \qquad
+    C^+=(1+h)\bigl(C^{-1}+hA(a)\bigr)^{-1},
+\end{equation}
+or equivalently
+$(C^+)^{-1}=(C^{-1}+hA(a))/(1+h)$.  Indeed, the first-order conditions in
+$m'$ and $C'$ give these two identities.  This scheme treats the potential
+term explicitly and the Gaussian entropy implicitly; it is not a
+full-gradient mirror step.  Under log-concavity $A(a)\succeq0$, so
+\eqref{eq:geometry-kl-step} is well defined for every $h>0$.
+
+\paragraph{Exact and stochastic oracle conventions.}
+The deterministic theory treats $g(a)$ and $A(a)$ in
+\eqref{eq:geometry-score-curvature-residual} as exact Gaussian expectations.
+The stochastic theory instead draws
+$\xi_s\overset{\mathrm{iid}}\sim\N(0,\Id)$,
+$X_s=m+C^{1/2}\xi_s$, and uses the Price/Hessian pair
+\begin{equation}
+\label{eq:geometry-stochastic-oracles}
+    \widehat g_{\STL}(a)
+    :=\frac1B\sum_{s=1}^B
+       \left[-\nabla V(X_s)+C^{-1/2}\xi_s\right],
+    \qquad
+    \widehat A(a)
+    :=\frac1B\sum_{s=1}^B\nabla^2V(X_s).
+\end{equation}
+Both estimators are conditionally unbiased for $g(a)$ and $A(a)$,
+respectively.  The first is the sticking-the-landing score estimator, while
+the second implements the Price identity through sampled Hessians.  The same
+samples may be used for the two components; no independence between the
+score and Hessian estimators is assumed.  Replacing $(g,A)$ by
+$(\widehat g_{\STL},\widehat A)$ in
+\eqref{eq:geometry-riemannian-step} or \eqref{eq:geometry-kl-step} gives the
+two Price/Hessian stochastic algorithms analyzed later.

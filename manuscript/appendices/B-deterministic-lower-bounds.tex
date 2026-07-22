@@ -1,0 +1,1367 @@
+\section{Certificates for the deterministic lower bounds}
+\label{app:deterministic-lower-bounds}
+
+\subsection{The logarithmic-spiral construction}
+\label{app:spiral}
+
+This subsection proves \Cref{thm:global:spiral-lower}.  The construction is
+two-dimensional; the extension to higher dimension is recorded at the end.
+
+\subsubsection{Potential and global Hessian certificate}
+
+Fix \(K\geq16\) and set
+\begin{equation}
+\label{app:spiral:parameters}
+    \alpha_0:=2\alpha,
+    \qquad
+    c:=\frac{\sqrt{K-2}}3,
+    \qquad
+    \delta_K:=\frac{10^{-4}}K,
+    \qquad
+    D_K:=\frac{18\alpha_0(K-1)}{K+7},
+    \qquad
+    \beta:=\alpha(2K+1).
+\end{equation}
+Thus the condition number in the original coordinates is \(2K+1\).
+Define
+\[
+    s(u):=35u^4-84u^5+70u^6-20u^7,
+    \qquad 0\leq u\leq1,
+\]
+and the even \(C^3\) cutoff
+\begin{equation}
+\label{app:spiral:phase-bump}
+    \rho(u):=
+    \begin{cases}
+        1, & |u|\leq\tfrac12,\\[1mm]
+        s(2-2|u|), & \tfrac12<|u|<1,\\[1mm]
+        0, & |u|\geq1.
+    \end{cases}
+\end{equation}
+Extend \(\rho_{\delta_K}(\phi):=\rho(\phi/\delta_K)\) periodically with
+period \(\pi\), and put
+\[
+    \bar\rho_{\delta_K}
+    :=\frac1\pi\int_{-\pi/2}^{\pi/2}\rho_{\delta_K}(\phi)\,\dd\phi,
+    \qquad
+    g_K(\phi)
+    :=\frac{\rho_{\delta_K}(\phi)-\bar\rho_{\delta_K}}
+            {1-\bar\rho_{\delta_K}}.
+\]
+Let \(f_K\) be the even \(\pi\)-periodic solution of
+\begin{equation}
+\label{app:spiral:fK-equation}
+    f_K''=g_K,
+    \qquad
+    f_K(0)=f_K'(0)=0.
+\end{equation}
+The normalization gives
+\begin{equation}
+\label{app:spiral:fK-bounds}
+    f_K(\phi)=\frac12\phi^2
+    \quad\text{for }|\phi|\leq\frac{\delta_K}{2},
+    \qquad
+    \norm{f_K'}_\infty\leq3\delta_K,
+    \qquad
+    \norm{f_K}_\infty\leq2\pi\delta_K.
+\end{equation}
+
+For the radial cutoff use
+\begin{equation}
+\label{app:spiral:radial-cutoff}
+    \chi(\ell):=
+    \begin{cases}
+        0, & \ell\leq0,\\
+        35\ell^4-84\ell^5+70\ell^6-20\ell^7,
+            & 0<\ell<1,\\
+        1, & \ell\geq1.
+    \end{cases}
+\end{equation}
+Fix a scale \(r_0>0\).  In polar coordinates \((r,\theta)\), set
+\[
+    \ell:=\log\frac r{r_0},
+    \qquad
+    \phi:=\theta+c\ell,
+\]
+and define
+\begin{equation}
+\label{app:spiral:potential}
+    \boxed{
+    V_K(r,\theta)
+    :=\frac12r^2\bigl[\alpha_0+D_K\chi(\ell)f_K(\phi)\bigr].}
+\end{equation}
+For \(r\leq r_0\), the potential is exactly
+\(V_K(x)=\alpha_0\norm{x}^2/2\).  The first three derivatives of \(\rho\) and
+\(\chi\) match at the endpoints of their pieces, so
+\(V_K\in C^3(\R^2)\).  Its evenness follows from the \(\pi\)-periodicity of
+\(f_K\).
+
+\begin{lemma}[Global Hessian certificate]
+\label{app:spiral:hessian-certificate}
+The potential in \eqref{app:spiral:potential} satisfies
+\begin{equation}
+\label{app:spiral:hessian-bounds}
+    0.98\alpha_0\Id\preceq\nabla^2V_K(x)\preceq \alpha_0(K+0.02)\Id
+    \qquad (x\in\R^2).
+\end{equation}
+Consequently,
+\(\alpha\Id\preceq\nabla^2V_K\preceq\beta\Id\), with \(\beta\) from
+\eqref{app:spiral:parameters}.  On the flat part of a spiral valley, the
+two Hessian eigenvalues are exactly \(\alpha_0\) and \(\alpha_0K\).
+\end{lemma}
+
+\begin{proof}
+Put \(q(\ell,\theta):=\chi(\ell)f_K(\theta+c\ell)\).  For any profile
+\(A=A(\ell,\theta)\), direct differentiation in the orthonormal polar
+frame yields
+\[
+    \nabla^2\left(\frac12r^2A\right)
+    =
+    \begin{pmatrix}
+      A+\frac32A_\ell+\frac12A_{\ell\ell}
+      &\frac12A_\theta+\frac12A_{\ell\theta}\\[1mm]
+      \frac12A_\theta+\frac12A_{\ell\theta}
+      &A+\frac12A_\ell+\frac12A_{\theta\theta}
+    \end{pmatrix}.
+\]
+It follows that
+\begin{equation}
+\label{app:spiral:hessian-decomposition}
+ \nabla^2V_K-\alpha_0\Id
+ =\frac{D_K}{2}\chi g_K
+     \begin{pmatrix}c^2&c\\c&1\end{pmatrix}
+   +D_K\{\chi B_K+E_K\},
+\end{equation}
+where all scalar functions are evaluated at \((\ell,\phi)\) and
+\[
+ B_K=
+ \begin{pmatrix}
+ f_K+\frac32cf_K'&\frac12f_K'\\
+ \frac12f_K'&f_K+\frac12cf_K'
+ \end{pmatrix},
+ \qquad
+ E_K=
+ \begin{pmatrix}
+ (\frac32\chi'+\frac12\chi'')f_K+c\chi'f_K'&\frac12\chi'f_K'\\
+ \frac12\chi'f_K'&\frac12\chi'f_K
+ \end{pmatrix}.
+\]
+This identity includes the transition annulus \(0<\ell<1\).
+
+The normalization of the phase cutoff is explicit.  Since
+\(\int_{-1}^1\rho(u)\,\dd u=3/2\),
+\[
+ \bar\rho_{\delta_K}=\frac{3\delta_K}{2\pi},
+ \qquad
+ -\frac{\bar\rho_{\delta_K}}{1-\bar\rho_{\delta_K}}
+ \leq g_K\leq1.
+\]
+For \(K\geq16\),
+\begin{equation}
+\label{app:spiral:negative-background}
+ (K-1)\frac{\bar\rho_{\delta_K}}{1-\bar\rho_{\delta_K}}
+ <4.8\cdot10^{-5}.
+\end{equation}
+The radial cutoff satisfies
+\[
+ 0\leq\chi\leq1,
+ \qquad
+ \norm{\chi'}_\infty=\frac{35}{16},
+ \qquad
+ \norm{\chi''}_\infty<7.514.
+\]
+Using \eqref{app:spiral:fK-bounds}, \(D_K/\alpha_0\leq18\), and
+\(c\leq\sqrt K/3\), the maximum-row-sum bound in
+\eqref{app:spiral:hessian-decomposition} gives
+\begin{align*}
+ \frac{D_K}{\alpha_0}\norm{\chi B_K+E_K}_{\op}
+ &\leq18\Bigl[
+   \left(1+\frac32\frac{35}{16}+\frac{7.514}{2}\right)2\pi\delta_K\\
+ &\hspace{25mm}
+  +\left(\frac32c+\frac12+c\frac{35}{16}
+         +\frac12\frac{35}{16}\right)3\delta_K
+  \Bigr]
+ <0.0078.
+\end{align*}
+Every term in the last bound decreases with \(K\), so evaluation at \(K=16\)
+suffices.
+
+The rank-one matrix in the first term of
+\eqref{app:spiral:hessian-decomposition} has nonzero eigenvalue
+\(1+c^2=(K+7)/9\), and
+\[
+    \frac{D_K}{2}(1+c^2)=\alpha_0(K-1).
+\]
+Its positive part is at most \(\alpha_0(K-1)\Id\), while
+\eqref{app:spiral:negative-background} bounds its negative part by
+\(4.8\cdot10^{-5}\alpha_0\Id\).  Thus the calculation in fact proves
+\[
+ 0.992\alpha_0\Id\preceq\nabla^2V_K
+ \preceq \alpha_0(K+0.0078)\Id,
+\]
+which implies \eqref{app:spiral:hessian-bounds}.  On an uncut valley core,
+\(g_K=1\) and \(f_K(0)=f_K'(0)=0\), so the two eigenvalues are \(\alpha_0\) and
+\(\alpha_0K\).  Finally, \(0.98\alpha_0=1.96\alpha>\alpha\) and
+\(\alpha_0(K+0.02)<\alpha(2K+1)=\beta\).
+\end{proof}
+
+\subsubsection{Reference orbit}
+
+Let \(R_\theta\) be rotation through angle \(\theta\), put
+\(s_K:=\sqrt{K-2}\), and define
+\begin{equation}
+\label{app:spiral:QK}
+    Q_K
+    :=\frac1{K+7}
+      \begin{pmatrix}
+        (K+1)^2 & 2s_K(K+1)\\
+        2s_K(K+1) & 6(K+1)
+      \end{pmatrix}.
+\end{equation}
+Its trace and determinant are
+\[
+    \Tr Q_K=K+1,
+    \qquad
+    \det Q_K=\frac{2(K+1)^2}{K+7},
+\]
+and
+\[
+ \det\left(Q_K-\frac32\Id\right)
+ =\frac{2K^2-23K+29}{4(K+7)}>0
+ \qquad(K\geq16).
+\]
+The principal minors of \(Q_K-3\Id/2\) and \(K\Id-Q_K\) therefore give
+\begin{equation}
+\label{app:spiral:QK-band}
+    \frac32\Id\prec Q_K\prec K\Id,
+    \qquad
+    Q_K^{-1}e_1
+    =\frac1{K+1}\begin{pmatrix}3\\-\sqrt{K-2}\end{pmatrix}.
+\end{equation}
+
+Choose \(\norm{m_0}=e^2r_0\) and an angle \(\theta_0\) such that
+\begin{equation}
+\label{app:spiral:phase-initialization}
+    \theta_0+c\log\frac{\norm{m_0}}{r_0}\equiv0\pmod\pi,
+\end{equation}
+and initialize the precision by
+\begin{equation}
+\label{app:spiral:precision-initialization}
+    P_0:=C_0^{-1}
+    :=\alpha_0R_{\theta_0}Q_KR_{\theta_0}^{\top}.
+\end{equation}
+By \eqref{app:spiral:QK-band},
+\begin{equation}
+\label{app:spiral:initial-covariance-band}
+    \frac1\beta\Id\preceq C_0\preceq\frac1\alpha\Id.
+\end{equation}
+
+The point-system reference orbit is
+\begin{equation}
+\label{app:spiral:reference-orbit}
+    r_t^{\mathrm{ref}}
+    :=e^2r_0\exp\left(-\frac{3t}{K+1}\right),
+    \qquad
+    \theta_t^{\mathrm{ref}}
+    :=\theta_0+\frac{\sqrt{K-2}}{K+1}t,
+\end{equation}
+with
+\[
+    P_t^{\mathrm{ref}}
+    :=\alpha_0R_{\theta_t^{\mathrm{ref}}}Q_K
+      R_{\theta_t^{\mathrm{ref}}}^{\top}.
+\]
+Indeed, on the valley \(\nabla V_K(m)=hm\), and
+\eqref{app:spiral:QK-band} gives
+\[
+    \dot r=-\frac3{K+1}r,
+    \qquad
+    r\dot\theta=\frac{\sqrt{K-2}}{K+1}r.
+\]
+A direct substitution also verifies
+\(\dot P^{\mathrm{ref}}
+=\nabla^2V_K(m^{\mathrm{ref}})-P^{\mathrm{ref}}\).
+
+\subsubsection{Gaussian shadowing and the first-exit argument}
+
+\begin{lemma}[Gaussian shadowing certificate]
+\label{app:spiral:shadowing}
+Assume
+\begin{equation}
+\label{app:spiral:radius-condition}
+    r_0\sqrt\alpha
+    \geq10^{25}K^{3/2}\sqrt{\log(eK)}.
+\end{equation}
+Let \((m_t,C_t)\) be the exact Gaussian Fisher--Rao flow for \(V_K\),
+initialized by
+\eqref{app:spiral:phase-initialization}--%
+\eqref{app:spiral:precision-initialization}.  Then, for
+\(0\leq t\leq K/100\),
+\begin{equation}
+\label{app:spiral:radial-shadowing}
+    -\frac4K
+    \leq\frac{\dd}{\dd t}\log\norm{m_t}
+    \leq-\frac2K.
+\end{equation}
+In particular,
+\begin{equation}
+\label{app:spiral:mean-lower}
+    \norm{m_t}\geq e^{-0.04}\norm{m_0}
+    \qquad(0\leq t\leq K/100).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write \(P_t=C_t^{-1}\), choose the continuous lift of the polar angle
+starting at \(\theta_0\), and introduce
+\begin{equation}
+\label{app:spiral:transverse-coordinates}
+ z_t:=\theta_t+c\log\frac{r_t}{r_0},
+ \qquad
+ S_t:=\frac1{\alpha_0}R_{\theta_t}^{\top}P_tR_{\theta_t},
+ \qquad
+ E_t:=S_t-Q_K.
+\end{equation}
+The phase \(z_t\) is represented near zero modulo \(\pi\).  Put
+\[
+ w:=\begin{pmatrix}c\\1\end{pmatrix},
+ \qquad
+ J:=\begin{pmatrix}0&-1\\1&0\end{pmatrix},
+ \qquad
+ d_K:=\frac{D_K}{\alpha_0}=\frac{18(K-1)}{K+7}.
+\]
+On the uncut flat phase core \(f_K(z)=z^2/2\).  The normalized point
+gradient and Hessian there are
+\begin{align}
+\label{app:spiral:core-point-gradient}
+ b_K(z)
+ &:=\frac1{\alpha_0 r}R_\theta^\top\nabla V_K(m)
+ =\begin{pmatrix}
+ 1+\frac{d_K}{2}z^2+\frac{d_Kc}{2}z\\[1mm]
+ \frac{d_K}{2}z
+ \end{pmatrix},\\
+\label{app:spiral:core-point-hessian}
+ \mathsf H_K(z)
+ &:=\frac1{\alpha_0}R_\theta^\top\nabla^2V_K(m)R_\theta\notag\\
+ &=\Id+\frac{d_K}{2}ww^\top
+ +d_K\begin{pmatrix}
+ \frac12z^2+\frac32cz&\frac12z\\[1mm]
+ \frac12z&\frac12z^2+\frac12cz
+ \end{pmatrix}.
+\end{align}
+For the exact Gaussian flow define
+\[
+ \bar b_t:=\frac1{\alpha_0 r_t}R_{\theta_t}^\top
+            \E[\nabla V_K(X_t)],
+ \qquad
+ \bar H_t:=\frac1{\alpha_0}R_{\theta_t}^\top
+            \E[\nabla^2V_K(X_t)]R_{\theta_t},
+ \qquad
+ q_t:=S_t^{-1}\bar b_t.
+\]
+The mean and precision equations become
+\begin{equation}
+\label{app:spiral:rotated-system}
+ \frac{\dot r_t}{r_t}=-(q_t)_1,
+ \qquad
+ \dot\theta_t=-(q_t)_2,
+ \qquad
+ \dot z_t=-w^\top q_t,
+ \qquad
+ \dot S_t=\bar H_t-S_t-(q_t)_2(S_tJ-JS_t).
+\end{equation}
+If the Gaussian averages are replaced by
+\eqref{app:spiral:core-point-gradient}--%
+\eqref{app:spiral:core-point-hessian}, then
+\((z,S)=(0,Q_K)\) is an equilibrium.  With
+\(\omega_K=s_K/(K+1)\),
+\[
+ Q_K^{-1}e_1
+ =\begin{pmatrix}3/(K+1)\\-\omega_K\end{pmatrix},
+ \qquad
+ w^\top Q_K^{-1}e_1=0,
+ \qquad
+ \mathsf H_K(0)-Q_K
+ +\omega_K(Q_KJ-JQ_K)=0.
+\]
+
+We next certify the linearization and nonlinear remainder.  Let
+\begin{equation}
+\label{app:spiral:y-scaling}
+ \mathsf T_K:=\diag(K,\sqrt K,1,\sqrt K),
+ \qquad
+ y:=\mathsf T_K(z,E_{11},E_{12},E_{22})^\top.
+\end{equation}
+For \(S=Q_K+E\), let \(\mathcal F_K(y)\) be the scaled point vector field
+obtained from \eqref{app:spiral:rotated-system} with
+\(\bar b=b_K(z)\) and \(\bar H=\mathsf H_K(z)\).  Set
+\[
+ A_K:=D\mathcal F_K(0),
+ \qquad
+ \mathcal N_K(y):=\mathcal F_K(y)-A_Ky.
+\]
+Writing \(s=\sqrt{K-2}\), direct differentiation gives
+\begin{equation}
+\label{app:spiral:linear-matrix}
+ A_K=\mathsf T_K\mathsf B_K\mathsf T_K^{-1},
+\end{equation}
+where, in the order \((z,E_{11},E_{12},E_{22})\),
+{\scriptsize
+\[
+\mathsf B_K=
+\begin{pmatrix}
+-\frac{3(K-1)}{2(K+1)}&0&\frac{K+7}{2(K+1)^2}
+&-\frac{s(K+7)}{6(K+1)^2}\\[1mm]
+\frac{3s(K-1)}{K+7}
+&-\frac{K^2+20K-17}{(K+1)(K+7)}
+&\frac{12s}{K+7}&-\frac{2(K-2)}{K+7}\\[1mm]
+\frac{3(K-1)(K+1)}{2(K+7)}
+&\frac{2(K-11)s}{(K+1)(K+7)}
+&-\frac{7K^2-10K+19}{2(K+1)(K+7)}
+&\frac{s(K^2-2K+9)}{2(K+1)(K+7)}\\[1mm]
+\frac{9s(K-1)}{K+7}
+&\frac{12(K-2)}{(K+1)(K+7)}
+&-\frac{12s}{K+7}&\frac{K-11}{K+7}
+\end{pmatrix}.
+\]
+}
+Its characteristic polynomial factors as
+\begin{equation}
+\label{app:spiral:characteristic-polynomial}
+ \det(\lambda\Id-A_K)
+ =\frac{\lambda+1}{2(K+1)^3}\,p_K(\lambda+1),
+\end{equation}
+where
+\[
+ p_K(\mu)
+ =2(K+1)^3\mu^3
+ +2(K-5)(K+1)^2\mu^2
+ +4(K-2)(K+1)^2\mu
+ +(K-2)(K^2-10K-23).
+\]
+For \(K\geq16\), all coefficients are positive and the cubic
+Routh--Hurwitz determinant is
+\[
+ 6(K-2)(K-1)^2(K+1)^3>0.
+\]
+Thus every eigenvalue of \(A_K\) has real part at most \(-1\).  The
+entries of the scaled matrix satisfy
+\[
+ \bigl(|(A_K)_{ij}|\bigr)
+ \preceq
+ \begin{pmatrix}
+ 3/2&0&2/3&1/4\\
+ 3&3/2&12&2\\
+ 3/2&1/8&7/2&1/2\\
+ 9&3/4&12&1
+ \end{pmatrix},
+\]
+so \(\norm{A_K}_{\op}<21\).  In a complex Schur decomposition
+\(A_K=U(D+N)U^*\), the matrix \(N\) is strictly upper triangular,
+\(\norm{N}_{\op}\leq42\), and
+\(\norm{e^{Dt}}_{\op}\leq e^{-t}\).  Iterated Duhamel expansion
+terminates after three factors of \(N\) and yields
+\begin{equation}
+\label{app:spiral:semigroup-bound}
+ \norm{e^{A_Kt}}_{\op}
+ \leq e^{-t}\sum_{j=0}^3\frac{(42t)^j}{j!}
+ <2\cdot10^6e^{-t/2}.
+\end{equation}
+
+The nonlinear estimate is a finite-dimensional calculation.  Insert the
+explicit inverse of \(S\) into
+\eqref{app:spiral:core-point-gradient}--%
+\eqref{app:spiral:core-point-hessian}.  For
+\(\norm{y}\leq10^{-12}\) and \(K\geq16\),
+\begin{equation}
+\label{app:spiral:second-derivative-table}
+ \sup\sum_{j,\ell=1}^4
+ \left|\partial_{j\ell}^2(\mathcal F_K)_i\right|
+ \leq(100,2000,500,2000)_i.
+\end{equation}
+Indeed, these bounds follow term by term from
+\(d_K\leq18\), \(c/\sqrt K\leq1/3\),
+\(Q_K\succeq3\Id/2\), and
+\[
+ E=\begin{pmatrix}
+ y_2/\sqrt K&y_3\\y_3&y_4/\sqrt K
+ \end{pmatrix};
+\]
+on this ball,
+\(\norm{(Q_K+E)^{-1}}_{\op}\leq1\).  Taylor's theorem then gives
+\begin{equation}
+\label{app:spiral:nonlinear-bound}
+ \norm{\mathcal N_K(y)}
+ \leq\frac12\sqrt{100^2+2000^2+500^2+2000^2}\,\norm{y}^2
+ <4000\norm{y}^2.
+\end{equation}
+
+It remains to compare Gaussian averages with the point fields at the actual
+state.  Define the first-exit time
+\begin{equation}
+\label{app:spiral:stopping-time}
+ \tau:=\frac K{100}\wedge
+ \inf\left\{t\geq0:\norm{y_t}=10^{-12}
+ \ \text{or}\ r_t\notin[e^{3/2}r_0,e^{5/2}r_0]\right\}.
+\end{equation}
+On \([0,\tau]\), \eqref{app:spiral:QK-band} and
+\eqref{app:spiral:y-scaling} imply \(S_t\succeq\Id\), hence
+\(C_t\preceq \alpha_0^{-1}\Id\).  Put \(Z_t=X_t-m_t\) and
+\[
+ \mathcal G_t
+ :=\left\{\norm{Z_t}\leq\frac{\delta_Kr_t}{8\sqrt K}\right\},
+ \qquad
+ p_K:=\sup_{t\leq\tau}\Prob(\mathcal G_t^c),
+ \qquad
+ M_K:=\sup_{t\leq\tau}
+ \E\left[\sqrt{\alpha_0}\norm{Z_t}\one_{\mathcal G_t^c}\right].
+\]
+On \(\mathcal G_t\), every point of the segment
+\(m_t+uZ_t\), \(0\leq u\leq1\), satisfies
+\[
+ |\Delta\theta|+c|\Delta\ell|
+ \leq2(1+c)\frac{\norm{Z_t}}{r_t}
+ <\frac{\delta_K}{4}.
+\]
+Because
+\(|z_t|\leq10^{-12}/K<\delta_K/4\) and
+\(r_t\geq e^{3/2}r_0\), the whole segment remains in the uncut flat
+phase core.  Under a common Gaussian representation,
+\(\sqrt{\alpha_0}\norm{Z_t}\leq\norm{G}\) for
+\(G\sim\N(0,\Id_2)\).  The exact two-dimensional radial tail gives
+\begin{equation}
+\label{app:spiral:tail-certificate}
+ p_K
+ \leq\exp\left(-\frac{\delta_K^2\alpha_0r_0^2}{128K}\right)
+ \leq10^{-50}K^{-30},
+ \qquad
+ M_K\leq\sqrt{2p_K}\leq\sqrt2\,10^{-25}K^{-15}.
+\end{equation}
+
+On the flat core, differentiation of
+\eqref{app:spiral:core-point-hessian} in Cartesian coordinates gives
+\begin{equation}
+\label{app:spiral:local-hessian-lipschitz}
+ \operatorname{Lip}_{\op}(\nabla^2V_K)
+ \leq\frac{15\alpha_0K}{r_t}
+\end{equation}
+along these segments.  For example,
+\(\norm{\partial_z\mathsf H_K}_{\op}\leq12\sqrt K\),
+\(\norm{\nabla z}\leq2\sqrt K/(5r)\), and rotation of the polar frame
+contributes at most \(2\alpha_0(K+0.02)/r\); allowing a factor two for the
+radius along the segment gives the displayed constant.
+
+Define the normalized Gaussian errors
+\begin{align*}
+ \varepsilon_b(t)
+ &:=\left\|\frac1{\alpha_0 r_t}R_{\theta_t}^\top
+   \bigl(\E[\nabla V_K(X_t)]-\nabla V_K(m_t)\bigr)\right\|,\\
+ \varepsilon_H(t)
+ &:=\left\|\frac1{\alpha_0}R_{\theta_t}^\top
+   \bigl(\E[\nabla^2V_K(X_t)]-\nabla^2V_K(m_t)\bigr)
+   R_{\theta_t}\right\|_{\op}.
+\end{align*}
+Let \(A_0:=\sqrt\alpha\,r_0\).  Split the expectations at
+\(\mathcal G_t\), use
+\eqref{app:spiral:local-hessian-lipschitz} for the Taylor remainder on
+\(\mathcal G_t\), the global Hessian bound on its complement,
+\(\E Z_t=0\), and \(\E\norm{Z_t}^2\leq2/\alpha_0\).  This gives
+\begin{equation}
+\label{app:spiral:average-errors}
+ \varepsilon_b(t)
+ \leq8\frac K{A_0^2}+3\frac K{A_0}M_K,
+ \qquad
+ \varepsilon_H(t)
+ \leq15\frac K{A_0}+3Kp_K.
+\end{equation}
+Let \(\xi_K(t)\) be the contribution of these actual-state errors to
+the scaled transverse system.  Since
+\(\norm{S_t^{-1}}_{\op}\leq1\),
+\(\norm{S_t}_{\op}\leq2K\), and
+\(\norm{w}\leq2\sqrt K/5\), equations
+\eqref{app:spiral:rotated-system} and
+\eqref{app:spiral:y-scaling} imply
+\begin{align}
+\label{app:spiral:smoothing-certificate}
+ \norm{\xi_K(t)}
+ &\leq\frac25K^{3/2}\varepsilon_b(t)
+   +\sqrt{2K}\bigl(\varepsilon_H(t)+4K\varepsilon_b(t)\bigr)\notag\\
+ &\leq23\frac{K^{3/2}}{A_0}
+   +5K^{3/2}p_K
+   +52\frac{K^{5/2}}{A_0^2}
+   +20\frac{K^{5/2}}{A_0}M_K.
+\end{align}
+The radius condition \eqref{app:spiral:radius-condition} and
+\eqref{app:spiral:tail-certificate} make the last line smaller than
+\(3\cdot10^{-24}\), hence smaller than \(10^{-22}\), throughout
+\([0,\tau]\).
+
+The exact transverse equation is therefore
+\begin{equation}
+\label{app:spiral:transverse-system}
+ \dot y_t=A_Ky_t+\mathcal N_K(y_t)+\xi_K(t),
+ \qquad
+ y_0=0.
+\end{equation}
+Variation of constants together with
+\eqref{app:spiral:semigroup-bound},
+\eqref{app:spiral:nonlinear-bound}, and
+\eqref{app:spiral:smoothing-certificate} yields, for \(t\leq\tau\),
+\[
+ \norm{y_t}
+ \leq2\cdot10^6\int_0^te^{-(t-s)/2}
+ \bigl(4000\cdot10^{-24}+10^{-22}\bigr)\,\dd s
+ <2\cdot10^{-14}.
+\]
+Thus the transverse component cannot trigger the exit in
+\eqref{app:spiral:stopping-time}.
+
+Finally, let
+\(\mathcal R_K(y):=-e_1^\top S^{-1}b_K(z)\) be the point radial field.
+Differentiating the same explicit \(2\times2\) inverse gives
+\[
+ \sup_{\norm{y}\leq10^{-12}}\norm{\nabla\mathcal R_K(y)}
+ \leq\frac{20}{K},
+ \qquad
+ \mathcal R_K(0)=-\frac3{K+1}.
+\]
+The Gaussian correction is at most \(\varepsilon_b(t)\), so
+\[
+ \left|\frac{\dd}{\dd t}\log r_t+\frac3{K+1}\right|
+ \leq\frac{20}{K}\norm{y_t}+\varepsilon_b(t)
+ <\frac1{4K}.
+\]
+This proves \(-4/K\leq\dot r_t/r_t\leq-2/K\).  The radius can neither
+reach the upper barrier nor, before time \(K/100\), fall below
+\(e^{2-0.04}r_0>e^{3/2}r_0\).  Hence \(\tau=K/100\), which proves
+\eqref{app:spiral:radial-shadowing}; integration gives
+\eqref{app:spiral:mean-lower}.
+\end{proof}
+
+\subsubsection{Optimizer comparison and completion of the lower bound}
+
+\begin{lemma}[Optimizer covariance and intrinsic condition number]
+\label{app:spiral:optimizer-comparison}
+Let \(C_\star\) be the optimizing covariance for \(V_K\), and define
+\[
+    \eta_K:=K\exp\left(-\frac{\alpha r_0^2}{2}\right).
+\]
+Under \eqref{app:spiral:radius-condition}, \(\eta_K\leq10^{-3}\) and
+\begin{equation}
+\label{app:spiral:optimizer-precision}
+    \alpha_0(1-\eta_K)\Id
+    \preceq C_\star^{-1}
+    \preceq \alpha_0(1+\eta_K)\Id.
+\end{equation}
+Moreover,
+\begin{equation}
+\label{app:spiral:intrinsic-condition}
+    K\leq\kappastar(V_K)\leq1.03K,
+\end{equation}
+and
+\begin{equation}
+\label{app:spiral:initial-product}
+    \betastar\lambda_{0,\star}
+    \geq\frac{1-\eta_K}{1+\eta_K}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The potential is exactly quadratic with Hessian \(\alpha_0\Id\) on
+\(\{\norm{x}\leq r_0\}\).  Since
+\(C_\star\preceq\alpha^{-1}\Id\), write
+\(X_\star=C_\star^{1/2}Z\), \(Z\sim\N(0,\Id_2)\).  Then
+\(\norm{X_\star}>r_0\) implies
+\(\norm{Z}>\sqrt\alpha r_0\), and
+\(\Prob(\norm{Z}>s)=e^{-s^2/2}\) in two dimensions.  Combining this tail
+identity with
+\(\norm{\nabla^2V_K-\alpha_0\Id}_{\op}\leq \alpha_0K\) and
+\[
+    C_\star^{-1}=\E[\nabla^2V_K(X_\star)]
+\]
+proves \eqref{app:spiral:optimizer-precision}.
+
+The global Hessian certificate and
+\eqref{app:spiral:optimizer-precision} give
+\[
+    \alphastar\geq\frac{0.98}{1+\eta_K},
+    \qquad
+    \betastar\leq\frac{K+0.02}{1-\eta_K},
+\]
+and hence \(\kappastar\leq1.03K\).  At the origin the Hessian is
+\(\alpha_0\Id\), while at a valley point it has eigenvalue \(\alpha_0K\).  Therefore
+\[
+    \alphastar\leq \alpha_0\lambda_{\min}(C_\star),
+    \qquad
+    \betastar\geq \alpha_0K\lambda_{\min}(C_\star),
+\]
+which proves \(\kappastar\geq K\).
+
+Finally,
+\eqref{app:spiral:initial-covariance-band} gives
+\(C_0\succeq(\alpha_0K)^{-1}\Id\), whereas
+\(C_\star^{-1}\succeq \alpha_0(1-\eta_K)\Id\).  Thus
+\(\lambda_{0,\star}\geq(1-\eta_K)/K\).  The valley eigenvalue and
+\eqref{app:spiral:optimizer-precision} also give
+\(\betastar\geq K/(1+\eta_K)\), proving
+\eqref{app:spiral:initial-product}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:global:spiral-lower}]
+\Cref{app:spiral:hessian-certificate} proves the global \(C^3\)
+regularity and curvature bounds, while
+\eqref{app:spiral:initial-covariance-band} proves admissibility of the
+anisotropic initialization.  The potential is even, so its optimizing
+mean is \(m_\star=0\).  Strong convexity in the mean and global
+optimality of \((0,C_\star)\) imply
+\[
+    \Delta(m,C)\geq\frac\alpha2\norm{m}^2
+    \qquad\text{for every }(m,C).
+\]
+By \Cref{app:spiral:shadowing}, for \(0\leq t\leq K/100\),
+\[
+    \Delta(a_t)
+    \geq\frac\alpha2e^{-0.08}\norm{m_0}^2.
+\]
+Therefore no level
+\(\delta_{\loc}<(\alpha/2)e^{-0.08}\norm{m_0}^2\) can be reached before
+\(K/100\).  The intrinsic comparison
+\(\kappastar\leq1.03K\) in
+\Cref{app:spiral:optimizer-comparison} gives
+\[
+    T_{\loc}\geq\frac K{100}
+    \geq\frac{\kappastar(V_K)}{103}.
+\]
+\end{proof}
+
+For \(d>2\), define
+\[
+    V_K^{(d)}(x)
+    :=V_K(x_1,x_2)+\frac{\alpha_0}{2}\sum_{j=3}^d x_j^2
+\]
+and initialize the added coordinates at equilibrium.  The block-diagonal
+subsystem is invariant.  Hadamard's determinant inequality shows that a
+cross-covariance block can only decrease the Gaussian determinant while
+leaving the separated potential expectation unchanged, so the optimizing
+covariance is block diagonal as well.  The two-dimensional slow subsystem and
+its intrinsic condition comparison are unchanged.
+
+The construction can also meet any prescribed positive Hessian-Lipschitz
+constant.  Differentiating
+\eqref{app:spiral:hessian-decomposition}, using
+\(\norm{\chi'''}_\infty\leq52.5\) and
+\(\norm{g_K'}_\infty\leq4.376/\delta_K\), gives
+\begin{equation}
+\label{app:spiral:global-hessian-lipschitz}
+    \operatorname{Lip}_{\op}(\nabla^2V_K)
+    \leq10^8\frac{\alpha_0K^{5/2}}{r_0}.
+\end{equation}
+Thus, for \(L_H>0\), it is enough to choose
+\[
+    r_0\geq
+    \max\left\{
+        \frac{10^8\alpha_0K^{5/2}}{L_H},
+        \frac{10^{25}K^{3/2}\sqrt{\log(eK)}}{\sqrt\alpha}
+    \right\}.
+\]
+The initial radius is allowed to grow with \(K\), and with \(L_H^{-1}\)
+in this version.  At \(L_H=0\) the target is quadratic, and this
+construction does not assert a linear lower bound under a radius budget
+fixed independently of \(L_H\).
+
+\subsection{The one-dimensional bump train}
+\label{app:bump}
+
+This subsection proves \Cref{thm:global:bump-lower}.  Normalize
+\(\alpha=1\), \(\beta=\kappa\), and write a scalar Gaussian parameter as
+\(a=(m,c)\).  For \(X\sim\N(m,c)\), set
+\begin{equation}
+\label{app:bump:averaged-score-curvature}
+    b(m,c):=\E[V'(X)],
+    \qquad
+    A(m,c):=\E[V''(X)].
+\end{equation}
+The two deterministic maps reduce respectively to
+\begin{align}
+\label{app:bump:riemannian-map}
+    m^+&=m-hc\,b(m,c),
+    &
+    c^+&=c\exp\bigl(h[1-cA(m,c)]\bigr),\\
+\label{app:bump:kl-map}
+    m^+&=m-hc\,b(m,c),
+    &
+    c^+&=\frac{(1+h)c}{1+hcA(m,c)}.
+\end{align}
+Fix
+\begin{equation}
+\label{app:bump:stepsize}
+    h=\frac\gamma\kappa,
+    \qquad
+    0<\gamma\leq\frac12,
+\end{equation}
+with \(\gamma\) independent of \(\kappa\).
+
+\subsubsection{Bump profile, placement, and regularity}
+
+Choose an even \(\varphi\in C_c^\infty(\R)\) such that
+\begin{equation}
+\label{app:bump:profile}
+    0\leq\varphi\leq1,
+    \qquad
+    \varphi(u)=1\quad(|u|\leq\tfrac12),
+    \qquad
+    \varphi(u)=0\quad(|u|\geq1).
+\end{equation}
+Let
+\[
+    I_\varphi:=\int_\R\varphi(u)\,\dd u,
+    \qquad
+    M_\varphi:=\norm{\varphi'}_\infty.
+\]
+For a prescribed \(L_0>0\), define
+\begin{equation}
+\label{app:bump:width-mass}
+    w_\kappa:=\frac{(\kappa-1)M_\varphi}{L_0},
+    \qquad
+    B_\kappa:=w_\kappa I_\varphi,
+    \qquad
+    H_\kappa:=(\kappa-1)B_\kappa.
+\end{equation}
+Then \(w_\kappa=\Theta(\kappa)\),
+\(H_\kappa=\Theta(\kappa^2)\), and
+\begin{equation}
+\label{app:bump:lipschitz-normalization}
+    \frac{\kappa-1}{w_\kappa}\norm{\varphi'}_\infty=L_0.
+\end{equation}
+
+Choose \(T>0\) sufficiently small and \(Y>0\) sufficiently large,
+depending only on \(\varphi\) and \(L_0\), and set
+\begin{equation}
+\label{app:bump:count-initial-center}
+    N_\kappa:=\left\lfloor\frac{T\kappa^2}{\gamma}\right\rfloor,
+    \qquad
+    x_0:=\frac{Y\kappa^4}{\gamma}.
+\end{equation}
+Define the positive centers recursively by
+\begin{equation}
+\label{app:bump:center-recursion}
+    x_{j+1}
+    :=x_j-\frac{\gamma}{\kappa^2}
+    \left[
+        x_j+H_\kappa\left(N_\kappa-j+\frac12\right)
+    \right],
+    \qquad 0\leq j<N_\kappa.
+\end{equation}
+
+\begin{lemma}[Geometry of the centers]
+\label{app:bump:center-geometry}
+For the preceding choices and all sufficiently large \(\kappa\),
+\begin{equation}
+\label{app:bump:center-lower}
+    x_{N_\kappa}\geq\frac34x_0
+\end{equation}
+and
+\begin{equation}
+\label{app:bump:center-spacing}
+    x_j-x_{j+1}\geq\frac{3Y}{4}\kappa^2,
+    \qquad 0\leq j<N_\kappa.
+\end{equation}
+Hence the intervals
+\([x_j-w_\kappa,x_j+w_\kappa]\) are pairwise disjoint and disjoint
+from their reflections about the origin.
+\end{lemma}
+
+\begin{proof}
+Summing \eqref{app:bump:center-recursion} and using \(x_j\leq x_0\)
+gives
+\begin{align*}
+    x_0-x_{N_\kappa}
+    &\leq
+    \frac{\gamma N_\kappa}{\kappa^2}x_0
+    +\frac{\gamma H_\kappa}{\kappa^2}
+      \sum_{j=0}^{N_\kappa-1}
+      \left(N_\kappa-j+\frac12\right)\\
+    &\leq
+    Tx_0+C_\varphi\frac{T^2\kappa^4}{\gamma},
+\end{align*}
+where \(C_\varphi\) depends only on \(\varphi,L_0\).  Since
+\(x_0=Y\kappa^4/\gamma\), choosing \(T\) small and then \(Y\) large
+makes the right side at most \(x_0/4\), proving
+\eqref{app:bump:center-lower}.  The recursion and this lower bound give
+\[
+    x_j-x_{j+1}
+    \geq\frac{\gamma}{\kappa^2}x_{N_\kappa}
+    \geq\frac{3Y}{4}\kappa^2.
+\]
+Because \(w_\kappa=O(\kappa)\), the positive supports are disjoint for
+large \(\kappa\).  Also
+\(x_{N_\kappa}\asymp\kappa^4/\gamma\gg w_\kappa\), so they are disjoint
+from the reflected supports.
+\end{proof}
+
+Define \(V_\kappa\) by
+\begin{equation}
+\label{app:bump:potential}
+    V_\kappa''(x)
+    :=1+(\kappa-1)
+    \sum_{j=0}^{N_\kappa}
+    \left[
+        \varphi\left(\frac{x-x_j}{w_\kappa}\right)
+        +\varphi\left(\frac{x+x_j}{w_\kappa}\right)
+    \right],
+\end{equation}
+with \(V_\kappa'(0)=V_\kappa(0)=0\).
+
+\begin{lemma}[Regularity and exact condition number]
+\label{app:bump:regularity}
+For all sufficiently large \(\kappa\), the potential \(V_\kappa\) is
+even and belongs to \(C^\infty(\R)\).  Moreover,
+\begin{equation}
+\label{app:bump:curvature-bounds}
+    1\leq V_\kappa''(x)\leq\kappa
+    \qquad(x\in\R),
+\end{equation}
+both endpoints are attained, and
+\begin{equation}
+\label{app:bump:hessian-lipschitz}
+    \norm{V_\kappa'''}_\infty\leq L_0.
+\end{equation}
+The density \(e^{-V_\kappa}\) is integrable, and the original and
+optimizer-whitened condition numbers are both \(\kappa\).
+\end{lemma}
+
+\begin{proof}
+The reflected construction makes \(V_\kappa''\) even, so the
+normalizations at zero make \(V_\kappa'\) odd and \(V_\kappa\) even.
+By \Cref{app:bump:center-geometry}, at most one summand in
+\eqref{app:bump:potential} is nonzero at any point.  Hence
+\(1\leq V_\kappa''\leq1+(\kappa-1)=\kappa\).  The lower value is
+attained outside the supports, and the upper value on each flat top.
+Likewise,
+\[
+    |V_\kappa'''(x)|
+    \leq\frac{\kappa-1}{w_\kappa}\norm{\varphi'}_\infty=L_0.
+\]
+Since \(V_\kappa''\geq1\) and
+\(V_\kappa(0)=V_\kappa'(0)=0\), one has
+\(V_\kappa(x)\geq x^2/2\), proving integrability.  In one dimension,
+optimizer whitening multiplies every Hessian value by the same positive
+scalar \(c_\star\), so it does not change the ratio of the largest and
+smallest Hessian values.  Thus \(\kappastar=\kappa\).
+\end{proof}
+
+\subsubsection{Gaussian averages on the train}
+
+Set
+\begin{equation}
+\label{app:bump:matched-covariance}
+    c_\kappa:=\frac1\kappa
+\end{equation}
+and define ideal states \(a_j^\circ=(x_j,c_\kappa)\).
+
+\begin{lemma}[Averaged score and curvature]
+\label{app:bump:averages}
+There exist constants \(C,c>0\) and an integer \(p\geq1\), independent
+of \(\kappa\), such that, for \(0\leq j\leq N_\kappa\),
+\begin{align}
+\label{app:bump:center-curvature}
+    A(x_j,c_\kappa)
+    &=\kappa+r^A_{j,\kappa},
+    &
+    |r^A_{j,\kappa}|
+    &\leq C\kappa^p e^{-c\kappa^3},\\
+\label{app:bump:center-score}
+    b(x_j,c_\kappa)
+    &=x_j+H_\kappa\left(N_\kappa-j+\frac12\right)
+      +r^b_{j,\kappa},
+    &
+    |r^b_{j,\kappa}|
+    &\leq C\kappa^p e^{-c\kappa^3}.
+\end{align}
+The same estimates are uniform on
+\begin{equation}
+\label{app:bump:tube}
+    \mathcal T_{j,\kappa}
+    :=\left\{
+        (m,c):
+        |m-x_j|\leq\frac{w_\kappa}{8},
+        \quad
+        |\kappa c-1|\leq\frac18
+    \right\}.
+\end{equation}
+More precisely, for \((m,c)\in\mathcal T_{j,\kappa}\),
+\begin{align}
+\label{app:bump:tube-curvature}
+    |A(m,c)-\kappa|
+    &\leq\varepsilon_\kappa,\\
+\label{app:bump:tube-score}
+    \left|
+        b(m,c)-x_j
+        -H_\kappa\left(N_\kappa-j+\frac12\right)
+        -\kappa(m-x_j)
+    \right|
+    &\leq\varepsilon_\kappa,
+\end{align}
+where
+\begin{equation}
+\label{app:bump:epsilon}
+    \varepsilon_\kappa:=C\kappa^p e^{-c\kappa^3}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+At the ideal state write \(X=x_j+Z/\sqrt\kappa\), with
+\(Z\sim\N(0,1)\).  The current bump equals one whenever
+\(|X-x_j|\leq w_\kappa/2\), and \(w_\kappa\asymp\kappa\), so
+\[
+    \Prob\left(|X-x_j|>\frac{w_\kappa}{2}\right)
+    \leq2e^{-c\kappa^3}.
+\]
+Every other bump is at distance at least \(c\kappa^2\), or
+\(c\kappa^{5/2}\) Gaussian standard deviations, from \(x_j\).
+Summing over \(N_\kappa+1=O(\kappa^2)\) bumps changes only the
+polynomial prefactor.  This proves
+\eqref{app:bump:center-curvature}.
+
+Let
+\[
+    \Phi(s):=\int_{-\infty}^s\varphi(u)\,\dd u.
+\]
+For \(x>0\), except on an exponentially unlikely event on which the
+Gaussian sample crosses the origin, integration of
+\eqref{app:bump:potential} gives
+\[
+    V_\kappa'(x)
+    =x+(\kappa-1)w_\kappa
+      \sum_{k=0}^{N_\kappa}
+      \Phi\left(\frac{x-x_k}{w_\kappa}\right).
+\]
+The bumps with \(k>j\) lie between the origin and \(x_j\) and contribute
+their full mass \(I_\varphi\); those with \(k<j\) contribute zero, up to
+the same Gaussian-tail error.  For the current bump,
+\(\Phi(s)+\Phi(-s)=I_\varphi\), and symmetry gives
+\[
+    \E\Phi\left(\frac{X-x_j}{w_\kappa}\right)
+    =\frac{I_\varphi}{2}.
+\]
+Multiplication by \((\kappa-1)w_\kappa\) proves
+\eqref{app:bump:center-score}.
+
+Now take \((m,c)\in\mathcal T_{j,\kappa}\).  Its mean stays at least
+\(3w_\kappa/8\) from the edge of the current flat top, and its standard
+deviation is at most \(\sqrt{9/(8\kappa)}\).  The probability of
+reaching a transition layer remains bounded by \(Ce^{-c\kappa^3}\),
+uniformly on the tube.  This proves
+\eqref{app:bump:tube-curvature}.  Since
+\(\partial_m b(m,c)=A(m,c)\), integration in \(m\) gives the term
+\(\kappa(m-x_j)\) with error \(\varepsilon_\kappa\).  Price's identity
+also gives
+\[
+    \partial_c b(m,c)=\frac12\E[V_\kappa'''(X)].
+\]
+The third derivative is supported on transition layers, which are
+reached with probability \(O(e^{-c\kappa^3})\) throughout the tube.
+Integration in \(c\) proves \eqref{app:bump:tube-score}, after enlarging
+the polynomial prefactor in \eqref{app:bump:epsilon}.
+\end{proof}
+
+\subsubsection{Uniform shadowing for both covariance maps}
+
+Let \((m_j,c_j)\) be the iterates of either
+\eqref{app:bump:riemannian-map} or \eqref{app:bump:kl-map}, initialized
+by
+\begin{equation}
+\label{app:bump:initial-state}
+    m_0=x_0,
+    \qquad
+    c_0=c_\kappa=\frac1\kappa.
+\end{equation}
+Define
+\begin{equation}
+\label{app:bump:shadow-errors}
+    e_j:=m_j-x_j,
+    \qquad
+    q_j:=\kappa c_j-1.
+\end{equation}
+
+\begin{lemma}[Uniform discrete shadowing]
+\label{app:bump:shadowing}
+For either covariance map, there exist constants \(C,c>0\) and an
+integer \(p\geq1\) such that, for all sufficiently large \(\kappa\) and
+every \(0\leq j\leq N_\kappa\),
+\begin{equation}
+\label{app:bump:shadowing-estimate}
+    |e_j|+|q_j|\leq C\kappa^p e^{-c\kappa^3}.
+\end{equation}
+In particular, every iterate lies in \(\mathcal T_{j,\kappa}\) and
+\[
+    m_j=x_j+o(1),
+    \qquad
+    c_j=\frac1\kappa(1+o(1))
+\]
+uniformly for \(0\leq j\leq N_\kappa\).
+\end{lemma}
+
+\begin{proof}
+Write
+\[
+    B_j:=x_j+H_\kappa\left(N_\kappa-j+\frac12\right).
+\]
+The center recursion says
+\(x_{j+1}=x_j-\gamma B_j/\kappa^2\).  On the tube,
+\Cref{app:bump:averages} gives
+\[
+    b(m_j,c_j)=B_j+\kappa e_j+r_j,
+    \qquad
+    |r_j|\leq\varepsilon_\kappa.
+\]
+Since \(c_j=(1+q_j)/\kappa\), the mean error obeys the exact recursion
+\begin{equation}
+\label{app:bump:mean-error-recursion}
+    e_{j+1}
+    =\left(1-\frac{\gamma(1+q_j)}{\kappa}\right)e_j
+      -\frac{\gamma q_j}{\kappa^2}B_j
+      -\frac{\gamma(1+q_j)}{\kappa^2}r_j.
+\end{equation}
+The center geometry gives \(|B_j|\leq C\kappa^4/\gamma\).  As long as
+\(|q_j|\leq1/8\),
+\begin{equation}
+\label{app:bump:mean-error-bound}
+    |e_{j+1}|
+    \leq
+    \left(1-\frac{7\gamma}{8\kappa}\right)|e_j|
+    +C\kappa^2|q_j|
+    +C\frac{\varepsilon_\kappa}{\kappa^2}.
+\end{equation}
+
+For the Riemannian covariance map write
+\(A(m_j,c_j)=\kappa+\delta_j\), with
+\(|\delta_j|\leq\varepsilon_\kappa\).  Then
+\begin{equation}
+\label{app:bump:q-riemannian-exact}
+    1+q_{j+1}
+    =(1+q_j)
+      \exp\left[
+        \frac{\gamma}{\kappa}
+        \left(
+            1-(1+q_j)\left(1+\frac{\delta_j}{\kappa}\right)
+        \right)
+      \right].
+\end{equation}
+For \(|q_j|\leq1/8\) and large \(\kappa\), the derivative of the right
+side with respect to \(q_j\) lies between zero and
+\(1-\gamma/(2\kappa)\), while its variation with respect to
+\(\delta_j\) is at most \(C\gamma|\delta_j|/\kappa^2\).  Since the map
+fixes \(q=0\) when \(\delta=0\), the mean-value theorem yields
+\begin{equation}
+\label{app:bump:q-riemannian-bound}
+    |q_{j+1}|
+    \leq\left(1-\frac{\gamma}{2\kappa}\right)|q_j|
+    +C\frac{\varepsilon_\kappa}{\kappa^2}.
+\end{equation}
+
+For the KL/Bregman covariance map,
+\begin{equation}
+\label{app:bump:q-kl-exact}
+    1+q_{j+1}
+    =
+    \frac{(1+\gamma/\kappa)(1+q_j)}
+         {1+(\gamma/\kappa)(1+q_j)(1+\delta_j/\kappa)}.
+\end{equation}
+The same mean-value argument gives
+\begin{equation}
+\label{app:bump:q-kl-bound}
+    |q_{j+1}|
+    \leq\left(1-\frac{\gamma}{2\kappa}\right)|q_j|
+    +C\frac{\varepsilon_\kappa}{\kappa^2}.
+\end{equation}
+
+Since \(q_0=0\), either covariance recursion implies
+\begin{equation}
+\label{app:bump:q-summed}
+    |q_j|
+    \leq C\frac{\varepsilon_\kappa}{\gamma\kappa}
+    \qquad(0\leq j\leq N_\kappa).
+\end{equation}
+Substitute this into \eqref{app:bump:mean-error-bound}, use \(e_0=0\),
+and sum the geometric recursion to obtain
+\begin{equation}
+\label{app:bump:e-summed}
+    |e_j|\leq C_\gamma\kappa^p e^{-c\kappa^3}
+\end{equation}
+after increasing \(p\) if necessary.  Exponential decay dominates
+every polynomial, so
+\eqref{app:bump:q-summed}--\eqref{app:bump:e-summed} are eventually
+smaller than \(1/8\) and \(w_\kappa/8\).  The tube hypotheses close by
+induction, proving \eqref{app:bump:shadowing-estimate}.
+\end{proof}
+
+\subsubsection{Objective comparison and completion}
+
+For \(c>0\), define
+\begin{equation}
+\label{app:bump:smoothed-potential}
+    F_c(m):=\E_{X\sim\N(m,c)}[V_\kappa(X)].
+\end{equation}
+Up to a target-dependent additive constant,
+\begin{equation}
+\label{app:bump:scalar-objective}
+    \calE_\kappa(m,c)=F_c(m)-\frac12\log c.
+\end{equation}
+
+\begin{lemma}[Constant-factor objective lower bound]
+\label{app:bump:objective-gap}
+There is a numerical \(q\in(0,1)\), independent of \(\kappa\), such
+that the iterates of either scheme satisfy
+\begin{equation}
+\label{app:bump:gap-lower}
+    \Delta(m_j,c_j)\geq q\,\Delta(m_0,c_0),
+    \qquad 0\leq j\leq N_\kappa,
+\end{equation}
+for all sufficiently large \(\kappa\).
+\end{lemma}
+
+\begin{proof}
+The potential is even, so \(F_c\) is even and \(F_c'(0)=0\).  Moreover,
+\(F_c''(m)=A(m,c)\geq1\), whence
+\begin{equation}
+\label{app:bump:smoothed-lower}
+    F_c(m)-F_c(0)\geq\frac12m^2.
+\end{equation}
+At the matched covariance,
+\Cref{app:bump:center-geometry} gives
+\begin{equation}
+\label{app:bump:final-mean-lower}
+    F_{c_\kappa}(x_j)-F_{c_\kappa}(0)
+    \geq\frac12x_j^2
+    \geq\frac12x_{N_\kappa}^2
+    \geq\frac9{32}x_0^2.
+\end{equation}
+
+Integration of \eqref{app:bump:potential} gives the global estimate
+\begin{equation}
+\label{app:bump:global-score-bound}
+    |V_\kappa'(x)|
+    \leq |x|+H_\kappa(N_\kappa+1).
+\end{equation}
+Therefore, for \(m\geq0\),
+\[
+    F_{c_\kappa}'(m)
+    \leq
+    m+\sqrt{\frac{2}{\pi\kappa}}
+      +H_\kappa(N_\kappa+1).
+\]
+Integrating from zero to \(x_0\) gives
+\begin{equation}
+\label{app:bump:initial-mean-upper}
+    F_{c_\kappa}(x_0)-F_{c_\kappa}(0)
+    \leq
+    \frac12x_0^2
+    +\left[
+        H_\kappa(N_\kappa+1)
+        +\sqrt{\frac{2}{\pi\kappa}}
+    \right]x_0
+    \leq C_0x_0^2,
+\end{equation}
+where \(C_0\) is independent of \(\kappa\); here
+\(H_\kappa(N_\kappa+1)=O(\kappa^4/\gamma)\) and
+\(x_0=Y\kappa^4/\gamma\).  Combining
+\eqref{app:bump:final-mean-lower} and
+\eqref{app:bump:initial-mean-upper} yields
+\begin{equation}
+\label{app:bump:mean-ratio}
+    F_{c_\kappa}(x_j)-F_{c_\kappa}(0)
+    \geq q_0
+    [F_{c_\kappa}(x_0)-F_{c_\kappa}(0)],
+    \qquad
+    q_0:=\frac9{32C_0}>0.
+\end{equation}
+
+For every fixed covariance,
+\(m\mapsto\calE_\kappa(m,c)\) is strictly convex and even, so its
+unique minimizing mean is zero.  Let \(c_\star\) be the optimizing
+covariance and set
+\[
+    D_\kappa
+    :=\calE_\kappa(0,c_\kappa)-\calE_\kappa(0,c_\star)\geq0.
+\]
+At covariance \(c_\kappa\),
+\[
+    \Delta(x_j,c_\kappa)
+    =F_{c_\kappa}(x_j)-F_{c_\kappa}(0)+D_\kappa.
+\]
+After replacing \(q_0\) by \(\min\{q_0,1\}\),
+\eqref{app:bump:mean-ratio} implies
+\begin{equation}
+\label{app:bump:ideal-gap-ratio}
+    \Delta(x_j,c_\kappa)\geq q_0\Delta(x_0,c_\kappa).
+\end{equation}
+
+It remains to replace the ideal states by the actual iterates.  On the
+tube,
+\[
+    |\partial_m\calE_\kappa|=|b(m,c)|
+    \leq C\kappa^4/\gamma,
+\]
+while
+\[
+    \left|\partial_c\calE_\kappa(m,c)\right|
+    =\frac12\left|A(m,c)-\frac1c\right|
+    \leq C(\varepsilon_\kappa+\kappa|q|).
+\]
+Together with \Cref{app:bump:shadowing}, the mean-value theorem gives
+\begin{equation}
+\label{app:bump:objective-shadow}
+    \sup_{0\leq j\leq N_\kappa}
+    \left|
+        \calE_\kappa(m_j,c_j)
+        -\calE_\kappa(x_j,c_\kappa)
+    \right|
+    =o(x_0^2).
+\end{equation}
+By \eqref{app:bump:smoothed-lower},
+\(\Delta(x_0,c_\kappa)\geq x_0^2/2\), so the error in
+\eqref{app:bump:objective-shadow} is
+\(o(\Delta(x_0,c_\kappa))\).  Absorbing it in
+\eqref{app:bump:ideal-gap-ratio}, after reducing \(q_0\) by a fixed
+factor, proves \eqref{app:bump:gap-lower}.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:global:bump-lower}]
+\Cref{app:bump:regularity} proves
+\(1\leq V_\kappa''\leq\kappa\),
+\(\norm{V_\kappa'''}_\infty\leq L_0\), and
+\(\kappastar=\kappa\).  The initialization
+\eqref{app:bump:initial-state} lies at the lower edge of the
+curvature-scale band \([1/\kappa,1]\), so the construction begins after
+covariance burn-in.  By \Cref{app:bump:objective-gap},
+\[
+    \Delta_n\geq q\Delta_0
+    \qquad
+    \left(0\leq n\leq
+    N_\kappa=\left\lfloor\frac{T\kappa^2}{\gamma}\right\rfloor\right)
+\]
+for either exact-expectation map.  Since \(h=\gamma/\kappa\),
+\[
+    \frac{\kappa^2}{\gamma}=\frac{\kappa}{h},
+\]
+which proves the claimed \(\Omega(\kappa/h)\) constant-factor lower
+bound for both discretizations.
+\end{proof}
+
+The construction is tied to the fixed value of \(\gamma\) and does not
+cover adaptive relative-curvature steps, line searches, or implicit updates.
+Indeed, along the shadowed path,
+\[
+    c_jA(m_j,c_j)=1+o(1),
+    \qquad
+    c_j\simeq\frac1\kappa,
+    \qquad
+    \frac{b(m_j,c_j)}{m_j}=\Theta(1).
+\]
+Thus the relative mean motion is
+\[
+    h\frac{c_jb(m_j,c_j)}{m_j}
+    =\Theta\left(\frac{\gamma}{\kappa^2}\right),
+\]
+which is the precise source of the fixed-step slowdown.

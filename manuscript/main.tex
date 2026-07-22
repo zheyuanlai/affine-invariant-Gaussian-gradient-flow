@@ -1,0 +1,69 @@
+\input{preamble}
+
+\title{Sharp Global-to-Local Theory for Fisher--Rao Gaussian Variational Inference}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study full-covariance Gaussian variational inference for a target
+\(\pi\propto e^{-V}\) through the Fisher--Rao natural gradient.  For strongly
+log-concave targets, optimizer whitening separates three rate-limiting
+mechanisms.  An underdispersed initialization first incurs a covariance
+bootstrap cost.  Global localization then occurs on an intrinsic condition
+scale \(\kappastar\), and, in dimension at least two, a logarithmic-spiral
+construction shows that this dependence is unavoidable for an admissible
+anisotropic initialization.  Near the optimizing Gaussian, the rate is
+instead controlled by a self-adjoint score operator.  Its spectral gap satisfies
+\[
+ \max\!\left\{\alphastar,\frac{1}{4+\Gamma}\right\}
+ \leq \gstar\leq\Lstar
+ \leq\min\!\left\{\betastar,\frac{4+\Gamma}{2}\right\},
+ \qquad
+ \Gamma=O\!\left(1+\sqrt d\log\kappastar\right).
+\]
+A smooth convex-ridge family with \(d=\Theta(\kappastar^2)\) has
+\(\gstar=\Theta(\kappastar^{-1/2})\), showing that the
+\(\betastar-1\) branch of the universal spectral certificate is sharp up to
+constants while leaving the fixed-dimensional question open.  For two
+discretizations---a Riemannian matrix-exponential retraction and a KL/Bregman
+resolvent---we prove global upper bounds and a fixed-step lower bound matching
+the \(\kappa/h\) dependence for constant-factor reduction.  We also develop a
+joint Price/Hessian oracle with a sticking-the-landing score estimator, prove
+global geometric bounds with explicit constant-step residual levels, and,
+under Hessian-Lipschitzness, a floor-free decreasing-step rate and a
+finite-horizon local non-exit theory.  Finally, for \(d\geq2\) we classify all
+affine-invariant Gaussian metrics, identify Fisher--Rao as the unique balanced
+Gaussian choice up to scale, and show by a smooth double-well example why
+covariance control can become essential beyond log-concavity.
+\end{abstract}
+
+\noindent\textbf{Keywords.}
+Gaussian variational inference; natural gradient; Fisher--Rao geometry;
+affine invariance; stochastic gradient; local convergence.
+
+\input{sections/01-introduction}
+\input{sections/02-geometry}
+\input{sections/03-global-deterministic}
+\input{sections/04-local}
+\input{sections/05-stochastic}
+\input{sections/06-nonconvex}
+\input{sections/07-numerics}
+\input{sections/08-discussion}
+
+\appendix
+\input{appendices/A-affine-geometry}
+\input{appendices/B-deterministic-lower-bounds}
+\input{appendices/C-local-counterexample}
+\input{appendices/D-nonconvex-details}
+\input{appendices/E-experimental-details}
+
+\begingroup
+\small
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\endgroup
+
+\end{document}

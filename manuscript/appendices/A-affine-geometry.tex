@@ -1,0 +1,82 @@
+\section{Affine-invariant geometry: classification details}
+\label{app:affine-classification}
+
+This appendix records the representation argument behind the metric
+classification in \Cref{sec:geometry}.  The affine group acts transitively on
+\(\R^d\times\SPD(d)\).  It is therefore enough to classify inner products on
+the tangent space at \(o=(0,\Id)\) that are invariant under the isotropy group
+\(O(d)\).
+
+At \(o\), the tangent representation is
+\[
+  \R^d\oplus\Sym(d)
+  =
+  \R^d\oplus\operatorname{span}\{\Id\}\oplus\Sym_0(d),
+\]
+where \(\Sym_0(d)\) denotes the traceless symmetric matrices.  These three
+summands are pairwise inequivalent irreducible \(O(d)\)-representations
+(with the familiar low-dimensional interpretation when \(d=1\)).
+Schur's lemma therefore leaves one scalar weight on each summand.
+Equivalently, every invariant quadratic form is
+\[
+  \eta\norm u^2+\omega\Tr(X^2)+\tau(\Tr X)^2.
+\]
+There is no mean--covariance term.  One can see this without representation
+terminology: the isotropy element \(-\Id\) sends \(u\) to \(-u\) and fixes
+\(X\), so any cross term changes sign and must vanish.
+
+Transporting this form from \(o\) to \(a=(m,C)\) by
+\((u,X)\mapsto(C^{-1/2}u,C^{-1/2}XC^{-1/2})\) gives
+\[
+  g_a((u,X),(v,Y))
+  =
+  \eta u^\top C^{-1}v
+  +\omega\Tr(C^{-1}XC^{-1}Y)
+  +\tau\Tr(C^{-1}X)\Tr(C^{-1}Y).
+\]
+Positivity on the mean and traceless summands requires
+\(\eta>0\) and \(\omega>0\).  On \(X=s\Id\), the covariance part is
+\(d(\omega+d\tau)s^2\), hence
+\(\tau>-\omega/d\).  These conditions are also sufficient.
+
+For completeness, let
+\[
+  g:=-\E_{\N(m,C)}\nabla V,\qquad
+  A:=\E_{\N(m,C)}\nabla^2V,\qquad
+  R:=C^{-1}-A.
+\]
+The Euclidean differentials of the objective are
+\[
+  D_m\calE[u]=-g^\top u,\qquad
+  D_C\calE[X]=-\frac12\Tr(RX).
+\]
+Solving
+\(g_a(\grad\calE,(u,X))=D\calE[(u,X)]\) separately on the mean,
+traceless, and trace covariance components gives
+\begin{align*}
+  \dot m
+  &=\frac1\eta Cg,\\
+  \dot C
+  &=
+  \frac1{2\omega}CRC
+  -
+  \frac{\tau}{2\omega(\omega+d\tau)}
+  \Tr(CR)\,C.
+\end{align*}
+Whitening a Gaussian target at its optimizer yields
+\(\dot m=-m/\eta+O(\norm{a-a_\star}^2)\).
+For \(C=\Id+X\), the traceless covariance part obeys
+\(\dot X_0=-X_0/(2\omega)+O(\norm X^2)\), while the trace part obeys
+\[
+  \frac{\dd}{\dd t}\frac{\Tr X}{d}
+  =
+  -\frac1{2(\omega+d\tau)}
+  \frac{\Tr X}{d}
+  +O(\norm X^2).
+\]
+Balancing all three linear rates, modulo an overall multiplication of the
+metric, requires
+\[
+  \eta=1,\qquad \omega=\frac12,\qquad \tau=0,
+\]
+which is the Fisher--Rao metric.

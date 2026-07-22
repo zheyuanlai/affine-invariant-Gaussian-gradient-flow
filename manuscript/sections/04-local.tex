@@ -1,0 +1,761 @@
+\section{Local spectral theory and global-to-local convergence}
+\label{sec:local}
+
+Global energy decay eventually places the iterates near the optimizing
+Gaussian, but it does not determine the local rate.  After optimizer
+whitening, the derivative of the Fisher--Rao field contains first- and
+second-Hermite correlations of the target Hessian.  This section identifies
+the corresponding self-adjoint generator, bounds its spectrum, and then
+controls the nonlinear dynamics by retaining the Gaussian part of the field
+exactly.
+
+\subsection{Optimizer whitening and the score generator}
+\label{sec:local-linearization}
+
+Work in the optimizer-whitened coordinates introduced in
+\Cref{sec:introduction-bottlenecks}.  Thus \(a_\star=(0,\Id)\),
+\[
+  \E_{\N(0,\Id)}\nabla\widehat V(Z)=0,\qquad
+  \E_{\N(0,\Id)}\nabla^2\widehat V(Z)=\Id,
+\]
+and
+\[
+  \alphastar\Id\preceq\nabla^2\widehat V(z)
+  \preceq\betastar\Id.
+\]
+For \(\xi=(u,X)\in\R^d\times\Sym(d)\), use the equilibrium Fisher--Rao norm
+\begin{equation}
+  \norm{\xi}_\star^2
+  :=\norm u^2+\frac12\norm X_{\Frob}^2.
+  \label{eq:local-equilibrium-norm}
+\end{equation}
+Let \(B(Z):=\nabla^2\widehat V(Z)\).  The first- and second-Hermite score
+operators are
+\begin{align}
+  \mathcal T[X]_k
+  &:=\E\!\left[\Tr(XB(Z))Z_k\right],
+  &
+  \mathcal T^\ast[u]_{ij}
+  &:=\E\!\left[(u^\top Z)B_{ij}(Z)\right],
+  \label{eq:local-first-hermite}\\
+  \mathcal H[X]_{ij}
+  &:=\E\!\left[
+      B_{ij}(Z)\bigl(Z^\top XZ-\Tr X\bigr)
+    \right].
+  \label{eq:local-second-hermite}
+\end{align}
+We use the operator norm
+\begin{equation}
+  \norm{\mathcal T}
+  :=
+  \sup_{X\neq0}
+  \frac{\norm{\mathcal T[X]}}{\norm X_{\Frob}}.
+  \label{eq:local-first-hermite-operator-norm}
+\end{equation}
+Gaussian integration by parts gives
+\[
+  u^\top\mathcal T[X]=\Tr(\mathcal T^\ast[u]X),
+  \qquad
+  \Tr(\mathcal H[X]Y)=\Tr(X\mathcal H[Y]).
+\]
+Consequently, the negative Jacobian of the Fisher--Rao field at equilibrium
+is the self-adjoint operator
+\begin{equation}
+  \mathscr L_\star(u,X)
+  =
+  \left(
+    u+\frac12\mathcal T[X],
+    X+\mathcal T^\ast[u]+\frac12\mathcal H[X]
+  \right).
+  \label{eq:local-generator}
+\end{equation}
+Write
+\[
+  \gstar:=\lambda_{\min}(\mathscr L_\star),
+  \qquad
+  \Lstar:=\lambda_{\max}(\mathscr L_\star).
+\]
+
+The dimension dependence enters through a centered diagonal block.  Set
+\begin{equation}
+  t_0:=\max\{1,\log(4\betastar)\},
+  \qquad
+  \Gamma:=
+  \min\!\left\{
+    \betastar-1,\,
+    \sqrt d\bigl(4\sqrt{2t_0}+4t_0+4\bigr)
+  \right\}.
+  \label{eq:local-Gamma}
+\end{equation}
+In particular,
+\(\Gamma=O(1+\sqrt d\log\kappastar)\).
+
+\begin{theorem}[Spectral sandwich for the local generator]
+\label{thm:local-spectral-sandwich}
+Under the whitened curvature bounds,
+\begin{equation}
+  \boxed{
+  \max\!\left\{\alphastar,\frac1{4+\Gamma}\right\}
+  \leq\gstar\leq\Lstar
+  \leq
+  \min\!\left\{\betastar,\frac{4+\Gamma}{2}\right\}.}
+  \label{eq:local-spectral-sandwich}
+\end{equation}
+If the target is Gaussian, then
+\(\mathcal T=\mathcal H=0\) and
+\(\gstar=\Lstar=1\).
+\end{theorem}
+
+\begin{proof}
+Diagonalize \(X=\diag(\lambda)\) and define
+\[
+  \widetilde T_{ki}:=\E[B_{ii}(Z)Z_k],
+  \qquad
+  D_{ij}:=\E[B_{ii}(Z)(Z_j^2-1)].
+\]
+The restriction of \(\mathcal H\) to diagonal matrices is self-adjoint, so
+\(D\) is symmetric.  For
+\(\eta(Z)=u+\diag(\lambda)Z\), two Gaussian integrations by parts give
+\begin{equation}
+  \E[\eta^\top B\eta]
+  =
+  \norm u^2+2u^\top\widetilde T\lambda
+  +\norm\lambda^2+\lambda^\top D\lambda.
+  \label{eq:local-schur-identity}
+\end{equation}
+Positivity of \(B\) implies
+\(\widetilde T^\top\widetilde T\preceq\Id+D\).
+The pointwise upper curvature bound gives
+\(\lambda_{\max}(D)\leq\betastar-1\).
+
+For the second branch of \(\Gamma\), normalize \(\norm\lambda=1\) and put
+\(Q_X(Z)=Z^\top XZ-\Tr X\).  The exact representation
+\[
+  \lambda^\top D\lambda
+  =\E\!\left[\Tr(XB(Z))Q_X(Z)\right]
+\]
+is combined with
+\(\E\Tr(|X|B)=\Tr|X|\leq\sqrt d\) and a two-sided Gaussian
+quadratic-form tail bound.  Splitting at \(t_0\) yields
+\[
+  \abs{\lambda^\top D\lambda}
+  \leq
+  \sqrt d\bigl(4\sqrt{2t_0}+4t_0+4\bigr).
+\]
+The quadratic form of \(\mathscr L_\star\) is
+\[
+  Q(u,\diag\lambda)
+  =
+  \norm u^2+u^\top\widetilde T\lambda
+  +\frac12\norm\lambda^2+\frac14\lambda^\top D\lambda.
+\]
+Completing the square in \(u\), using the Schur bound, and taking
+\(\nu=(4+\Gamma)^{-1}\) gives
+\(Q\geq\nu\norm{(u,X)}_\star^2\).
+The same estimates give
+\(Q\leq(4+\Gamma)\norm{(u,X)}_\star^2/2\).
+Finally, applying \eqref{eq:local-schur-identity} with \(u\) replaced by
+\(2u\) gives the exact representation
+\[
+  Q(u,X)
+  =\frac14\E\!\left[(2u+XZ)^\top B(Z)(2u+XZ)\right]
+   +\frac14\norm X_{\Frob}^2.
+\]
+Since \(\E\norm{2u+XZ}^2=4\norm u^2+\norm X_{\Frob}^2\) and
+\(\alphastar\leq1\leq\betastar\), the pointwise curvature sandwich gives
+the direct bounds
+\(\alphastar\norm{\xi}_\star^2\leq Q(\xi)
+\leq\betastar\norm{\xi}_\star^2\).
+Taking the stronger lower and upper estimates proves
+\eqref{eq:local-spectral-sandwich}.
+\end{proof}
+
+\begin{corollary}[Linearized deterministic maps]
+\label{cor:local-linear-maps}
+Let \(T_{\Riem,h}\) and \(T_{\KL,h}\) denote the Riemannian and KL maps of
+\Cref{sec:geometry-fr-algorithms}, expressed in whitened coordinates.  If
+\(0<h\leq2/(4+\Gamma)\), then
+\begin{align}
+  \norm{DT_{\Riem,h}(a_\star)\xi}_\star
+  &\leq
+  \left(1-\frac{h}{4+\Gamma}\right)\norm{\xi}_\star,
+  \label{eq:local-linear-riem}\\
+  \norm{DT_{\KL,h}(a_\star)\xi}_{\star,h}
+  &\leq
+  \left(1-\frac{h}{4+2h+\Gamma}\right)
+  \norm{\xi}_{\star,h},
+  \label{eq:local-linear-kl}
+\end{align}
+where
+\(\norm{(u,X)}_{\star,h}^2
+=\norm u^2+(1+h)\norm X_{\Frob}^2/2\).
+\end{corollary}
+
+\subsection{The Gaussian core and a nonlinear local region}
+\label{sec:local-gaussian-core}
+
+Write the whitened Fisher--Rao field as
+\[
+  F=\FGauss+H,
+  \qquad
+  \FGauss(m,C)=(-Cm,C-C^2).
+\]
+The field \(\FGauss\) is the exact natural gradient for the standard Gaussian
+target.  It is not treated as a quadratic Taylor remainder.  With
+\(\xi=(m,C-\Id)\),
+\begin{equation}
+  \inner{\xi}{\FGauss(m,C)}_\star
+  =
+  -m^\top Cm-\frac12\Tr\!\left(C(C-\Id)^2\right).
+  \label{eq:local-gaussian-dissipation}
+\end{equation}
+Thus its dissipation remains useful well beyond the infinitesimal regime.
+
+To turn an energy level into a covariance band, define
+\[
+  \phi_{\alphastar}(s)
+  :=s-1-\log s+\frac{\alphastar}{2}(s-1)^2.
+\]
+If \(s_1,\ldots,s_d\) are the eigenvalues of \(C^{1/2}\), strong convexity
+and the equilibrium first-order conditions imply
+\begin{equation}
+  \Delta(m,C)
+  \geq
+  \frac{\alphastar}{2}\norm m^2+
+  \sum_{i=1}^d\phi_{\alphastar}(s_i).
+  \label{eq:local-entropy-coercivity}
+\end{equation}
+Let \(s_-(\delta)<1<s_+(\delta)\) be the two roots of
+\(\phi_{\alphastar}(s)=\delta\), and set
+\[
+  \ell_\delta=s_-(\delta)^2,\qquad
+  U_\delta=s_+(\delta)^2.
+\]
+Then the sublevel
+\(\mathcal U_\delta:=\{a:\Delta(a)\leq\delta\}\) satisfies
+\(\ell_\delta\Id\preceq C\preceq U_\delta\Id\).
+Define the explicit norm-conversion factors
+\begin{align}
+  \vartheta(\delta)
+  &:={}
+  \sup_{\substack{s\in[s_-(\delta),s_+(\delta)]\\s\neq1}}
+  \frac{(s^2-1)^2}{2\phi_{\alphastar}(s)}
+  \leq
+  \frac{(1+s_+(\delta))^2}
+       {\alphastar+s_+(\delta)^{-2}},
+  \label{eq:local-vartheta}\\
+  \mathfrak b(\delta)^2
+  &:={}
+  \max\left\{\frac2{\alphastar},\vartheta(\delta)\right\},
+  &
+  \mathfrak b_h(\delta)^2
+  &:={}
+  \max\left\{\frac2{\alphastar},(1+h)\vartheta(\delta)\right\}.
+  \label{eq:local-b-factors}
+\end{align}
+Then
+\begin{equation}
+  a\in\mathcal U_\delta
+  \quad\Longrightarrow\quad
+  \begin{aligned}
+    \norm{a-a_\star}_\star
+    &\leq\mathfrak b(\delta)\sqrt\delta,\\
+    \norm{a-a_\star}_{\star,h}
+    &\leq\mathfrak b_h(\delta)\sqrt\delta.
+  \end{aligned}
+  \label{eq:local-norm-conversion}
+\end{equation}
+
+Let \(\mathcal H_\delta\) be the star-shaped hull of
+\(\mathcal U_\delta\) about \(a_\star\).  Every point in this compact hull
+obeys the same covariance band and the same bound
+\eqref{eq:local-norm-conversion}: its covariance is a convex combination of
+\(\Id\) and a covariance in \(\mathcal U_\delta\), while its displacement
+from \(a_\star\) is shortened by the same interpolation factor.  Define the
+non-Gaussian second-differential modulus
+\begin{equation}
+  \Kng(\delta)
+  :=
+  \sup_{\substack{a\in\mathcal H_\delta\\\zeta\neq0}}
+  \frac{\norm{D^2H(a)[\zeta,\zeta]}_\star}
+       {\norm{\zeta}_\star^2}.
+  \label{eq:local-nongaussian-modulus}
+\end{equation}
+To make this modulus quantitative, put
+\begin{align}
+  \mathcal B_\delta
+  &:={}
+  \sup_{a\in\mathcal H_\delta}
+  \norm{A(a)-\Id}_{\op},
+  \label{eq:local-Bdelta}\\
+  \Sigma_\delta
+  &:={}
+  \sup_{a\in\mathcal H_\delta}
+  \left(
+    \E_{\rho_a}
+    \norm{\nabla^2\widehat V(X)-A(a)}_{\Frob}^2
+  \right)^{1/2},
+  &
+  \overline\Sigma_\delta
+  &:={}
+  \min\{\Sigma_\delta,\betastar-\alphastar\}.
+  \label{eq:local-Sigmadelta}
+\end{align}
+The Gaussian score calculation in \Cref{app:local-moduli} gives the fully
+explicit estimate
+\begin{align}
+  \Kng(\delta)
+  &\leq
+  \left\{
+    K_{\mathrm{ng},m}(\delta)^2
+    +\frac12K_{\mathrm{ng},C}(\delta)^2
+  \right\}^{1/2},
+  \label{eq:local-Kng-explicit}\\
+  K_{\mathrm{ng},m}(\delta)
+  &:={}
+  \frac{U_\delta^{3/2}}{\ell_\delta^2}
+  \left(
+    \sqrt3\,\overline\Sigma_\delta+\Sigma_\delta
+    +\sqrt{\Sigma_\delta^2+2\mathcal B_\delta^2}
+  \right),
+  \label{eq:local-Kng-mean}\\
+  K_{\mathrm{ng},C}(\delta)
+  &:={}
+  \frac{U_\delta^2}{\ell_\delta^2}
+  \left((4\sqrt2+\sqrt6)\Sigma_\delta+4\mathcal B_\delta\right).
+  \label{eq:local-Kng-covariance}
+\end{align}
+Thus \(\Kng(\delta)\) measures only departure from the Gaussian core: all
+three non-Gaussian moduli vanish identically for a Gaussian target.  Bounded
+Hessian and Gaussian score differentiation suffice for finiteness; classical
+third and fourth derivatives of \(V\) are not required.
+
+\begin{theorem}[Gaussian-core local convergence]
+\label{thm:local-gaussian-core}
+Let \(0<\gamma_0\leq\gstar\), and define
+\begin{equation}
+  \rho_{\mathrm{core}}(\delta)
+  :=
+  2\gamma_0-2+2\ell_\delta
+  -\Kng(\delta)\mathfrak b(\delta)\sqrt\delta.
+  \label{eq:local-core-rate}
+\end{equation}
+If \(\rho_{\mathrm{core}}(\delta)>0\) and
+\(\Delta(a_0)\leq\delta\), then the Fisher--Rao flow remains in
+\(\mathcal U_\delta\) and
+\begin{equation}
+  \norm{a_t-a_\star}_\star^2
+  \leq
+  e^{-\rho_{\mathrm{core}}(\delta)t}
+  \norm{a_0-a_\star}_\star^2.
+  \label{eq:local-core-contraction}
+\end{equation}
+With
+\(\gamma_0=\max\{\alphastar,(4+\Gamma)^{-1}\}\), the limiting
+squared-norm rate as \(\delta\downarrow0\) is at least
+\(2\gamma_0\).
+\end{theorem}
+
+\begin{proof}
+Energy dissipation makes \(\mathcal U_\delta\) forward invariant.
+Equation \eqref{eq:local-gaussian-dissipation} contributes
+\(-2\ell_\delta\norm{\xi}_\star^2\) to the derivative of the squared
+norm.  The linear part of \(H\) contributes at most
+\(2(1-\gamma_0)\norm{\xi}_\star^2\).  Taylor's theorem on
+\(\mathcal H_\delta\), together with
+\eqref{eq:local-norm-conversion}, bounds the remaining contribution by
+\(\Kng(\delta)\mathfrak b(\delta)\sqrt\delta
+\norm{\xi}_\star^2\).  The result follows from Gr\"onwall's inequality.
+\end{proof}
+
+\begin{corollary}[Exact Gaussian region]
+\label{cor:local-exact-gaussian-region}
+For a Gaussian target, \(\gstar=1\), \(\Kng\equiv0\), and
+\(\rho_{\mathrm{core}}(\delta)=2\ell_\delta\).  For every
+\(\rho\in(0,2)\), the largest energy sublevel on which the flow has
+squared-norm rate at least \(\rho\) is
+\begin{equation}
+  \Delta\leq
+  \Delta_{\mathrm G}^{\sharp}(\rho)
+  :=
+  \frac12\left(
+    \frac{\rho}{2}-1-\log\frac{\rho}{2}
+  \right).
+  \label{eq:local-exact-gaussian-threshold}
+\end{equation}
+This threshold is independent of dimension.
+\end{corollary}
+
+\begin{proof}
+For the standard Gaussian, each covariance eigenvalue solves
+\(\dot c=c(1-c)\).  The instantaneous squared-norm rate is at least
+\(2\lambda_{\min}(C)\), with equality for a centered covariance perturbation
+supported on a minimal eigendirection.  If
+\(\Delta\leq\Delta_{\mathrm G}^{\sharp}(\rho)\), the Gaussian energy formula
+forces every covariance eigenvalue to be at least \(\rho/2\), so the rate is
+at least \(\rho\).  Conversely, setting one eigenvalue to
+\(c<\rho/2\) gives rate \(2c<\rho\) at energy cost
+\(\frac12(c-1-\log c)\).  Letting \(c\uparrow\rho/2\) shows that every
+strictly larger energy sublevel contains such a state, proving sharpness.
+\end{proof}
+
+\subsection{Discrete local contractions and entry}
+\label{sec:local-discrete}
+
+For the KL map, the Gaussian covariance eigenvalue and mean factors are
+\[
+  c^+=\frac{(1+h)c}{1+hc},
+  \qquad
+  r_C(c)=(1+hc)^{-2},
+  \qquad
+  r_m(c)=(1-hc)^2.
+\]
+Hence, for \(q\in(0,1)\), the exact invariant interval producing contraction
+factor \(q\) is
+\begin{equation}
+  I_h^{\KL}(q)
+  =
+  \left[
+    \frac{q^{-1/2}-1}{h},
+    \frac{1+\sqrt q}{h}
+  \right],
+  \label{eq:local-kl-invariant-interval}
+\end{equation}
+provided \(0<h<2\) and
+\(q\geq\max\{(1+h)^{-2},(1-h)^2\}\).
+Indeed, the two scalar inequalities \(r_C(c),r_m(c)\leq q\) give exactly
+the endpoints in \eqref{eq:local-kl-invariant-interval}, and the condition on
+\(q\) is precisely what makes that interval contain \(1\).  Since \(c^+\)
+lies between \(c\) and \(1\), the interval is forward invariant.  Hence
+\[
+  \operatorname{spec}(C_n)\subseteq I_h^{\KL}(q)
+  \quad\Longrightarrow\quad
+  \norm{a_{n+k}-a_\star}_{\star,h}^2
+  \leq q^k\norm{a_n-a_\star}_{\star,h}^2,\qquad k\geq0.
+\]
+
+For non-Gaussian targets, let \(T_\bullet\) denote either deterministic map
+and use the norm in \Cref{cor:local-linear-maps}.  Define
+\begin{equation}
+  K_{\mathrm{disc},\bullet}(\delta)
+  :=
+  h^{-1}
+  \sup_{\substack{a\in\mathcal H_\delta\\
+                   \norm{\xi}_{\star,\bullet}=1}}
+  \norm{D^2T_\bullet(a)[\xi,\xi]}_{\star,\bullet}.
+  \label{eq:local-discrete-modulus}
+\end{equation}
+Here
+\(\norm{\cdot}_{\star,\Riem}=\norm{\cdot}_\star\),
+\(\norm{\cdot}_{\star,\KL}=\norm{\cdot}_{\star,h}\), and
+\begin{equation}
+  \mathfrak b_{\Riem}(\delta):=\mathfrak b(\delta),
+  \qquad
+  \mathfrak b_{\KL}(\delta):=\mathfrak b_h(\delta).
+  \label{eq:local-discrete-b-factors}
+\end{equation}
+The supremum is finite because Gaussian score differentiation makes the two
+maps twice continuously differentiable on a neighborhood of the compact,
+spectrally bounded hull; compactness by itself would not be enough.  For
+fixed \(h\), the same continuity gives
+\(K_{\mathrm{disc},\bullet}(\delta)
+\to K_{\mathrm{disc},\bullet}(0)<\infty\) as
+\(\delta\downarrow0\), where the value at zero is the same supremum with
+\(a=a_\star\).  Since
+\(\mathfrak b_\bullet(\delta)\sqrt\delta\to0\), the radius condition below
+therefore holds for every sufficiently small positive \(\delta\).
+
+\begin{theorem}[Local deterministic maps]
+\label{thm:local-discrete-contraction}
+Suppose
+\[
+  0<h\leq
+  \min\!\left\{
+    \frac{2}{4+\Gamma},
+    \frac{1}{\betastar\max\{U_\delta,\alphastar^{-1}\}}
+  \right\}
+\]
+and
+\[
+  K_{\mathrm{disc},\bullet}(\delta)
+  \mathfrak b_\bullet(\delta)\sqrt\delta
+  \leq\gamma_\bullet,
+  \qquad
+  \gamma_{\Riem}:=\frac1{4+\Gamma},\quad
+  \gamma_{\KL}:=\frac1{4+2h+\Gamma}.
+\]
+If \(\Delta(a_0)\leq\delta\), then the iterates remain in
+\(\mathcal U_\delta\) and
+\begin{equation}
+  \norm{a_n-a_\star}_{\star,\bullet}
+  \leq
+  \left(1-\frac{h\gamma_\bullet}{2}\right)^n
+  \norm{a_0-a_\star}_{\star,\bullet}.
+  \label{eq:local-discrete-contraction}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Put
+\(\overline\Lambda_\delta
+:=\max\{U_\delta,\alphastar^{-1}\}\).
+The stepsize restriction and
+\Cref{prop:global:one-step-descent}, applied in optimizer-whitened
+coordinates with curvature bound \(\betastar\) and covariance upper barrier
+\(\overline\Lambda_\delta\), imply
+\(\calE(T_\bullet(a))\leq\calE(a)\) for every
+\(a\in\mathcal U_\delta\).  Thus \(\mathcal U_\delta\) is invariant by
+induction.
+
+Write \(\xi_n=a_n-a_\star\) and
+\(M_\bullet=DT_\bullet(a_\star)\).  Since
+\(T_\bullet(a_\star)=a_\star\), the integral Taylor formula gives
+\[
+  a_{n+1}-a_\star
+  =M_\bullet\xi_n
+   +\int_0^1(1-s)
+      D^2T_\bullet(a_\star+s\xi_n)[\xi_n,\xi_n]\,\dd s.
+\]
+The whole segment lies in \(\mathcal H_\delta\).  By
+\Cref{cor:local-linear-maps}, the linear term has norm at most
+\((1-h\gamma_\bullet)\norm{\xi_n}_{\star,\bullet}\), whereas
+\eqref{eq:local-discrete-modulus}, the radius hypothesis, and the
+energy-to-norm conversion with \(\mathfrak b_\bullet\) bound the remainder by
+\[
+  \frac h2K_{\mathrm{disc},\bullet}(\delta)
+  \norm{\xi_n}_{\star,\bullet}^2
+  \leq
+  \frac{h\gamma_\bullet}{2}
+  \norm{\xi_n}_{\star,\bullet}.
+\]
+Adding the two estimates and iterating proves
+\eqref{eq:local-discrete-contraction}.
+\end{proof}
+
+\begin{remark}[What is explicit]
+\label{rem:local-discrete-explicitness}
+The spectral gap, the stepsize restriction, the energy-to-norm conversion,
+and the exact Gaussian intervals are explicit.  For a general target, the
+certified radius is constructive through
+\eqref{eq:local-discrete-modulus}, but the current theory does not provide a
+closed-form bound for that supremum in the target parameters.  We therefore
+do not call the general discrete radius fully explicit.
+\end{remark}
+
+An online switch need not know \(\calE(a_\star)\).  In original coordinates,
+set
+\begin{equation}
+  \mathcal R_{\BW}(a)^2
+  :=
+  \norm{g(a)}^2+
+  \Tr\!\left[
+    (C^{-1}-A(a))C(C^{-1}-A(a))
+  \right],
+  \label{eq:local-bw-residual}
+\end{equation}
+where \(g(a)=-\E_{\N(m,C)}\nabla V\) and
+\(A(a)=\E_{\N(m,C)}\nabla^2V\).
+The Bures--Wasserstein PL inequality gives
+\begin{equation}
+  \mathcal R_{\BW}(a)^2\geq2\alpha\Delta(a).
+  \label{eq:local-bw-gate}
+\end{equation}
+Thus
+\(\mathcal R_{\BW}(a_n)^2\leq2\alpha\delta_{\mathrm{loc}}\)
+certifies entry into any previously validated local level
+\(\delta_{\mathrm{loc}}\).  This is an exact-expectation gate.  A Monte Carlo
+implementation requires a concentration margin, and the stochastic theory
+still needs its separate containment argument.
+
+\subsection{A sharp growing-dimensional obstruction}
+\label{sec:local-ridge}
+
+The universal lower bound in
+\Cref{thm:local-spectral-sandwich} cannot be replaced by a
+dimension-free logarithmic rate under a globally Lipschitz Hessian assumption
+alone.
+
+\begin{theorem}[Smooth convex-ridge obstruction]
+\label{thm:local-ridge-obstruction}
+There are numerical constants \(c,C>0\) and a sequence of smooth strongly
+convex potentials \(V_K:\R^{d_K}\to\R\), \(K\to\infty\), such that the
+standard Gaussian is the optimizing Gaussian,
+\[
+  \E\nabla V_K(Z)=0,\qquad
+  \E\nabla^2V_K(Z)=\Id,
+\]
+and the Hessians have a common global Lipschitz constant.  Moreover,
+\begin{equation}
+  d_K=\Theta(K^4),\qquad
+  \kappastar=\Theta(K^2),\qquad
+  \norm{\mathcal T}^2=\Theta(K),
+  \qquad
+  \gstar=\Theta(K^{-1}).
+  \label{eq:local-ridge-scaling}
+\end{equation}
+Equivalently,
+\[
+  d_K=\Theta(\kappastar^2),\qquad
+  \norm{\mathcal T}^2=\Theta(\kappastar^{1/2}),
+  \qquad
+  \gstar=\Theta(\kappastar^{-1/2}).
+\]
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The full construction and proof, given in
+\Cref{app:local-ridge-construction}, use a convex ridge with one
+distinguished coordinate and a weak tilt toward a radial block of
+\(d_K-1\) coordinates.  Its averaged Hessian is tuned to be the identity.
+A distributional Codazzi identity exposes a collective radial fluctuation
+that gives
+\(\norm{\mathcal T[X]}^2\geq K/2-O(1)\) for an explicit unit
+Frobenius matrix \(X\).  The polarized second-Hermite identity makes the
+packed generator self-adjoint.  The Rayleigh vector
+\[
+  Y=\frac{X}{\sqrt2},
+  \qquad
+  v=-\frac{\mathcal T[X]}2
+\]
+has quotient
+\[
+  \frac{2+\inner{X}{\mathcal H[X]}_{\Frob}
+    -\norm{\mathcal T[X]}^2}
+       {2+\norm{\mathcal T[X]}^2}
+  =O(K^{-1}),
+\]
+which proves \(\gstar\leq C/K\).  On this family
+\(\Gamma=\betastar-1=\Theta(K)\); the lower bound in
+\Cref{thm:local-spectral-sandwich} therefore gives
+\(\gstar\geq c/K\).  Mollifying the one-dimensional ridge profile and
+retuning its scalar tilt preserve the exact whitening, the scaling, and the
+common Hessian-Lipschitz bound.
+\end{proof}
+
+\begin{remark}[Scope of sharpness]
+\label{rem:local-ridge-scope}
+The construction saturates the \(\betastar-1\) branch of \(\Gamma\), not the
+\(\sqrt d\log\kappastar\) branch.  Its dimension grows as
+\(\Theta(\kappastar^2)\).  It rules out a dimension-uniform
+\((1+\log\kappastar)^{-1}\) local rate, but it neither supplies a
+fixed-dimensional counterexample nor determines the optimal dimension
+dependence.
+\end{remark}
+
+\subsection{Global-to-local composition}
+\label{sec:local-global-to-local}
+
+The preceding results now compose without identifying the global energy gap
+with the local parameter error.  Put
+\[
+  \underline\gamma_\star
+  :=\max\!\left\{\alphastar,\frac1{4+\Gamma}\right\}.
+\]
+
+\begin{theorem}[Deterministic three-stage complexity]
+\label{thm:local-three-stage}
+Assume the global curvature condition
+\eqref{eq:global:curvature-assumption} and the initial covariance band
+\eqref{eq:global:initial-covariance-band}; in particular,
+\(\Delta_0\), \(\lambda_0\), and \(\lambda_{\max}\) have the meanings fixed
+in \Cref{sec:global}, while \(\lambda_{0,\star}\) is defined in
+\eqref{eq:global:intrinsic-initial-floor}.
+Let \(\delta_{\mathrm c}>0\) satisfy the hypotheses of
+\Cref{thm:local-gaussian-core} with
+\(\gamma_0=\underline\gamma_\star\) and
+\(\rho_{\mathrm{core}}(\delta_{\mathrm c})
+\geq\underline\gamma_\star\).  Let
+\(\delta_{\Riem}\) and \(\delta_{\KL}\) satisfy the hypotheses of
+\Cref{thm:local-discrete-contraction} for the indicated schemes.  Such
+levels exist: \(\rho_{\mathrm{core}}(\delta)\to
+2\underline\gamma_\star\), and, for each fixed admissible \(h\), the
+discrete radius condition holds at every sufficiently small positive level.
+
+For the continuous flow, squared local error at most \(\varepsilon\) is
+reached by time
+\begin{equation}
+  T_{\mathrm c}(\varepsilon)
+  =O\!\left(
+  \begin{aligned}
+    &\logp\frac1{\betastar\lambda_{0,\star}}
+    +\kappastar\logp\frac{\Delta_0}{\delta_{\mathrm c}}\\[-1mm]
+    &\qquad +(4+\Gamma)
+      \logp\frac{\mathfrak b(\delta_{\mathrm c})^2
+                       \delta_{\mathrm c}}{\varepsilon}
+  \end{aligned}
+  \right),
+  \label{eq:local-three-stage-continuous}
+\end{equation}
+where the first line may be replaced by the smaller original-coordinate
+global bound from \Cref{thm:global:continuous-upper}.
+
+For the Riemannian map, suppose
+\[
+  0<h\leq\min\!\left\{
+    \frac1{2\beta\lambda_{\max}},
+    \frac2{4+\Gamma},
+    \frac1{\betastar
+      \max\{U_{\delta_{\Riem}},\alphastar^{-1}\}}
+  \right\}.
+\]
+Then \(\norm{a_N-a_\star}_\star^2\leq\varepsilon\) after
+\begin{equation}
+  N_{\Riem}(\varepsilon)
+  =O\!\left(
+    \frac1h\logp\frac1{\beta\lambda_0}
+    +\frac\kappa h\logp\frac{\Delta_0}{\delta_{\Riem}}
+    +\frac{4+\Gamma}{h}
+       \logp\frac{\mathfrak b(\delta_{\Riem})^2
+                        \delta_{\Riem}}{\varepsilon}
+  \right).
+  \label{eq:local-three-stage-riemannian}
+\end{equation}
+
+For the KL map, suppose
+\[
+  0<h\leq\min\!\left\{
+    \frac1{\beta\lambda_{\max}},
+    \frac2{4+\Gamma},
+    \frac1{\betastar
+      \max\{U_{\delta_{\KL}},\alphastar^{-1}\}}
+  \right\}.
+\]
+Then \(\norm{a_N-a_\star}_{\star,h}^2\leq\varepsilon\) after
+\begin{equation}
+  N_{\KL}(\varepsilon)
+  =O\!\left(
+    \frac1h\logp\frac1{\beta\lambda_0}
+    +\frac\kappa h\logp\frac{\Delta_0}{\delta_{\KL}}
+    +\frac{4+2h+\Gamma}{h}
+       \logp\frac{\mathfrak b_h(\delta_{\KL})^2
+                        \delta_{\KL}}{\varepsilon}
+  \right).
+  \label{eq:local-three-stage-kl}
+\end{equation}
+The hidden constants are numerical once the certified entry levels are
+fixed independently of \(\varepsilon\).
+\end{theorem}
+
+\begin{proof}
+Apply \Cref{thm:global:continuous-upper} until the continuous trajectory
+reaches \(\mathcal U_{\delta_{\mathrm c}}\).  At entry,
+\eqref{eq:local-norm-conversion} bounds the squared local norm by
+\(\mathfrak b(\delta_{\mathrm c})^2\delta_{\mathrm c}\), and
+\Cref{thm:local-gaussian-core} contracts it at rate at least
+\(\underline\gamma_\star\geq(4+\Gamma)^{-1}\).  This proves
+\eqref{eq:local-three-stage-continuous}.
+
+For either discrete scheme, \Cref{thm:global:discrete-upper} supplies the
+covariance-bootstrap and global-localization terms.  The energy-to-norm
+conversion at entry is \(\mathfrak b_\bullet(\delta_\bullet)^2
+\delta_\bullet\).  Restarting
+\Cref{thm:local-discrete-contraction} and using
+\(-\log(1-x)\geq x\) gives the final term in
+\eqref{eq:local-three-stage-riemannian} or
+\eqref{eq:local-three-stage-kl}.
+\end{proof}
+
+The first two stages above are measured in energy, while the last is measured
+in an optimizer-frozen parameter norm.  Keeping that change of error metric
+explicit prevents a local spectral statement from being mistaken for a
+global KL contraction.
