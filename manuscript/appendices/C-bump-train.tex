@@ -6,6 +6,18 @@ bound. The construction is one-dimensional, starts with the covariance already o
 scale, and has a dimension-free Hessian-Lipschitz constant, so the obstruction it exhibits is
 the global localization stage itself rather than the covariance burn-in.
 
+The following packaging of \Cref{thm:sharp-disc} records the $\Theta(\kappa^2)$ complexity
+reading at the globally certified stepsize.
+
+\begin{corollary}[Sharpness of the global-localization prefactor]\label{cor:sharp-disc}
+    For the globally fixed-step schemes \eqref{upd:Riem} and \eqref{upd:KL}, the factor
+    $\kappa/\Delta t$ in \Cref{thm:glob-Riem,thm:glob-KL} is sharp, up to constants independent
+    of $\kappa$ for each fixed $\gamma=\kappa\Delta t$, for a constant-factor reduction of the
+    energy. In particular, with $\Delta t=\Theta(\kappa^{-1})$, both methods have worst-case
+    global-localization complexity $\Theta(\kappa^2)$ in the condition-number exponent, and
+    this remains true under the additional assumption $\norm{V'''}_\infty=O(1)$.
+\end{corollary}
+
 \subsection{Scalar schemes and scope}
 
 We normalize $\alpha=1$ and $\beta=\kappa$, and write $a=(m,c)\in\R\times(0,\infty)$. For

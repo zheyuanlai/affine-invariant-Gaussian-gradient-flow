@@ -135,6 +135,19 @@ $\E[(u^\top Z)B(Z)]=\mathcal T^*[u]$ by Stein's identity and in the covariance d
 $\tfrac12\mathcal H[X]$ by \eqref{eq:price-directional} applied entrywise.
 \end{proof}
 
+\begin{lemma}[Diagonal-mode bounds]
+\label{lem:diagonal-modes}
+Fix an orthogonal basis in which $X=\diag(\lambda)$, and set
+$\widetilde T_{ki}:=\E[B_{ii}(Z)Z_k]$, $G_{ij}:=\E[B_{ii}(Z)Z_j^2]$, and
+$D:=G-\one\one^\top$. Then $D$ is symmetric,
+\begin{equation}
+\label{eq:T-Schur}
+    \widetilde T^\top\widetilde T\preceq\Id+D,
+    \qquad\text{and}\qquad
+    \lambda_{\max}(D)\leq\Gamma .
+\end{equation}
+\end{lemma}
+
 \begin{proof}[Proof of \Cref{lem:diagonal-modes}]
 Since $\E B=\Id$, two Gaussian integrations by parts give, for $i\neq j$,
 \[

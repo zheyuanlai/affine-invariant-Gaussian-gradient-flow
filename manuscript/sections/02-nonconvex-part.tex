@@ -79,13 +79,11 @@ so that $A_R (c) \to -1$ as $R \to \infty$, uniformly on compact intervals of $c
 
 The blow-up in \eqref{eq:KL-cov-map} is caused by the approaching loss of positive definiteness of the rational resolvent, and it occurs despite the uniform Hessian bound $|V_R''| \leq 1$; taken together, the two propositions show that a global smoothness constant cannot replace covariance control in a trajectory-wise Fisher--Rao theorem.
 
-\begin{remark}
-    The Bures--Wasserstein forward--backward method carries a different guarantee beyond log-concavity. Under the assumptions and stepsize $\eta$ of \citet[Theorem~5.5]{diao2023forward}, its iterates satisfy the running-minimum bound
-    \begin{equation*}
-        \min_{0 \leq n < N} \| \grad^\BW \calE (a_n) \|_\BW^2 \leq \frac{150 \{ \calE (a_0) - \inf \calE \}}{\eta N}.
-    \end{equation*}
-    This is a stationarity statement in the Bures--Wasserstein geometry and does not control the pointwise Fisher--Rao residual appearing in \Cref{prop:cascade-Riem,prop:pole-KL}. We use it only as a comparison between the two geometries.
-\end{remark}
+The Bures--Wasserstein forward--backward method carries a different guarantee beyond log-concavity. Under the assumptions and stepsize $\eta$ of \citet[Theorem~5.5]{diao2023forward}, its iterates satisfy the running-minimum bound
+\begin{equation*}
+    \min_{0 \leq n < N} \| \grad^\BW \calE (a_n) \|_\BW^2 \leq \frac{150 \{ \calE (a_0) - \inf \calE \}}{\eta N}.
+\end{equation*}
+This is a stationarity statement in the Bures--Wasserstein geometry and does not control the pointwise Fisher--Rao residual appearing in \Cref{prop:cascade-Riem,prop:pole-KL}. We use it only as a comparison between the two geometries.
 
 \subsection{A covariance-constrained KL scheme}
 
@@ -145,30 +143,12 @@ where the orientation of the covariance divergence matters: the forward divergen
     so $\widetilde{C}_{n+1}$ is well defined, and $C_{n+1} \in [\lambda_- I, \lambda_+ I]$ by construction. Writing $\calE = \Phi + \calE_2 + \mathrm{const}$ with $\Phi (C) = -\frac{1}{2} \log \det C$ and $\calE_2 (a) = \E_{\rho_a} [V (\theta)]$, a square-root coupling of $\rho_{a_n}$ and $\rho_{a_{n+1}}$ together with the scalar inequality $x - 1 - \log x \geq (\sqrt{x} - 1)^2$ shows that $\calE_2$ is relatively smooth with constant $L = 2 \beta \lambda_+$ with respect to the split divergence built from $\frac12 \| \cdot \|_{C_n^{-1}}^2$ and $\KL (\N (0, \cdot) \| \N (0, C_n))$. The pair $(m_{n+1}, C_{n+1})$ is the unique minimizer over $\Aspace'$ of the associated proximal model, because the covariance part of that model is, up to an additive constant, a multiple of $D_\Phi (\cdot, \widetilde{C}_{n+1})$, whose Bregman projection onto $[\lambda_- I, \lambda_+ I]$ is spectral clipping. Mean optimality then contributes $b_n^\top (m_{n+1} - m_n) = -\frac{2}{\Delta t} \cdot \frac12 \| m_{n+1} - m_n \|_{C_n^{-1}}^2$, while the constrained log-determinant three-point inequality contributes the reverse covariance divergence in \eqref{eq:split-stationarity}. Since $L \Delta t \leq 1$, the forward remainder is absorbed and the two estimates combine to \eqref{eq:clip-descent}. Summing \eqref{eq:clip-descent} over $0 \leq n < N$ and bounding the minimum by the average gives \eqref{eq:clip-runmin}. The details are given in \Cref{app:nonconvex}.
 \end{proof}
 
-\begin{corollary}\label{cor:clip-KL-full}
-    Under the assumptions of \Cref{thm:clip-KL}, the full successive-Gaussian reverse KL divergence satisfies
-    \begin{equation*}
-        \min_{0 \leq n < N} \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) \leq \frac{\lambda_+}{\lambda_-} \frac{\Delta t}{N} \left\{ \calE (a_0) - \calE (a_N) \right\}.
-    \end{equation*}
-\end{corollary}
-
-\begin{proof}
-    The reverse KL divergence between successive Gaussians splits as
-    \begin{equation*}
-        \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) = \KL \left( \N (0, C_n) \, \middle\| \, \N (0, C_{n+1}) \right) + \frac{1}{2} \| m_{n+1} - m_n \|_{C_{n+1}^{-1}}^2,
-    \end{equation*}
-    and the mean block is measured in $C_{n+1}^{-1}$ rather than $C_n^{-1}$. Feasibility gives
-    \begin{equation*}
-        C_{n+1}^{-1} \preceq \lambda_-^{-1} I \preceq \frac{\lambda_+}{\lambda_-} C_n^{-1},
-    \end{equation*}
-    so the full divergence is at most $(\lambda_+ / \lambda_-) \mathsf{S}_n$, and \eqref{eq:clip-runmin} completes the proof.
-\end{proof}
+The full successive-Gaussian KL bound with the $\lambda_+/\lambda_-$ factor is
+\Cref{cor:clip-KL-full} in \Cref{app:nonconvex}.
 
 For centered scalar trajectories the mean term vanishes, so the factor-one bound \eqref{eq:clip-runmin} is the quantity plotted in \Cref{sec:numerics-nonconvex}.
 
-\begin{remark}
-    \Cref{thm:clip-KL} certifies stationarity of the projected split map on the covariance-truncated set $\Aspace'$. If an iterate is pinned at the upper clip $\lambda_+ I$, then $\mathsf{S}_n$ can vanish while the unconstrained Fisher--Rao gradient points outward. The theorem therefore does not imply that the unconstrained gradient is small, nor that the iterates converge to the unconstrained Gaussian optimizer $a_\star$.
-\end{remark}
+\Cref{thm:clip-KL} certifies stationarity of the projected split map on the covariance-truncated set $\Aspace'$. If an iterate is pinned at the upper clip $\lambda_+ I$, then $\mathsf{S}_n$ can vanish while the unconstrained Fisher--Rao gradient points outward. The theorem therefore does not imply that the unconstrained gradient is small, nor that the iterates converge to the unconstrained Gaussian optimizer $a_\star$.
 
 % SOURCES:
 % natural-gradient.tex l.198-220 (Corollary, continuous stationarity) -> cor:stationary-cont (verbatim modulo notation/labels)

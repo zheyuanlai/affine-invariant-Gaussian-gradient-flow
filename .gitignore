@@ -66,3 +66,7 @@ local-convergence/
 # regenerate with scripts/natural_gradient_stl_variance/run_algorithm_grid.py).
 # The committed algorithm_summary.csv / tail_noise_floor.csv are the evidence.
 outputs/natural_gradient_stl_variance/algorithm_results_long.csv
+
+# Exception: config-derived target metadata (pure function of the committed
+# config; required by reports/make_report_assets.py --only covariance_bootstrap)
+!outputs/natural_gradient_covariance_bootstrap/target_metadata.json

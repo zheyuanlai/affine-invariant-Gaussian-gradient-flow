@@ -317,7 +317,16 @@ The pole experiment runs the unprojected resolvent \eqref{eq:KL-cov-map} of
 \Cref{prop:pole-KL} with $R = 1000$, $\Delta t = 1$, $c_0 = 1-\varepsilon$,
 $\varepsilon\in\{10^{-1},10^{-2},10^{-3},10^{-4},10^{-5},10^{-6}\}$, and a
 two-step cap. The middle panel plots the squared gradient after the first step
-against $\varepsilon$, together with the reference $4\varepsilon^{-2}$.
+against $\varepsilon$, together with the reference $4\varepsilon^{-2}$. At
+$R=1000$ the sufficient condition $R_\varepsilon^2\geq2\varepsilon^{-2}$ used in
+the proof of \Cref{prop:pole-KL} holds only for
+$\varepsilon\in\{10^{-1},10^{-2}\}$; the measured-to-reference ratios are
+$0.90$ and $0.99$ there, remain $0.99$ and $0.89$ at the uncertified points
+$10^{-3}$ and $10^{-4}$, and collapse to $0.39$ and $0.014$ at $10^{-5}$ and
+$10^{-6}$, where the fixed truncation radius saturates the pole. The
+small-$\varepsilon$ bend of the middle panel is this fixed-$R$ saturation and
+not a failure of the $\varepsilon^{-2}$ law along the proposition's admissible
+sequences $R_\varepsilon\to\infty$.
 
 The clipped experiment runs the scalar form of \eqref{upd:clip-KL},
 \begin{equation*}
@@ -368,7 +377,7 @@ The scientific parameters above are recoverable from the configurations,
 source, and raw columns used by the selected figures, but some run-level
 provenance files that the runners are designed to write are not committed:
 \path{outputs/natural_gradient_covariance_bootstrap} lacks
-\path{target_metadata.json} and \path{run_metadata.json};
+\path{run_metadata.json};
 \path{outputs/natural_gradient_stl_variance} lacks
 \path{algorithm_results_long.csv}, \path{target_metadata.json},
 \path{run_metadata.json}, \path{estimator_target_metadata.json}, and
@@ -381,13 +390,19 @@ files, and \path{requirements.txt} and \path{requirements-gpu.txt} give lower
 dependency bounds rather than a locked environment. These omissions do not
 change the selected data-to-figure mappings, since the two STL panels need only
 the surviving estimator and tail CSVs and the covariance panels need only the
-surviving long and transport-summary CSVs. They do mean that
-\path{reports/make_report_assets.py}, invoked with either
-\texttt{--only stl\_variance} or \texttt{--only covariance\_bootstrap}, does not
-run to completion from the current snapshot, because the group-level builder
-also loads the missing metadata or supplementary trajectory files before
-producing all of that group's tables and figures. Rerunning the corresponding
-experiment scripts restores those files; no missing value has been guessed here.
+surviving long and transport-summary CSVs. The target-level metadata of
+the covariance-bootstrap group is a deterministic function of the committed
+configuration and has been regenerated from it
+(\path{target_metadata.json}); the run-level metadata of the original runs is
+not reconstructed. The asset builder \path{reports/make_report_assets.py}
+treats the GPU-regenerable trajectory file \path{algorithm_results_long.csv}
+and the algorithm run metadata as optional and builds every figure and table
+used by this manuscript from the committed summary files, so both
+\texttt{--only stl\_variance} and \texttt{--only covariance\_bootstrap} run to
+completion from a clean checkout; the supplementary algorithm-gap panels, which
+this manuscript does not use, require rerunning
+\path{scripts/natural_gradient_stl_variance/run_algorithm_grid.py} on a CUDA
+host. No missing value has been guessed here.
 General WFR experiments under \path{outputs/wfr_gradient_flow} are not used in
 any figure or claim in this manuscript.
 \par\endgroup

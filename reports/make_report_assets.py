@@ -1262,7 +1262,9 @@ def _tab_stl_algorithm_noise_floor(tail_df):
 
 def _tab_stl_runtime(alg_summary, est_meta, alg_meta):
     """Runtime / environment summary for both experiments."""
-    dev = alg_meta.get("torch_info", {}).get("device_name") or alg_meta.get("device")
+    alg_meta = alg_meta or {}
+    dev = (alg_meta.get("torch_info", {}).get("device_name")
+           or alg_meta.get("device") or "--")
     backend = alg_meta.get("backend", "--")
     est_wall = est_meta.get("wall_time_total", float("nan")) if est_meta else float("nan")
     alg_wall = alg_meta.get("wall_time_total", float("nan"))
@@ -1295,11 +1297,21 @@ def build_stl_variance_assets():
 
     est_df = pd.read_csv(os.path.join(STL_DIR, "estimator_variance.csv"))
     est_sum = pd.read_csv(os.path.join(STL_DIR, "estimator_variance_summary.csv"))
-    long_df = pd.read_csv(os.path.join(STL_DIR, "algorithm_results_long.csv"))
     tail_df = pd.read_csv(os.path.join(STL_DIR, "tail_noise_floor.csv"))
     alg_sum = pd.read_csv(os.path.join(STL_DIR, "algorithm_summary.csv"))
-    with open(os.path.join(STL_DIR, "run_metadata.json")) as fh:
-        alg_meta = json.load(fh)
+    # The raw trajectory CSV (>100 MB) and the run metadata are regenerable only
+    # on the original GPU host (see .gitignore); every asset the manuscript uses
+    # is built from the committed summary CSVs, so both inputs are optional.
+    long_path = os.path.join(STL_DIR, "algorithm_results_long.csv")
+    long_df = pd.read_csv(long_path) if os.path.exists(long_path) else None
+    if long_df is None:
+        print("  [info] algorithm_results_long.csv absent -> skipping "
+              "fig_stl_algorithm_gap_* (supplementary; not used by the manuscript)")
+    alg_meta = None
+    alg_meta_path = os.path.join(STL_DIR, "run_metadata.json")
+    if os.path.exists(alg_meta_path):
+        with open(alg_meta_path) as fh:
+            alg_meta = json.load(fh)
     est_meta = None
     est_meta_path = os.path.join(STL_DIR, "estimator_run_metadata.json")
     if os.path.exists(est_meta_path):
@@ -1310,7 +1322,7 @@ def build_stl_variance_assets():
         if kind in set(est_df.kind.unique()):
             _savefig(P.fig_estimator_variance_ratio(est_df, kind),
                      f"fig_stl_estimator_variance_ratio_{STL_KIND_FILE[kind]}")
-        if kind in set(long_df.kind.unique()):
+        if long_df is not None and kind in set(long_df.kind.unique()):
             fig = P.fig_algorithm_gap(long_df, kind)
             if fig is not None:
                 _savefig(fig, f"fig_stl_algorithm_gap_{STL_KIND_FILE[kind]}")

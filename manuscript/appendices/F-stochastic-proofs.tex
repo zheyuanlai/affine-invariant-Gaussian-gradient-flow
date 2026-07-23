@@ -7,6 +7,25 @@ $R(a)=C^{-1}-A(a)$, the intrinsic fluctuation $\Psi$ of \Cref{def:Psi}, and the 
 
 \subsection{The rescued initializer}
 
+\begin{lemma}[Rescue energy for nonquadratic targets]
+\label{lem:rescue-energy}
+Under \Cref{assump:logconcave-smooth}, the quadratic rescue of \Cref{def:rescue} gives $\Delta(a_0)$ deterministic and finite.
+Under the additional \Cref{assump:hess-lip}, writing $r_{\mathrm{in}}:=\norm{m_{\mathrm{in}}-m_\star}$,
+\[
+    \norm{m_0-m_\star}\leq\frac{\LH}{2\alpha}\Bigl(r_{\mathrm{in}}^2+\frac{N_\theta}\alpha\Bigr),
+    \qquad
+    \norm{C_0-C_\star}_{\Frob}\leq\frac{\sqrt{N_\theta}\,\LH}{\alpha^2}\Bigl(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha}\Bigr),
+\]
+and hence
+\[
+    \Delta(a_0)
+    \leq
+    \frac{\beta\LH^2}{8\alpha^2}\Bigl(r_{\mathrm{in}}^2+\frac{N_\theta}\alpha\Bigr)^2
+    +\frac{\beta^2N_\theta\LH^2}{4\alpha^4}\Bigl(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha}\Bigr)^2,
+\]
+which is quadratic in $\LH$ and vanishes when $\LH=0$.
+\end{lemma}
+
 \begin{proof}[Proof of \Cref{lem:rescue-energy}]
 Write $d:=m_{\mathrm{in}}-m_\star$ and $\bar H:=\int_0^1\nabla^2V(m_\star+td)\dd t$, so that
 $\nabla V(m_{\mathrm{in}})=\nabla V(m_\star)+\bar Hd$ by the integral Taylor form. Note that $m_\star$
@@ -67,6 +86,107 @@ $\LH=0$.
 
 \subsection{The global one-step estimates}
 
+\begin{lemma}[Self-bounding estimate for the intrinsic fluctuation]
+\label{lem:Psi-selfbound}
+Under \Cref{assump:logconcave-smooth}, if $C\preceq\Lambda\Id$ then
+\begin{equation}
+\label{eq:Psi-selfbound}
+    \Psi(a)\leq2\beta\Lambda N_\theta+\beta\Lambda\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2
+    \leq2\beta\Lambda N_\theta+2\beta\Lambda\,\Gradnorm(a)^2 .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write $B_X:=C^{1/2}\nabla^2V(X)C^{1/2}$ and $S_A:=C^{1/2}A(a)C^{1/2}=\E[B_X]$. First,
+$\Psi(a)=\E\Tr(B_X^2)-\Tr(S_A^2)\leq\E\Tr(B_X^2)$. Second, $0\preceq B_X\preceq\beta C\preceq\beta\Lambda\Id$
+almost surely, and $0\preceq M\preceq L\Id$ implies $M^2\preceq LM$, so $B_X^2\preceq\beta\Lambda B_X$
+and $\E\Tr(B_X^2)\leq\beta\Lambda\Tr(S_A)$. Third, $s\leq2+(s-1)^2$ for every real $s$, so
+$\Tr(S_A)\leq2N_\theta+\norm{S_A-\Id}_{\Frob}^2$; since $S_A-\Id=-C^{1/2}R(a)C^{1/2}$, this gives the
+first inequality, and $\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2\leq2\Gradnorm(a)^2$ gives the second.
+\end{proof}
+
+\begin{lemma}[Hessian-Lipschitz control of the intrinsic fluctuation]
+\label{lem:Psi-hesslip}
+Under \Cref{assump:hess-lip}, the anisotropic bound
+$\Psi(a)\leq\LH^2\,\Tr(C^2)\,\Tr C\leq\LH^2\norm C_\op(\Tr C)^2$ holds. On the band
+$C\preceq\tfrac1\alpha\Id$,
+\begin{equation}
+\label{eq:Psi-hesslip}
+    \Psi(a)\leq\Psi_H:=\frac{N_\theta^2\LH^2}{\alpha^3}=N_\theta^2\barLH^2 .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write $X=m+C^{1/2}Z$ and $F(Z):=C^{1/2}\nabla^2V(m+C^{1/2}Z)C^{1/2}$. Gaussian Poincar\'e applied
+componentwise gives $\Psi(a)=\E\norm{F(Z)-\E F(Z)}_{\Frob}^2\leq\E\norm{D_ZF(Z)}_{\mathrm{HS}}^2$. For
+a unit vector $u$, $D_ZF(Z)[u]=C^{1/2}M_uC^{1/2}$ with $M_u:=D(\nabla^2V)(X)[C^{1/2}u]$ symmetric and
+$\norm{M_u}_\op\leq\LH(u^\top Cu)^{1/2}$. In the eigenbasis of $C$ with eigenvalues $c_i$,
+Cauchy--Schwarz on the weights gives
+$\norm{C^{1/2}M_uC^{1/2}}_{\Frob}^2=\sum_{ij}c_ic_j(M_u)_{ij}^2\leq\Tr(C^2M_u^2)\leq\norm{M_u}_\op^2\Tr(C^2)$,
+so $\norm{D_ZF(Z)[u]}_{\Frob}^2\leq\LH^2(u^\top Cu)\Tr(C^2)$; summing over an orthonormal basis gives
+$\norm{D_ZF(Z)}_{\mathrm{HS}}^2\leq\LH^2\,\Tr C\,\Tr(C^2)$, and $\Tr(C^2)\leq\norm C_\op\Tr C$ gives the
+coarser form. On $C\preceq\tfrac1\alpha\Id$ one has $\Tr(C^2)\leq N_\theta/\alpha^2$ and
+$\Tr C\leq N_\theta/\alpha$.
+\end{proof}
+
+\begin{lemma}[The KL resolvent update is an exponential retraction]
+\label{lem:KL-retraction}
+Fix $a=(m,C)$ with $\tfrac1\beta\Id\preceq C\preceq\tfrac1\alpha\Id$ and
+$\alpha\Id\preceq\overline H\preceq\beta\Id$, and set $P:=C^{1/2}\overline HC^{1/2}$, so that
+$\tfrac1\kappa\Id\preceq P\preceq\kappa\Id$. Write $\overline S:=\Id-P$ and define the logarithmic
+tangent
+\begin{equation}
+\label{eq:Wlog}
+    W(P):=\log(1+\Delta t)\,\Id-\log(\Id+\Delta t\,P).
+\end{equation}
+Then the KL covariance update $C^+=(1+\Delta t)(C^{-1}+\Delta t\,\overline H)^{-1}$ satisfies
+\begin{equation}
+\label{eq:KL-retr}
+    C^+=C^{1/2}e^{W(P)}C^{1/2},
+    \qquad\text{equivalently}\qquad
+    a^+=\Retr_a\bigl(\Delta t\,C\overline b,\;C^{1/2}W(P)C^{1/2}\bigr).
+\end{equation}
+Moreover, with $\mathcal R(P):=W(P)-\Delta t\,\overline S$,
+\begin{equation}
+\label{eq:Wlog-bounds}
+    \norm{W(P)}_\op\leq\Delta t\,\kappa,
+    \qquad
+    \norm{W(P)}_{\Frob}\leq\Delta t\,\norm{\overline S}_{\Frob},
+    \qquad
+    \norm{\mathcal R(P)}_{\Frob}\leq\kappa\,\Delta t^2\,\norm{\overline S}_{\Frob},
+\end{equation}
+so for $\Delta t\leq1/(8\kappa)$ the tangent $\zeta:=(\Delta t\,C\overline b,\,C^{1/2}W(P)C^{1/2})$
+satisfies $\norm{W(P)}_\op\leq\tfrac18<1$ and hence the scope condition of
+\eqref{eq:retr-smooth-restated}.
+\end{lemma}
+
+\begin{proof}
+Since $C^{-1}+\Delta t\,\overline H=C^{-1/2}(\Id+\Delta t\,P)C^{-1/2}$, we have
+$C^+=C^{1/2}\bigl[(1+\Delta t)(\Id+\Delta t\,P)^{-1}\bigr]C^{1/2}$, and, $\log(1+\Delta t)\Id$ and
+$\log(\Id+\Delta t\,P)$ being commuting functions of $P$,
+$e^{W(P)}=(1+\Delta t)(\Id+\Delta t\,P)^{-1}$; the retraction form follows from
+$\Retr_a(u,U)=(m+u,\,C^{1/2}\exp(C^{-1/2}UC^{-1/2})C^{1/2})$ with $U=C^{1/2}W(P)C^{1/2}$. The band
+$\tfrac1\kappa\Id\preceq P\preceq\kappa\Id$ is $\alpha C\preceq P\preceq\beta C$ combined with
+$\tfrac1\beta\Id\preceq C\preceq\tfrac1\alpha\Id$. Each eigenvalue $p\in[\tfrac1\kappa,\kappa]$ of $P$
+contributes $w(p)=\log(1+\Delta t)-\log(1+\Delta t\,p)=\int_p^1\tfrac{\Delta t}{1+\Delta t\,r}\dd r$, and
+$0\leq\tfrac{\Delta t}{1+\Delta t\,r}\leq\Delta t$ for $r\geq0$ gives $|w(p)|\leq\Delta t|1-p|$, whence
+the first two bounds of \eqref{eq:Wlog-bounds}. For the remainder,
+$w(p)-\Delta t(1-p)=-\Delta t^2\int_p^1\tfrac r{1+\Delta t\,r}\dd r$ and $0\leq\tfrac r{1+\Delta t\,r}\leq r\leq\kappa$
+give $|w(p)-\Delta t(1-p)|\leq\kappa\Delta t^2|1-p|$; summing over eigenvalues gives the third.
+\end{proof}
+
+\begin{lemma}[Riemannian stochastic one-step descent]
+\label{lem:onestep-stoch-Riem}
+Assume \Cref{assump:logconcave-smooth} and $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$. For
+one step of \eqref{upd:Riem-stoch} with $0<\Delta t\leq1/\kappa$,
+\begin{equation}
+\label{eq:Riem-onestep-Psi}
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq\Delta_n-\Delta t\Bigl(1-\kappa\Delta t\bigl(1+\tfrac2B\bigr)\Bigr)\Gradnorm(a_n)^2
+    +\frac{3\kappa\Delta t^2}{2B}\Psi(a_n).
+\end{equation}
+\end{lemma}
+
 \begin{proof}[Proof of \Cref{lem:onestep-stoch-Riem}]
 By \Cref{lem:stoch-band}(1) the band $C_n\preceq\tfrac1\alpha\Id$ holds pathwise, so the scope
 condition $\norm{C_n^{-1/2}UC_n^{-1/2}}_\op\leq1$ of the retraction-smoothness estimate
@@ -83,6 +203,18 @@ intrinsic variance bound \eqref{eq:intrinsic-STL} gives
 $\E[\norm{\widehat\grad\calE(a_n)}_{a_n}^2\mid\Fil_n]\leq(1+\tfrac2B)\Gradnorm(a_n)^2+\tfrac3{2B}\Psi(a_n)$.
 Collecting terms gives \eqref{eq:Riem-onestep-Psi}.
 \end{proof}
+
+\begin{lemma}[KL stochastic one-step descent]
+\label{lem:onestep-stoch-KL}
+Assume \Cref{assump:logconcave-smooth} and $\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$. For
+one step of \eqref{upd:KL-stoch} with $0<\Delta t\leq1/(8\kappa)$,
+\begin{equation}
+\label{eq:KL-onestep-Psi}
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq\Delta_n-\frac{\Delta t}2\,\Gradnorm(a_n)^2
+    +\frac{7\kappa\,\Delta t^2}{4B}\,\Psi(a_n).
+\end{equation}
+\end{lemma}
 
 \begin{proof}[Proof of \Cref{lem:onestep-stoch-KL}]
 Suppress the index $n$ and condition on $\Fil_n$. Write $A:=A(a)$, $R:=C^{-1}-A$, $S:=C^{1/2}RC^{1/2}$,
@@ -201,6 +333,24 @@ $1-\tfrac B{56\kappa^3}$.
 
 \subsection{Local variance and the matrix-exponential perturbation}
 
+\begin{lemma}[Local variance decomposition]
+\label{lem:loc-variance}
+Assume \Cref{assump:logconcave-smooth,assump:hess-lip}, work in whitened coordinates, and let
+$a=(m,C)$ with $\tfrac12\Id\preceq C\preceq\tfrac32\Id$. Then for a single sample $X\sim\rho_a$,
+\begin{equation}
+\label{eq:local-var}
+    \E\Bigl[\norm{\varepsilon_b}^2+\tfrac12\norm{\varepsilon_H}_{\Frob}^2\Bigr]
+    \leq V_0+V_1\,\norm{a-a_\star}_\star^2,
+    \qquad
+    V_0:=3N_\theta^2\LHs^2,\quad V_1:=24+6N_\theta\LHs^2 ,
+\end{equation}
+and by conditional independence the minibatch noise obeys
+$\E[\norm{\overline\varepsilon_b}^2+\tfrac12\norm{\overline\varepsilon_H}_{\Frob}^2\mid\Fil]\leq B^{-1}(V_0+V_1\norm{a-a_\star}_\star^2)$.
+At the optimizer,
+$\E[\norm{\varepsilon_b(a_\star)}^2+\tfrac12\norm{\varepsilon_H(a_\star)}_{\Frob}^2]\leq\sigma_\star^2:=\tfrac32N_\theta^2\LHs^2$,
+which is $0$ for Gaussian targets.
+\end{lemma}
+
 \begin{proof}[Proof of \Cref{lem:loc-variance}]
 Write $H(x):=\nabla^2\widehat V(x)$, so $\varepsilon_H=H(X)-A(a)$ and $A(a)=\E_{\rho_a}[H(X)]$.
 Gaussian Poincar\'e applied componentwise to $X\mapsto H_{ij}(X)$ with $X\sim\N(m,C)$
@@ -288,6 +438,18 @@ $\norm{\Phi''(s)}_{\Frob}\leq e^{\Delta t}\Delta t^2\norm\Xi_\op\norm\Xi_{\Frob}
 $\int_0^1(1-s)\dd s=\tfrac12$ with $e^{\Delta t}\leq e$ gives (ii).
 \end{proof}
 
+\begin{lemma}[One-step stochastic perturbation, Riemannian]
+\label{lem:perturb-Riem}
+Assume \Cref{assump:logconcave-smooth,assump:hess-lip}, work in whitened coordinates, and let
+$a=(m,C)$ with $\tfrac12\Id\preceq C\preceq\tfrac32\Id$ and $\norm{T_{\Riem}(a)-a_\star}_\star\leq1$,
+where $T_{\Riem}$ is the deterministic map of \eqref{upd:Riem} and $\widehat a^+$ one stochastic step
+of \eqref{upd:Riem-stoch} with batch $B$ and $0<\Delta t\leq1$. Then
+\[
+    \E\bigl[\norm{\widehat a^+-a_\star}_\star^2\mid\Fil\bigr]
+    \leq\norm{T_{\Riem}(a)-a_\star}_\star^2+\frac{64\,\Delta t^2}{B}\bigl(V_0+V_1\norm{a-a_\star}_\star^2\bigr).
+\]
+\end{lemma}
+
 \begin{proof}[Proof of \Cref{lem:perturb-Riem}]
 Let $a^+:=T_{\Riem}(a)$ and $\widehat a^+-a^+=(\delta_m,\delta_C)$. Expanding the whitened square,
 \begin{equation}
@@ -328,6 +490,17 @@ Adding the two contributions, the coefficient of $\Delta t^2Q$ is
 $\tfrac{81e^2}{16}+\tfrac{27e}{4\sqrt2}<64$, numerically about $50.4$. Bounding
 $Q\leq B^{-1}(V_0+V_1\norm{a-a_\star}_\star^2)$ by \Cref{lem:loc-variance} gives the claim.
 \end{proof}
+
+\begin{lemma}[One-step stochastic perturbation, KL]
+\label{lem:perturb-KL}
+Under the hypotheses of \Cref{lem:perturb-Riem} but for the KL maps \eqref{upd:KL} and
+\eqref{upd:KL-stoch} and the weighted norm $\norm\cdot_{\star,\Delta t}$, with
+$\norm{T_{\KL}(a)-a_\star}_{\star,\Delta t}\leq1$,
+\[
+    \E\bigl[\norm{\widehat a^+-a_\star}_{\star,\Delta t}^2\mid\Fil\bigr]
+    \leq\norm{T_{\KL}(a)-a_\star}_{\star,\Delta t}^2+\frac{68\,\Delta t^2}{B}\bigl(V_0+V_1\norm{a-a_\star}_\star^2\bigr).
+\]
+\end{lemma}
 
 \begin{proof}[Proof of \Cref{lem:perturb-KL}]
 Let $a^+:=T_{\KL}(a)$, $P:=C^{-1}+\Delta t\,A(a)$ and
@@ -499,6 +672,55 @@ $\E\Delta_n\leq K/t$,
     \leq\frac K{t+1},
 \]
 using $2K-S\geq K$ and $(t-1)(t+1)\leq t^2$. Since $t+1=(n+1)+n_0$, the induction closes.
+\end{proof}
+
+\subsection{Gaussian targets in the local phase}
+
+\begin{corollary}[Gaussian targets in the local phase]
+\label{cor:stoch-loc-Gauss}
+Let $V$ be as in \Cref{prop:Gauss-nofloor}, so that $\LHs=0$ and $V_0=\sigma_\star^2=\eta_\bullet=0$,
+and adopt the stepsize hypotheses of \Cref{thm:stoch-loc-Riem} resp.\ \Cref{thm:stoch-loc-KL}. For a
+Gaussian target $\Gamma=0$, so the first branch reads $\Delta t\leq\tfrac12$, while the second
+branch persists: $\LHs=0$ leaves $V_1=24$, so the hypotheses are
+$0<\Delta t\leq\min\{\tfrac12,\,B/(256\,A_{\Riem}V_1)\}$ with $A_{\Riem}=4$, and
+$0<\Delta t\leq\min\{\tfrac12,\,B/(272\,A_{\KL}V_1)\}$ respectively. Only the additive floors, not
+the state-dependent stepsize restriction, are removed by Gaussianity. Three cases are
+distinguished by the whitened covariance initialization.
+\begin{enumerate}
+\item[(a)] For generic $C_0\neq\Id$, the additive floors of
+\Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL} vanish and the exit bound of \Cref{prop:exit-prob} loses
+its horizon-growing term,
+\[
+    \E\bigl[\norm{a_N-a_\star}_{\star,\bullet}^2;\tau_\bullet>N\bigr]\leq(1-\mu_\bullet\Delta t)^N\norm{a_0-a_\star}_{\star,\bullet}^2,
+    \qquad
+    \Prob(\tau_{r_\bullet}\leq N)\leq\frac{\norm{a_0-a_\star}_{\star,\bullet}^2}{r_\bullet^2},
+\]
+both uniformly in $N$. These remain mean-square and in-probability statements: the mean-score noise
+$\varepsilon_b=(C^{-1/2}-C^{1/2})Z$ is nonzero whenever $C\neq\Id$, the state-dependent constant
+$V_1=24$ survives because $V_1$ does not contain $\LHs$, and the exit probability is not zero.
+\item[(b)] For matched covariance $C_0=\Id$, that is $C_0=C_\star$, with $m_0\neq0$, one has
+$\varepsilon_b=0$ and $\varepsilon_H=0$ pathwise, both covariance updates fix $C_n\equiv\Id$, and the
+mean update is deterministic, $m_{n+1}=(1-\Delta t)m_n$ for both schemes. The iterate is pathwise
+deterministic and contracts to $a_\star$ with no noise, so no exit control is needed. Zero-noise
+pathwise evolution therefore requires only $C_0=C_\star$, not $a_0=a_\star$.
+\item[(c)] Under quadratic rescue the initializer is $a_0=a_\star$ by \Cref{thm:rescue-Gauss}, the
+special case of (b) with $m_0=0$; then $a_n\equiv a_\star$ and no local phase is needed.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+For a quadratic potential $\nabla^2\widehat V\equiv C_\star^{1/2}HC_\star^{1/2}$ is constant, so
+$\LHs=0$, and \Cref{lem:loc-variance} gives $V_0=3N_\theta^2\LHs^2=0$ and
+$\sigma_\star^2=\tfrac32N_\theta^2\LHs^2=0$, whence $\eta_\bullet=0$. Setting $\eta_\bullet=0$ in
+\Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL,prop:exit-prob} gives the two displays of (a). For
+$\widehat V(z)=\tfrac12\norm z^2$ and $X=m+C^{1/2}Z$ the whitened single-sample mean noise is
+$\varepsilon_b=-C^{1/2}Z+C^{-1/2}Z=(C^{-1/2}-C^{1/2})Z$, nonzero for $C\neq\Id$, so no pathwise or
+zero-exit conclusion follows. For (b), $C_0=\Id$ gives $\varepsilon_b=0$ and, since
+$\nabla^2\widehat V\equiv\Id$, $\overline H_n=\Id=A(a)$ and $\varepsilon_H=0$ pathwise; the Riemannian
+update returns $C_1=\exp(\Delta t\cdot0)=\Id$ and the KL update
+$C_1=(1+\Delta t)(\Id+\Delta t\Id)^{-1}=\Id$, so $C_n\equiv\Id$, and then
+$\overline b_n=g(a_n)=-m_n$ gives $m_{n+1}=(1-\Delta t)m_n$. For (c), \Cref{thm:rescue-Gauss} gives
+$a_0=a_\star=(0,\Id)$, the $m_0=0$ instance of (b).
 \end{proof}
 
 \begin{remark}[Conservative constants]

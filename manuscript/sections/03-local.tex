@@ -80,19 +80,10 @@ We reduce the spectral analysis to the diagonal modes of $\mathcal H$, on which 
 score operators are represented by a matrix pair whose Schur complement is the quantity of
 interest.
 
-\begin{lemma}[Diagonal-mode bounds]
-\label{lem:diagonal-modes}
-Fix an orthogonal basis in which $X=\diag(\lambda)$, and set
-$\widetilde T_{ki}:=\E[B_{ii}(Z)Z_k]$, $G_{ij}:=\E[B_{ii}(Z)Z_j^2]$, and
-$D:=G-\one\one^\top$. Then $D$ is symmetric,
-\begin{equation}
-\label{eq:T-Schur}
-    \widetilde T^\top\widetilde T\preceq\Id+D,
-    \qquad\text{and}\qquad
-    \lambda_{\max}(D)\leq\Gamma .
-\end{equation}
-The proof is given in \Cref{app:identities}.
-\end{lemma}
+The exact diagonal-mode identity behind both branches, \Cref{lem:diagonal-modes}, is stated
+and proved in \Cref{app:identities}; there, in an orthogonal basis with $X=\diag(\lambda)$,
+$\widetilde T_{ki}:=\E[B_{ii}(Z)Z_k]$ and $D:=G-\one\one^\top$ with
+$G_{ij}:=\E[B_{ii}(Z)Z_j^2]$ is the diagonal fourth-moment matrix.
 
 The two branches of $\Gamma$ have different origins. The branch $\betastar-1$ is the pointwise
 curvature bound applied to a diagonal quadratic form. The branch
@@ -214,30 +205,15 @@ region on which the local theory is certified is the corresponding energy sublev
 mechanism is the entropy term, which contributes a logarithmic barrier at
 degenerate covariances on top of the quadratic coercivity supplied by strong convexity.
 
-\begin{lemma}[Entropy-enhanced coercivity]
-\label{lem:coercivity}
-Write $B:=C^{1/2}$ with eigenvalues $s_1,\dots,s_{N_\theta}$ and set
-$\phi_{\alphastar}(s):=s-1-\log s+\tfrac{\alphastar}2(s-1)^2$. Then
-\begin{equation}
-\label{eq:entropy-coerc}
-    \DeltaE(m,C)\geq\frac{\alphastar}2\norm m^2+\sum_{i=1}^{N_\theta}\phi_{\alphastar}(s_i).
-\end{equation}
-For a Gaussian target this is an equality, and
+Coercivity of the energy in the equilibrium norm, \Cref{lem:coercivity}, is proved in
+\Cref{app:det-proofs}; it bounds $\DeltaE(m,C)$ from below by
+$\tfrac{\alphastar}2\norm m^2$ plus the scalar function
+\[
+    \phi_{\alphastar}(s):=s-1-\log s+\tfrac{\alphastar}2(s-1)^2
+\]
+summed over the eigenvalues $s_i$ of $C^{1/2}$, with equality for Gaussian targets, where
 $\DeltaE_{\mathrm G}(m,C)=\tfrac12\norm m^2+\sum_i\varphi(c_i)$ with
 $\varphi(c):=\tfrac12(c-1-\log c)$ and $c_i$ the eigenvalues of $C$.
-\end{lemma}
-
-\begin{proof}
-With $X=m+BZ$ we have $\DeltaE=\E[\widehat V(m+BZ)-\widehat V(Z)]-\log\det B$. By
-$\alphastar$-strong convexity,
-$\widehat V(m+BZ)-\widehat V(Z)\geq\nabla\widehat V(Z)^\top(m+(B-\Id)Z)+\tfrac{\alphastar}2\norm{m+(B-\Id)Z}^2$.
-Taking expectations, $\E[\nabla\widehat V(Z)]^\top m=0$,
-$\E[\nabla\widehat V(Z)^\top(B-\Id)Z]=\Tr(B-\Id)$ by Gaussian integration by parts, and
-$\E\norm{m+(B-\Id)Z}^2=\norm m^2+\norm{B-\Id}_{\Frob}^2$. Hence
-$\DeltaE\geq\tfrac{\alphastar}2\norm m^2+\Tr(B-\Id)-\log\det B+\tfrac{\alphastar}2\norm{B-\Id}_{\Frob}^2$,
-which diagonalizes to \eqref{eq:entropy-coerc}. For a Gaussian target the convexity step is an
-equality and $\phi_1(s)=\tfrac12(s^2-1-\log s^2)=\varphi(c)$ with $c=s^2$.
-\end{proof}
 
 Since $\phi_{\alphastar}$ is strictly decreasing on $(0,1)$, increasing on $(1,\infty)$, and
 vanishes at $1$, for each $\delta>0$ the equation $\phi_{\alphastar}(s)=\delta$ has roots
@@ -465,38 +441,12 @@ between $c$ and $1$, so an interval containing $1$ is preserved; each scalar fac
 $\leq q$, the norm \eqref{eq:local-norms} contracts by $q$ per step.
 \end{proof}
 
-\begin{proposition}[Exact Gaussian Riemannian map]
-\label{prop:Gauss-Riem-map}
-For a Gaussian target the update \eqref{upd:Riem} in whitened coordinates reduces to
-$m_{n+1}=(\Id-\Delta t\,C_n)m_n$ and, in the eigenbasis of $C_n$, to
-$c^+=c\,e^{\Delta t(1-c)}$, with scalar factors $r_m^\Riem(c)=(1-\Delta t\,c)^2$ and
-\[
-    r_C^\Riem(c)=\Bigl(\frac{c\,e^{\Delta t(1-c)}-1}{c-1}\Bigr)^2,
-    \qquad r_C^\Riem(1)=(1-\Delta t)^2 .
-\]
-For $0<\Delta t<2$ and $q\in(0,1)$ with $q\geq(1-\Delta t)^2$, let
-$I_{\Delta t}^\Riem(q)=[\ell,u]$ be the connected component containing $1$ of
-$\{c>0:r_m^\Riem(c)\leq q,\ r_C^\Riem(c)\leq q\}$. If in addition
-\[
-    \Delta t\leq\min\Bigl\{1,\;\frac{\log u}{u-1}\Bigr\}
-\]
-and $\operatorname{spec}(C_n)\subseteq I_{\Delta t}^\Riem(q)$, then
-$\norm{a_{n+k}-a_\star}_\star^2\leq q^k\norm{a_n-a_\star}_\star^2$ for all $k\geq0$.
-\end{proposition}
-
-\begin{proof}
-For a Gaussian target $F_C(a)=C-C^2=-C(C-\Id)$, so $C^{-1/2}F_CC^{-1/2}=\Id-C$ and the
-retraction gives $C^+=C^{1/2}e^{\Delta t(\Id-C)}C^{1/2}=C\,e^{\Delta t(\Id-C)}$, since $C$ and
-$\Id-C$ commute; in the eigenbasis this is $c^+=c\,e^{\Delta t(1-c)}$, and expanding at $c=1$
-gives $r_C^\Riem(1)=(1-\Delta t)^2$. On $I_{\Delta t}^\Riem(q)$ both factors are at most $q$;
-the first stepsize condition prevents a point below $1$ from overshooting above $1$ and the
-second prevents points in $(1,u]$ from crossing below $1$, so $c\mapsto c\,e^{\Delta t(1-c)}$
-keeps $[\ell,u]$ forward invariant and the per-step contraction propagates.
-\end{proof}
+The parallel Riemannian statement, \Cref{prop:Gauss-Riem-map}, is recorded in
+\Cref{app:det-proofs}.
 
 The Riemannian interval endpoints solve scalar transcendental equations, while the KL interval
 \eqref{eq:kl-interval} is closed-form, so \Cref{prop:Gauss-KL-map} is the primary discrete
-Gaussian statement and \Cref{prop:Gauss-Riem-map} its parallel. For general targets we record
+Gaussian statement and \Cref{prop:Gauss-Riem-map} its parallel (\Cref{app:det-proofs}). For general targets we record
 the clean per-step rate used in the complexity statements, writing
 $\gamma_\Riem:=1/(4+\Gamma)$ and $\gamma_\KL:=1/(4+2\Delta t+\Gamma)$ for the certified
 linearized gaps of \Cref{prop:linearized-maps} in the norms $\norm\cdot_\star$ and
@@ -551,33 +501,8 @@ by \eqref{eq:Kdisc} and the radius condition. Adding gives the per-step factor
 $1-\tfrac12\Delta t\gamma_\bullet$, and iterating completes the proof.
 \end{proof}
 
-The contraction step of the previous proof is valid at each point separately, without the
-forward-invariance argument and hence without the energy-descent stepsize restriction. We
-isolate it, because the stochastic analysis of \Cref{sec:stochastic} perturbs exactly this
-estimate and cannot afford the descent constraint.
-
-\begin{lemma}[Pointwise one-step contraction]
-\label{lem:loc-contraction}
-Fix $\bullet\in\{\Riem,\KL\}$ and a level $\delta>0$ satisfying the radius condition
-$\Kdisc(\delta)\,\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\leq\gamma_\bullet$ of
-\Cref{thm:loc-disc}. If $0<\Delta t\leq2/(4+\Gamma)$, then every $a\in\Ureg_\delta$
-satisfies
-\[
-    \norm{T_\bullet(a)-a_\star}_{\star,\bullet}
-    \leq\Bigl(1-\tfrac12\Delta t\,\gamma_\bullet\Bigr)\norm{a-a_\star}_{\star,\bullet}.
-\]
-No energy-descent hypothesis is used.
-\end{lemma}
-
-\begin{proof}
-With $\xi:=a-a_\star$ and $a\in\Ureg_\delta\subseteq\mathcal V_\delta$, the integral Taylor
-identity of the previous proof holds at the single point $a$. Its linear part obeys
-$\norm{M_\bullet\xi}_{\star,\bullet}\leq(1-\Delta t\gamma_\bullet)\norm\xi_{\star,\bullet}$ by
-\Cref{prop:linearized-maps}, whose only stepsize requirement is $\Delta t\leq2/(4+\Gamma)$, and
-the segment $a_\star+s\xi$ lies in $\mathcal V_\delta$, so the remainder is at most
-$\tfrac12\Delta t\Kdisc(\delta)\norm\xi_{\star,\bullet}^2\leq\tfrac12\Delta t\gamma_\bullet\norm\xi_{\star,\bullet}$
-by the radius condition and $\norm\xi_{\star,\bullet}\leq\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta$.
-\end{proof}
+The one-step local contraction estimate isolated for the stochastic analysis,
+\Cref{lem:loc-contraction}, is stated in \Cref{app:det-proofs}.
 
 \begin{remark}[Status of $\Kdisc$]
 \label{rem:Kdisc}
@@ -619,30 +544,15 @@ The left-hand side is evaluated from $g(a_n)$, $A(a_n)$, $C_n$, and $\alpha$, no
 requires $C_\star$, $m_\star$, or $\calE(a_\star)$. When a covariance floor $C_n\succeq\ell_n\Id$
 is available, the Fisher--Rao gradient norm gives the alternative intrinsic test
 $\Gradnorm(a_n)^2\leq\alpha\ell_n\delta_{\loc}\Rightarrow\DeltaE(a_n)\leq\delta_{\loc}$, which
-is more restrictive than the Bures--Wasserstein gate. Once either test triggers, energy descent
+is more restrictive than the Bures--Wasserstein gate. Once either test triggers, for the flow
+and for either deterministic scheme under all hypotheses of its global theorem and its
+certified stepsize window (\Cref{thm:glob-Riem,thm:glob-KL}), energy descent
 keeps $\DeltaE(a_k)\leq\delta_{\loc}$ for all $k\geq n$, so the local theorems apply
 permanently. The proof is given in \Cref{app:det-proofs}.
 \end{proposition}
 
-\begin{proposition}[Exact Gaussian spectral gates]
-\label{prop:entry-Gauss}
-Let the target be Gaussian with precision $H$, so that $C_\star=H^{-1}$, and put
-$S_n:=H^{1/2}C_nH^{1/2}$, computable from $C_n$ and $H$ without the target mean. Then, for
-$0<\rho\leq2$, the condition $\lambda_{\min}(S_n)\geq\rho/2$ certifies instantaneous rate
-$\geq\rho$ for the flow and is forward invariant, each covariance eigenvalue obeying
-$\dot s=s(1-s)$ and moving monotonically toward $1$. For the KL scheme,
-$\operatorname{spec}(S_n)\subseteq I_{\Delta t}^{\KL}(q)$ certifies the per-step contraction
-$\norm{a_{n+1}-a_\star}_{\star,\Delta t}^2\leq q\norm{a_n-a_\star}_{\star,\Delta t}^2$ and is
-forward invariant.
-\end{proposition}
-
-\begin{proof}
-$S_n$ is the whitened covariance $\widehat C_n$. For the flow,
-$q_{\mathrm c}=q_{\mathrm G}\geq2\lambda_{\min}(\widehat C_n)=2\lambda_{\min}(S_n)$ by
-\Cref{lem:gauss-core}, and for $\rho\leq2$ the threshold $\rho/2$ lies below $1$, so the scalar
-dynamics $\dot s=s(1-s)$ preserves it. The KL statement is \Cref{prop:Gauss-KL-map} in whitened
-coordinates.
-\end{proof}
+Exact spectral entry gates for Gaussian targets, \Cref{prop:entry-Gauss}, are recorded in
+\Cref{app:det-proofs}.
 
 These spectral gates can be substantially less restrictive than the residual gate, since they
 impose no condition on the mean and depend only on the target-relative covariance spectrum. The
@@ -655,15 +565,12 @@ admissibility condition $\rho_{\mathrm{core}}(\delta)>0$ of \Cref{thm:loc-flow} 
 inequality in $\alpha,\beta,N_\theta$. For the discrete schemes the admissible level remains
 implicit, by \Cref{rem:Kdisc}.
 
-\begin{remark}[Stochastic caveat]
-\label{rem:entry-stoch}
 For the stochastic schemes of \Cref{sec:stochastic} neither pathwise nor expected containment
 follows from these gates alone. The one-step recursion
 $\E[\DeltaE_{n+1}\mid\Fil_n]\leq q\DeltaE_n+\eta$ with a variance floor $\eta>0$ gives only
 $\E[\DeltaE_{n+1}\mid\Fil_n]\leq q\delta_{\loc}+\eta$, which is at most $\delta_{\loc}$ only if
 $\delta_{\loc}\geq\eta/(1-q)$. Entry must therefore be combined with the containment analysis
 of \Cref{sec:stochastic}.
-\end{remark}
 
 \subsection{Sharpness: no dimension-free logarithmic local rate}
 \label{subsec:loc-sharp}
@@ -674,7 +581,8 @@ under the additional hypothesis of a dimension-free Hessian-Lipschitz constant.
 
 \begin{theorem}[Convex-ridge lower bound on the local gap]
 \label{thm:loc-sharp}
-There are numerical constants $K_0,c_\kappa,C_\kappa,C_\tau,C_\gamma>0$ with the following property. For every
+There are numerical constants $K_0,c_\kappa,C_\kappa,C_\tau,C_\gamma>0$, and
+$C_\gamma':=C_\gamma\sqrt{C_\kappa}$, with the following property. For every
 integer $m$ with $K:=(8m)^{1/4}\geq K_0$ and $N_\theta:=m+1$, there is a potential
 $V\in C^\infty(\R^{N_\theta})$ satisfying \Cref{assump:logconcave-smooth} and the whitening
 conditions $\E_{\N(0,\Id)}[\nabla V]=0$, $\E_{\N(0,\Id)}[\nabla^2V]=\Id$ of
@@ -689,7 +597,7 @@ $\LH=64$, such that
 \]
 where $\tau_H:=\sup_{\norm w=1}\norm{\E[(w^\top Z)\nabla^2V(Z)]}_{\Frob}=\norm{\mathcal T}$ is
 the first-Hermite coupling norm of \Cref{def:score-ops}. For this family the Schur bound
-\eqref{eq:T-Schur} gives $\tau_H^2\leq1+\Gamma$ with $\Gamma=\betastar-1=\Theta(K)$, so that
+\eqref{eq:T-Schur} of \Cref{lem:diagonal-modes} (\Cref{app:identities}) gives $\tau_H^2\leq1+\Gamma$ with $\Gamma=\betastar-1=\Theta(K)$, so that
 \[
     \tau_H^2=\Theta(K)=\Theta\bigl(\kappastar^{1/2}\bigr),
     \qquad
@@ -701,14 +609,11 @@ every dimension under \Cref{assump:logconcave-smooth} and \Cref{assump:hess-lip}
 construction and the proof are given in \Cref{app:ridge}.
 \end{theorem}
 
-\begin{remark}[Scope]
-\label{rem:loc-sharp-scope}
 The family uses $N_\theta=m+1=K^4/8+1=\Theta(\kappastar^2)$. It therefore rules out estimates
 uniform over the dimension only. It does not settle whether an analogous obstruction exists at
 fixed $N_\theta$, or for $N_\theta=o(\kappastar^2)$, and, since the branch it saturates is
 $\betastar-1$, it says nothing about the sharpness of the $\sqrt{N_\theta}\log\kappastar$
 branch of $\Gamma$.
-\end{remark}
 
 \subsection{Deterministic three-stage complexity}
 \label{subsec:three-stage}
@@ -739,7 +644,9 @@ $\rho_{\mathrm{core}}(\delta_{\mathrm c})\geq1/(4+\Gamma)$, and let
 $\delta_\Riem,\delta_\KL>0$ be levels admissible for \Cref{thm:loc-disc} for the two schemes at
 the stepsizes below; such levels exist by \Cref{cor:loc-universal} and \Cref{thm:loc-disc}. For
 sufficiently small $\varepsilon>0$, specifically
-$\varepsilon<\mathfrak b_{\star,\bullet}(\delta_\bullet)^2\delta_\bullet$ for the relevant level and norm:
+$\varepsilon<\mathfrak b(\delta_{\mathrm c})^2\delta_{\mathrm c}$ for the flow and
+$\varepsilon<\mathfrak b_{\star,\bullet}(\delta_\bullet)^2\delta_\bullet$ for the scheme
+$\bullet\in\{\Riem,\KL\}$:
 \begin{enumerate}
 \item For the flow \eqref{ODEs:NG}, the time
 \[
@@ -877,9 +784,5 @@ of $\Gamma$ and rules out any dimension-free logarithmic replacement.
 % improved-global-local-stoch.tex l.2051-2081 (cor:burnin-free) -> cor:three-stage-burninfree
 % improved-global-local-stoch.tex l.1818-1826 (why the burn-in is intrinsic to Fisher-Rao)
 %   -> closing sharpness paragraph
-%
-% TODO(label): prop:entry-residual rests on the Bures-Wasserstein PL inequality
-%   (det note lem:W2-PL, l. approx. 700) and the FR/W2 gradient-norm comparison
-%   (det note lem:FR-W2). Neither has a label in the fixed namespace of the drafting
-%   contract; both must be stated in Section 2 or in app:det-proofs, and the proof
-%   pointer here updated to the label they receive.
+% [resolved: the two ingredients are labeled eq:W2-PL and eq:FR-W2 in Section 2 and are
+%  cited from the app:det-proofs proof of prop:entry-residual]

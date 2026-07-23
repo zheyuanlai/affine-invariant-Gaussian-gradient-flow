@@ -151,15 +151,7 @@ At $(\eta, \omega, \tau) = (1, \frac{1}{2}, 0)$ the bracket collapses to $C_n^{1
 \end{equation*}
 which is the covariance update of \eqref{upd:Riem}.
 
-The Riemannian scheme requires a matrix exponential at every step. Based on the Gaussian natural gradient discretization with KL divergence \eqref{upd:KL}, whose covariance update is the rational resolvent $C_{n+1} = (1 + \Delta t) (C_n^{-1} - \Delta t \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)])^{-1}$, we write down the following discretization scheme for the general metric,
-\begin{equation}\label{upd:affine-KL}
-    \begin{aligned}
-        m_{n+1} &= m_n + \frac{\Delta t}{\eta} C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
-        C_{n+1} &= \left[ 1 + \frac{\Delta t \left( \omega - \tau \Tr(C_n \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)]) \right)}{2\omega (\omega + N_\theta \tau)} \right] \\
-        &\qquad \times \left( C_n^{-1} - \frac{\Delta t}{2\omega} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] \right)^{-1}.
-    \end{aligned}
-\end{equation}
-This update recovers \eqref{upd:KL} when $\omega = \frac{1}{2}$, $\tau = 0$ and $\eta = 1$. As the scheme is first-order consistent with the ODE \eqref{ODEs:affine}, but it is not the exact update of a proximal algorithm.
+The Riemannian scheme requires a matrix exponential at every step. The KL resolvent scheme \eqref{upd:KL} of \Cref{sec:global} avoids it, but its rational form does not extend safely to the whole family: the natural general-metric analogue multiplies the resolvent by a scalar prefactor that is not sign-definite for $\tau < 0$, so the resulting update need not remain in the SPD cone for admissible metrics. We therefore state the general-metric extension only for the retraction scheme \eqref{upd:affine-Riem}, whose covariance update is SPD by construction; at the Fisher--Rao point $(\eta, \omega, \tau) = (1, \frac{1}{2}, 0)$ the resolvent scheme \eqref{upd:KL} of \Cref{sec:global} remains available with its full convergence theory.
 
 % SOURCES:
 % natural-gradient.tex l.2802-2804 (section opening) -> sec:geometry lead-in
@@ -190,6 +182,12 @@ This update recovers \eqref{upd:KL} when $\omega = \frac{1}{2}$, $\tau = 0$ and 
 % natural-gradient.tex l.2866-2873 (upd:affine-invariant-Riem and its (1/2,0) reduction)
 %     -> upd:affine-Riem
 % natural-gradient.tex l.2875-2882 (KL-type scheme, its (1/2,0) reduction, and the
-%     first-order-consistency / not-a-proximal-update caveat) -> upd:affine-KL
+%     first-order-consistency / not-a-proximal-update caveat) -> NOT CARRIED
+%     [DEFECT: the general (eta,omega,tau) KL resolvent update in the source has a scalar
+%      prefactor 1 + Dt(omega - tau Tr(C_n E[Hess log rho_post]))/(2 omega(omega + N_theta tau))
+%      that is negative for admissible tau < 0 (e.g. N_theta=2, eta=omega=1, tau=-49/100,
+%      C_n=2I, Dt=1/10 gives C_{n+1} = -28/11 I, not SPD). No positivity condition is proved
+%      in any source, so the general KL display is replaced by a scope sentence; only the
+%      SPD-safe retraction scheme upd:affine-Riem is stated for the general family.]
 % natural-gradient.tex l.329-331 (Fisher-Rao metric on the Gaussian family) -> proof of thm:aff-balanced
 % refs: thanwerdas2019affine, thanwerdas2023n (SPD classification), chen2023sampling (KL energy)

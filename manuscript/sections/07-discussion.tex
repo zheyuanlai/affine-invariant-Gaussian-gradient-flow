@@ -17,8 +17,11 @@ convex ridge shows that the $\betastar-1$ branch of the local spectral scale is
 attained, so that no dimension-free logarithmic local rate can hold.
 
 The stochastic theory preserves this structure with the sticking-the-landing and
-Price/Hessian estimators, at the cost of explicit variance floors that scale as
-$1/B$ in the batch size and vanish for Gaussian targets. The stochastic local result is a killed-process contraction together with a
+Price/Hessian estimators, at the cost of explicit variance floors: the
+Hessian-Lipschitz floors scale as $1/B$ in the batch size, while the
+assumption-minimal global floor plateaus at $O(\kappa N_\theta)$ for
+$B\lesssim\kappa$ and the local floor at $O(N_\theta^2\LHs^2/V_1)$ for
+$B\lesssim V_1$; all of these floors vanish for Gaussian targets. The stochastic local result is a killed-process contraction together with a
 finite-horizon exit-probability bound; because the mean-score noise has
 unbounded support, we do not claim pathwise invariance of a bounded local region
 at a fixed stepsize, and we do not claim infinite-horizon containment. The

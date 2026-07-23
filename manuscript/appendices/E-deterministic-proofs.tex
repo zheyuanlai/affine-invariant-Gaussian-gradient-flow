@@ -9,6 +9,35 @@ $A:=A(a)$, $R:=R(a)=C^{-1}-A$, and $\calE=\calE_1+\calE_2$ as in \eqref{eq:E-spl
 convexity and $\beta$-smoothness of $V$, that is $0\preceq\nabla^2V\preceq\beta\Id$, are used;
 both hold under \Cref{assump:logconcave-smooth}.
 
+\subsection{Continuous covariance envelope}
+
+\begin{lemma}[Continuous covariance bootstrap]\label{lem:cov-cont}
+    Under \Cref{assump:logconcave-smooth}, if the initial covariance satisfies
+    $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$, then along \eqref{ODEs:NG},
+    with $\lambda_0:=\lambda_{0,\min}$ and
+    $\lambda_{\max}:=\max\{\lambda_{0,\max},1/\alpha\}$,
+    \begin{equation*}
+        C_t\succeq\ell(t)\Id,
+        \qquad
+        \ell(t):=\frac{\lambda_0e^t}{1+\beta\lambda_0(e^t-1)},
+        \qquad
+        C_t\preceq\lambda_{\max}\Id .
+    \end{equation*}
+    In particular $C_t\succeq(2\beta)^{-1}\Id$ for all
+    $t\geq\logp\bigl(1/(\beta\lambda_0)\bigr)$.
+\end{lemma}
+
+\begin{proof}
+    By \eqref{eq:precision-duhamel} and $A(a_s)\preceq\beta\Id$,
+    \begin{equation*}
+        P_t\preceq\bigl(e^{-t}\lambda_0^{-1}+\beta(1-e^{-t})\bigr)\Id,
+    \end{equation*}
+    which gives the lower bound after inversion. For the upper bound, $A(a_t)\succeq\alpha\Id$
+    shows that no eigenvalue of $C_t$ can cross $1/\alpha$ from below and that any eigenvalue
+    above $1/\alpha$ is pushed downward. The curvature-scale consequence follows by requiring
+    the decaying initial-precision term to be no larger than $\beta$.
+\end{proof}
+
 \subsection{Two scalar inequalities}
 
 \begin{lemma}\label{lem:scalar-retraction}
@@ -68,6 +97,23 @@ both hold under \Cref{assump:logconcave-smooth}.
 \end{proof}
 
 \subsection{Retraction smoothness and the Riemannian descent estimate}
+
+\begin{lemma}[Retraction smoothness and one-step descent]\label{lem:descent-Riem}
+    Assume $0\preceq\nabla^2V\preceq\beta\Id$ and $C\preceq\Lambda\Id$, and set
+    $K:=\beta\Lambda\geq1$. For a tangent vector $\zeta=(u,U)$ at $a=(m,C)$ write
+    $W:=C^{-1/2}UC^{-1/2}$. If $\norm W_\op\leq1$, then
+    \begin{equation}\label{eq:Riem-retraction-smooth}
+        \calE\bigl(\Retr_a(\zeta)\bigr)
+        \leq
+        \calE(a)+\inner{\grad\calE(a)}{\zeta}_a+K\norm\zeta_a^2 .
+    \end{equation}
+    Consequently, for the update \eqref{upd:Riem} with $0<\Delta t\leq1/K$,
+    \begin{equation*}
+        \calE(a_{n+1})\leq\calE(a_n)-\Delta t(1-K\Delta t)\Gradnorm(a_n)^2,
+    \end{equation*}
+    and in particular $\calE(a_{n+1})\leq\calE(a_n)-\tfrac{\Delta t}2\Gradnorm(a_n)^2$ whenever
+    $\Delta t\leq1/(2K)$.
+\end{lemma}
 
 \begin{proof}[Proof of \Cref{lem:descent-Riem}]
     Let $Z\sim\N(0,\Id)$ and introduce the coupling
@@ -229,7 +275,7 @@ both hold under \Cref{assump:logconcave-smooth}.
     $\nabla_B\calE_2(a_n)=\nabla_C\calE_2(a_n)\cdot2B_n=2G_nB_n$,
     \begin{align*}
         \inner{\nabla_B\calE_2(a_n)}H
-        &=\Tr\bigl((2G_nB_n)^\top H\bigr)=\Tr\bigl(G_n(B_nH+HB_n)\bigr)\\
+        &=\Tr\bigl((2G_nB_n)^\top H\bigr)=\Tr\bigl(G_n(B_nH^\top+HB_n)\bigr)\\
         &\leq\Tr\bigl(G_n(B_nH^\top+HB_n+HH^\top)\bigr)
         =\inner{\nabla_C\calE_2(a_n)}{C-C_n},
     \end{align*}
@@ -265,6 +311,22 @@ both hold under \Cref{assump:logconcave-smooth}.
 \end{proof}
 
 \subsection{Forward-KL descent and the Wasserstein-gradient lower bound}
+
+\begin{proposition}[Forward-KL descent and Wasserstein-gradient control]\label{prop:onestep-KL}
+    Assume $0\preceq\nabla^2V\preceq\beta\Id$ and $L\Id\preceq C_n\preceq\Lambda\Id$, put
+    $K:=\beta\Lambda\geq1$, and let $0<\Delta t\leq1/K$. Then the update \eqref{upd:KL}
+    satisfies
+    \begin{equation*}
+        \calE(a_{n+1})\leq\calE(a_n)-\frac1{\Delta t}\KL(\rho_{a_{n+1}}\|\rho_{a_n}),
+    \end{equation*}
+    and
+    \begin{equation*}
+        \KL(\rho_{a_{n+1}}\|\rho_{a_n})
+        \geq
+        \frac{L\Delta t^2}{4(1+\Delta t\,K)^2}
+        \norm{\grad^{W_2}\calE(a_n)}_{W_2}^2 .
+    \end{equation*}
+\end{proposition}
 
 \begin{proof}[Proof of \Cref{prop:onestep-KL}]
     Set
@@ -348,6 +410,140 @@ both hold under \Cref{assump:logconcave-smooth}.
     which is the stated bound.
 \end{proof}
 
+\subsection{Warm-start estimates}
+
+\begin{lemma}[Wasserstein covariance bootstrap]\label{lem:cov-BW}
+    Under \Cref{assump:logconcave-smooth} and
+    $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$, along \eqref{eq:W-flow} one has
+    $C_t\preceq\lambda_{\max}\Id$ and
+    \begin{equation*}
+        C_t\succeq\ell_{\BW}(t)\Id,
+        \qquad
+        \ell_{\BW}(t):=\frac1\beta+\left(\lambda_0-\frac1\beta\right)e^{-2\beta t}.
+    \end{equation*}
+    Consequently, for $c\in(0,1)$, the time
+    $T_{\BW}(c):=\tfrac1{2\beta}\log\tfrac{1-\beta\lambda_0}{1-c}$ if $\lambda_0<c/\beta$, and
+    $T_{\BW}(c):=0$ otherwise, satisfies $C_{T_{\BW}(c)}\succeq\tfrac c\beta\Id$. For fixed
+    $c$ the warm-up time is $O(1/\beta)$, with no logarithmic dependence on $\lambda_0$.
+
+    Discretely, given $a=(m,C)$ with $C\preceq\lambda_{\max}\Id$ and a transport stepsize
+    $0<\eta\leq1/\beta$, the Bures--Wasserstein forward--backward step \eqref{eq:BW-step}
+    satisfies $C^+\succeq\eta\Id$, $C^+\preceq\lambda_{\max}\Id$, and
+    $\calE(m^+,C^+)\leq\calE(m,C)$.
+\end{lemma}
+
+\begin{proof}
+    For an eigenvalue $\mu_i$ of $C_t$ with normalized eigenvector $u_i$,
+    $\dot\mu_i=2(1-\mu_ih_i)$ with $h_i=u_i^\top A(a_t)u_i\in[\alpha,\beta]$, hence
+    $\dot\mu_i\geq2(1-\beta\mu_i)$, and scalar comparison with
+    $\dot\ell_{\BW}=2(1-\beta\ell_{\BW})$, $\ell_{\BW}(0)=\lambda_0$, gives
+    $\mu_i\geq\ell_{\BW}$. If $\mu_i\geq1/\alpha$ then $\dot\mu_i\leq2(1-\alpha\mu_i)\leq0$,
+    which gives the upper bound. Finally $\ell_{\BW}(t)\geq c/\beta$ is equivalent to
+    $e^{-2\beta t}\leq(1-c)/(1-\beta\lambda_0)$.
+
+    For the discrete step, $\psi_\eta(x):=\tfrac12(x+2\eta+\sqrt{x(x+4\eta)})$ is increasing
+    with $\psi_\eta(0)=\eta$ and \eqref{eq:BW-step} applies it to the eigenvalues of
+    $\widetilde C\succeq0$, so $C^+\succeq\eta\Id$. Since
+    $0\preceq\Id-\eta A(a)\preceq(1-\eta\alpha)\Id$ and $\lambda_{\max}\geq1/\alpha$,
+    $\widetilde C\preceq(1-\eta\alpha)^2\lambda_{\max}\Id
+    \preceq(1-\eta/\lambda_{\max})^2\lambda_{\max}\Id$, and the scalar identity
+    $\psi_\eta((1-\eta/L)^2L)=L$ at $L=\lambda_{\max}$ with monotonicity gives
+    $C^+\preceq\lambda_{\max}\Id$. The step is the Bures--Wasserstein forward--backward step
+    for the splitting \eqref{eq:E-split} with the entropy treated backward, so under
+    $\eta\leq1/\beta$ the forward--backward descent inequality of \citet{diao2023forward}
+    gives the energy decrease.
+\end{proof}
+
+\begin{lemma}[Curvature-scale covariance rescue]\label{lem:rescue-band}
+    Under \Cref{assump:logconcave-smooth}, \Cref{def:rescue} gives
+    $\tfrac1\beta\Id\preceq C_0\preceq\tfrac1\alpha\Id$.
+\end{lemma}
+
+\begin{proof}
+    We have $\alpha\Id\preceq H_{\mathrm{in}}\preceq\beta\Id$, and the matrix inverse is
+    operator antitone on $\SPD(N_\theta)$, so
+    $\tfrac1\beta\Id\preceq H_{\mathrm{in}}^{-1}\preceq\tfrac1\alpha\Id$.
+\end{proof}
+
+\subsection{Deferred statements of the local theory}
+
+\begin{lemma}[Entropy-enhanced coercivity]
+\label{lem:coercivity}
+Write $B:=C^{1/2}$ with eigenvalues $s_1,\dots,s_{N_\theta}$ and let
+$\phi_{\alphastar}(s):=s-1-\log s+\tfrac{\alphastar}2(s-1)^2$ be as in \Cref{subsec:core}. Then
+\begin{equation}
+\label{eq:entropy-coerc}
+    \DeltaE(m,C)\geq\frac{\alphastar}2\norm m^2+\sum_{i=1}^{N_\theta}\phi_{\alphastar}(s_i).
+\end{equation}
+For a Gaussian target this is an equality, and
+$\DeltaE_{\mathrm G}(m,C)=\tfrac12\norm m^2+\sum_i\varphi(c_i)$ with
+$\varphi(c):=\tfrac12(c-1-\log c)$ and $c_i$ the eigenvalues of $C$.
+\end{lemma}
+
+\begin{proof}
+With $X=m+BZ$ we have $\DeltaE=\E[\widehat V(m+BZ)-\widehat V(Z)]-\log\det B$. By
+$\alphastar$-strong convexity,
+$\widehat V(m+BZ)-\widehat V(Z)\geq\nabla\widehat V(Z)^\top(m+(B-\Id)Z)+\tfrac{\alphastar}2\norm{m+(B-\Id)Z}^2$.
+Taking expectations, $\E[\nabla\widehat V(Z)]^\top m=0$,
+$\E[\nabla\widehat V(Z)^\top(B-\Id)Z]=\Tr(B-\Id)$ by Gaussian integration by parts, and
+$\E\norm{m+(B-\Id)Z}^2=\norm m^2+\norm{B-\Id}_{\Frob}^2$. Hence
+$\DeltaE\geq\tfrac{\alphastar}2\norm m^2+\Tr(B-\Id)-\log\det B+\tfrac{\alphastar}2\norm{B-\Id}_{\Frob}^2$,
+which diagonalizes to \eqref{eq:entropy-coerc}. For a Gaussian target the convexity step is an
+equality and $\phi_1(s)=\tfrac12(s^2-1-\log s^2)=\varphi(c)$ with $c=s^2$.
+\end{proof}
+
+\begin{proposition}[Exact Gaussian Riemannian map]
+\label{prop:Gauss-Riem-map}
+For a Gaussian target the update \eqref{upd:Riem} in whitened coordinates reduces to
+$m_{n+1}=(\Id-\Delta t\,C_n)m_n$ and, in the eigenbasis of $C_n$, to
+$c^+=c\,e^{\Delta t(1-c)}$, with scalar factors $r_m^\Riem(c)=(1-\Delta t\,c)^2$ and
+\[
+    r_C^\Riem(c)=\Bigl(\frac{c\,e^{\Delta t(1-c)}-1}{c-1}\Bigr)^2,
+    \qquad r_C^\Riem(1)=(1-\Delta t)^2 .
+\]
+For $0<\Delta t<2$ and $q\in(0,1)$ with $q\geq(1-\Delta t)^2$, let
+$I_{\Delta t}^\Riem(q)=[\ell,u]$ be the connected component containing $1$ of
+$\{c>0:r_m^\Riem(c)\leq q,\ r_C^\Riem(c)\leq q\}$. If in addition
+\[
+    \Delta t\leq\min\Bigl\{1,\;\frac{\log u}{u-1}\Bigr\}
+\]
+and $\operatorname{spec}(C_n)\subseteq I_{\Delta t}^\Riem(q)$, then
+$\norm{a_{n+k}-a_\star}_\star^2\leq q^k\norm{a_n-a_\star}_\star^2$ for all $k\geq0$.
+\end{proposition}
+
+\begin{proof}
+For a Gaussian target $F_C(a)=C-C^2=-C(C-\Id)$, so $C^{-1/2}F_CC^{-1/2}=\Id-C$ and the
+retraction gives $C^+=C^{1/2}e^{\Delta t(\Id-C)}C^{1/2}=C\,e^{\Delta t(\Id-C)}$, since $C$ and
+$\Id-C$ commute; in the eigenbasis this is $c^+=c\,e^{\Delta t(1-c)}$, and expanding at $c=1$
+gives $r_C^\Riem(1)=(1-\Delta t)^2$. On $I_{\Delta t}^\Riem(q)$ both factors are at most $q$;
+the first stepsize condition prevents a point below $1$ from overshooting above $1$ and the
+second prevents points in $(1,u]$ from crossing below $1$, so $c\mapsto c\,e^{\Delta t(1-c)}$
+keeps $[\ell,u]$ forward invariant and the per-step contraction propagates.
+\end{proof}
+
+\begin{lemma}[Pointwise one-step contraction]
+\label{lem:loc-contraction}
+Fix $\bullet\in\{\Riem,\KL\}$ and a level $\delta>0$ satisfying the radius condition
+$\Kdisc(\delta)\,\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\leq\gamma_\bullet$ of
+\Cref{thm:loc-disc}. If $0<\Delta t\leq2/(4+\Gamma)$, then every $a\in\Ureg_\delta$
+satisfies
+\[
+    \norm{T_\bullet(a)-a_\star}_{\star,\bullet}
+    \leq\Bigl(1-\tfrac12\Delta t\,\gamma_\bullet\Bigr)\norm{a-a_\star}_{\star,\bullet}.
+\]
+No energy-descent hypothesis is used.
+\end{lemma}
+
+\begin{proof}
+With $\xi:=a-a_\star$ and $a\in\Ureg_\delta\subseteq\mathcal V_\delta$, the integral Taylor
+identity of the proof of \Cref{thm:loc-disc} holds at the single point $a$. Its linear part obeys
+$\norm{M_\bullet\xi}_{\star,\bullet}\leq(1-\Delta t\gamma_\bullet)\norm\xi_{\star,\bullet}$ by
+\Cref{prop:linearized-maps}, whose only stepsize requirement is $\Delta t\leq2/(4+\Gamma)$, and
+the segment $a_\star+s\xi$ lies in $\mathcal V_\delta$, so the remainder is at most
+$\tfrac12\Delta t\Kdisc(\delta)\norm\xi_{\star,\bullet}^2\leq\tfrac12\Delta t\gamma_\bullet\norm\xi_{\star,\bullet}$
+by the radius condition and $\norm\xi_{\star,\bullet}\leq\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta$.
+\end{proof}
+
 \subsection{The computable entry gates}
 
 We prove \Cref{prop:entry-residual}. The two gates are the two basic inequalities of
@@ -382,6 +578,26 @@ We prove \Cref{prop:entry-residual}. The two gates are the two basic inequalitie
     \eqref{eq:dissipation}. Hence $\DeltaE(a_k)\leq\DeltaE(a_n)\leq\delta_{\loc}$ for every
     $k\geq n$, so once either test triggers the iterate remains in the certified sublevel
     set permanently.
+\end{proof}
+
+\begin{proposition}[Exact Gaussian spectral gates]
+\label{prop:entry-Gauss}
+Let the target be Gaussian with precision $H$, so that $C_\star=H^{-1}$, and put
+$S_n:=H^{1/2}C_nH^{1/2}$, computable from $C_n$ and $H$ without the target mean. Then, for
+$0<\rho\leq2$, the condition $\lambda_{\min}(S_n)\geq\rho/2$ certifies instantaneous rate
+$\geq\rho$ for the flow and is forward invariant, each covariance eigenvalue obeying
+$\dot s=s(1-s)$ and moving monotonically toward $1$. For the KL scheme,
+$\operatorname{spec}(S_n)\subseteq I_{\Delta t}^{\KL}(q)$ certifies the per-step contraction
+$\norm{a_{n+1}-a_\star}_{\star,\Delta t}^2\leq q\norm{a_n-a_\star}_{\star,\Delta t}^2$ and is
+forward invariant.
+\end{proposition}
+
+\begin{proof}
+$S_n$ is the whitened covariance $\widehat C_n$. For the flow,
+$q_{\mathrm c}=q_{\mathrm G}\geq2\lambda_{\min}(\widehat C_n)=2\lambda_{\min}(S_n)$ by
+\Cref{lem:gauss-core}, and for $\rho\leq2$ the threshold $\rho/2$ lies below $1$, so the scalar
+dynamics $\dot s=s(1-s)$ preserves it. The KL statement is \Cref{prop:Gauss-KL-map} in whitened
+coordinates.
 \end{proof}
 
 % SOURCES:

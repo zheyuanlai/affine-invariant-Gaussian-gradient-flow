@@ -1,6 +1,14 @@
 \input{preamble}
 
+% FoCM submission front matter.
+% Running title (<= 45 characters): "Gaussian Natural Gradient Flows for VI"
+% 2020 MSC: 62F15 (Bayesian inference), 65K10 (numerical optimization),
+%   53B12 (information geometry), 60J60 (diffusion processes), 90C26 (nonconvex programming)
+% Keywords: variational inference; natural gradient; Fisher-Rao metric;
+%   convergence rates; information geometry; stochastic optimization
 \title{Gaussian Natural Gradient Flows for Variational Inference}
+% TODO(submission): replace with the author block before submission -
+%   full names, affiliations, emails, ORCIDs, and corresponding author.
 \author{}
 \date{}
 
@@ -9,35 +17,26 @@
 
 \begin{abstract}
 We study Gaussian variational inference for a target
-$\rho_\post\propto e^{-V}$ through the natural gradient flow induced by the
-Fisher--Rao metric, together with two discretizations of it: a Riemannian
-retraction scheme and a KL/Bregman resolvent scheme. Our results are organized by
-a single phenomenon. Convergence proceeds in three stages, a covariance burn-in,
-a global localization phase, and a local phase, and each stage is governed by a
-different mechanism and carries its own sharp rate. An underdispersed
-initialization costs a burn-in time logarithmic in the initial covariance, which
-a Bures--Wasserstein warm start or a single gradient--Hessian query removes. The
-global phase is controlled by the condition number obtained after whitening by
-the optimizing covariance rather than by that of the target, and we show by a
-logarithmic-spiral construction in dimension two that this dependence cannot be
-improved, and by a one-dimensional bump train that the factor $\kappa/\Delta t$
-of both fixed-step schemes is sharp. The local phase runs at a rate set by the
-spectral gap of a self-adjoint score operator, for which we prove a two-sided
-estimate; a smooth convex-ridge family in dimension $\Theta(\kappastar^2)$, with
-a dimension-free Hessian-Lipschitz constant, has gap
-$\Theta(\kappastar^{-1/2})$ and thereby rules out every dimension-free
-logarithmic local rate. The same three stages persist for stochastic algorithms
-built from a joint Price/Hessian oracle with a sticking-the-landing mean
-estimator, where the covariance bands hold pathwise without clipping, the
-constant-step guarantees carry explicit variance floors that vanish for Gaussian
-targets, and the local statement is a non-exit contraction together with a
-finite-horizon containment bound. Beyond log-concavity, a smooth double well
-makes both unprojected schemes unstable, while a covariance-constrained KL step
+$\rho_\post\propto e^{-V}$ through the natural gradient flow of the
+Fisher--Rao metric and two discretizations, a Riemannian retraction
+scheme and a KL/Bregman resolvent scheme. Convergence proceeds in three
+stages, covariance burn-in, global localization, and a local phase,
+each with its own sharp rate. The
+burn-in is logarithmic in the initial covariance and removable by a warm
+start. The global phase is controlled by the condition number after
+whitening by the optimizing covariance; a logarithmic-spiral construction
+shows this cannot be improved, and a bump train shows the fixed-step
+factor $\kappa/\Delta t$ is sharp. The local phase runs at the spectral gap of
+a self-adjoint score operator, bounded two-sidedly, and a
+convex-ridge family rules out every dimension-free logarithmic local rate. The
+same three stages persist for stochastic algorithms built from a joint
+Price/Hessian oracle, with pathwise covariance bands and variance
+floors that vanish for Gaussian targets. Beyond log-concavity, a double well
+destabilizes both unprojected schemes, while a covariance-constrained step
 retains an $O(1/N)$ stationarity guarantee. Finally, we classify all
-affine-invariant Riemannian metrics on the Gaussian manifold, compute the exact
-rates at which each preconditions the mean, trace, and traceless covariance
-modes, and show that Fisher--Rao is the unique member of the family, up to scale,
-that balances all three.
+affine-invariant metrics on the Gaussian manifold and show that Fisher--Rao is
+the unique member, up to scale, that balances the mean, trace, and traceless
+covariance modes.
 \end{abstract}
 
 \noindent\textbf{Keywords.}
@@ -50,7 +49,9 @@ affine invariance; convergence rates; stochastic gradient.
 \input{sections/04-stochastic}
 \input{sections/05-geometry}
 \input{sections/06-numerics}
+\FloatBarrier
 \input{sections/07-discussion}
+\FloatBarrier
 
 \appendix
 \input{appendices/A-identities}

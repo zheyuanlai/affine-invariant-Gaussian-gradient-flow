@@ -155,17 +155,31 @@ amari2016information}, and Gaussian and stochastic variational inference are
 surveyed in \citet{blei2017variational} and \citet{JMLR:v14:hoffman13a}. The
 Fisher--Rao gradient flow and its Gaussian restriction are studied in
 \citet{carrillo2026fisher} and \citet{chen2023sampling}, the latter establishing
-the affine invariance we exploit throughout. Our analysis differs from a generic
+the affine invariance we exploit throughout. Closest to our deterministic theory,
+\citet{kumar2025squareroot} prove convergence guarantees for Gaussian
+natural-gradient variational inference, in discrete time and for its
+continuous-time flow, through a square-root covariance parameterization; for
+stochastic natural-gradient variational inference, \citet{wu2024understanding}
+obtain the first $O(1/T)$ non-asymptotic rate in the conjugate-likelihood case.
+Our analysis differs from these and from a generic
 natural-gradient convergence argument in that it uses the exact Gaussian
-covariance equation rather than a smoothness surrogate, and keeps every constant
-in optimizer-whitened, affine-invariant form.
+covariance equation in the intrinsic Fisher--Rao geometry rather than a
+smoothness surrogate or a chosen parameterization, and keeps every constant
+in optimizer-whitened, affine-invariant form; this is what yields the
+three-stage decomposition, the optimizer-whitened condition number, and the
+matching lower bounds at every stage.
 
 Wasserstein Gaussian variational methods supply a complementary geometry.
 \citet{lambert2022variational} study variational inference through
 Bures--Wasserstein gradient flows and analyze a stochastic scheme with
 non-asymptotic guarantees, and \citet{diao2023forward} analyze a forward--backward
 scheme with state-of-the-art rates and the first stationarity guarantees beyond
-log-concavity. We use the Bures--Wasserstein flow in two limited roles, as a
+log-concavity. \citet{kim2026price} analyze stochastic Gaussian variational
+inference with Price's Hessian-based gradient estimator across the
+Bures--Wasserstein and parameter-space geometries, an estimator-level overlap
+with our joint Price/Hessian oracle, and \citet{luu2024variance} add
+control-variate variance reduction on the Bures--Wasserstein manifold; neither
+treats the Fisher--Rao geometry or its variance floors. We use the Bures--Wasserstein flow in two limited roles, as a
 warm start that removes the covariance burn-in and as a point of comparison
 beyond log-concavity; we do not blend the two geometries into a
 Wasserstein--Fisher--Rao method here. Affine-invariant metrics on the cone of

@@ -71,14 +71,11 @@ Since each $H_{n,s}$ has spectrum in $[\alpha,\beta]$ almost surely under
 and this almost-sure spectral band is the structural reason the schemes admit an unconditional global
 theory.
 
-\begin{remark}[Price's identity and the choice of covariance oracle]
-\label{rem:price}
 By Gaussian integration by parts, for $X=m+C^{1/2}\xi$ one has $\E[\xi\,\nabla V(X)^\top]=C^{1/2}A(a)$,
 so $A(a)$ admits both a sampled-Hessian and a gradient-only representation. We use the sampled
 Hessian, which is the representation carrying \eqref{eq:pathwise-Hess}; the gradient-only
 representation has unbounded samplewise spectrum, and none of the pathwise statements below apply to
 it.
-\end{remark}
 
 The stochastic pipeline is initialized by the single deterministic query of the quadratic rescue of
 \Cref{def:rescue}, which sets
@@ -92,26 +89,8 @@ for a quadratic potential it returns the optimizer itself, $a_0=a_\star$ and $\D
 (\Cref{thm:rescue-Gauss}). For nonquadratic targets we record the energy quality of the rescued
 initializer, which is what the global complexity bounds below consume.
 
-\begin{lemma}[Rescue energy for nonquadratic targets]
-\label{lem:rescue-energy}
-Under \Cref{assump:logconcave-smooth}, the quadratic rescue of \Cref{def:rescue} gives $\Delta(a_0)$ deterministic and finite.
-Under the additional \Cref{assump:hess-lip}, writing $r_{\mathrm{in}}:=\norm{m_{\mathrm{in}}-m_\star}$,
-\[
-    \norm{m_0-m_\star}\leq\frac{\LH}{2\alpha}\Bigl(r_{\mathrm{in}}^2+\frac{N_\theta}\alpha\Bigr),
-    \qquad
-    \norm{C_0-C_\star}_{\Frob}\leq\frac{\sqrt{N_\theta}\,\LH}{\alpha^2}\Bigl(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha}\Bigr),
-\]
-and hence
-\[
-    \Delta(a_0)
-    \leq
-    \frac{\beta\LH^2}{8\alpha^2}\Bigl(r_{\mathrm{in}}^2+\frac{N_\theta}\alpha\Bigr)^2
-    +\frac{\beta^2N_\theta\LH^2}{4\alpha^4}\Bigl(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha}\Bigr)^2,
-\]
-which is quadratic in $\LH$ and vanishes when $\LH=0$.
-\end{lemma}
-
-The proof is given in \Cref{app:stoch-proofs}. We may also retain the first-order covariance-segment
+The energy cost of the sampled rescue, \Cref{lem:rescue-energy}, is bounded in \Cref{app:stoch-proofs}.
+We may also retain the first-order covariance-segment
 estimate $\Delta(a_0)\leq\tfrac\beta2\norm{m_0-m_\star}^2+\tfrac\beta2\sqrt{N_\theta}\norm{C_0-C_\star}_{\Frob}$
 and take the minimum of the two; the quadratic form is the one with the near-Gaussian $O(\LH^2)$
 scaling that matches the stochastic local floors of \Cref{subsec:stoch-local}.
@@ -216,54 +195,13 @@ for every $B\geq1$. No third or fourth derivative of $V$ enters: when $\nabla^2V
 Poincar\'e step is applied to the Lipschitz map $F$ through its weak derivative. Two estimates of
 $\Psi$ are available, and they separate the two regimes of the theory.
 
-\begin{lemma}[Self-bounding estimate for the intrinsic fluctuation]
-\label{lem:Psi-selfbound}
-Under \Cref{assump:logconcave-smooth}, if $C\preceq\Lambda\Id$ then
-\begin{equation}
-\label{eq:Psi-selfbound}
-    \Psi(a)\leq2\beta\Lambda N_\theta+\beta\Lambda\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2
-    \leq2\beta\Lambda N_\theta+2\beta\Lambda\,\Gradnorm(a)^2 .
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-Write $B_X:=C^{1/2}\nabla^2V(X)C^{1/2}$ and $S_A:=C^{1/2}A(a)C^{1/2}=\E[B_X]$. First,
-$\Psi(a)=\E\Tr(B_X^2)-\Tr(S_A^2)\leq\E\Tr(B_X^2)$. Second, $0\preceq B_X\preceq\beta C\preceq\beta\Lambda\Id$
-almost surely, and $0\preceq M\preceq L\Id$ implies $M^2\preceq LM$, so $B_X^2\preceq\beta\Lambda B_X$
-and $\E\Tr(B_X^2)\leq\beta\Lambda\Tr(S_A)$. Third, $s\leq2+(s-1)^2$ for every real $s$, so
-$\Tr(S_A)\leq2N_\theta+\norm{S_A-\Id}_{\Frob}^2$; since $S_A-\Id=-C^{1/2}R(a)C^{1/2}$, this gives the
-first inequality, and $\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2\leq2\Gradnorm(a)^2$ gives the second.
-\end{proof}
-
-The estimate \eqref{eq:Psi-selfbound} charges the fluctuation against the gradient norm itself, which
+The self-bounding estimate for $\Psi$, \Cref{lem:Psi-selfbound}, is proved in \Cref{app:stoch-proofs}.
+The estimate \eqref{eq:Psi-selfbound} (\Cref{app:stoch-proofs}) charges the fluctuation against the gradient norm itself, which
 is what forces a smaller stepsize in the assumption-minimal regime below. Charging it instead against
 the nonquadraticity of the target decouples the two, at the price of one further regularity
 assumption.
 
-\begin{lemma}[Hessian-Lipschitz control of the intrinsic fluctuation]
-\label{lem:Psi-hesslip}
-Under \Cref{assump:hess-lip}, the anisotropic bound
-$\Psi(a)\leq\LH^2\,\Tr(C^2)\,\Tr C\leq\LH^2\norm C_\op(\Tr C)^2$ holds. On the band
-$C\preceq\tfrac1\alpha\Id$,
-\begin{equation}
-\label{eq:Psi-hesslip}
-    \Psi(a)\leq\Psi_H:=\frac{N_\theta^2\LH^2}{\alpha^3}=N_\theta^2\barLH^2 .
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-Write $X=m+C^{1/2}Z$ and $F(Z):=C^{1/2}\nabla^2V(m+C^{1/2}Z)C^{1/2}$. Gaussian Poincar\'e applied
-componentwise gives $\Psi(a)=\E\norm{F(Z)-\E F(Z)}_{\Frob}^2\leq\E\norm{D_ZF(Z)}_{\mathrm{HS}}^2$. For
-a unit vector $u$, $D_ZF(Z)[u]=C^{1/2}M_uC^{1/2}$ with $M_u:=D(\nabla^2V)(X)[C^{1/2}u]$ symmetric and
-$\norm{M_u}_\op\leq\LH(u^\top Cu)^{1/2}$. In the eigenbasis of $C$ with eigenvalues $c_i$,
-Cauchy--Schwarz on the weights gives
-$\norm{C^{1/2}M_uC^{1/2}}_{\Frob}^2=\sum_{ij}c_ic_j(M_u)_{ij}^2\leq\Tr(C^2M_u^2)\leq\norm{M_u}_\op^2\Tr(C^2)$,
-so $\norm{D_ZF(Z)[u]}_{\Frob}^2\leq\LH^2(u^\top Cu)\Tr(C^2)$; summing over an orthonormal basis gives
-$\norm{D_ZF(Z)}_{\mathrm{HS}}^2\leq\LH^2\,\Tr C\,\Tr(C^2)$, and $\Tr(C^2)\leq\norm C_\op\Tr C$ gives the
-coarser form. On $C\preceq\tfrac1\alpha\Id$ one has $\Tr(C^2)\leq N_\theta/\alpha^2$ and
-$\Tr C\leq N_\theta/\alpha$.
-\end{proof}
-
+Its Hessian-Lipschitz sharpening, \Cref{lem:Psi-hesslip}, is also in \Cref{app:stoch-proofs}.
 The anisotropic form is the sharper statement: it replaces $N_\theta^2$ by the effective dimension
 $\Tr(C^2)\Tr C/\norm C_\op^3$ and is strictly smaller whenever the covariance spectrum decays, the
 worst case over the band being $N_\theta^2$. For a Gaussian target $\nabla^2V(X)=A(a)$ pathwise, so
@@ -305,86 +243,19 @@ descends in the forward divergence: for $\Delta t\leq1/(\beta\Lambda)$ and $L_n\
 \end{equation}
 which is \Cref{prop:onestep-KL}. The forward-divergence margin \eqref{eq:KL-descent-restated} is
 exact for the deterministic map but is not stable under an unbiased perturbation of $A(a_n)$, since the
-divergence is evaluated at the perturbed endpoint. The following identity removes the difficulty by
-exhibiting the KL resolvent update as a retraction, after which \eqref{eq:retr-smooth-restated}
+divergence is evaluated at the perturbed endpoint. An identity exhibiting the KL resolvent update as
+a retraction removes the difficulty, after which \eqref{eq:retr-smooth-restated}
 governs both schemes.
 
-\begin{lemma}[The KL resolvent update is an exponential retraction]
-\label{lem:KL-retraction}
-Fix $a=(m,C)$ with $\tfrac1\beta\Id\preceq C\preceq\tfrac1\alpha\Id$ and
-$\alpha\Id\preceq\overline H\preceq\beta\Id$, and set $P:=C^{1/2}\overline HC^{1/2}$, so that
-$\tfrac1\kappa\Id\preceq P\preceq\kappa\Id$. Write $\overline S:=\Id-P$ and define the logarithmic
-tangent
-\begin{equation}
-\label{eq:Wlog}
-    W(P):=\log(1+\Delta t)\,\Id-\log(\Id+\Delta t\,P).
-\end{equation}
-Then the KL covariance update $C^+=(1+\Delta t)(C^{-1}+\Delta t\,\overline H)^{-1}$ satisfies
-\begin{equation}
-\label{eq:KL-retr}
-    C^+=C^{1/2}e^{W(P)}C^{1/2},
-    \qquad\text{equivalently}\qquad
-    a^+=\Retr_a\bigl(\Delta t\,C\overline b,\;C^{1/2}W(P)C^{1/2}\bigr).
-\end{equation}
-Moreover, with $\mathcal R(P):=W(P)-\Delta t\,\overline S$,
-\begin{equation}
-\label{eq:Wlog-bounds}
-    \norm{W(P)}_\op\leq\Delta t\,\kappa,
-    \qquad
-    \norm{W(P)}_{\Frob}\leq\Delta t\,\norm{\overline S}_{\Frob},
-    \qquad
-    \norm{\mathcal R(P)}_{\Frob}\leq\kappa\,\Delta t^2\,\norm{\overline S}_{\Frob},
-\end{equation}
-so for $\Delta t\leq1/(8\kappa)$ the tangent $\zeta:=(\Delta t\,C\overline b,\,C^{1/2}W(P)C^{1/2})$
-satisfies $\norm{W(P)}_\op\leq\tfrac18<1$ and hence the scope condition of
-\eqref{eq:retr-smooth-restated}.
-\end{lemma}
-
-\begin{proof}
-Since $C^{-1}+\Delta t\,\overline H=C^{-1/2}(\Id+\Delta t\,P)C^{-1/2}$, we have
-$C^+=C^{1/2}\bigl[(1+\Delta t)(\Id+\Delta t\,P)^{-1}\bigr]C^{1/2}$, and, $\log(1+\Delta t)\Id$ and
-$\log(\Id+\Delta t\,P)$ being commuting functions of $P$,
-$e^{W(P)}=(1+\Delta t)(\Id+\Delta t\,P)^{-1}$; the retraction form follows from
-$\Retr_a(u,U)=(m+u,\,C^{1/2}\exp(C^{-1/2}UC^{-1/2})C^{1/2})$ with $U=C^{1/2}W(P)C^{1/2}$. The band
-$\tfrac1\kappa\Id\preceq P\preceq\kappa\Id$ is $\alpha C\preceq P\preceq\beta C$ combined with
-$\tfrac1\beta\Id\preceq C\preceq\tfrac1\alpha\Id$. Each eigenvalue $p\in[\tfrac1\kappa,\kappa]$ of $P$
-contributes $w(p)=\log(1+\Delta t)-\log(1+\Delta t\,p)=\int_p^1\tfrac{\Delta t}{1+\Delta t\,r}\dd r$, and
-$0\leq\tfrac{\Delta t}{1+\Delta t\,r}\leq\Delta t$ for $r\geq0$ gives $|w(p)|\leq\Delta t|1-p|$, whence
-the first two bounds of \eqref{eq:Wlog-bounds}. For the remainder,
-$w(p)-\Delta t(1-p)=-\Delta t^2\int_p^1\tfrac r{1+\Delta t\,r}\dd r$ and $0\leq\tfrac r{1+\Delta t\,r}\leq r\leq\kappa$
-give $|w(p)-\Delta t(1-p)|\leq\kappa\Delta t^2|1-p|$; summing over eigenvalues gives the third.
-\end{proof}
-
-The identity \eqref{eq:KL-retr} is what lets the two schemes share one perturbation analysis: the
+This identity is what lets the two schemes share one perturbation analysis: the
 implicit resolvent update is the exponential retraction $C^{1/2}e^{W(P)}C^{1/2}$ with $W(P)$ a spectral
 function of the sampled relative Hessian $P$, so its first-order stochastic part is unbiased and only a
-second-order fluctuation survives. We may therefore perturb \eqref{eq:retr-smooth-restated} for both.
+second-order fluctuation survives, and we may therefore perturb \eqref{eq:retr-smooth-restated} for
+both schemes; it is recorded as \Cref{lem:KL-retraction} in \Cref{app:stoch-proofs}.
 
-\begin{lemma}[Riemannian stochastic one-step descent]
-\label{lem:onestep-stoch-Riem}
-Assume \Cref{assump:logconcave-smooth} and $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$. For
-one step of \eqref{upd:Riem-stoch} with $0<\Delta t\leq1/\kappa$,
-\begin{equation}
-\label{eq:Riem-onestep-Psi}
-    \E[\Delta_{n+1}\mid\Fil_n]
-    \leq\Delta_n-\Delta t\Bigl(1-\kappa\Delta t\bigl(1+\tfrac2B\bigr)\Bigr)\Gradnorm(a_n)^2
-    +\frac{3\kappa\Delta t^2}{2B}\Psi(a_n).
-\end{equation}
-\end{lemma}
-
-\begin{lemma}[KL stochastic one-step descent]
-\label{lem:onestep-stoch-KL}
-Assume \Cref{assump:logconcave-smooth} and $\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$. For
-one step of \eqref{upd:KL-stoch} with $0<\Delta t\leq1/(8\kappa)$,
-\begin{equation}
-\label{eq:KL-onestep-Psi}
-    \E[\Delta_{n+1}\mid\Fil_n]
-    \leq\Delta_n-\frac{\Delta t}2\,\Gradnorm(a_n)^2
-    +\frac{7\kappa\,\Delta t^2}{4B}\,\Psi(a_n).
-\end{equation}
-\end{lemma}
-
-The proofs are given in \Cref{app:stoch-proofs}. Substituting the two estimates of $\Psi$ into these
+The two one-step inequalities with their additive stochastic terms,
+\Cref{lem:onestep-stoch-Riem,lem:onestep-stoch-KL}, are stated and proved in \Cref{app:stoch-proofs}.
+Substituting the two estimates of $\Psi$ into these
 one-step inequalities and unrolling gives the global rates for each scheme.
 
 \begin{theorem}[Riemannian stochastic global convergence]
@@ -441,8 +312,6 @@ Hessian-Lipschitz assumption is used.
 
 The proofs are given in \Cref{app:stoch-proofs}.
 
-\begin{remark}[Batch-dependent stepsize window]
-\label{rem:stoch-batch-window}
 The proof of \Cref{lem:onestep-stoch-KL} holds verbatim under the weaker batch-dependent condition
 $\Delta t\leq\tfrac1{4\kappa(1+1/B)}$, of which $\Delta t\leq\tfrac1{8\kappa}$ is the $B=1$ case.
 Before the step is fixed, the Hessian-Lipschitz recursion unrolls to
@@ -454,10 +323,7 @@ which displays the rate--floor tradeoff: for large $B$ the certified step nearly
 outer-round constant at the cost of a proportionally larger fixed-step floor. The analogous
 self-bounding window is $\Delta t\leq\min\{\tfrac1{4\kappa(1+1/B)},\tfrac B{14\kappa^2}\}$. The theorem
 statements retain the conservative choices.
-\end{remark}
 
-\begin{remark}[The two schemes side by side]
-\label{rem:stoch-schemes-compare}
 The two schemes attain the same leading complexity in each regime, $\widetilde O(\kappa^2)$
 single-sample iterations under \Cref{assump:hess-lip} and $\widetilde O(\kappa^3)$ under
 \Cref{assump:logconcave-smooth} alone, both unconditionally. They differ in their bands and hence in
@@ -467,7 +333,6 @@ Riemannian band $\tfrac1{2\beta}\Id\preceq C_n$ requires $\Delta t\leq1/\kappa$ 
 $\tfrac1{2\kappa}$. Both floors are proportional to $\Psi_H=N_\theta^2\barLH^2$ in the
 Hessian-Lipschitz regime and to $\kappa N_\theta$ in the assumption-minimal regime, and both vanish at
 the estimator level for Gaussian targets by \Cref{prop:Gauss-nofloor}.
-\end{remark}
 
 \subsection{Local convergence}
 \label{subsec:stoch-local}
@@ -510,25 +375,8 @@ hypothesis of the variance estimate. This is an existence statement; no closed-f
 $\delta_\bullet$ in terms of $\alpha,\beta,N_\theta,\LH$ is available, because $\Kdisc$ is defined
 through a supremum of second derivatives of the scheme map over the local hull.
 
-\begin{lemma}[Local variance decomposition]
-\label{lem:loc-variance}
-Assume \Cref{assump:logconcave-smooth,assump:hess-lip}, work in whitened coordinates, and let
-$a=(m,C)$ with $\tfrac12\Id\preceq C\preceq\tfrac32\Id$. Then for a single sample $X\sim\rho_a$,
-\begin{equation}
-\label{eq:local-var}
-    \E\Bigl[\norm{\varepsilon_b}^2+\tfrac12\norm{\varepsilon_H}_{\Frob}^2\Bigr]
-    \leq V_0+V_1\,\norm{a-a_\star}_\star^2,
-    \qquad
-    V_0:=3N_\theta^2\LHs^2,\quad V_1:=24+6N_\theta\LHs^2 ,
-\end{equation}
-and by conditional independence the minibatch noise obeys
-$\E[\norm{\overline\varepsilon_b}^2+\tfrac12\norm{\overline\varepsilon_H}_{\Frob}^2\mid\Fil]\leq B^{-1}(V_0+V_1\norm{a-a_\star}_\star^2)$.
-At the optimizer,
-$\E[\norm{\varepsilon_b(a_\star)}^2+\tfrac12\norm{\varepsilon_H(a_\star)}_{\Frob}^2]\leq\sigma_\star^2:=\tfrac32N_\theta^2\LHs^2$,
-which is $0$ for Gaussian targets.
-\end{lemma}
-
-The proof is given in \Cref{app:stoch-proofs}. We compare one stochastic step to the deterministic
+The oracle variance constants $V_0,V_1$, \Cref{lem:loc-variance}, are derived in \Cref{app:stoch-proofs}.
+We compare one stochastic step to the deterministic
 local step. The one-step contraction of \Cref{lem:loc-contraction} holds pointwise on
 $\Ureg_{\delta_\bullet}$: every $a\in\Ureg_{\delta_\bullet}$ satisfies
 $\norm{T_\bullet(a)-a_\star}_{\star,\bullet}\leq(1-\tfrac12\Delta t\,\gamma_\bullet)\norm{a-a_\star}_{\star,\bullet}$
@@ -538,30 +386,8 @@ on the stepsize and no forward-invariance assertion. We perturb that estimate by
 noise. The energy-descent restriction would force $\Delta t=O(\kappa^{-2})$ and add a polynomial
 factor in $\kappa$ to the local rate.
 
-\begin{lemma}[One-step stochastic perturbation, Riemannian]
-\label{lem:perturb-Riem}
-Assume \Cref{assump:logconcave-smooth,assump:hess-lip}, work in whitened coordinates, and let
-$a=(m,C)$ with $\tfrac12\Id\preceq C\preceq\tfrac32\Id$ and $\norm{T_{\Riem}(a)-a_\star}_\star\leq1$,
-where $T_{\Riem}$ is the deterministic map of \eqref{upd:Riem} and $\widehat a^+$ one stochastic step
-of \eqref{upd:Riem-stoch} with batch $B$ and $0<\Delta t\leq1$. Then
-\[
-    \E\bigl[\norm{\widehat a^+-a_\star}_\star^2\mid\Fil\bigr]
-    \leq\norm{T_{\Riem}(a)-a_\star}_\star^2+\frac{64\,\Delta t^2}{B}\bigl(V_0+V_1\norm{a-a_\star}_\star^2\bigr).
-\]
-\end{lemma}
-
-\begin{lemma}[One-step stochastic perturbation, KL]
-\label{lem:perturb-KL}
-Under the hypotheses of \Cref{lem:perturb-Riem} but for the KL maps \eqref{upd:KL} and
-\eqref{upd:KL-stoch} and the weighted norm $\norm\cdot_{\star,\Delta t}$, with
-$\norm{T_{\KL}(a)-a_\star}_{\star,\Delta t}\leq1$,
-\[
-    \E\bigl[\norm{\widehat a^+-a_\star}_{\star,\Delta t}^2\mid\Fil\bigr]
-    \leq\norm{T_{\KL}(a)-a_\star}_{\star,\Delta t}^2+\frac{68\,\Delta t^2}{B}\bigl(V_0+V_1\norm{a-a_\star}_\star^2\bigr).
-\]
-\end{lemma}
-
-The proofs are given in \Cref{app:stoch-proofs}. Combining the pointwise contraction with these
+The two perturbation lemmas for the local maps, \Cref{lem:perturb-Riem,lem:perturb-KL}, are in
+\Cref{app:stoch-proofs}. Combining the pointwise contraction with these
 perturbation estimates gives the local theorems.
 
 \begin{theorem}[Stochastic local convergence, Riemannian]
@@ -629,8 +455,6 @@ high-probability containment over a horizon $N$ requires both a deep-entry condi
 batch proportional to $N$. This motivates two nested regions, entry being certified on the smaller and
 the exit time measured against the larger.
 
-\begin{remark}[Scope of the local statements]
-\label{rem:stoch-loc-scope}
 \Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL} are killed-process statements, not stopped-process bounds:
 they control the mean square on the survival event. The standing assumptions do not give the
 sticking-the-landing mean-score noise bounded support, since even for a Gaussian target it equals
@@ -638,10 +462,7 @@ $(C^{-1/2}-C^{1/2})Z$ with $Z\sim\N(0,\Id)$ away from $C=\Id$. The sampled-Hessi
 by contrast bounded almost surely, since $\alpha_\star\Id\preceq\overline H_n\preceq\beta_\star\Id$, so
 it is the mean component that obstructs pathwise invariance of a bounded local sublevel at fixed
 stepsize, and we claim no infinite-horizon containment.
-\end{remark}
 
-\begin{remark}[Local complexity]
-\label{rem:stoch-loc-complexity}
 By $\beta_\star\leq\kappa$ the spectral scale of \Cref{prop:spectral-sandwich} satisfies
 $\Gamma=O(1+\sqrt{N_\theta}\log\kappa)$, so at the certified stepsizes
 $\Delta t_{\Riem}^\star=\min\{\tfrac2{A_0},\tfrac B{256A_0V_1}\}$ and
@@ -660,7 +481,6 @@ $\bigl(1/(4+\Gamma),(4+\Gamma)/2\bigr)$ the same proofs give the target-adaptive
 $N_{\loc}=O\bigl(\max\{\Lstar/\gstar,\ V_1/(B\gstar^2)\}\log\tfrac{r_0^2}\epsilon\bigr)$. We do not
 claim the intermediate $O(\sqrt{N_\theta}\log\kappa\cdot\log\tfrac1\epsilon)$ bound, linear rather than
 quadratic in the spectral scale $4+\Gamma$.
-\end{remark}
 
 The deterministic three-stage theorem of \Cref{sec:local} spends
 $O(\Delta t^{-1}\logp\tfrac1{\beta\lambda_0})$ iterations on the covariance burn-in,
@@ -735,8 +555,6 @@ than with $\kappa^2$.
 
 The proof is given in \Cref{app:stoch-proofs}.
 
-\begin{remark}[Scope of the decreasing schedule]
-\label{rem:decreasing-reading}
 The bound \eqref{eq:decreasing-rate} is an $O(1/N)$ decay to zero, not to a floor: the
 $\Psi_H$-dependent term is carried inside $K$ and divided by $N+n_0$. For a Gaussian target
 $\Psi_H=0$ and, by \Cref{thm:rescue-Gauss}, $\Delta(a_0)=0$, so $K=0$. The schedule requires only
@@ -744,17 +562,18 @@ $\barLH<\infty$ to define $K$; the iteration itself does not use $\LH$. The theo
 the Hessian-Lipschitz regime, because in the assumption-minimal regime the stability threshold is
 $\Delta t=\Theta(\kappa^{-2})$ rather than $1/(8\kappa)$ and \eqref{eq:decreasing-schedule} does not
 apply as written.
-\end{remark}
 
-Every stochastic floor above originates in the intrinsic fluctuation $\Psi$ entering
-\eqref{eq:Riem-onestep-Psi} and \eqref{eq:KL-onestep-Psi}, and $\Psi$ vanishes identically for
-Gaussian targets. We record what this gives globally and locally.
+Every stochastic floor above originates in the intrinsic fluctuation $\Psi$ entering the additive
+stochastic terms of the one-step inequalities \eqref{eq:Riem-onestep-Psi} and \eqref{eq:KL-onestep-Psi}
+of \Cref{lem:onestep-stoch-Riem,lem:onestep-stoch-KL} (\Cref{app:stoch-proofs}), and $\Psi$ vanishes
+identically for Gaussian targets. We record what this gives globally and locally.
 
 \begin{proposition}[Zero intrinsic fluctuation for Gaussian targets]
 \label{prop:Gauss-nofloor}
 If $V(\theta)=\tfrac12(\theta-\mu)^\top H(\theta-\mu)+c$ with $H\succ0$, then $\nabla^2V(X)=H$ for all
 $X$, so $A(a)=H$ and $\Psi(a)\equiv0$ for every $a\in\Aspace$, and the additive stochastic term in the
-intrinsic one-step inequalities \eqref{eq:Riem-onestep-Psi} and \eqref{eq:KL-onestep-Psi} vanishes
+one-step inequalities \eqref{eq:Riem-onestep-Psi} and \eqref{eq:KL-onestep-Psi} of
+\Cref{lem:onestep-stoch-Riem,lem:onestep-stoch-KL} (\Cref{app:stoch-proofs}) vanishes
 unconditionally. Consequently, under the covariance-band and stepsize hypotheses of the corresponding
 global theorem, that is the band $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$ for the
 Riemannian scheme and $\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$ for the KL scheme, both
@@ -786,53 +605,8 @@ assumption-minimal branches; the intrinsic one-step inequalities show it directl
 specific to Gaussian
 targets, since it requires the sampled Hessian to equal its mean pathwise, and the resulting upper
 bound is not a matching lower bound on the asymptotic error of the algorithm.
-
-\begin{corollary}[Gaussian targets in the local phase]
-\label{cor:stoch-loc-Gauss}
-Let $V$ be as in \Cref{prop:Gauss-nofloor}, so that $\LHs=0$ and $V_0=\sigma_\star^2=\eta_\bullet=0$,
-and adopt the stepsize hypotheses of \Cref{thm:stoch-loc-Riem} resp.\ \Cref{thm:stoch-loc-KL}. For a
-Gaussian target $\Gamma=0$, so the first branch reads $\Delta t\leq\tfrac12$, while the second
-branch persists: $\LHs=0$ leaves $V_1=24$, so the hypotheses are
-$0<\Delta t\leq\min\{\tfrac12,\,B/(256\,A_{\Riem}V_1)\}$ with $A_{\Riem}=4$, and
-$0<\Delta t\leq\min\{\tfrac12,\,B/(272\,A_{\KL}V_1)\}$ respectively. Only the additive floors, not
-the state-dependent stepsize restriction, are removed by Gaussianity. Three cases are
-distinguished by the whitened covariance initialization.
-\begin{enumerate}
-\item[(a)] For generic $C_0\neq\Id$, the additive floors of
-\Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL} vanish and the exit bound of \Cref{prop:exit-prob} loses
-its horizon-growing term,
-\[
-    \E\bigl[\norm{a_N-a_\star}_{\star,\bullet}^2;\tau_\bullet>N\bigr]\leq(1-\mu_\bullet\Delta t)^N\norm{a_0-a_\star}_{\star,\bullet}^2,
-    \qquad
-    \Prob(\tau_{r_\bullet}\leq N)\leq\frac{\norm{a_0-a_\star}_{\star,\bullet}^2}{r_\bullet^2},
-\]
-both uniformly in $N$. These remain mean-square and in-probability statements: the mean-score noise
-$\varepsilon_b=(C^{-1/2}-C^{1/2})Z$ is nonzero whenever $C\neq\Id$, the state-dependent constant
-$V_1=24$ survives because $V_1$ does not contain $\LHs$, and the exit probability is not zero.
-\item[(b)] For matched covariance $C_0=\Id$, that is $C_0=C_\star$, with $m_0\neq0$, one has
-$\varepsilon_b=0$ and $\varepsilon_H=0$ pathwise, both covariance updates fix $C_n\equiv\Id$, and the
-mean update is deterministic, $m_{n+1}=(1-\Delta t)m_n$ for both schemes. The iterate is pathwise
-deterministic and contracts to $a_\star$ with no noise, so no exit control is needed. Zero-noise
-pathwise evolution therefore requires only $C_0=C_\star$, not $a_0=a_\star$.
-\item[(c)] Under quadratic rescue the initializer is $a_0=a_\star$ by \Cref{thm:rescue-Gauss}, the
-special case of (b) with $m_0=0$; then $a_n\equiv a_\star$ and no local phase is needed.
-\end{enumerate}
-\end{corollary}
-
-\begin{proof}
-For a quadratic potential $\nabla^2\widehat V\equiv C_\star^{1/2}HC_\star^{1/2}$ is constant, so
-$\LHs=0$, and \Cref{lem:loc-variance} gives $V_0=3N_\theta^2\LHs^2=0$ and
-$\sigma_\star^2=\tfrac32N_\theta^2\LHs^2=0$, whence $\eta_\bullet=0$. Setting $\eta_\bullet=0$ in
-\Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL,prop:exit-prob} gives the two displays of (a). For
-$\widehat V(z)=\tfrac12\norm z^2$ and $X=m+C^{1/2}Z$ the whitened single-sample mean noise is
-$\varepsilon_b=-C^{1/2}Z+C^{-1/2}Z=(C^{-1/2}-C^{1/2})Z$, nonzero for $C\neq\Id$, so no pathwise or
-zero-exit conclusion follows. For (b), $C_0=\Id$ gives $\varepsilon_b=0$ and, since
-$\nabla^2\widehat V\equiv\Id$, $\overline H_n=\Id=A(a)$ and $\varepsilon_H=0$ pathwise; the Riemannian
-update returns $C_1=\exp(\Delta t\cdot0)=\Id$ and the KL update
-$C_1=(1+\Delta t)(\Id+\Delta t\Id)^{-1}=\Id$, so $C_n\equiv\Id$, and then
-$\overline b_n=g(a_n)=-m_n$ gives $m_{n+1}=(1-\Delta t)m_n$. For (c), \Cref{thm:rescue-Gauss} gives
-$a_0=a_\star=(0,\Id)$, the $m_0=0$ instance of (b).
-\end{proof}
+The three-case Gaussian local calibration, \Cref{cor:stoch-loc-Gauss}, is recorded in
+\Cref{app:stoch-proofs}.
 
 \subsection{Complexity summary}
 \label{subsec:stoch-summary}

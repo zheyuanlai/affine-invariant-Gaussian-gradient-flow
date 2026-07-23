@@ -111,13 +111,32 @@ The quantity $\mathsf{S}_n$ vanishes if and only if $(m_{n+1}, C_{n+1}) = (m_n, 
 \begin{equation*}
     \Tr \left( \frac{1}{2} \left( A_n - C_n^{-1} \right) (C - C_n) \right) \geq 0 \qquad \text{for every } C \in [\lambda_- I, \lambda_+ I],
 \end{equation*}
-which are exactly the first-order conditions for $\calE$ on the covariance box. Thus $\mathsf{S}_n$ is a constrained fixed-point residual and not an unconstrained Fisher--Rao gradient norm, as recorded in the scope remark following \Cref{cor:clip-KL-full}.
+which are exactly the first-order conditions for $\calE$ on the covariance box. Thus $\mathsf{S}_n$ is a constrained fixed-point residual and not an unconstrained Fisher--Rao gradient norm, as recorded in the closing scope paragraph of \Cref{sec:global}'s non-log-concave subsection.
 
 Finally we record the mean-block identity behind \Cref{cor:clip-KL-full}. The full successive reverse KL divergence is
 \begin{equation*}
     \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) = D_C^- (C_n, C_{n+1}) + \frac{1}{2} \| m_{n+1} - m_n \|_{C_{n+1}^{-1}}^2,
 \end{equation*}
-whose mean block is measured in $C_{n+1}^{-1}$ rather than in $C_n^{-1}$. Feasibility gives $C_{n+1}^{-1} \preceq \lambda_-^{-1} I \preceq (\lambda_+ / \lambda_-) C_n^{-1}$, which is the origin of the factor $\lambda_+ / \lambda_-$ in \Cref{cor:clip-KL-full}.
+whose mean block is measured in $C_{n+1}^{-1}$ rather than in $C_n^{-1}$. Feasibility gives $C_{n+1}^{-1} \preceq \lambda_-^{-1} I \preceq (\lambda_+ / \lambda_-) C_n^{-1}$, which is the origin of the factor $\lambda_+ / \lambda_-$ in the following corollary.
+
+\begin{corollary}\label{cor:clip-KL-full}
+    Under the assumptions of \Cref{thm:clip-KL}, the full successive-Gaussian reverse KL divergence satisfies
+    \begin{equation*}
+        \min_{0 \leq n < N} \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) \leq \frac{\lambda_+}{\lambda_-} \frac{\Delta t}{N} \left\{ \calE (a_0) - \calE (a_N) \right\}.
+    \end{equation*}
+\end{corollary}
+
+\begin{proof}
+    The reverse KL divergence between successive Gaussians splits as
+    \begin{equation*}
+        \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) = \KL \left( \N (0, C_n) \, \middle\| \, \N (0, C_{n+1}) \right) + \frac{1}{2} \| m_{n+1} - m_n \|_{C_{n+1}^{-1}}^2,
+    \end{equation*}
+    and the mean block is measured in $C_{n+1}^{-1}$ rather than $C_n^{-1}$. Feasibility gives
+    \begin{equation*}
+        C_{n+1}^{-1} \preceq \lambda_-^{-1} I \preceq \frac{\lambda_+}{\lambda_-} C_n^{-1},
+    \end{equation*}
+    so the full divergence is at most $(\lambda_+ / \lambda_-) \mathsf{S}_n$, and \eqref{eq:clip-runmin} completes the proof.
+\end{proof}
 
 % SOURCES:
 % codex-draft/appendices/D-nonconvex-details.tex l.11-27 (splitting of calE, D_m/D_C^+/D_C^-) -> setup
