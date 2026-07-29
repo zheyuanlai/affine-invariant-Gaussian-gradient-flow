@@ -1514,6 +1514,150 @@ def build_covariance_bootstrap_assets():
     _tab_covboot_wasserstein(wboot)
 
 
+# ===========================================================================
+# sharp bump train (thm:sharp-disc)
+# ===========================================================================
+
+SHARP_ARM_TEX = {
+    "theory": r"$\Delta t=\gamma/\kappa$",
+    "const": r"$\Delta t=\gamma$",
+}
+SHARP_ARM_STYLE = {
+    "theory": ("o-", "#d62728"),
+    "const": ("s-", "#1f77b4"),
+}
+SHARP_FAMILY_TEX = {
+    "manuscript": r"Appendix~C train (built for $\Delta t=\gamma/\kappa$)",
+    "retuned": r"train retuned to the arm's own $\Delta t$",
+}
+
+
+def _sharp_fmt_int(x):
+    if x is None or not np.isfinite(x) or x < 0:
+        return "--"
+    return f"{int(round(x)):d}"
+
+
+def _fig_sharp_scaling(summary, name):
+    """Iterations to a constant-factor gap reduction vs kappa, one panel per family."""
+    df = summary[(summary.scheme == "riemannian") & (summary.n_half > 0)]
+    families = [f for f in ("manuscript", "retuned") if f in set(df.family)]
+    fig, axes = plt.subplots(1, len(families), figsize=(5.2 * len(families), 3.9),
+                             sharey=True)
+    axes = np.atleast_1d(axes)
+    for ax, family in zip(axes, families):
+        sub = df[df.family == family]
+        for arm, (fmt, color) in SHARP_ARM_STYLE.items():
+            g = sub[sub.arm == arm].sort_values("kappa")
+            if g.empty:
+                continue
+            ax.loglog(g.kappa, g.n_half, fmt, color=color, label=SHARP_ARM_TEX[arm])
+        k = np.array(sorted(sub.kappa.unique()), dtype=float)
+        anchor = float(sub[sub.arm == "theory"].n_half.min())
+        for power, shade, lab in ((1, "0.55", r"  $\kappa$"), (2, "0.3", r"  $\kappa^2$")):
+            ax.loglog(k, anchor * (k / k[0]) ** power, ":", color=shade, lw=1.0)
+            ax.text(k[-1], anchor * (k[-1] / k[0]) ** power, lab, color=shade, va="center")
+        ax.set_xlabel(r"condition number $\kappa$")
+        ax.set_title(SHARP_FAMILY_TEX.get(family, family))
+    axes[0].set_ylabel(r"iterations to $\Delta\mathcal{E}\leq\Delta\mathcal{E}_0/2$")
+    axes[0].legend(loc="upper left")
+    _savefig(fig, name)
+
+
+def _tab_sharp_scaling(summary, slopes):
+    """Iteration counts and fitted exponents, both schemes, both fixed steps."""
+    lines = [
+        r"\begin{tabular}{ll rrrr r}", r"\toprule",
+        r"train & step & \multicolumn{4}{c}{iterations to "
+        r"$\Delta\mathcal{E}\leq\Delta\mathcal{E}_0/2$} & exponent \\",
+        r"\cmidrule(lr){3-6}\cmidrule(lr){7-7}",
+        r" & & $\kappa{=}128$ & $\kappa{=}256$ & $\kappa{=}512$ & $\kappa{=}1024$ "
+        r"& $\kappa\in[128,1024]$ \\", r"\midrule",
+    ]
+    for fi, family in enumerate(("manuscript", "retuned")):
+        if fi:
+            lines.append(r"\midrule")
+        for ai, arm in enumerate(("theory", "const")):
+            for scheme in ("riemannian", "kl"):
+                sub = summary[(summary.family == family) & (summary.arm == arm)
+                              & (summary.scheme == scheme)]
+                sl = slopes[(slopes.family == family) & (slopes.arm == arm)
+                            & (slopes.scheme == scheme) & (slopes.metric == "n_half")]
+
+                def cell(kappa):
+                    r = sub[np.isclose(sub.kappa, kappa)]
+                    return _sharp_fmt_int(r.n_half.iloc[0]) if len(r) else "--"
+
+                short = {"manuscript": r"Appendix~C", "retuned": "retuned"}
+                head = short.get(family, family) if (ai == 0 and scheme == "riemannian") else ""
+                tag = "Riem." if scheme == "riemannian" else "KL"
+                exp_v = _fmt(sl.slope_upper.iloc[0], 2) if len(sl) else "--"
+                lines.append(
+                    f"{head} & {SHARP_ARM_TEX[arm]}, {tag} & {cell(128)} & {cell(256)} & "
+                    f"{cell(512)} & {cell(1024)} & {exp_v} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_sharp_scaling.tex", "\n".join(lines))
+
+
+def _tab_sharp_gamma(gamma_df):
+    """Fixed order-one step swept over its own constant: exponent and stability."""
+    lines = [
+        r"\begin{tabular}{l rr rr}", r"\toprule",
+        r" & \multicolumn{2}{c}{exponent, $\kappa\in[128,1024]$} "
+        r"& \multicolumn{2}{c}{all runs monotone / converged} \\",
+        r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
+        r"$\gamma$ ($=\Delta t$) & Riem. & KL & Riem. & KL \\", r"\midrule",
+    ]
+    for gamma in sorted(gamma_df.gamma.unique()):
+        sub = gamma_df[np.isclose(gamma_df.gamma, gamma)]
+
+        def cell(scheme, col):
+            r = sub[sub.scheme == scheme]
+            if not len(r):
+                return "--"
+            if col == "slope_upper":
+                return _fmt(r.slope_upper.iloc[0], 2)
+            ok = bool(r.all_monotone.iloc[0]) and bool(r.all_converged.iloc[0])
+            return r"\checkmark" if ok else r"$\times$"
+
+        lines.append(
+            f"${gamma:g}$ & {cell('riemannian', 'slope_upper')} & {cell('kl', 'slope_upper')} "
+            f"& {cell('riemannian', 'ok')} & {cell('kl', 'ok')} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_sharp_gamma.tex", "\n".join(lines))
+
+
+def _tab_sharp_shadowing(summary):
+    """Shadowing diagnostics: the theory arm really is on the lem:bump-shadowing orbit."""
+    sub = summary[(summary.family == "manuscript") & (summary.arm == "theory")
+                  & (summary.scheme == "riemannian")].sort_values("kappa")
+    lines = [
+        r"\begin{tabular}{r rr rr r}", r"\toprule",
+        r"$\kappa$ & $N_\kappa$ & $n_{1/2}$ & $n_{1/2}/N_\kappa$ & "
+        r"$\sup_j|m_j-x_j|/w_\kappa$ & $\sup_j|\kappa c_j-1|$ \\", r"\midrule",
+    ]
+    for _, r in sub.iterrows():
+        lines.append(
+            f"${r.kappa:g}$ & {_sharp_fmt_int(r.N_train)} & {_sharp_fmt_int(r.n_half)} & "
+            f"{_fmt(r.n_half_over_N_train, 3)} & {_fmt_sci(r.shadow_mean_err_over_w)} & "
+            f"{_fmt_sci(r.shadow_cov_err)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_sharp_shadowing.tex", "\n".join(lines))
+
+
+def build_sharp_bump_assets():
+    """Figures and tables for the sharp bump-train report."""
+    print("sharp bump train:")
+    d = os.path.join(_ROOT, "outputs", "natural_gradient_sharp_bump")
+    summary = pd.read_csv(os.path.join(d, "sharp_bump_summary.csv"))
+    slopes = pd.read_csv(os.path.join(d, "sharp_bump_slopes.csv"))
+    gamma_df = pd.read_csv(os.path.join(d, "sharp_bump_gamma_sweep.csv"))
+    _fig_sharp_scaling(summary, "fig_sharp_bump_scaling")
+    _tab_sharp_scaling(summary, slopes)
+    _tab_sharp_gamma(gamma_df.drop_duplicates(subset=["gamma", "scheme"]))
+    _tab_sharp_shadowing(summary)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--repo-root", default=_ROOT)
@@ -1522,6 +1666,7 @@ def main():
                        "omega_tau", "local_rate", "discretization", "wfr",
                        "nonconvex_instability", "stl_variance",
                        "covariance_bootstrap", "natural_gradient_covariance_bootstrap",
+                       "sharp_bump",
                    ],
                    default=None, help="Build only one group's assets.")
     args = p.parse_args()
@@ -1536,6 +1681,7 @@ def main():
         "stl_variance": build_stl_variance_assets,
         "covariance_bootstrap": build_covariance_bootstrap_assets,
         "natural_gradient_covariance_bootstrap": build_covariance_bootstrap_assets,
+        "sharp_bump": build_sharp_bump_assets,
     }
     # The covariance-bootstrap group has two alias keys pointing at one builder;
     # on a full run keep only one so it is not built twice.
