@@ -202,44 +202,43 @@ asymptotic noise floor for the Gaussian target (machine zero) and an
 `O(dt Psi)` floor for the non-Gaussian target (log–log slope ≈ 1.0). See
 [`reports/natural_gradient_covariance_bootstrap_report.tex`](reports/natural_gradient_covariance_bootstrap_report.tex).
 
-### 8. `natural_gradient_sharp_bump` — is the `O(kappa^2)` global localization intrinsic?
+### 8. `natural_gradient_fixed_step_barrier` — is the `O(kappa^2)` fixed-step rate intrinsic?
 
-Runs the sharp counterexample of `thm:sharp-disc` (manuscript Appendix C) itself.
-The 1-D bump-train potential `V_kappa` has exact condition number `kappa`,
-`||V'''||_inf <= LH` dimension-free, and matched initial covariance `c_0 = 1/kappa`;
-at the globally certified fixed step `dt = gamma/kappa` it blocks both schemes for
-`N = T kappa^2 / gamma` iterations. The appendix writes the center recursion with
-the constant `gamma/kappa^2`, which is exactly the per-step mean gain `dt * c_kappa`;
-here that constant is a free parameter `s`, so the same construction can be
-**retuned** to any stepsize (`s = dt / kappa`) — the adversary sees the stepsize rule
-before choosing `V`. Two families (`manuscript`, `retuned`) are crossed with the two
-schemes and two **fixed** stepsize arms: `theory` (`dt = gamma/kappa`, the
-certified step) and `const` (`dt = gamma`, `kappa`-independent). Both are single
-scalars held constant for the whole run — no line search, no state dependence. A
-separate sweep varies the order-one constant `gamma` itself. The measured quantity
-is iterations to `DeltaE <= DeltaE_0 / 2` versus `kappa`, reported as a log-log
-slope.
+Two counterexamples that together partition the fixed-stepsize axis, plus a
+Bures–Wasserstein contrast on the same targets.
 
-**Finding.** The certified step reproduces the theorem: slope `1.93` over
-`kappa in [128, 1024]` (`-> 2`), with the iterates shadowing the ideal centers `x_j`
-to machine precision, `c_n A_n = 1` throughout, and `n_half / N_train -> 1.04`. An
-order-one step is **not** destabilized by the construction — every run is monotone,
-no failures — and on the manuscript train it defeats the obstruction outright
-(slope `0.16`, essentially logarithmic). When the adversary retunes the train to
-the order-one step the cost returns to slope `0.91` (Riemannian) / `0.90` (KL),
-i.e. `Theta(kappa)`, matching the Bures–Wasserstein complexity of
-arXiv:2304.05398. Both schemes agree to within two iterations everywhere — along
-the shadowed trajectory `c_n A_n = 1`, at which the two covariance maps coincide
-exactly. The order-one reading is not an artifact of `gamma = 0.5`: every
-`gamma <= 1` is monotone and convergent at every `kappa` with exponent in
-`[0.88, 0.92]`, and the fixed step breaks only at `gamma >= 2`, a `kappa`-free
-threshold matching the explicit mean update's `dt * c_n A_n < 2` limit. So the `kappa^2` is
-the price of committing to `dt = Theta(1/kappa)`, not an intrinsic property of the
-Fisher–Rao scheme: the construction certifies `Omega(T kappa / dt)`, which is
-`kappa^2` at the certified step and `kappa` at an order-one step. This is evidence
-on the sharp example only — it does not supply a stability proof for `dt = Theta(1)`
-outside the certified range `dt <= 1/(beta lambda_max)`. See
-[`reports/natural_gradient_sharp_bump_report.tex`](reports/natural_gradient_sharp_bump_report.tex).
+**Bump train** (manuscript `thm:sharp-disc`, Appendix C). The 1-D potential with
+exact condition number `kappa`, dimension-free `||V'''||_inf` and matched initial
+covariance `c_0 = 1/kappa` blocks both schemes for `N = T kappa^2 / gamma`
+iterations at the certified step. The appendix writes the center recursion with the
+constant `gamma/kappa^2`, which is exactly the per-step mean gain `dt * c_kappa`;
+treating it as a free parameter `s` retunes the same construction to any stepsize
+(`s = dt/kappa`), so the family certifies `Omega(T kappa / dt)`.
+
+**Two-cycle.** Both covariance maps are stationary wherever `c A = 1`, and there the
+mean recursion becomes `m+ = (1 - dt * secant/tangent) m`, where `secant = b(m,c)/m`
+is the *average* of `A` over `[0,m]` and `tangent = A(m,c)` is its endpoint value.
+These are independent and their ratio spans `[1/kappa, kappa]`, so setting it to
+`2/dt` makes the multiplier exactly `-1` and evenness closes an exact nonoptimal
+period-two orbit. This is realizable whenever `dt > 2/kappa`, with `min V'' = 1` and
+`max V'' = kappa` both **attained** (otherwise the example would only restate the
+textbook stability limit at a smaller true condition number).
+
+**Finding.** The `kappa^2` is intrinsic to fixed-step Fisher–Rao. For `dt <= 2/kappa`
+the retuned bump train forces `Omega(T kappa / dt)` (measured exponent `1.93` over
+`kappa in [128, 1024]`, iterates shadowing the ideal centers to machine precision);
+for `dt > 2/kappa` the two-cycle target makes both schemes never converge — all 40
+Fisher–Rao runs fail, the mean flips sign every iteration with amplitude and gap
+constant to 6 decimals, and the orbit survives a 1% perturbation of the
+initialization in every run. The envelope is minimized at the crossover
+`dt ~ 1/kappa` with value `~ kappa^2`, so `min_dt sup_V N = Theta(kappa^2)`.
+On the same targets the Bures–Wasserstein forward–backward step converges in all 60
+runs inside its certified `eta <= 1/beta` and first fails at exactly `eta = 2/beta`:
+its mean update carries no covariance preconditioner, so its multiplier is
+`1 - eta * secant` with `secant <= beta`, bounded away from `-1` uniformly in `c`.
+This supersedes an earlier reading of the bump-train experiment alone, which
+concluded the `kappa^2` was only the price of the certified step. See
+[`reports/natural_gradient_fixed_step_barrier_report.tex`](reports/natural_gradient_fixed_step_barrier_report.tex).
 
 ## Which outputs are final
 
@@ -538,29 +537,33 @@ and the report compiled by:
 ```bash
 cd reports
 tectonic natural_gradient_covariance_bootstrap_report.tex
-tectonic natural_gradient_sharp_bump_report.tex
+tectonic natural_gradient_fixed_step_barrier_report.tex
 ```
 
-## Reproducing the sharp bump-train experiment
+## Reproducing the fixed-step barrier experiments
 
-Deterministic, 1-D, CPU-only (~95 s for the full `kappa` grid up to 1024):
+Deterministic, 1-D, CPU-only. The bump train takes ~95 s for the full `kappa`
+grid up to 1024; the two-cycle study (including the basin sweep and the combined
+barrier sweep) takes ~8 min:
 
 ```bash
-python scripts/natural_gradient_sharp_bump/run_sharp_bump.py \
-    --config configs/natural_gradient_sharp_bump/sharp_bump.yaml \
-    --outdir outputs/natural_gradient_sharp_bump --overwrite
+python scripts/natural_gradient_fixed_step_barrier/run_sharp_bump.py \
+    --config configs/natural_gradient_fixed_step_barrier/sharp_bump.yaml \
+    --outdir outputs/natural_gradient_fixed_step_barrier --overwrite
 ```
 
 ```bash
-python scripts/natural_gradient_sharp_bump/plot_sharp_bump.py \
-    --indir outputs/natural_gradient_sharp_bump
+python scripts/natural_gradient_fixed_step_barrier/run_two_cycle.py \
+    --config configs/natural_gradient_fixed_step_barrier/two_cycle.yaml \
+    --outdir outputs/natural_gradient_fixed_step_barrier --overwrite
 ```
 
 This writes `sharp_bump_long.csv`, `sharp_bump_summary.csv`,
 `sharp_bump_slopes.csv`, `sharp_bump_gamma_sweep.csv` and
 `sharp_bump_metadata.json`, plus
-`figures/sharp_bump_scaling.{png,pdf}`. Add `--smoke` for the reduced grid
-(`outputs/natural_gradient_sharp_bump_smoke/`). The headline columns are
+`two_cycle_summary.csv`, `two_cycle_basin.csv`, `two_cycle_targets.csv`,
+`two_cycle_barrier.csv` and `two_cycle_long.csv`. Add `--smoke` to either for the reduced grid
+(`outputs/natural_gradient_fixed_step_barrier_smoke/`). The headline columns are
 `slope_upper` in `sharp_bump_slopes.csv` (log-log exponent of `n_half` vs `kappa`
 over the top half of the grid) and `shadow_mean_err_over_w` / `cA_max` in the
 summary, which verify that the `theory` arm really is on the shadowed trajectory
@@ -610,7 +613,7 @@ the speed, not the meaning, of the estimates. Potential centering and the
 python reports/make_report_assets.py
 #    -> reports/assets/figs/*.pdf, *.png  and  reports/assets/tab_*.tex
 #    (use --only {omega_tau,local_rate,discretization,wfr,nonconvex_instability,
-#     stl_variance,covariance_bootstrap,sharp_bump} to build one group)
+#     stl_variance,covariance_bootstrap,fixed_step_barrier} to build one group)
 
 # 2. compile the reports (tectonic resolves preamble.tex and assets/)
 cd reports
@@ -621,7 +624,7 @@ tectonic wfr_gradient_flow_report.tex
 tectonic natural_gradient_nonconvex_instability_report.tex
 tectonic natural_gradient_stl_variance_report.tex
 tectonic natural_gradient_covariance_bootstrap_report.tex
-tectonic natural_gradient_sharp_bump_report.tex
+tectonic natural_gradient_fixed_step_barrier_report.tex
 ```
 
 `make_report_assets.py` only reads the final CSVs and writes figures/tables; it

@@ -1645,10 +1645,104 @@ def _tab_sharp_shadowing(summary):
     _write_table("tab_sharp_shadowing.tex", "\n".join(lines))
 
 
-def build_sharp_bump_assets():
-    """Figures and tables for the sharp bump-train report."""
-    print("sharp bump train:")
-    d = os.path.join(_ROOT, "outputs", "natural_gradient_sharp_bump")
+def _tab_two_cycle(summary, targets):
+    """Both Fisher--Rao schemes cycle; Bures--Wasserstein converges on the same target."""
+    lines = [
+        r"\begin{tabular}{r r rr rr r}", r"\toprule",
+        r"& & \multicolumn{2}{c}{Fisher--Rao, $\Delta t=\gamma$}"
+        r" & \multicolumn{2}{c}{Bures--Wasserstein, $\eta=1/\beta$} & \\",
+        r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-7}",
+        r"$\kappa$ & $\gamma$ & Riem. & KL & converged & $n_{\mathrm{tol}}$ "
+        r"& $\|V'''\|_\infty$ \\", r"\midrule",
+    ]
+    for kappa in sorted(summary.kappa.unique()):
+        for gamma in sorted(summary.gamma.unique()):
+            sub = summary[(summary.kappa == kappa) & (summary.gamma == gamma)]
+
+            def fr(scheme):
+                r = sub[sub.scheme == scheme]
+                if not len(r):
+                    return "--"
+                return r"cycles" if not int(r.converged.iloc[0]) else r"converges"
+
+            bwr = sub[(sub.scheme == "bures_wasserstein")
+                      & np.isclose(sub.get("bw_eta_multiplier", -1), 1.0)]
+            bw_ok = r"\checkmark" if len(bwr) and int(bwr.converged.iloc[0]) else r"$\times$"
+            bw_n = _sharp_fmt_int(bwr.n_tol.iloc[0]) if len(bwr) else "--"
+            tg = targets[(targets.kappa == kappa) & (targets.gamma == gamma)]
+            lh = _fmt(tg.hessian_lipschitz.iloc[0], 4) if len(tg) else "--"
+            lines.append(
+                f"${kappa:g}$ & ${gamma:g}$ & {fr('riemannian')} & {fr('kl')} & "
+                f"{bw_ok} & {bw_n} & {lh} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_two_cycle.tex", "\n".join(lines))
+
+
+def _tab_two_cycle_bw(summary):
+    """Bures--Wasserstein stepsize boundary: converges iff eta <= 1/beta (edge at 2/beta)."""
+    bw = summary[summary.family == "bures_wasserstein"]
+    lines = [
+        r"\begin{tabular}{l rr l}", r"\toprule",
+        r"$\eta$ & converged & runs & behaviour \\", r"\midrule",
+    ]
+    for mult in sorted(bw.bw_eta_multiplier.unique()):
+        sub = bw[np.isclose(bw.bw_eta_multiplier, mult)]
+        n_ok, n = int(sub.converged.sum()), len(sub)
+        note = "converges" if n_ok == n else ("oscillates" if n_ok == 0 else "mixed")
+        inside = r"\;(certified)" if mult <= 1.0 else ""
+        lines.append(rf"${mult:g}/\beta${inside} & {n_ok} & {n} & {note} \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_two_cycle_bw.tex", "\n".join(lines))
+
+
+def _tab_two_cycle_basin(basin):
+    """How large a perturbation of the initial mean still fails to converge."""
+    lines = [
+        r"\begin{tabular}{l rr l}", r"\toprule",
+        r"initial perturbation & non-convergent & runs & status \\", r"\midrule",
+    ]
+    for pert in sorted(basin.perturb.unique()):
+        # exact match: np.isclose would merge perturbations 0 and 1e-12 (atol=1e-8)
+        sub = basin[basin.perturb == pert]
+        n_bad, n = int((sub.converged == 0).sum()), len(sub)
+        tag = "all cycle" if n_bad == n else ("all escape" if n_bad == 0 else "mixed")
+        label = "$0$" if pert == 0 else rf"${pert:g}$"
+        lines.append(rf"{label} & {n_bad} & {n} & {tag} \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_two_cycle_basin.tex", "\n".join(lines))
+
+
+def _fig_barrier(barrier, name):
+    """The fixed-step barrier: worst case over both counterexamples, versus ``dt``."""
+    kappa = float(barrier.kappa.iloc[0])
+    fig, ax = plt.subplots(figsize=(6.6, 4.2))
+    bump = barrier[barrier.regime == "bump_train"].sort_values("dt")
+    cyc = barrier[barrier.regime == "two_cycle"].sort_values("dt")
+    ax.loglog(bump.dt, bump.n_half, "o-", color="#1f77b4",
+              label=r"bump train, $\Omega(T\kappa/\Delta t)$")
+    ymax = float(bump.n_half.max()) * 40 if len(bump) else 1e7
+    ymin = max(float(bump.n_half.min()) / 8, 1.0) if len(bump) else 1.0
+    if len(cyc):
+        ax.axvspan(float(cyc.dt.min()) * 0.75, float(cyc.dt.max()) * 1.4,
+                   color="#d62728", alpha=0.13)
+        ax.plot(cyc.dt, np.full(len(cyc), ymax * 0.5), "v", color="#d62728",
+                label=r"two-cycle: never converges")
+    ax.axvline(2.0 / kappa, color="0.35", ls="--", lw=1.2)
+    ax.text(2.0 / kappa * 1.15, ymin * 2.2, r"$\Delta t=2/\kappa$", color="0.35")
+    ax.axhline(kappa ** 2, color="0.6", ls=":", lw=1.0)
+    ax.text(float(bump.dt.min()), kappa ** 2 * 1.3, r"$\kappa^2$", color="0.5")
+    ax.set_xlabel(r"fixed stepsize $\Delta t$")
+    ax.set_ylabel("worst-case iterations to halve the gap")
+    ax.set_title(rf"Fixed-step barrier at $\kappa={kappa:g}$")
+    ax.set_ylim(ymin, ymax)
+    ax.legend(loc="upper right")
+    _savefig(fig, name)
+
+
+def build_fixed_step_barrier_assets():
+    """Figures and tables for the fixed-step lower-bound report."""
+    print("fixed-step barrier (bump train + two-cycle):")
+    d = os.path.join(_ROOT, "outputs", "natural_gradient_fixed_step_barrier")
     summary = pd.read_csv(os.path.join(d, "sharp_bump_summary.csv"))
     slopes = pd.read_csv(os.path.join(d, "sharp_bump_slopes.csv"))
     gamma_df = pd.read_csv(os.path.join(d, "sharp_bump_gamma_sweep.csv"))
@@ -1656,6 +1750,15 @@ def build_sharp_bump_assets():
     _tab_sharp_scaling(summary, slopes)
     _tab_sharp_gamma(gamma_df.drop_duplicates(subset=["gamma", "scheme"]))
     _tab_sharp_shadowing(summary)
+
+    tc = pd.read_csv(os.path.join(d, "two_cycle_summary.csv"))
+    tgt = pd.read_csv(os.path.join(d, "two_cycle_targets.csv"))
+    basin = pd.read_csv(os.path.join(d, "two_cycle_basin.csv"))
+    barrier = pd.read_csv(os.path.join(d, "two_cycle_barrier.csv"))
+    _tab_two_cycle(tc, tgt)
+    _tab_two_cycle_bw(tc)
+    _tab_two_cycle_basin(basin)
+    _fig_barrier(barrier, "fig_fixed_step_barrier")
 
 
 def main():
@@ -1666,7 +1769,7 @@ def main():
                        "omega_tau", "local_rate", "discretization", "wfr",
                        "nonconvex_instability", "stl_variance",
                        "covariance_bootstrap", "natural_gradient_covariance_bootstrap",
-                       "sharp_bump",
+                       "fixed_step_barrier",
                    ],
                    default=None, help="Build only one group's assets.")
     args = p.parse_args()
@@ -1681,7 +1784,7 @@ def main():
         "stl_variance": build_stl_variance_assets,
         "covariance_bootstrap": build_covariance_bootstrap_assets,
         "natural_gradient_covariance_bootstrap": build_covariance_bootstrap_assets,
-        "sharp_bump": build_sharp_bump_assets,
+        "fixed_step_barrier": build_fixed_step_barrier_assets,
     }
     # The covariance-bootstrap group has two alias keys pointing at one builder;
     # on a full run keep only one so it is not built twice.

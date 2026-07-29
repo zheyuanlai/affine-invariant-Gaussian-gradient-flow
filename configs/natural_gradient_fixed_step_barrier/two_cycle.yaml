@@ -1,0 +1,61 @@
+# Configuration for the exact two-cycle counterexample.
+#
+# For any fixed stepsize gamma in (2/kappa, 2) there is an admissible target --
+# even, C^inf, with min V'' = 1 and max V'' = kappa both ATTAINED, and prescribed
+# dimension-free ||V'''||_inf -- on which both Fisher-Rao schemes have an exact
+# nonoptimal period-two orbit. The Bures-Wasserstein forward-backward scheme is run
+# on the SAME targets at its own certified stepsize eta <= 1/beta, where the cycle
+# cannot form because its mean update carries no covariance preconditioner.
+#
+# Deterministic, 1-D, CPU-only: closed-form potential, Gauss-Hermite averages.
+
+kappas: [64, 128, 256, 512, 1024]
+
+# Fixed order-one stepsizes. All are kappa-independent and all lie in (2/kappa, 2)
+# for every kappa in the grid above.
+gammas: [0.25, 0.5, 1.0, 1.5]
+
+fisher_rao_schemes: [riemannian, kl]
+
+# Bures-Wasserstein stepsizes as multiples of its certified scale 1/beta
+# (arXiv:2304.05398). Values <= 1 are inside the certified range; 2 is the exact
+# stability edge of the mean update (|1 - eta r| = 1 at r = beta).
+bw_eta_multipliers: [0.25, 0.5, 1.0, 2.0, 4.0]
+
+# Relative perturbations of the initial mean, to measure the basin of the orbit
+# rather than assuming it is a knife edge.
+perturbations: [0.0, 1.0e-12, 1.0e-6, 0.01, 0.05, 0.1, 0.2, 0.5]
+
+# Potential geometry.
+target:
+  LH: 1.0                # Hessian-Lipschitz budget, dimension-free
+  width_factor: 24.0     # M0/d; doubled automatically when r sits close to kappa
+  gh_nodes: 64
+
+# Barrier sweep: one kappa, a log grid of fixed stepsizes spanning both regimes.
+# dt > 2/kappa is where the two-cycle exists (hitting time infinite); below it the
+# retuned bump train is run and its blocked-iteration count measured.
+barrier_kappa: 256
+barrier_dt_grid: [0.0004883, 0.0009766, 0.001953, 0.003906, 0.0078125,
+                  0.015625, 0.03125, 0.0625, 0.125, 0.25, 0.5, 1.0]
+
+# A run is "converged" when the gap falls to tol_rel of its initial value.
+tol_rel: 1.0e-6
+max_steps: 2000
+
+# Longer horizon for the perturbation study (escapes can be slow).
+max_steps_perturb: 20000
+
+max_saved_rows: 200
+
+output_dir: outputs/natural_gradient_fixed_step_barrier
+
+smoke:
+  kappas: [64, 256]
+  gammas: [0.5, 1.0]
+  bw_eta_multipliers: [1.0, 2.0]
+  perturbations: [0.0, 0.01, 0.5]
+  max_steps: 500
+  max_steps_perturb: 2000
+  barrier_dt_grid: [0.001953, 0.0078125, 0.03125, 0.25, 1.0]
+  output_dir: outputs/natural_gradient_fixed_step_barrier_smoke

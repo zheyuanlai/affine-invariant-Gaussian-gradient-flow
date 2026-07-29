@@ -25,8 +25,8 @@ is the Bures--Wasserstein scaling.
 Everything is one-dimensional, deterministic and CPU-only: closed-form potential,
 Gauss--Hermite Gaussian averages, no Monte Carlo.
 """
-from src.natural_gradient_sharp_bump.bump_target import BumpTrain, phi
-from src.natural_gradient_sharp_bump.runner import (
+from src.natural_gradient_fixed_step_barrier.bump_target import BumpTrain, phi
+from src.natural_gradient_fixed_step_barrier.runner import (
     ARMS, SCHEMES, nominal_dt, scheme_step, simulate, step_size,
 )
 

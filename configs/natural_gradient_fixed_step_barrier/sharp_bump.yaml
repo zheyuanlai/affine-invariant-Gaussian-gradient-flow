@@ -56,7 +56,7 @@ max_steps_floor: 20000
 
 max_saved_rows: 400
 
-output_dir: outputs/natural_gradient_sharp_bump
+output_dir: outputs/natural_gradient_fixed_step_barrier
 
 # Fast subset used with --smoke.
 smoke:
@@ -64,4 +64,4 @@ smoke:
   gamma_sweep: [0.5, 2.0]
   max_steps_factor: 4
   max_steps_floor: 5000
-  output_dir: outputs/natural_gradient_sharp_bump_smoke
+  output_dir: outputs/natural_gradient_fixed_step_barrier_smoke

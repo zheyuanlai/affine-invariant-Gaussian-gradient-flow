@@ -5,8 +5,8 @@ one panel per train family, log-log, with ``kappa`` and ``kappa^2`` guides.
 
 Usage::
 
-    python scripts/natural_gradient_sharp_bump/plot_sharp_bump.py \
-        --indir outputs/natural_gradient_sharp_bump
+    python scripts/natural_gradient_fixed_step_barrier/plot_sharp_bump.py \
+        --indir outputs/natural_gradient_fixed_step_barrier
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ FAMILY_TITLE = {
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--indir", default="outputs/natural_gradient_sharp_bump")
+    ap.add_argument("--indir", default="outputs/natural_gradient_fixed_step_barrier")
     ap.add_argument("--scheme", default="riemannian", choices=["riemannian", "kl"])
     args = ap.parse_args()
 

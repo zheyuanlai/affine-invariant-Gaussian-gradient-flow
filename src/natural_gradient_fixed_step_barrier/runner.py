@@ -30,6 +30,26 @@ import math
 SCHEMES = ["riemannian", "kl"]
 ARMS = ["theory", "const", "relcurv"]
 
+# Bures--Wasserstein forward--backward step (manuscript eq. BW-step; Lambert et al.,
+# arXiv:2304.05398), scalar form. Its certified stepsize is eta <= 1/beta, which
+# involves beta ALONE -- no covariance factor. That is the structural contrast with
+# Fisher--Rao, whose certified step 1/(beta lambda_max) carries the covariance scale.
+BW_SCHEMES = ["bures_wasserstein"]
+
+
+def bw_step(m, c, b, A, eta):
+    """One Bures--Wasserstein forward--backward step.
+
+    ``m+ = m - eta b`` -- note the mean update has NO covariance preconditioner, so
+    its multiplier is ``1 - eta * (secant slope)`` and the secant is bounded by
+    ``beta``. With ``eta <= 1/beta`` the multiplier lies in ``[0, 1)`` at every
+    admissible state, which is exactly why the two-cycle cannot form.
+    """
+    m_next = m - eta * b
+    c_tilde = (1.0 - eta * A) ** 2 * c
+    c_next = 0.5 * (c_tilde + 2.0 * eta + math.sqrt(c_tilde * (c_tilde + 4.0 * eta)))
+    return m_next, c_next
+
 
 def nominal_dt(arm, gamma, kappa):
     """Nominal (trajectory) stepsize of an arm -- what the retuned train is built for.
@@ -69,6 +89,79 @@ def scheme_step(scheme, m, c, b, A, dt):
     else:
         raise ValueError(f"unknown scheme '{scheme}' (known: {SCHEMES})")
     return m_next, c_next
+
+
+def simulate_two_cycle(target, scheme, dt, max_steps, tol_rel=1e-6,
+                       max_saved_rows=400, perturb=0.0):
+    """Run one scheme on the two-cycle target from ``(M, 1/p)``.
+
+    ``scheme`` is ``riemannian``, ``kl`` or ``bures_wasserstein``; ``dt`` is the fixed
+    stepsize (``gamma`` for the Fisher--Rao schemes, ``eta`` for BW). ``perturb``
+    multiplies the initial mean by ``1 + perturb``, which probes whether the orbit is
+    attracting or a knife edge.
+
+    Returns ``(records, summary)``. The summary reports the cycle diagnostics: the
+    sign pattern of the mean, the amplitude drift ``|m_n|/M``, and whether the gap
+    ever falls below ``tol_rel`` of its initial value.
+    """
+    m = target.M * (1.0 + perturb)
+    c = target.c
+    gap0 = target.gap(m, c)
+    save_every = max(1, max_steps // max_saved_rows)
+
+    records, n_tol = [], -1
+    amp_min, amp_max = abs(m) / target.M, abs(m) / target.M
+    gap_min, gap_max = gap0, gap0
+    sign_flips = 0
+    prev_sign = math.copysign(1.0, m)
+    status = "ok"
+    gap = gap0
+
+    for n in range(max_steps):
+        b, A = target.b_A(m, c)
+        if n % save_every == 0:
+            records.append({"n": n, "m": m, "c": c, "gap": gap,
+                            "rel_gap": gap / gap0, "amplitude": abs(m) / target.M,
+                            "cA": c * A})
+        if scheme == "bures_wasserstein":
+            m, c = bw_step(m, c, b, A, dt)
+        else:
+            m, c = scheme_step(scheme, m, c, b, A, dt)
+        if not (math.isfinite(m) and math.isfinite(c) and c > 0.0):
+            status = "failed"
+            break
+        gap = target.gap(m, c)
+        if not math.isfinite(gap):
+            status = "failed"
+            break
+        amp = abs(m) / target.M
+        amp_min, amp_max = min(amp_min, amp), max(amp_max, amp)
+        gap_min, gap_max = min(gap_min, gap), max(gap_max, gap)
+        s = math.copysign(1.0, m) if m != 0.0 else prev_sign
+        if s != prev_sign:
+            sign_flips += 1
+        prev_sign = s
+        if n_tol < 0 and gap <= tol_rel * gap0:
+            n_tol = n + 1
+            break
+
+    n_done = len(records) and records[-1]["n"]
+    records.append({"n": max_steps if n_tol < 0 else n_tol, "m": m, "c": c, "gap": gap,
+                    "rel_gap": gap / gap0, "amplitude": abs(m) / target.M, "cA": float("nan")})
+    converged = n_tol > 0
+    if status == "ok" and not converged:
+        status = "cycling" if gap_min > 0.5 * gap0 else "max_steps"
+    return records, {
+        "kappa": target.kappa, "scheme": scheme, "gamma": target.gamma, "dt": dt,
+        "perturb": perturb,
+        "p": target.p, "r": target.r, "q": target.q, "c_cycle": target.c, "M": target.M,
+        "initial_gap": gap0, "final_gap": gap, "final_rel_gap": gap / gap0,
+        "min_rel_gap": gap_min / gap0, "max_rel_gap": gap_max / gap0,
+        "amplitude_min": amp_min, "amplitude_max": amp_max,
+        "n_steps": max_steps if n_tol < 0 else n_tol,
+        "sign_flips": sign_flips, "n_tol": n_tol, "tol_rel": tol_rel,
+        "converged": int(converged), "status": status,
+    }
 
 
 def simulate(train, scheme, arm, gamma, max_steps, tol_rel=1e-6,

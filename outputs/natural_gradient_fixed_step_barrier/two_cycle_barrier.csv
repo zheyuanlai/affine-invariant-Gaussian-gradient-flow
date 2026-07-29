@@ -1,0 +1,13 @@
+kappa,dt,dt_times_kappa,two_cycle_exists,n_half,bump_N_train,regime,scheme
+256.0,0.0004883,0.1250048,0,73805.0,65533.0,bump_train,riemannian
+256.0,0.0009766,0.2500096,0,36903.0,32766.0,bump_train,riemannian
+256.0,0.001953,0.499968,0,18455.0,16385.0,bump_train,riemannian
+256.0,0.003906,0.999936,0,9228.0,8192.0,bump_train,riemannian
+256.0,0.0078125,2.0,0,4615.0,4096.0,bump_train,riemannian
+256.0,0.015625,4.0,1,inf,,two_cycle,both
+256.0,0.03125,8.0,1,inf,,two_cycle,both
+256.0,0.0625,16.0,1,inf,,two_cycle,both
+256.0,0.125,32.0,1,inf,,two_cycle,both
+256.0,0.25,64.0,1,inf,,two_cycle,both
+256.0,0.5,128.0,1,inf,,two_cycle,both
+256.0,1.0,256.0,1,inf,,two_cycle,both

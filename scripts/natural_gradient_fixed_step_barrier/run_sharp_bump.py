@@ -13,9 +13,9 @@ scalar scheme until the objective gap has fallen by ``tol_rel``, then fits
 
 Usage::
 
-    python scripts/natural_gradient_sharp_bump/run_sharp_bump.py \
-        --config configs/natural_gradient_sharp_bump/sharp_bump.yaml \
-        --outdir outputs/natural_gradient_sharp_bump --overwrite
+    python scripts/natural_gradient_fixed_step_barrier/run_sharp_bump.py \
+        --config configs/natural_gradient_fixed_step_barrier/sharp_bump.yaml \
+        --outdir outputs/natural_gradient_fixed_step_barrier --overwrite
 
 Add ``--smoke`` for the reduced grid defined in the config.
 """
@@ -32,12 +32,12 @@ import pandas as pd
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.common.io_utils import load_yaml, ensure_dir, save_dataframe, save_json
-from src.natural_gradient_sharp_bump.bump_target import BumpTrain
-from src.natural_gradient_sharp_bump.runner import nominal_dt, simulate
+from src.natural_gradient_fixed_step_barrier.bump_target import BumpTrain
+from src.natural_gradient_fixed_step_barrier.runner import nominal_dt, simulate
 
 DEFAULT_CONFIG = os.path.join(
     os.path.dirname(__file__), "..", "..", "configs",
-    "natural_gradient_sharp_bump", "sharp_bump.yaml")
+    "natural_gradient_fixed_step_barrier", "sharp_bump.yaml")
 
 LONG_COLS = ["family", "kappa", "scheme", "arm", "n", "m", "c", "gap", "rel_gap", "cA", "A"]
 

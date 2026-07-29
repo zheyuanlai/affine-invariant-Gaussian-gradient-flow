@@ -9,7 +9,7 @@ import math
 import numpy as np
 import pytest
 
-from src.natural_gradient_sharp_bump import BumpTrain, simulate, step_size
+from src.natural_gradient_fixed_step_barrier import BumpTrain, simulate, step_size
 
 GAMMA = 0.5
 KAPPAS = [8.0, 32.0, 128.0]
