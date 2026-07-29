@@ -32,19 +32,26 @@
 
 \graphicspath{{figures/}{../reports/assets/figs/}}
 
+% Shared theorem counter via aliascnt, so cleveref names each environment by its
+% own type (Lemma F.8, Assumption 2.1) instead of the counter's (Theorem ...).
+\newcommand{\newsharedtheorem}[2]{%
+  \newaliascnt{#1}{theorem}%
+  \newtheorem{#1}[#1]{#2}%
+  \aliascntresetthe{#1}%
+}
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[section]
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{corollary}[theorem]{Corollary}
+\newsharedtheorem{proposition}{Proposition}
+\newsharedtheorem{lemma}{Lemma}
+\newsharedtheorem{corollary}{Corollary}
 
 \theoremstyle{definition}
-\newtheorem{assumption}[theorem]{Assumption}
-\newtheorem{definition}[theorem]{Definition}
+\newsharedtheorem{assumption}{Assumption}
+\newsharedtheorem{definition}{Definition}
 
 \theoremstyle{remark}
-\newtheorem{remark}[theorem]{Remark}
-\newtheorem{example}[theorem]{Example}
+\newsharedtheorem{remark}{Remark}
+\newsharedtheorem{example}{Example}
 
 \crefname{assumption}{Assumption}{Assumptions}
 \Crefname{assumption}{Assumption}{Assumptions}

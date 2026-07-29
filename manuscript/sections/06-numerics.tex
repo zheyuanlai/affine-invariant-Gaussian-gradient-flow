@@ -92,6 +92,39 @@ cone, which is the content of \Cref{lem:cov-KL}. The full algorithm can still
 fail at a large stepsize through the explicit mean update, which carries the
 factor $\Delta t\, C_n$.
 
+\subsection{The fixed-step barrier}
+\label{sec:numerics-barrier}
+
+The two lower-bound constructions of \Cref{sec:global} are one-dimensional and fully
+deterministic, so we run them directly. On the bump train of \Cref{thm:sharp-disc}, retuned
+so that the per-step mean gain matches each tested stepsize, the certified arm
+$\Delta t=\gamma/\kappa$ reproduces the theorem: over $\kappa\in[128,1024]$ the fitted
+exponent of the iteration count to a constant-factor reduction is $1.93$ for both schemes,
+the iterates track the ideal centers to machine precision, $c_nA_n=1$ throughout, and the
+blocked count reaches $1.04$ times the theoretical $N_\kappa$ at $\kappa=1024$. On the
+two-cycle targets of \Cref{thm:two-cycle}, all runs over
+$\kappa\in\{64,\dots,1024\}$, $\gamma\in\{0.25,\dots,1.5\}$ and both schemes cycle exactly:
+the mean flips sign at every iteration, the amplitude and the energy gap are constant to
+six decimals over two thousand iterations, and every run still cycles when the initial mean
+is perturbed by one percent, so the orbit is an attractor of the observed dynamics on this
+scale rather than a knife edge. The Bures--Wasserstein forward--backward step converges on
+the same targets at every tested $\eta\leq1/\beta$ and first fails at $\eta=2/\beta$,
+which is exactly where its unpreconditioned mean multiplier $1-\eta\,b/m$ first reaches
+$-1$, as in \Cref{rem:cycle-scope}. \Cref{fig:num-barrier} assembles the two regimes of
+\Cref{cor:fixed-step} into a single worst-case curve.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\linewidth]{fig_fixed_step_barrier}
+\caption{The fixed-step barrier at $\kappa=256$. For $\Delta t<2/\kappa$ the retuned bump
+train forces $\Omega(\kappa/\Delta t)$ iterations for a constant-factor energy reduction,
+growing as the stepsize shrinks; for $\Delta t>2/\kappa$ the two-cycle target of
+\Cref{thm:two-cycle} makes both schemes fail to converge at all. The envelope is minimized
+at $\Delta t\asymp1/\kappa$ with value $\asymp\kappa^2$, which is the content of
+\Cref{cor:fixed-step}.}
+\label{fig:num-barrier}
+\end{figure}
+
 \subsection{Sticking-the-landing variance and the constant-step floors}
 \label{sec:numerics-stl}
 

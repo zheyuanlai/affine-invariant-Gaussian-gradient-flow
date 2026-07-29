@@ -1,0 +1,231 @@
+\section{The two-cycle construction}
+\label{app:cycle}
+
+We construct the family announced in \Cref{thm:two-cycle} and prove the corollary. As in
+\Cref{app:bump} we normalize $\alpha=1$, $\beta=\kappa$, write $a=(m,c)\in\R\times(0,\infty)$,
+and use the scalar averages
+\begin{equation}\label{eq:cycle-bA}
+    b(m,c):=\E[V'(X)],
+    \qquad
+    A(m,c):=\E[V''(X)],
+    \qquad
+    X\sim\N(m,c),
+\end{equation}
+so that $g(a)=-b(m,c)$ and the scalar forms of \eqref{upd:Riem} and \eqref{upd:KL} are
+\eqref{eq:bump-R-map} and \eqref{eq:bump-KL-map}.
+
+\subsection{The matched-state reduction}
+
+Both covariance maps have the same fixed-point equation, and on it the iteration collapses
+to a scalar recursion for the mean.
+
+\begin{proposition}[Matched-state reduction]\label{prop:cycle-frozen}
+    Suppose that at a state $(m,c)$ one has $cA(m,c)=1$. Then both
+    \eqref{eq:bump-R-map} and \eqref{eq:bump-KL-map} leave the covariance exactly unchanged,
+    $c^+=c$. If moreover $b(m,c)=rm$ and $c=1/p$ for some $p,r>0$, the shared mean update is
+    \begin{equation}\label{eq:cycle-multiplier}
+        m^+=\left(1-\Delta t\,\frac rp\right)m .
+    \end{equation}
+\end{proposition}
+
+\begin{proof}
+    With $cA=1$ the Riemannian map gives $c^+=c\exp(\Delta t[1-cA])=c\,e^0=c$ and the
+    KL/Bregman map gives $c^+=(1+\Delta t)c/(1+\Delta t\,cA)=(1+\Delta t)c/(1+\Delta t)=c$.
+    The mean update is $m^+=m-\Delta t\,c\,b(m,c)=m-\Delta t\,p^{-1}rm$.
+\end{proof}
+
+The multiplier in \eqref{eq:cycle-multiplier} involves $c$ times the secant slope
+$b(m,c)/m$, while the matched condition pins $c$ to the reciprocal of the tangent value
+$A(m,c)$. For an even potential $b(m,c)=\int_0^mA(u,c)\,\dd u$, so the secant is the average
+of the Gaussian curvature over $[0,m]$ while the tangent is its endpoint value; both lie in
+$[1,\kappa]$ and they are otherwise independent, so the ratio $r/p$ ranges over
+$(1/\kappa,\kappa)$. The realization lemma below prescribes both moments exactly.
+
+\subsection{The Gaussian-moment realization lemma}
+
+\begin{lemma}[One-point Gaussian-moment realization]\label{lem:cycle-moments}
+    Let $\kappa>1$, let $p,r\in(1,\kappa)$, and fix $\LH>0$. There exists
+    $M_0<\infty$, depending on $\kappa$, $p$, $r$ and $\LH$, such that for every $M\geq M_0$
+    there is an even potential $V\in C^\infty(\R)$ with
+    \begin{equation}\label{eq:cycle-regularity}
+        1\leq V''\leq\kappa,
+        \qquad
+        \norm{V'''}_\infty\leq\LH,
+    \end{equation}
+    both curvature bounds attained, such that, with $c:=1/p$,
+    \begin{equation}\label{eq:cycle-identities}
+        A(M,c)=p,
+        \qquad
+        b(M,c)=rM .
+    \end{equation}
+    By evenness, $A(-M,c)=p$ and $b(-M,c)=-rM$.
+\end{lemma}
+
+\begin{proof}
+    Fix a nondecreasing $\sigma\in C^\infty(\R)$ with $\sigma\equiv0$ on $(-\infty,0]$,
+    $\sigma\equiv1$ on $[1,\infty)$, and put $M_\sigma:=\norm{\sigma'}_\infty$,
+    $\bar\Sigma:=\int_0^1\sigma\in(0,1)$. Set the transition width
+    \begin{equation}\label{eq:cycle-width}
+        d:=\frac{(\kappa-1)M_\sigma}{\LH},
+    \end{equation}
+    so that any monotone transition of height at most $\kappa-1$ spread over an interval of
+    length $d$ contributes $|V'''|\leq(\kappa-1)M_\sigma/d=\LH$.
+
+    Since $r\in(1,\kappa)$ is interior, we may fix $\varepsilon_0\in(0,\tfrac12)$, depending
+    only on $\kappa,p,r$, so small that
+    \begin{equation}\label{eq:cycle-mu}
+        \mu:=\frac{r-\varepsilon_0p}{1-\varepsilon_0}\in(1,\kappa),
+    \end{equation}
+    and set $\lambda:=1-\varepsilon_0$. For parameters $s>0$ and $\tilde p\in[1,\kappa]$
+    define the even curvature profile, for $\theta\geq0$,
+    \begin{equation}\label{eq:cycle-profile}
+        V''(\theta):=
+        \begin{cases}
+            \kappa, & 0\leq\theta\leq s,\\
+            \kappa+(1-\kappa)\,\sigma\bigl(\tfrac{\theta-s}d\bigr), & s\leq\theta\leq s+d,\\
+            1, & s+d\leq\theta\leq\lambda M,\\
+            1+(\tilde p-1)\,\sigma\bigl(\tfrac{\theta-\lambda M}d\bigr), & \lambda M\leq\theta\leq\lambda M+d,\\
+            \tilde p, & \theta\geq\lambda M+d,
+        \end{cases}
+    \end{equation}
+    extended evenly to $\theta<0$, with $V(0)=V'(0)=0$. For $s\geq d$ and
+    $s+2d\leq\lambda M$ the profile is $C^\infty$, takes values in $[1,\kappa]$ with both
+    bounds attained on the two inner plateaux, and satisfies
+    $\norm{V'''}_\infty\leq\LH$ by \eqref{eq:cycle-width}.
+
+    We estimate the two moments at $(M,c)$, $c=1/p\leq1$. The point $M$ lies at distance
+    $\varepsilon_0M-d$ from the outer transition, so writing
+    $t_M:=\sqrt p\,(\varepsilon_0M-d)$,
+    \begin{equation}\label{eq:cycle-A-est}
+        A(M,c)=\tilde p+\eta_A(s,\tilde p),
+        \qquad
+        |\eta_A|\leq\kappa\,\Prob\bigl(|Z|\geq t_M\bigr)\leq\kappa e^{-t_M^2/2}.
+    \end{equation}
+    For the score, $V'(X)=V'(M)+\int_M^XV''$, and on the symmetric event
+    $\{|Z|<t_M\}$ the integrand is identically $\tilde p$, so the conditional contribution
+    $\tilde p\sqrt c\,\E[Z\one_{|Z|<t_M}]$ vanishes; on the complement
+    $|{\int_M^XV''}|\leq\kappa|X-M|$, whence
+    \begin{equation}\label{eq:cycle-b-est}
+        b(M,c)=V'(M)+\eta_b(s,\tilde p),
+        \qquad
+        |\eta_b|\leq\kappa\,\E\bigl[|Z|\one_{|Z|\geq t_M}\bigr]\leq2\kappa e^{-t_M^2/2}.
+    \end{equation}
+    Integrating \eqref{eq:cycle-profile},
+    \begin{equation}\label{eq:cycle-VprimeM}
+        V'(M)=\kappa s+(\lambda M-s)+\tilde p\,\varepsilon_0M+d\,e(\tilde p),
+        \qquad
+        e(\tilde p):=-(\kappa-1)\bar\Sigma-(\tilde p-1)(1-\bar\Sigma),
+    \end{equation}
+    which is exactly affine in $s$ with slope $\kappa-1$, and $|e|\leq2(\kappa-1)$.
+
+    Define the nominal plateau length $s^*=s^*(M)$ by solving the dominant part of
+    $V'(M)/M=r$ at $\tilde p=p$:
+    \begin{equation}\label{eq:cycle-sstar}
+        \lambda+(\kappa-1)\frac{s^*}M+p\,\varepsilon_0+\frac{d\,e(p)}M=r .
+    \end{equation}
+    By \eqref{eq:cycle-mu}, $s^*/(\lambda M)\to(\mu-1)/(\kappa-1)\in(0,1)$ as $M\to\infty$,
+    so for all $M$ large both inner plateaux have length bounded below by a fixed multiple of
+    $M$; in particular $s^*\geq d+1$ and $s^*+2d+1\leq\lambda M$.
+
+    Now apply the Poincar\'e--Miranda theorem to
+    \begin{equation*}
+        G(s,\tilde p)
+        :=\Bigl(\frac{b(M,c)}M-r,\;A(M,c)-p\Bigr)
+        \quad\text{on}\quad
+        [s^*-1,\,s^*+1]\times[p-\delta_M,\,p+\delta_M],
+        \qquad
+        \delta_M:=2\kappa e^{-t_M^2/2}.
+    \end{equation*}
+    Both components are continuous in $(s,\tilde p)$ by dominated convergence. On the faces
+    $\tilde p=p\pm\delta_M$, \eqref{eq:cycle-A-est} gives
+    $A(M,c)-p=\pm\delta_M+\eta_A$ with $|\eta_A|\leq\delta_M/2$, so the second component has
+    the sign of $\pm1$. On the faces $s=s^*\pm1$,
+    \eqref{eq:cycle-b-est}--\eqref{eq:cycle-sstar} give
+    \begin{equation*}
+        \frac{b(M,c)}M-r
+        =\pm\frac{\kappa-1}M
+        +(\tilde p-p)\Bigl(\varepsilon_0-\frac{d(1-\bar\Sigma)}M\Bigr)
+        +\frac{\eta_b}M,
+    \end{equation*}
+    and since $|\tilde p-p|\leq\delta_M$ decays as $e^{-cM^2}$ while $(\kappa-1)/M$ decays
+    polynomially, the first component has the sign of $\pm1$ for all $M$ large. Hence
+    $G$ vanishes at some $(s^\circ,\tilde p^\circ)$ in the box, which is
+    \eqref{eq:cycle-identities} exactly. Finally $\tilde p^\circ\in[p-\delta_M,p+\delta_M]
+    \subset(1,\kappa)$ for $M$ large, so \eqref{eq:cycle-regularity} holds with both bounds
+    attained, and evenness of $V''$ makes $V'$ odd and $V$ even, giving the sign-reflected
+    identities at $-M$.
+\end{proof}
+
+\subsection{Proof of the two-cycle theorem}
+
+\begin{proof}[Proof of \Cref{thm:two-cycle}]
+    Set $q:=2/\Delta t$; the window $2/\kappa<\Delta t<2\kappa$ is equivalent to
+    $1/\kappa<q<\kappa$. Choose
+    \begin{equation}\label{eq:cycle-pr}
+        p:=\frac{\kappa+1}{q+1},
+        \qquad
+        r:=qp .
+    \end{equation}
+    Then $p>1\iff q<\kappa$, $p<\kappa\iff q>1/\kappa$, $r>1\iff q\kappa>1$ and
+    $r<\kappa\iff q<\kappa$, so $p,r\in(1,\kappa)$ and $r/p=q=2/\Delta t$. Apply
+    \Cref{lem:cycle-moments} with these values and any $M\geq M_0$, and set $c:=1/p$, which
+    lies in the curvature band $(1/\kappa,1)$.
+
+    At $(\pm M,c)$ the matched condition $cA=1$ holds by \eqref{eq:cycle-identities}, so
+    \Cref{prop:cycle-frozen} freezes the covariance under both maps, and the mean multiplier
+    is $1-\Delta t\,r/p=1-\Delta t\cdot(2/\Delta t)=-1$: one step maps $(M,c)$ to $(-M,c)$,
+    and by the sign-reflected identities the next step maps back. This is the exact orbit.
+
+    The orbit is not optimal. By evenness $\calE(M,c)=\calE(-M,c)$, and
+    $\partial_m\calE(M,c)=b(M,c)=rM\neq0$, so $(M,c)$ is not a critical point of $\calE$ and
+    in particular not the optimizer $a_\star$, which exists under
+    \Cref{assump:logconcave-smooth}. Hence
+    $\DeltaE(a_n)=\calE(M,c)-\calE(a_\star)=:\DeltaE_{\mathrm{cyc}}>0$ for every $n$, and for
+    every $\delta<\DeltaE_{\mathrm{cyc}}$ the hitting time of $\{\DeltaE\leq\delta\}$ is
+    infinite.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{cor:fixed-step}]
+    For $\Delta t\in(2/\kappa,2\kappa)$ the claim is \Cref{thm:two-cycle}. For
+    $\Delta t\geq2\kappa$ apply \Cref{lem:cycle-moments} with the balanced choice
+    $p=r=(\kappa+1)/2\in(1,\kappa)$, which again has both curvature bounds attained and
+    $\norm{V'''}_\infty\leq\LH$: at $(M,1/p)$ the matched condition holds, both covariance
+    maps freeze $c$ by \Cref{prop:cycle-frozen}, and the mean multiplier is
+    $1-\Delta t\,r/p=1-\Delta t\leq1-2\kappa<-1$, so $|m_n|\to\infty$ and the gap increases
+    without bound. Hence for every fixed $\Delta t>2/\kappa$ the
+    worst case over the class is an infinite hitting time; a fixed-stepsize rule that
+    converges on every admissible target for all large $\kappa$ must therefore satisfy
+    $\Delta t\leq2/\kappa$, and any rule with $\Delta t_\kappa$ bounded away from zero fails
+    outright once $\kappa>2/\inf_\kappa\Delta t_\kappa$. In the convergent regime,
+    \Cref{thm:sharp-disc} applies at every $\Delta t\leq1/(2\kappa)$ and forces
+    $\Omega(\kappa/\Delta t)\geq\Omega(\kappa^2)$ iterations for a constant-factor energy
+    reduction, and the scope remark of \Cref{app:bump} extends the same bound, with
+    $\gamma$-dependent constants, to every fixed $\gamma=\kappa\Delta t\in(0,2)$.
+\end{proof}
+
+\begin{remark}[General curvature scale]\label{rem:cycle-rescale}
+    The normalization $\alpha=1$ loses no generality. If $W$ is the normalized construction
+    and $V(\theta):=W(\sqrt\alpha\,\theta)$, then
+    $\alpha\leq V''\leq\alpha\kappa=\beta$ and
+    $\norm{V'''}_\infty=\alpha^{3/2}\norm{W'''}_\infty$, so the dimensionless
+    Hessian-Lipschitz constant $\barLH=\norm{V'''}_\infty/\alpha^{3/2}$ is unchanged: the
+    counterexample survives the additional assumption $\barLH=O(1)$, exactly as the bump
+    train does. If $X\sim\N(M/\sqrt\alpha,c/\alpha)$ then $\sqrt\alpha X\sim\N(M,c)$, the
+    moments scale as $b_V=\sqrt\alpha\,b_W$ and $A_V=\alpha A_W$, and substitution into the
+    two updates shows the rescaled orbit $(\pm M/\sqrt\alpha,c/\alpha)$ flips sign exactly as
+    before.
+\end{remark}
+
+% SOURCES:
+%   User-supplied note "An Exact Period-Two Counterexample for Order-One Fixed Stepsizes
+%   in the Original Explicit Gaussian Fisher-Rao Schemes" (29 July 2026):
+%     realization lemma statement, matched-state reduction, two-cycle theorem with the
+%     (q,p,r) parameter choice and window (2/kappa, 2kappa), impossibility quantifiers,
+%     alpha-rescaling remark. The note's realization proof sketch (inverse-function /
+%     degree argument on separated plateaux) is replaced here by the explicit three-plateau
+%     profile with a Poincare-Miranda argument; constants and identities unchanged.
+%   Numerical verification: src/natural_gradient_fixed_step_barrier/two_cycle.py and
+%     outputs/natural_gradient_fixed_step_barrier/two_cycle_*.csv (exact orbit to machine
+%     precision at kappa in {64,...,1024}, gamma in {0.25,...,1.5}, both schemes; V'' range
+%     [1,kappa] attained; ||V'''|| = L_H; basin robust to 1e-2 relative perturbation).
+%   Notation: h -> \Delta t, L_0 -> \LH per drafting contract translation rules.

@@ -97,7 +97,14 @@ retraction scheme and a KL/Bregman resolvent scheme, we prove in
 \Cref{thm:glob-Riem,thm:glob-KL} global complexity bounds of a common form, and
 we show in \Cref{thm:sharp-disc} that their factor $\kappa/\Delta t$ is sharp at
 a fixed stepsize, by means of a one-dimensional bump-train potential that is
-even, strongly convex, and uniformly Hessian-Lipschitz. The covariance burn-in,
+even, strongly convex, and uniformly Hessian-Lipschitz. A second construction
+closes the fixed-step axis entirely: for every stepsize
+$\Delta t\in(2/\kappa,2\kappa)$ an admissible target carries an exact nonoptimal
+period-two orbit for both schemes (\Cref{thm:two-cycle}), so an order-one fixed
+step does not converge at all, and the certified scale
+$\Delta t=\Theta(\kappa^{-1})$ with its $\Theta(\kappa^2)$ iteration count is
+intrinsic to fixed-step natural gradient rather than an artifact of the proofs
+(\Cref{cor:fixed-step}). The covariance burn-in,
 and only the covariance burn-in, can be removed algorithmically: we give in
 \Cref{thm:burnin-BW} a Bures--Wasserstein transport warm start and in
 \Cref{thm:burnin-rescue} a single gradient--Hessian query that lands the

@@ -25,8 +25,10 @@ each with its own sharp rate. The
 burn-in is logarithmic in the initial covariance and removable by a warm
 start. The global phase is controlled by the condition number after
 whitening by the optimizing covariance; a logarithmic-spiral construction
-shows this cannot be improved, and a bump train shows the fixed-step
-factor $\kappa/\Delta t$ is sharp. The local phase runs at the spectral gap of
+shows this cannot be improved, a bump train shows the fixed-step
+factor $\kappa/\Delta t$ is sharp, and an exact period-two orbit shows that no
+order-one fixed stepsize converges at all, so the fixed-step complexity
+$\Theta(\kappa^2)$ is intrinsic. The local phase runs at the spectral gap of
 a self-adjoint score operator, bounded two-sidedly, and a
 convex-ridge family rules out every dimension-free logarithmic local rate. The
 same three stages persist for stochastic algorithms built from a joint
@@ -57,6 +59,7 @@ affine invariance; convergence rates; stochastic gradient.
 \input{appendices/A-identities}
 \input{appendices/B-spiral}
 \input{appendices/C-bump-train}
+\input{appendices/C2-two-cycle}
 \input{appendices/D-ridge}
 \input{appendices/E-deterministic-proofs}
 \input{appendices/F-stochastic-proofs}

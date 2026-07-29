@@ -809,13 +809,83 @@ mean requires $\Theta(\kappa^2/\gamma)$ steps. The lower bound is the product of
 globally safe fixed-step scale $\Delta t=\Theta(\kappa^{-1})$ and a Fisher--Rao global mean
 scale of order $\kappa^{-1}$.
 
-The theorem proves sharpness of the polynomial condition-number dependence for explicit
-methods committed to one globally fixed step. It does not rule out an $O(\kappa)$
-global-localization result for an adaptive relative-curvature step, an Armijo or
-backtracking line search, or an implicit or Rosenbrock-stabilized mean update. Indeed the
-construction has $c_nA(m_n,c_n)\simeq1$, so a method whose stability test is based on the
-current relative curvature could accept a step of order one and avoid this particular
-slowdown.
+The factor $\kappa/\Delta t$ invites taking a stepsize of order one, and the bump train
+alone does not forbid it: its mechanism requires the mean gain $\Delta t\,c_n$ to match the
+center spacing, and a step $\kappa$ times larger jumps the mean clear of the train. The next
+result closes this route. At every order-one stepsize an admissible target defeats both
+schemes outright, not by slowing them down but by trapping them on an exact nonoptimal
+periodic orbit.
+
+\begin{theorem}[Exact two-cycle at order-one stepsizes]\label{thm:two-cycle}
+    Fix $\LH>0$ and a stepsize
+    \begin{equation*}
+        \frac2\kappa<\Delta t<2\kappa .
+    \end{equation*}
+    Then there exist an even potential $V\in C^\infty(\R)$ with
+    \begin{equation*}
+        1\leq V''\leq\kappa,
+        \qquad
+        \norm{V'''}_\infty\leq\LH,
+    \end{equation*}
+    both curvature bounds attained, a mean $M>0$, and a covariance $c\in(1/\kappa,1)$ inside
+    the curvature-scale band, such that both \eqref{upd:Riem} and \eqref{upd:KL}, run with
+    exact expectations and stepsize $\Delta t$ from $a_0=(M,c)$, satisfy
+    \begin{equation*}
+        a_{2n}=(M,c),
+        \qquad
+        a_{2n+1}=(-M,c),
+        \qquad
+        n\geq0 .
+    \end{equation*}
+    The orbit is not optimal, $\DeltaE(a_n)=\DeltaE_{\mathrm{cyc}}>0$ for every $n$, so for
+    every $\delta<\DeltaE_{\mathrm{cyc}}$ the hitting time
+    $\inf\{n\geq0:\DeltaE(a_n)\leq\delta\}$ is infinite.
+\end{theorem}
+
+The construction and the proof are given in \Cref{app:cycle}. The mechanism is the
+interaction of the shared explicit mean update with the covariance preconditioner. Both
+covariance maps are stationary exactly where $cA(m,c)=1$, with
+$A(m,c)=\E[V''(m+\sqrt cZ)]$ the averaged curvature, and there the iteration reduces to
+$m^+=(1-\Delta t\,b(m,c)/(mA(m,c)))\,m$: the multiplier is governed by the ratio of the
+secant slope $b(m,c)/m$, an average of the curvature over $[0,m]$, to its endpoint value
+$A(m,c)$. The two are independent and both range over $[1,\kappa]$, so the ratio ranges over
+$(1/\kappa,\kappa)$; prescribing it equal to $2/\Delta t$ makes the multiplier exactly $-1$,
+and evenness closes the orbit. The prescription is feasible precisely when
+$\Delta t>2/\kappa$, which is where \Cref{thm:sharp-disc} hands over.
+
+\begin{corollary}[The fixed-step barrier]\label{cor:fixed-step}
+    For every fixed stepsize $\Delta t>2/\kappa$ there is a target satisfying
+    \Cref{assump:logconcave-smooth} with $\alpha=1$, $\beta=\kappa$ and
+    $\norm{V'''}_\infty\leq\LH$, and an initialization with covariance in the curvature-scale
+    band, from which neither \eqref{upd:Riem} nor \eqref{upd:KL} ever reduces the energy gap
+    below a fixed positive constant. Consequently a fixed-stepsize rule that converges on
+    every such target for all sufficiently large $\kappa$ must satisfy
+    $\Delta t\leq2/\kappa$, where \Cref{thm:sharp-disc} forces
+    $\Omega(\kappa/\Delta t)=\Omega(\kappa^2)$ iterations for a constant-factor energy
+    reduction; and every rule with $\Delta t_\kappa=\Theta(1)$ fails to converge at all once
+    $\kappa$ is large. The certified fixed-step scale $\Delta t=\Theta(\kappa^{-1})$ of
+    \Cref{thm:glob-Riem,thm:glob-KL}, and the resulting $\Theta(\kappa^2)$ global-localization
+    complexity, are therefore intrinsic to the fixed-step schemes and not artifacts of the
+    proofs.
+\end{corollary}
+
+\begin{remark}[Scope, and the contrast with Bures--Wasserstein]\label{rem:cycle-scope}
+    The target in \Cref{thm:two-cycle} is chosen after the stepsize, which is the quantifier
+    order needed to refute a uniform fixed-step theorem; no claim is made that one target
+    defeats every order-one stepsize simultaneously. Adaptivity is not ruled out in general,
+    but a stability test based on the relative curvature $c_nA_n$ does not suffice: the orbit
+    holds $c_nA_n=1$ exactly, so such a test accepts the step. A test based on the secant
+    $b(m_n,c_n)/m_n$, a monotone line search, which rejects the flip because the energy does
+    not decrease along it, and implicit or Rosenbrock-stabilized mean updates all remain
+    open. The Bures--Wasserstein forward--backward scheme of
+    \citet{lambert2022variational,diao2023forward} is immune for a structural reason: its
+    mean update $m^+=m-\eta\,b(m,c)$ carries no covariance preconditioner, so at its
+    certified stepsize $\eta\leq1/\beta$ the multiplier $1-\eta\,b/m$ lies in $[0,1)$ at
+    every admissible state, uniformly in $c$, and no such orbit can form. The certified
+    stepsizes of the two geometries have the same scale $\Theta(1/\kappa)$ in these units;
+    the difference is that the Fisher--Rao multiplier $1-\Delta t\,c\,b/m$ degrades by the
+    extra factor $c\in[1/\kappa,1]$, and it is this factor that the two-cycle exploits.
+\end{remark}
 
 \subsection{Removing the covariance burn-in}
 \label{subsec:burnin}
@@ -992,7 +1062,9 @@ identical.
 Both devices remove only the covariance burn-in stage. They do not improve the fixed-step
 global-localization factor $\kappa/\Delta t$, since the lower construction of
 \Cref{thm:sharp-disc} already starts at $c_0=1/\kappa$, after the covariance has reached
-the curvature scale; and they do not improve the local stiffness factor of
+the curvature scale, and the two-cycle of \Cref{thm:two-cycle} sits at a covariance
+$c\in(1/\kappa,1)$ strictly inside the band, so no covariance initialization evades either
+obstruction; and they do not improve the local stiffness factor of
 \Cref{sec:local}. Covariance warm-up, fixed-step global localization and local stiffness
 are three distinct issues.
 

@@ -370,6 +370,44 @@ the clipped panel reads \path{outputs/clipped_kl_stationarity.csv} through
 \path{fig_nonconvex_clipped_kl_stationarity.pdf}.
 \par\endgroup
 
+\subsection{Fixed-step barrier}
+
+All runs are one-dimensional, deterministic, and CPU-only; the potentials, their first two
+derivatives, and the objective are closed form up to tabulated antiderivatives of the fixed
+$C^\infty$ profiles, and the Gaussian averages $b(m,c)$, $A(m,c)$ use fixed Gauss--Hermite
+quadrature, $32$ nodes for the bump train and $64$ for the two-cycle targets.
+
+The bump-train grid instantiates \Cref{thm:sharp-disc} with profile constants
+$T=1/8$, $Y=4$, $\LH=1$, $\gamma=1/2$, over
+$\kappa\in\{8,16,\dots,1024\}$, in two families: the Appendix~\ref{app:bump} train built for
+the certified step, and the same construction retuned so that the per-step mean gain
+$s=\Delta t\,c_\kappa$ matches the tested arm. The two fixed arms are
+$\Delta t=\gamma/\kappa$ and $\Delta t=\gamma$; a run stops at a $10^{-6}$ relative gap, and
+the reported count $n_{1/2}$ is the first iterate with
+$\DeltaE\leq\tfrac12\DeltaE_0$. Reported exponents are least-squares slopes of
+$\log n_{1/2}$ against $\log\kappa$ over the upper half of the grid. A companion sweep
+varies the order-one constant $\gamma\in\{1/8,\dots,4\}$; every $\gamma\leq1$ is monotone
+and convergent at every $\kappa$ with exponent in $[0.88,0.92]$, and the fixed step first
+fails at $\gamma=2$, independently of $\kappa$.
+
+The two-cycle grid instantiates \Cref{thm:two-cycle} with the three-plateau profile of
+\Cref{app:cycle} at $\LH=1$, over $\kappa\in\{64,128,256,512,1024\}$ and
+$\gamma\in\{0.25,0.5,1,1.5\}$; the plateau length is obtained by a scalar root-find so that
+$b(M,c)=rM$ holds to machine precision, and the realized diagnostics
+($\min V''=1$, $\max V''=\kappa$, $\norm{V'''}_\infty=\LH$, $cA(M,c)=1$ and mean multiplier
+$-1$ to twelve digits) are recorded per target. Cycle runs use a $2000$-step cap; the basin
+study perturbs the initial mean by relative amounts in $\{0,10^{-12},10^{-6},
+10^{-2},0.05,0.1,0.2,0.5\}$ with a $20000$-step cap. The Bures--Wasserstein contrast runs
+the scalar forward--backward step on the same targets at
+$\eta\in\{0.25,0.5,1,2,4\}/\beta$. The barrier panel of \Cref{fig:num-barrier} combines, at
+$\kappa=256$, the retuned bump train over
+$\Delta t\in\{2^{-11},\dots,2/\kappa\}$ with the two-cycle regime
+$\Delta t\in(2/\kappa,1]$. Code and outputs:
+\path{src/natural_gradient_fixed_step_barrier},
+\path{outputs/natural_gradient_fixed_step_barrier}, with per-run CSVs
+(\path{sharp_bump_*.csv}, \path{two_cycle_*.csv}) and the assertion suite
+\path{tests/natural_gradient_fixed_step_barrier}.
+
 \subsection{Provenance limits of the committed snapshot}
 
 \begingroup\small\raggedright
