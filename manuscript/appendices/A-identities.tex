@@ -1,0 +1,379 @@
+\section{Gaussian differential identities and the score calculus}
+\label{app:identities}
+
+We collect the differential identities on which the Fisher--Rao gradient, the
+linearized generator of \Cref{subsec:whitened}, and the non-Gaussian modulus of
+\Cref{lem:Kng} rest. Throughout, $Z\sim\N(0,\Id)$, $a=(m,C)\in\Aspace$, and $X=m+C^{1/2}Z$ has
+law $\rho_a$.
+
+\subsection{Price and Bonnet directional derivatives}
+
+\begin{lemma}[Directional derivatives of a Gaussian expectation]
+\label{lem:price}
+Let $V\in C^2(\R^{N_\theta})$ satisfy $\norm{\nabla^2V}_{\op}\leq\beta$, let $v\in\R^{N_\theta}$
+and $Y\in\Sym(N_\theta)$, and write $a_\epsilon:=(m+\epsilon v,C+\epsilon Y)$. Then
+\begin{equation}
+\label{eq:price-directional}
+    \frac{\dd}{\dd\epsilon}\Big|_{\epsilon=0}\E_{\rho_{(m+\epsilon v,C)}}[V]
+    =\E_{\rho_a}[\nabla V]^\top v,
+    \qquad
+    \frac{\dd}{\dd\epsilon}\Big|_{\epsilon=0}\E_{\rho_{(m,C+\epsilon Y)}}[V]
+    =\frac12\Tr\bigl(Y\,A(a)\bigr),
+\end{equation}
+where $A(a)=\E_{\rho_a}[\nabla^2V]$, and
+\begin{equation}
+\label{eq:entropy-directional}
+    \frac{\dd}{\dd\epsilon}\Big|_{\epsilon=0}\calE_1(a_\epsilon)=-\frac12\Tr\bigl(YC^{-1}\bigr),
+    \qquad
+    \calE_1(a)=-\tfrac12\log\det C+\mathrm{const}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The mean identity is Bonnet's formula and follows from differentiating under the integral, which
+is licensed because $\norm{\nabla^2V}_{\op}\leq\beta$ forces
+$\norm{\nabla V(\theta)}\leq\norm{\nabla V(0)}+\beta\norm\theta$, so every integrand is bounded
+by a polynomial times a Gaussian density. For the covariance identity, let $p_\epsilon$ be the
+density of $\N(m,C+\epsilon Y)$, which is Schwartz for small $\abs\epsilon$, with Fourier
+transform $\widehat p_\epsilon(w)=\exp(i\,m^\top w-\tfrac12w^\top(C+\epsilon Y)w)$,
+so that
+$\partial_\epsilon\widehat p_\epsilon(w)|_{\epsilon=0}=-\tfrac12(w^\top Yw)\widehat p_0(w)$.
+The Fourier transform of $\partial_i\partial_jp_0$ is $-w_iw_j\widehat p_0$, so the
+Fourier transform of $\tfrac12\Tr(Y\nabla_\theta^2p_0)$ is exactly
+$-\tfrac12(w^\top Yw)\widehat p_0(w)$, and Fourier inversion gives the heat-type
+identity
+\begin{equation}
+\label{eq:heat-identity}
+    \partial_\epsilon p_\epsilon\big|_{\epsilon=0}=\tfrac12\Tr\bigl(Y\,\nabla_\theta^2p_0\bigr).
+\end{equation}
+Since $p_\epsilon$ and its first two derivatives decay faster than any polynomial uniformly
+near $\epsilon=0$ while $V$ grows at most quadratically, we may differentiate under the
+integral and integrate by parts twice with vanishing boundary terms, obtaining
+\[
+    \frac{\dd}{\dd\epsilon}\Big|_0\int V\,p_\epsilon\,\dd\theta
+    =\int V\cdot\tfrac12\Tr\bigl(Y\nabla_\theta^2p_0\bigr)\dd\theta
+    =\tfrac12\int\Tr\bigl(Y\,\nabla^2V\bigr)p_0\,\dd\theta
+    =\tfrac12\Tr\bigl(Y\,A(a)\bigr).
+\]
+Finally \eqref{eq:entropy-directional} is Jacobi's formula
+$\tfrac{\dd}{\dd\epsilon}\log\det(C+\epsilon Y)|_0=\Tr(C^{-1}Y)$.
+\end{proof}
+
+\subsection{The Fisher--Rao gradient}
+
+\begin{lemma}[Fisher--Rao gradient, flow, and gradient norm]
+\label{lem:FR-grad-app}
+With $R(a):=C^{-1}-A(a)$ and the Fisher--Rao metric
+$g_a^{\FR}((u,U),(v,Y))=u^\top C^{-1}v+\tfrac12\Tr(C^{-1}UC^{-1}Y)$,
+\begin{equation}
+\label{eq:FR-grad}
+    \grad\calE(a)=\bigl(-Cg(a),\;-CR(a)C\bigr),
+\end{equation}
+so that $\dot a=-\grad\calE(a)$ is exactly \eqref{ODEs:NG}. Moreover, with
+$\Gradnorm(a)^2:=g(a)^\top Cg(a)+\tfrac12\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2$, one has
+$\norm{\grad\calE(a)}_a^2=\Gradnorm(a)^2$ and, along \eqref{ODEs:NG},
+$\tfrac{\dd}{\dd t}\DeltaE(a_t)=-\Gradnorm(a_t)^2$.
+\end{lemma}
+
+\begin{proof}
+By \Cref{lem:price}, the differential of $\calE=\calE_1+\calE_2$ at $a$ in the direction
+$(v,Y)$ is $\dd\calE(a)[(v,Y)]=-g(a)^\top v-\tfrac12\Tr(R(a)Y)$, since
+$\E_{\rho_a}[\nabla V]=-g(a)$. Writing $(u^\star,U^\star):=\grad\calE(a)$ and matching blocks in
+$g_a^{\FR}((u^\star,U^\star),(v,Y))=\dd\calE(a)[(v,Y)]$ gives $u^{\star\top}C^{-1}v=-g(a)^\top v$
+for all $v$, hence $u^\star=-Cg(a)$, and
+$\tfrac12\Tr(C^{-1}U^\star C^{-1}Y)=-\tfrac12\Tr(R(a)Y)$ for all $Y\in\Sym(N_\theta)$; since
+both $C^{-1}U^\star C^{-1}$ and $R(a)$ are symmetric and $(S,Y)\mapsto\Tr(SY)$ is nondegenerate
+on $\Sym(N_\theta)$, this forces $U^\star=-CR(a)C$. Then $\dot m=Cg(a)$ and
+$\dot C=CR(a)C=C-CA(a)C$. Finally
+\[
+    \norm{\grad\calE(a)}_a^2
+    =(Cg)^\top C^{-1}(Cg)+\tfrac12\norm{C^{-1/2}(CRC)C^{-1/2}}_{\Frob}^2
+    =g^\top Cg+\tfrac12\norm{C^{1/2}RC^{1/2}}_{\Frob}^2,
+\]
+and the dissipation identity is the chain rule along the gradient flow.
+\end{proof}
+
+\subsection{The linearized score operators}
+
+We now work in the whitened coordinates of \Cref{def:whitened}, so $a_\star=(0,\Id)$,
+$B(Z):=\nabla^2\widehat V(Z)$ and $\E B(Z)=\Id$.
+
+\begin{lemma}[Adjoint identities and the linearization at $a_\star$]
+\label{lem:adjoint-app}
+For the operators of \Cref{def:score-ops},
+$u^\top\mathcal T[X]=\Tr(\mathcal T^*[u]X)$ and $\Tr(\mathcal H[X]Y)=\Tr(X\mathcal H[Y])$.
+Moreover
+\[
+    \E_{\N(u,\Id+X)}[\nabla\widehat V]=u+\tfrac12\mathcal T[X]+O(\norm{(u,X)}_\star^2),
+    \qquad
+    \E_{\N(u,\Id+X)}[\nabla^2\widehat V]=\Id+\mathcal T^*[u]+\tfrac12\mathcal H[X]+O(\norm{(u,X)}_\star^2).
+\]
+\end{lemma}
+
+\begin{proof}
+The first adjoint identity is immediate from the definitions,
+$u^\top\mathcal T[X]=\E[(u^\top Z)\Tr(XB(Z))]=\Tr(\mathcal T^*[u]X)$. For the second, write
+$\varphi_{N_\theta}$ for the standard Gaussian density and note that
+$\partial_{cd}\varphi_{N_\theta}(z)=(z_cz_d-\delta_{cd})\varphi_{N_\theta}(z)$, while
+$B=\nabla^2\widehat V$ gives $\partial_{cd}B_{ab}=\partial_{bc}B_{ad}$ as distributions.
+Pairing,
+\[
+    \E[(Z_cZ_d-\delta_{cd})B_{ab}(Z)]
+    =\inner{\partial_{cd}B_{ab}}{\varphi_{N_\theta}}
+    =\inner{\partial_{bc}B_{ad}}{\varphi_{N_\theta}}
+    =\E[(Z_bZ_c-\delta_{bc})B_{ad}(Z)],
+\]
+the pairings being justified by boundedness of $B$ and by inserting compactly supported cutoffs
+of $\varphi_{N_\theta}$. Contracting against $Y_{ab}X_{cd}$ and using $\E B=\Id$ gives
+$\Tr(\mathcal H[X]Y)=\E[(YZ)^\top(B(Z)-\Id)(XZ)]$, which is symmetric in $(X,Y)$. The two
+expansions are \Cref{lem:price} applied at $a_\star$: the first derivative of
+$a\mapsto\E_{\rho_a}[\nabla\widehat V]$ in the mean direction $u$ is $\E[B]u=u$ and in the
+covariance direction $X$ is $\tfrac12\E[\Tr(X\nabla^3\widehat V)]=\tfrac12\mathcal T[X]$ by
+\eqref{eq:price-directional} and Gaussian integration by parts; the first derivative of
+$a\mapsto\E_{\rho_a}[\nabla^2\widehat V]$ in the mean direction is
+$\E[(u^\top Z)B(Z)]=\mathcal T^*[u]$ by Stein's identity and in the covariance direction is
+$\tfrac12\mathcal H[X]$ by \eqref{eq:price-directional} applied entrywise.
+\end{proof}
+
+\begin{lemma}[Diagonal-mode bounds]
+\label{lem:diagonal-modes}
+Fix an orthogonal basis in which $X=\diag(\lambda)$, and set
+$\widetilde T_{ki}:=\E[B_{ii}(Z)Z_k]$, $G_{ij}:=\E[B_{ii}(Z)Z_j^2]$, and
+$D:=G-\one\one^\top$. Then $D$ is symmetric,
+\begin{equation}
+\label{eq:T-Schur}
+    \widetilde T^\top\widetilde T\preceq\Id+D,
+    \qquad\text{and}\qquad
+    \lambda_{\max}(D)\leq\Gamma .
+\end{equation}
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:diagonal-modes}]
+Since $\E B=\Id$, two Gaussian integrations by parts give, for $i\neq j$,
+\[
+    D_{ij}=\E\bigl[B_{ii}(Z)(Z_j^2-1)\bigr]
+    =\E\bigl[\widehat V(Z)(Z_i^2-1)(Z_j^2-1)\bigr]=D_{ji},
+\]
+and integrating one $i$- and one $j$-derivative gives $\E[B_{ij}(Z)Z_iZ_j]=D_{ij}$; for $i=j$,
+$\E[B_{ii}(Z)Z_i^2]=1+D_{ii}$ is immediate. Hence $D$ is symmetric and
+$\E[B_{ij}(Z)Z_iZ_j]=\delta_{ij}+G_{ij}-1$ for all $i,j$. For $\eta(Z):=u+\diag(\lambda)Z$,
+expanding with this identity gives the exact quadratic form
+\begin{equation}
+\label{eq:eta-B-identity}
+    \E\bigl[\eta(Z)^\top B(Z)\eta(Z)\bigr]
+    =\norm u^2+2u^\top\widetilde T\lambda+\norm\lambda^2+\lambda^\top D\lambda .
+\end{equation}
+Because $B(Z)\succeq0$, the block quadratic form on the right is nonnegative for all
+$(u,\lambda)$, and its Schur complement with respect to the identity mean block is
+\eqref{eq:T-Schur}. Taking $u=0$ and $B(Z)\preceq\betastar\Id$ in \eqref{eq:eta-B-identity}
+gives $\norm\lambda^2+\lambda^\top D\lambda\leq\betastar\norm\lambda^2$, so
+$\lambda_{\max}(D)\leq\betastar-1$.
+
+For the dimension-dependent branch, normalize $\norm\lambda=1$, set $X:=\diag(\lambda)$ in the
+fixed basis, and put $Q_X(Z):=Z^\top XZ-\Tr X=\sum_j\lambda_j(Z_j^2-1)$. Since
+$D_{ij}=\E[B_{ii}(Z)(Z_j^2-1)]$, the quadratic form has the basis-free representation
+\[
+    \lambda^\top D\lambda=\E\bigl[\Tr\bigl(XB(Z)\bigr)\,Q_X(Z)\bigr].
+\]
+Because $B(Z)\succeq0$, splitting $X=X_+-X_-$ gives $\abs{\Tr(XB)}\leq\Tr(\abs XB)$ pointwise,
+with $\E\Tr(\abs XB)=\Tr\abs X=\norm\lambda_1\leq\sqrt{N_\theta}$ and, almost surely,
+$\Tr(\abs XB)\leq\betastar\Tr\abs X\leq\betastar\sqrt{N_\theta}$. The Laurent--Massart bound
+\citep{laurent2000adaptive}
+for $\sum_j\mathfrak a_j(Z_j^2-1)$ with $\mathfrak a\succeq0$, applied to the positive and
+negative parts of $\lambda$ so that $\norm{\lambda_+}+\norm{\lambda_-}\leq\sqrt2$ and
+$\norm\lambda_\infty\leq1$, gives the two-sided tail
+$\Prob(\abs{Q_X}\geq2\sqrt{2t}+2t)\leq4e^{-t}$ for all $t\geq0$. With $t_0$ as in
+\eqref{eq:Gamma} and $T:=2\sqrt{2t_0}+2t_0$, split the expectation. On $\{\abs{Q_X}\leq T\}$,
+$\E[\Tr(\abs XB)\abs{Q_X}]\leq T\,\E\Tr(\abs XB)\leq T\sqrt{N_\theta}$. On the complement, the
+pointwise bound and the tail integral
+\[
+    \E\bigl[\abs{Q_X};\abs{Q_X}>T\bigr]
+    \leq T\cdot4e^{-t_0}+\int_{t_0}^\infty4e^{-t}\Bigl(\frac{\sqrt2}{\sqrt t}+2\Bigr)\dd t
+    \leq4e^{-t_0}\bigl(T+\sqrt2+2\bigr)\leq4e^{-t_0}(T+4),
+\]
+where $t_0\geq1$ is used, give, since $4\betastar e^{-t_0}\leq1$, a contribution at most
+$\betastar\sqrt{N_\theta}\cdot4e^{-t_0}(T+4)\leq\sqrt{N_\theta}(T+4)$. Hence
+$\abs{\lambda^\top D\lambda}\leq\sqrt{N_\theta}(2T+4)=\sqrt{N_\theta}(4\sqrt{2t_0}+4t_0+4)$
+uniformly over $\norm\lambda=1$ and over the diagonalizing basis, since the representation is
+basis-free in $X$. Combining the two branches gives $\lambda_{\max}(D)\leq\Gamma$.
+\end{proof}
+
+\subsection{Second-order score calculus and the sharp chaos constant}
+
+Write $\mathcal L_{\mathrm{OU}}$ for the Ornstein--Uhlenbeck generator, which acts as
+multiplication by $-k$ on the $k$-th Hermite chaos. Gaussian integration by parts
+($-\mathcal L_{\mathrm{OU}}=\nabla^*\nabla$) gives, for $\phi=\sum_{k\geq1}\phi_k$,
+\begin{equation}
+\label{eq:OU-inverse}
+    \E\norm{\nabla(-\mathcal L_{\mathrm{OU}})^{-1}\phi}^2
+    =\E\bigl[\phi\,(-\mathcal L_{\mathrm{OU}})^{-1}\phi\bigr]
+    =\sum_{k\geq1}\frac1k\norm{\phi_k}_{L^2}^2 ,
+\end{equation}
+so that $\E\norm{\nabla(-\mathcal L_{\mathrm{OU}})^{-1}\phi}^2\leq\tfrac12\norm\phi_{L^2}^2$
+whenever $\phi$ carries only chaoses $\geq2$. The bound fails for chaos one, and only chaoses
+$\geq2$ occur below.
+
+\begin{lemma}[Score identities and the sharp second-score constant]
+\label{lem:second-score}
+Fix $a=(m,C)$ and $\zeta=(u,U)$, and set $v:=C^{-1/2}u$, $S:=C^{-1/2}UC^{-1/2}$,
+$t:=\norm\zeta_a=(\norm v^2+\tfrac12\norm S_{\Frob}^2)^{1/2}$, and $X=m+C^{1/2}Z$. Put
+\[
+    q_\zeta:=v^\top Z+\tfrac12(Z^\top SZ-\Tr S),
+    \qquad
+    \chi_\zeta:=q_\zeta^2+\bigl(\tfrac12\Tr S^2-\norm v^2-2v^\top SZ-Z^\top S^2Z\bigr).
+\]
+Then for any $\phi$ of polynomial growth and $\Phi(a):=\E_{\rho_a}[\phi(X)]$,
+\[
+    D\Phi(a)[\zeta]=\E[\phi\,q_\zeta],
+    \qquad
+    D^2\Phi(a)[\zeta,\zeta]=\E[\phi\,\chi_\zeta].
+\]
+Moreover $q_\zeta$ has Hermite chaoses $1,2$ and $\chi_\zeta$ has chaoses $2,3,4$ only, so
+$\E[q_\zeta]=\E[\chi_\zeta]=0$ and $\E[Z\chi_\zeta]=0$; and
+\[
+    \E[q_\zeta^2]=t^2,
+    \qquad
+    \norm{\chi_\zeta}_{L^2}\leq\sqrt6\,t^2,
+\]
+the constant $\sqrt6$ being sharp and attained by rank-one covariance directions.
+\end{lemma}
+
+\begin{proof}
+Differentiation identities. With $m_s=m+su$ and $C_s=C+sU$, positive definite for small
+$\abs s$, differentiate
+$\log\rho_{a_s}(\theta)=-\tfrac12\log\det C_s-\tfrac12(\theta-m_s)^\top C_s^{-1}(\theta-m_s)+\mathrm{const}$
+at fixed $\theta=m+C^{1/2}Z$. The entropy term contributes $-\tfrac12\Tr S$ at first order and
+$+\tfrac12\Tr S^2$ at second; the quadratic term contributes $v^\top Z+\tfrac12Z^\top SZ$ at
+first order and $-\norm v^2-2v^\top SZ-Z^\top S^2Z$ at second. Hence
+$\partial_s\log\rho_{a_s}|_0=q_\zeta$ and
+$\partial_s^2\log\rho_{a_s}|_0=\tfrac12\Tr S^2-\norm v^2-2v^\top SZ-Z^\top S^2Z=:p_\zeta$. From
+$\partial_s\rho_{a_s}=\rho_{a_s}\partial_s\log\rho_{a_s}$ and
+$\partial_s^2\rho_{a_s}=\rho_{a_s}((\partial_s\log\rho_{a_s})^2+\partial_s^2\log\rho_{a_s})$,
+differentiation under the integral, licensed by polynomial growth of $\phi$ and locally bounded
+polynomial score factors, gives the two identities with $\chi_\zeta=q_\zeta^2+p_\zeta$.
+
+Chaos structure. Write $\ell:=v^\top Z$, of chaos one, and $Q:=Z^\top SZ-\Tr S$, of
+chaos two, so that $q_\zeta=\ell+\tfrac12Q$ and, since
+$\Var(Z^\top SZ)=2\norm S_{\Frob}^2$,
+$\E[q_\zeta^2]=\norm v^2+\tfrac14\cdot2\norm S_{\Frob}^2=t^2$. The chaos-two product formula
+gives $Q^2=(Q^2)_0+(Q^2)_2+(Q^2)_4$ with $(Q^2)_0=2\norm S_{\Frob}^2$ and
+$(Q^2)_2=4(Z^\top S^2Z-\Tr S^2)=:4R_2$, and $\ell Q=2v^\top SZ+G_3$ with $G_3$ pure chaos three,
+its chaos-one part being $\sum_k\E[\ell QZ_k]Z_k=2v^\top SZ$, from
+$\E[Z_i(Z_jZ_l-\delta_{jl})Z_k]=\delta_{ij}\delta_{lk}+\delta_{il}\delta_{jk}$. Writing
+$Z^\top S^2Z=R_2+\Tr S^2$ in $p_\zeta$ gives
+$p_\zeta=-2v^\top SZ-R_2-\tfrac12\Tr S^2-\norm v^2$. Collecting
+$\chi_\zeta=\ell^2+\ell Q+\tfrac14Q^2+p_\zeta$ by chaos order, the chaos-zero part is
+$\norm v^2+\tfrac12\norm S_{\Frob}^2-\tfrac12\Tr S^2-\norm v^2=0$, the chaos-one part is
+$2v^\top SZ-2v^\top SZ=0$, and, using $\tfrac14(Q^2)_2=R_2$, there remain the mutually
+orthogonal parts $\chi_2=\ell^2-\norm v^2$, $\chi_3=G_3=\ell Q-2v^\top SZ$, and
+$\chi_4=\tfrac14(Q^2)_4$. In particular $\E[\chi_\zeta]=0$ and $\E[Z\chi_\zeta]=0$.
+
+Sharp constant. By orthogonality
+$\norm{\chi_\zeta}_{L^2}^2=\E[\chi_2^2]+\E[\chi_3^2]+\E[\chi_4^2]$. With
+$\mathfrak a:=\norm v^2$, $\mathfrak b:=\norm S_{\Frob}^2$, $\mathfrak c:=v^\top S^2v$ and
+$d_4:=\Tr S^4$, one has $\E[\chi_2^2]=\Var((v^\top Z)^2)=2\mathfrak a^2$,
+$\E[\chi_3^2]=\E[(\ell Q)^2]-4\norm{v^\top SZ}_{L^2}^2=2\mathfrak a\mathfrak b+4\mathfrak c$,
+and $\E[\chi_4^2]=\tfrac1{16}\norm{(Q^2)_4}_{L^2}^2=\tfrac12\mathfrak b^2+d_4$, whence
+$\norm{\chi_\zeta}_{L^2}^2=2\mathfrak a^2+2\mathfrak a\mathfrak b+4\mathfrak c+\tfrac12\mathfrak b^2+d_4$.
+Since $\mathfrak c=v^\top S^2v\leq\norm v^2\norm S_{\op}^2\leq\mathfrak a\mathfrak b$ and
+$d_4=\sum_i\lambda_i(S)^4\leq(\sum_i\lambda_i(S)^2)^2=\mathfrak b^2$,
+\[
+    \norm{\chi_\zeta}_{L^2}^2
+    \leq2\mathfrak a^2+6\mathfrak a\mathfrak b+\tfrac32\mathfrak b^2
+    \leq6\bigl(\mathfrak a+\tfrac{\mathfrak b}2\bigr)^2=6t^4 .
+\]
+Equality holds at $v=0$, so $\mathfrak a=\mathfrak c=0$, with $S$ of rank one, so
+$d_4=\mathfrak b^2$: then
+$\norm{\chi_\zeta}_{L^2}^2=\tfrac12\mathfrak b^2+\mathfrak b^2=\tfrac32\mathfrak b^2=6(\mathfrak b/2)^2=6t^4$.
+\end{proof}
+
+\subsection{The non-Gaussian modulus}
+
+\begin{proof}[Proof of \Cref{lem:Kng}]
+Write $x:=\norm v$ and $y:=\norm S_{\Frob}/\sqrt2$, so that $t^2=x^2+y^2$; on
+$\mathcal V_\delta$ we have $\norm U_{\op}\leq\sqrt2U_\delta y$,
+$\norm U_{\Frob}\leq\sqrt2U_\delta y$ and $\norm C_{\op}\leq U_\delta$, and at the end we
+convert through $t\leq\ell_\delta^{-1}\norm\zeta_\star$.
+
+Mean block. Since $H_m(a)=C(g(a)+m)$ and $D^2m=0$,
+$D^2H_m[\zeta,\zeta]=2U\,D(g+m)[\zeta]+C\,D^2g[\zeta,\zeta]$. Now
+$g(a)+m=-\E[\nabla\widehat V(X)-X]$, and the Ornstein--Uhlenbeck inverse of $q_\zeta$, whose
+gradient is $\nabla\psi_1=v+\tfrac12SZ$, gives
+$D(g+m)[\zeta]=-\E[(\nabla^2\widehat V(X)-\Id)C^{1/2}(v+\tfrac12SZ)]$. Splitting
+$\nabla^2\widehat V-\Id=(\nabla^2\widehat V-A(a))+(A(a)-\Id)$ and using
+$\E[\nabla^2\widehat V-A(a)]=0$ and $\E[SZ]=0$,
+\[
+    \norm{D(g+m)[\zeta]}
+    \leq\sqrt{U_\delta}\Bigl(\mathcal B_\delta\norm v+\tfrac1{\sqrt2}\Sigma_\delta y\Bigr),
+\]
+where $\norm{A(a)-\Id}_{\op}\leq\mathcal B_\delta$ controls the $(A-\Id)v$ term and
+$(\E\norm{\nabla^2\widehat V-A}_{\Frob}^2)^{1/2}\leq\Sigma_\delta$ the
+$\tfrac12(\nabla^2\widehat V-A)SZ$ term. For the second derivative, $\chi_\zeta$ has chaoses
+$\geq2$, so with $\psi_2:=(-\mathcal L_{\mathrm{OU}})^{-1}\chi_\zeta$, for which
+$\E\norm{\nabla\psi_2}^2\leq\tfrac12\norm{\chi_\zeta}_{L^2}^2\leq3t^4$ by \eqref{eq:OU-inverse}
+and \Cref{lem:second-score}, and $\E\nabla\psi_2=0$, we get
+$D^2g[\zeta,\zeta]=-\E[(\nabla^2\widehat V(X)-A(a))C^{1/2}\nabla\psi_2]$ and hence
+$\norm{D^2g[\zeta,\zeta]}\leq\sqrt{3U_\delta}\,\bar\Sigma_\delta t^2$. The truncated modulus
+$\bar\Sigma_\delta=\min\{\Sigma_\delta,\betastar-\alphastar\}$ arises because
+$\E\norm{(\nabla^2\widehat V-A)C^{1/2}\nabla\psi_2}$ may be bounded either by the pointwise
+operator norm $\norm{\nabla^2\widehat V-A}_{\op}\leq\betastar-\alphastar$, which is
+dimension-free, or by the Frobenius dispersion
+$(\E\norm{\nabla^2\widehat V-A}_{\Frob}^2)^{1/2}\leq\Sigma_\delta$ through Cauchy--Schwarz,
+whichever is smaller; no bound of the form
+$\norm{\nabla^2\widehat V-A}_{\Frob}\leq\betastar-\alphastar$ is used. Therefore
+\[
+    \norm{D^2H_m[\zeta,\zeta]}
+    \leq U_\delta^{3/2}\bigl(2\sqrt2\,\mathcal B_\delta xy+2\Sigma_\delta y^2+\sqrt3\,\bar\Sigma_\delta t^2\bigr),
+\]
+and the quadratic form in $(x,y)$ formed by the first two terms has largest eigenvalue
+$\Sigma_\delta+\sqrt{\Sigma_\delta^2+2\mathcal B_\delta^2}$; adding
+$\sqrt3\bar\Sigma_\delta t^2$ and converting $t$ gives $K_{\mathrm{ng},m}(\delta)$.
+
+Covariance block. Here $H_C(a)=-C(A(a)-\Id)C=-CWC$ with $W:=A(a)-\Id$, and the product
+rule gives
+\[
+    D^2(CWC)[\zeta,\zeta]=2U(DW)C+2C(DW)U+2UWU+C(D^2W)C .
+\]
+By the first score identity $\norm{DW[\zeta]}_{\Frob}=\norm{DA[\zeta]}_{\Frob}\leq\Sigma_\delta t$,
+by definition $\norm W_{\op}\leq\mathcal B_\delta$, and by the second score identity of
+\Cref{lem:second-score},
+$\norm{D^2W[\zeta,\zeta]}_{\Frob}=\norm{D^2A[\zeta,\zeta]}_{\Frob}\leq\sqrt6\,\Sigma_\delta t^2$.
+Hence
+\[
+    \norm{D^2H_C[\zeta,\zeta]}_{\Frob}
+    \leq4\sqrt2\,U_\delta^2\Sigma_\delta ty+4\mathcal B_\delta U_\delta^2y^2+\sqrt6\,U_\delta^2\Sigma_\delta t^2
+    \leq U_\delta^2\bigl((4\sqrt2+\sqrt6)\Sigma_\delta+4\mathcal B_\delta\bigr)t^2,
+\]
+using $ty\leq t^2$ and $y^2\leq t^2$; converting $t$ gives $K_{\mathrm{ng},C}(\delta)$. The
+pair-norm bound follows from
+$\norm{D^2H[\zeta,\zeta]}_\star^2=\norm{(D^2H)_m}^2+\tfrac12\norm{(D^2H)_C}_{\Frob}^2$. Every
+constant is proportional to $\mathcal B_\delta$, $\Sigma_\delta$ or $\bar\Sigma_\delta$, all of
+which vanish for Gaussian targets.
+\end{proof}
+
+% SOURCES:
+% improved-global-local-stoch.tex l.478-531 (lem:price-derivative, Fourier proof of the
+%   directional Price identity and the Jacobi entropy derivative) -> lem:price
+% improved-global-local.tex l.550-600 (differential of E, Price's theorem, gradient matching)
+%   -> lem:price (mean/Bonnet part), lem:FR-grad-app
+% improved-global-local-stoch.tex l.533-580 (lem:FR-gradient: FR gradient, flow, gradient norm,
+%   dissipation identity) -> lem:FR-grad-app
+% improved-global-local-stoch.tex l.1204-1211 (adjoint identities of the score operators)
+%   -> lem:adjoint-app (first part)
+% local-log-kappa-counterexample.tex l.1173-1269 (lem:second-Hermite: distributional Codazzi
+%   commutation proving self-adjointness of H and the polarized identity) -> lem:adjoint-app
+%   (second part)
+% improved-global-local-stoch.tex l.1293-1296 / improved-global-local.tex l.3215-3227
+%   (Bonnet-Price expansion of the two Gaussian expectations at a_star) -> lem:adjoint-app
+% improved-global-local-stoch.tex l.1225-1275 (lem:linear-diagonal-bounds, full proof with the
+%   Laurent-Massart tail and the basis-free representation) -> proof of lem:diagonal-modes
+%   [supersedes improved-global-local.tex l.3116-3184, whose branch is the weaker N_theta one]
+% improved-global-local-stoch.tex l.4130-4137 (OU inverse and the chaos>=2 factor 1/2)
+%   -> eq:OU-inverse
+% improved-global-local.tex l.3525-3582 = improved-global-local-stoch.tex l.4139-4173
+%   (lem:second-score: differentiation identities, chaos decomposition, sharp sqrt6 constant)
+%   -> lem:second-score
+% improved-global-local.tex l.3584-3655 = improved-global-local-stoch.tex l.4175-4223
+%   (lem:Kng full derivation, both blocks) -> proof of lem:Kng
+%
+% NOTE(cite): the two-sided chi-square tail is \citep{laurent2000adaptive}; entry present in refs.bib.

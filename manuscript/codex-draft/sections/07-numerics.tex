@@ -1,0 +1,222 @@
+\section{Numerical illustrations}
+\label{sec:numerics}
+
+The experiments are designed as diagnostics for the mechanisms proved above,
+not as a search for favorable benchmark instances.  Deterministic Gaussian and
+separable low-dimensional log-concave expectations are evaluated analytically
+or by fixed Gauss--Hermite quadrature; the nonseparable affine-mode target uses
+a fixed scrambled Sobol design.  The stochastic implementations use float64
+arithmetic and explicit seeds; baseline/STL algorithm pairs are driven by the
+same random-number stream.  The selected figures report the five claims that
+matter for the paper; larger parameter sweeps remain in the accompanying
+repository.
+
+\subsection{Covariance bootstrap and transport warm start}
+\label{sec:numerics-bootstrap}
+
+The covariance-scaling sweep uses diagonal Gaussian targets with initial
+covariances as small as \(\lambda_{\min}(C_0)=10^{-10}\); the separate
+transport experiment also includes a smooth \(\log\cosh\)-perturbed target,
+with \(\lambda_{\min}(C_0)\geq10^{-8}\).  The burn-in endpoint is the first
+iterate with \(\lambda_{\min}(C_n)\geq1/(2\beta)\).  Across the Gaussian
+scaling sweep, this time is linear in
+\(\log(1/(\beta\lambda_{\min}(C_0)))\), as predicted by the two-sided
+covariance recursions.  \Cref{fig:num-three-stage} shows one hard KL run with
+\(d=20\) and \(\kappa=1000\): covariance calibration precedes rapid energy
+decay, which in turn precedes the final decay of the Fisher--Rao mean-block
+drift \(\norm{C_n^{1/2}g(a_n)}\).
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.47\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_covboot_three_stage}
+  \caption{A hard KL trajectory.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.51\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_covboot_wasserstein_bootstrap}
+  \caption{One transport step, then a Fisher--Rao tail.}
+\end{subfigure}
+\caption{\textbf{Covariance initialization.}
+Left: a Gaussian run with \(d=20\), \(\kappa=1000\), and
+\(\lambda_{\min}(C_0)=10^{-10}\) separates covariance burn-in, global energy
+localization, and the final local regime.  Right: one
+Bures--Wasserstein bootstrap with \(c=1/2\), hence transport step
+\(\eta=c/\beta\), lifts the minimum covariance eigenvalue to the curvature
+scale independently of the initial underdispersion; the subsequent
+Fisher--Rao warm-up is essentially flat in \(\lambda_{\min}(C_0)\).}
+\label{fig:num-three-stage}
+\end{figure}
+
+The transport experiment makes a deliberately narrow point.  A single
+Bures--Wasserstein step removes the small-covariance cost and then hands the
+trajectory back to a Fisher--Rao scheme.  It neither changes the
+\(\kappastar\)-scale spiral obstruction nor implements a blended WFR flow.
+
+\subsection{Riemannian versus KL discretization}
+\label{sec:numerics-discretization}
+
+The deterministic comparison uses two-dimensional Gaussian and smooth
+log-concave targets, together with a convex quartic target whose Hessian is
+unbounded and hence is not globally smooth.  Both schemes use the same explicit
+mean update and evaluate the same population score and Hessian, analytically or
+by deterministic quadrature.  The Riemannian covariance update applies a
+matrix-exponential retraction; the KL update solves a rational precision
+resolvent.  We report iteration count and elapsed flow time \(nh\)
+separately; the latter is a discretization diagnostic, not wall-clock timing.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.58\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_convergence_speed_smooth_logconcave}
+  \caption{Matched-step trajectories on a smooth target.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.39\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_iterations_vs_stepsize}
+  \caption{Iterations to tolerance.}
+\end{subfigure}
+\caption{\textbf{Deterministic discretizations.}
+At matched stable stepsizes, the Riemannian and KL trajectories have comparable
+first-order behavior.  The Riemannian map often contracts faster per step in
+the tested range, whereas the KL covariance resolvent remains well defined for
+all stepsizes on log-concave targets and avoids a matrix exponential.  Both
+methods can still become unstable through their shared explicit mean update.
+The common theorem-safe stepsize is sufficient and conservative in these
+low-dimensional examples.}
+\label{fig:num-discretization}
+\end{figure}
+
+The descriptor \emph{more robust} in this comparison refers specifically to
+the covariance map.  On a log-concave target,
+\(C_n^{-1}+hA_n\succ0\) for every \(h>0\), so the KL covariance update cannot
+leave the positive-definite cone.  The full algorithm may nevertheless fail
+at a large step because the mean update contains the factor \(hC_n\).
+
+\subsection{STL variance and constant-step floors}
+\label{sec:numerics-stl}
+
+The stochastic grid uses Gaussian targets with
+\(d\in\{2,8,32\}\), \(\kappa\in\{10,100,10^4\}\), and
+smooth \(\log\cosh\) targets with
+\(d\in\{2,8,32\}\), \(\kappa\in\{10,100\}\).  Each cell uses 20 seeds.
+Baseline and STL runs share the same samples, so the comparison is paired.
+The energy shown in the plots is evaluated independently of the update sample.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.48\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_stl_variance_by_distance_to_optimum}
+  \caption{Fisher--Rao variance ratio versus mean displacement.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_stl_batchsize_effect}
+  \caption{Tail energy versus batch size.}
+\end{subfigure}
+\caption{\textbf{Price/Hessian STL diagnostics.}
+For a non-Gaussian \(\log\cosh\) target, the displayed mean-block Fisher--Rao
+variance ratio \(\Var_{\FR}(b_{\STL})/\Var_{\FR}(b_{\rm base})\) is positive at
+the optimizer and increases with the mean displacement in every plotted
+configuration (left).  Mini-batching reduces the median tail energy gap
+approximately as \(1/B\), while STL stays below its paired baseline in the
+recorded grid (right).  For a Gaussian target with matched covariance, the
+mean estimator and the constant Hessian are deterministic pathwise; this
+special calibration is not extrapolated to general targets.}
+\label{fig:num-stl}
+\end{figure}
+
+These plots support the variance decomposition of
+\Cref{sec:stochastic}.  They do not test the high-probability local
+non-exit theorem, whose horizon-dependent batch requirement is a worst-case
+containment statement rather than a prediction for the median trajectory.
+
+\subsection{Trace and traceless affine modes}
+\label{sec:numerics-affine}
+
+The affine-metric experiment varies
+\(\tau\in\{-\omega/(2d),0,\omega/(2d)\}\) for several values of \(\omega\).
+Five initializations isolate mean, volume-high, volume-low, traceless shape,
+and mixed perturbations.  The Gaussian target uses exact expectations.  The
+non-Gaussian target is strongly log-concave and uses one common fixed,
+scrambled Sobol quasi--Monte Carlo design across all metric choices.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.49\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_ot_gaussian_tau_speedup}
+  \caption{Gaussian target.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_ot_logconcave_tau_speedup}
+  \caption{Strongly log-concave target.}
+\end{subfigure}
+\caption{\textbf{Affine-invariant mode preconditioning.}
+The panels show the time-to-tolerance ratio \(T(\tau)/T(0)\).  For
+\(\tau=-\omega/(2d)\), the trace rate doubles and the volume-dominated runs
+take about half as long.  For \(\tau=\omega/(2d)\), their time scale grows by
+about \(3/2\).  Mean- and traceless-dominated runs remain near one.  The
+Gaussian panel calibrates the exact modal calculation; the non-Gaussian panel
+is an illustration, not a general convergence theorem for the full metric
+family.}
+\label{fig:num-affine-modes}
+\end{figure}
+
+\subsection{The non-log-concave boundary}
+\label{sec:numerics-nonconvex}
+
+For \eqref{eq:nonconvex-potential}, all expectations are deterministic
+Gauss--Hermite quadratures and all trajectories are centered.  The first two
+panels visualize the analytic mechanisms of
+\Cref{prop:nonconvex-riemannian-cascade,prop:nonconvex-kl-pole}.  The last
+panel evaluates the covariance part of the split stationarity measure in
+\eqref{eq:nonconvex-split-stationarity}; the mean term is zero by symmetry.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.32\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_nonconvex_riemannian_cascade}
+  \caption{Riemannian cascade.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.32\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_nonconvex_kl_pole}
+  \caption{KL pole.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.32\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_nonconvex_clipped_kl_stationarity}
+  \caption{Clipped-KL stationarity.}
+\end{subfigure}
+\caption{\textbf{Beyond log-concavity.}
+Although \(\abs{V_R''}\leq1\), negative curvature drives a covariance cascade
+in the Riemannian map and a rational pole in the unprojected KL map.  With
+\(C_n\in[\lambda_-,\lambda_+]\) and a theorem-safe step, the running minimum
+of the centered covariance KL stays below the energy-drop envelope from
+\Cref{thm:nonconvex-clipped-stationarity}.  After the upper constraint has
+bound, the iterate remains pinned there and the next displacement is zero;
+this is constrained stationarity, not a small unconstrained Fisher--Rao
+gradient.}
+\label{fig:num-nonconvex}
+\end{figure}
+
+\subsection{Reproducibility}
+\label{sec:numerics-reproducibility}
+
+The repository contains the experiment scripts, the raw outputs used by the
+selected panels, and a deterministic asset-building script.  The selected
+submission PDFs are byte-identical to the corresponding report assets.
+The selected panels can be rebuilt directly from their surviving CSV inputs,
+but the covariance-bootstrap and STL group-level builder entry points do not
+run end to end from the current snapshot because some supplementary trajectory
+and run-metadata files are absent.
+\Cref{app:experiments} records the target formulas, grids, seeds, quadrature
+rules, stopping conditions, exact data-to-figure lineage, and the provenance
+files that are absent from the current repository snapshot.  No general WFR
+output is used in this paper.

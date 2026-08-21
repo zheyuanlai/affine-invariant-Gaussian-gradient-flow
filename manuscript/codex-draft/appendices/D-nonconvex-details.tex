@@ -1,0 +1,268 @@
+\section{Clipped-KL descent in split coordinates}
+\label{app:nonconvex-details}
+
+We prove the one-step estimate in
+\Cref{thm:nonconvex-clipped-stationarity}.  The point that requires care is
+the orientation of the Gaussian divergences.  The forward divergence controls
+the smoothness remainder and appears in the proximal model, whereas the
+covariance part of the reverse divergence is what remains in the descent
+certificate.
+
+Write
+\[
+  \calE(m,C)=\Phi(C)+\calE_2(m,C)+\mathrm{const},
+  \qquad
+  \Phi(C):=-\frac12\log\det C,
+  \qquad
+  \calE_2(m,C):=\E_{\N(m,C)}V(X).
+\]
+For two feasible states \(a=(m,C)\) and \(a'=(m',C')\), put
+\begin{align*}
+  D_m(a',a)
+  &:=\frac12\norm{m'-m}_{C^{-1}}^2,\\
+  D_C^+(C',C)
+  &:=\KL\!\left(\N(0,C')\,\middle\|\,\N(0,C)\right),\\
+  D_C^-(C,C')
+  &:=\KL\!\left(\N(0,C)\,\middle\|\,\N(0,C')\right).
+\end{align*}
+
+\begin{lemma}[Relative smoothness on the covariance box]
+\label{lem:app:nonconvex-relative-smoothness}
+Suppose
+\(-\beta\Id\preceq\nabla^2V\preceq\beta\Id\) and both \(C,C'\) lie in
+\([\lambda_-\Id,\lambda_+\Id]\).  If
+\(b=\E_{\N(m,C)}\nabla V\) and
+\(A=\E_{\N(m,C)}\nabla^2V\), then
+\begin{equation}
+  \calE_2(m',C')
+  \leq
+  \calE_2(m,C)
+  +b^\top(m'-m)+\frac12\Tr\!\left(A(C'-C)\right)
+  +2\beta\lambda_+
+   \left\{D_m(a',a)+D_C^+(C',C)\right\}.
+  \label{eq:app:nonconvex-relative-smoothness}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Set \(u=m'-m\),
+\(M=C^{-1/2}C'C^{-1/2}\),
+\(B_0=C^{1/2}\),
+\(B'=C^{1/2}M^{1/2}\), and \(H=B'-B_0\).  Then
+\(B'B'^{\mathsf T}=C'\).  Couple
+\[
+  X=m+B_0Z,
+  \qquad
+  Y=m'+B'Z,
+  \qquad Z\sim\N(0,\Id).
+\]
+The upper Hessian bound in absolute value gives
+\[
+  \E V(Y)
+  \leq
+  \E V(X)
+  +\E\!\left[\nabla V(X)^\top(u+HZ)\right]
+  +\frac\beta2\left(\norm u^2+\norm H_{\Frob}^2\right).
+\]
+Gaussian integration by parts and
+\[
+  C'-C=B_0H^{\mathsf T}+HB_0^{\mathsf T}+HH^{\mathsf T}
+\]
+show that
+\begin{align*}
+  \E\!\left[\nabla V(X)^\top HZ\right]
+  &=\Tr(H^{\mathsf T}AB_0)\\
+  &=\frac12\Tr\!\left(A(C'-C)\right)
+    -\frac12\Tr(AHH^{\mathsf T}).
+\end{align*}
+Since \(\norm A_{\op}\leq\beta\), the last term and the Taylor remainder
+together are bounded above by
+\[
+  \frac\beta2\norm u^2+\beta\norm H_{\Frob}^2.
+\]
+The covariance box yields
+\[
+  \frac\beta2\norm u^2
+  \leq\beta\lambda_+D_m(a',a).
+\]
+Moreover,
+\(\norm H_{\Frob}^2
+\leq\lambda_+\norm{M^{1/2}-\Id}_{\Frob}^2\), while the scalar inequality
+\[
+  x-1-\log x\geq(\sqrt x-1)^2,
+  \qquad x>0,
+\]
+gives
+\[
+  \norm{M^{1/2}-\Id}_{\Frob}^2
+  \leq
+  \sum_i\{\lambda_i(M)-1-\log\lambda_i(M)\}
+  =2D_C^+(C',C).
+\]
+Substitution proves \eqref{eq:app:nonconvex-relative-smoothness}.
+\end{proof}
+
+We next identify the clipped update as a constrained proximal step.  At
+\(a_n=(m_n,C_n)\), define
+\begin{equation}
+\label{eq:app:nonconvex-proximal-model}
+  \mathcal Q_n(m,C)
+  :=
+  \Phi(C)+b_n^\top(m-m_n)
+  +\frac12\Tr\!\left(A_n(C-C_n)\right)
+  +\frac1h\left\{D_m((m,C),a_n)+D_C^+(C,C_n)\right\}.
+\end{equation}
+With the trace pairing on symmetric matrices,
+\begin{equation}
+  D_C^+(C,C_n)
+  =\Phi(C)-\Phi(C_n)
+   -\Tr\!\left(\nabla\Phi(C_n)(C-C_n)\right),
+  \qquad
+  \nabla\Phi(C)=-\frac12C^{-1}.
+  \label{eq:app:nonconvex-forward-is-bregman}
+\end{equation}
+Thus the covariance penalty in \(\mathcal Q_n\) is the
+log-determinant Bregman divergence in its first argument.
+
+The mean and covariance variables separate.  The mean minimizer is
+\(m_n-hC_nb_n\).  The unconstrained covariance minimizer is
+\[
+  \widetilde C_{n+1}
+  =(1+h)(C_n^{-1}+hA_n)^{-1}.
+\]
+Under
+\(h\beta\lambda_+\leq1/2\), its inverse is positive definite because
+\[
+  C_n^{-1}+hA_n
+  \succeq(\lambda_+^{-1}-h\beta)\Id
+  \succeq(2\lambda_+)^{-1}\Id.
+\]
+More precisely, if \(\alpha=1+h^{-1}\), the covariance-dependent part of
+\(\mathcal Q_n\) is, up to a constant,
+\begin{equation}
+  \alpha\,D_\Phi(C,\widetilde C_{n+1}),
+  \qquad
+  D_\Phi(C,\widetilde C)
+  :=\Phi(C)-\Phi(\widetilde C)
+    -\Tr\!\left(\nabla\Phi(\widetilde C)(C-\widetilde C)\right).
+  \label{eq:app:nonconvex-proximal-bregman-form}
+\end{equation}
+Indeed,
+\(\alpha\widetilde C_{n+1}^{-1}=h^{-1}C_n^{-1}+A_n\), which matches the
+linear coefficient in \eqref{eq:app:nonconvex-proximal-model}.
+
+For completeness, the Bregman projection in
+\eqref{eq:app:nonconvex-proximal-bregman-form} is exactly spectral clipping.
+Write
+\(\widetilde C_{n+1}=Q\diag(\widetilde c_i)Q^\top\) and
+\(C^+=Q\diag(c_i^+)Q^\top\), where
+\(c_i^+=\min\{\lambda_+,\max\{\lambda_-,\widetilde c_i\}\}\).  Then
+\[
+  G:=\nabla_C D_\Phi(C^+,\widetilde C_{n+1})
+  =\frac12\bigl(\widetilde C_{n+1}^{-1}-(C^+)^{-1}\bigr)
+  =Q\diag(g_i)Q^\top.
+\]
+Here \(g_i>0\) only when \(c_i^+=\lambda_-\), \(g_i<0\) only when
+\(c_i^+=\lambda_+\), and \(g_i=0\) otherwise.  Hence every feasible
+\(C\) satisfies
+\[
+  \Tr\!\left(G(C-C^+)\right)
+  =\sum_i g_i\{q_i^\top Cq_i-c_i^+\}\geq0.
+\]
+This is the variational inequality for minimizing
+\(D_\Phi(\,\cdot\,,\widetilde C_{n+1})\) over the covariance box; strict
+convexity in the first argument gives uniqueness.  Consequently,
+\(C^+=\operatorname{Clip}_{[\lambda_-,\lambda_+]}
+(\widetilde C_{n+1})=C_{n+1}\), and
+\((m_{n+1},C_{n+1})\) is the unique minimizer of
+\eqref{eq:app:nonconvex-proximal-model} over the covariance box.
+
+For the mean minimizer, with \(u_n=m_{n+1}-m_n\),
+\begin{equation}
+  b_n^\top u_n=-\frac1h\norm{u_n}_{C_n^{-1}}^2
+  =-\frac2hD_m(a_{n+1},a_n).
+  \label{eq:app:nonconvex-mean-optimality}
+\end{equation}
+For the covariance minimizer, constrained first-order optimality gives, for
+every feasible \(C\),
+\begin{equation}
+  \Tr\!\left(
+    \left\{
+      \nabla\Phi(C_{n+1})+\frac12A_n
+      +\frac1h\bigl(\nabla\Phi(C_{n+1})-\nabla\Phi(C_n)\bigr)
+    \right\}(C-C_{n+1})
+  \right)\geq0.
+  \label{eq:app:nonconvex-covariance-vi}
+\end{equation}
+Set \(C=C_n\) and \(\Delta C_n=C_{n+1}-C_n\).  The Bregman identities
+\begin{align*}
+  \Tr\!\left(\nabla\Phi(C_{n+1})\Delta C_n\right)
+  &=\Phi(C_{n+1})-\Phi(C_n)+D_C^-(C_n,C_{n+1}),\\
+  \Tr\!\left(
+    \{\nabla\Phi(C_{n+1})-\nabla\Phi(C_n)\}\Delta C_n
+  \right)
+  &=D_C^-(C_n,C_{n+1})+D_C^+(C_{n+1},C_n)
+\end{align*}
+therefore give the stronger estimate
+\begin{align}
+  &\Phi(C_{n+1})-\Phi(C_n)
+   +\frac12\Tr\!\left(A_n(C_{n+1}-C_n)\right)
+  \notag\\
+  &\quad\leq
+  -\left(1+\frac1h\right)D_C^-(C_n,C_{n+1})
+  -\frac1hD_C^+(C_{n+1},C_n)
+  \notag\\
+  &\quad\leq
+  -\frac1h\left\{
+    D_C^-(C_n,C_{n+1})+D_C^+(C_{n+1},C_n)
+  \right\}.
+  \label{eq:app:nonconvex-covariance-three-point}
+\end{align}
+Apply \Cref{lem:app:nonconvex-relative-smoothness} with
+\(a=a_n\), \(a'=a_{n+1}\), and combine
+\eqref{eq:app:nonconvex-mean-optimality}--
+\eqref{eq:app:nonconvex-covariance-three-point}.  With
+\(L=2\beta\lambda_+\),
+\begin{align*}
+  \calE(a_{n+1})-\calE(a_n)
+  \leq{}&
+  -\left(\frac2h-L\right)D_m(a_{n+1},a_n)
+  -\frac1hD_C^-(C_n,C_{n+1})\\
+  &-\left(\frac1h-L\right)D_C^+(C_{n+1},C_n).
+\end{align*}
+Because \(hL\leq1\), the final term is nonpositive and
+\(2/h-L\geq1/h\).  Hence
+\[
+  \calE(a_{n+1})
+  \leq
+  \calE(a_n)-\frac1h\left\{
+    \frac12\norm{m_{n+1}-m_n}_{C_n^{-1}}^2
+    +D_C^-(C_n,C_{n+1})
+  \right\},
+\]
+which is exactly \eqref{eq:nonconvex-clipped-descent}.  Summation proves the
+running-minimum estimate.
+
+Finally, \(\mathsf S_n=0\) if and only if
+\((m_{n+1},C_{n+1})=(m_n,C_n)\).  At such a fixed point, mean optimality gives
+\(b_n=0\), while \eqref{eq:app:nonconvex-covariance-vi} reduces to
+\[
+  \Tr\!\left(
+    \frac12(A_n-C_n^{-1})(C-C_n)
+  \right)\geq0
+  \qquad\text{for every feasible }C.
+\]
+These are exactly the first-order conditions for \(\calE\) on the covariance
+box.  Thus \(\mathsf S_n\) is a constrained fixed-point residual, not an
+unconstrained Fisher--Rao gradient norm.  Moreover, the full successive
+reverse KL is
+\[
+  \KL\!\left(
+    \N(m_n,C_n)\,\middle\|\,\N(m_{n+1},C_{n+1})
+  \right)
+  =D_C^-(C_n,C_{n+1})
+   +\frac12\norm{m_{n+1}-m_n}_{C_{n+1}^{-1}}^2.
+\]
+Its mean block uses \(C_{n+1}^{-1}\), rather than \(C_n^{-1}\), which is why
+the comparison in \Cref{cor:nonconvex-full-kl} incurs the condition-number
+factor \(\lambda_+/\lambda_-\).

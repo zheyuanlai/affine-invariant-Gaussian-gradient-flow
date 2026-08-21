@@ -2,7 +2,7 @@
 
 Numerical experiments for Gaussian variational inference, where the variational
 family is the non-degenerate Gaussians `N(m, C)` and the objective is
-`KL(N(m, C) || target)`. The repository contains eight self-contained experiment
+`KL(N(m, C) || target)`. The repository contains nine self-contained experiment
 groups, each with its own configs, source modules, scripts, tests, and outputs.
 
 The polished write-ups for these groups are the LaTeX reports in
@@ -37,7 +37,7 @@ metric. The question is whether `gamma_loc` genuinely depends on the dimension
 
 **Finding.** Over this non-adversarial production grid the measured `gamma_loc`
 is essentially flat in `N_theta` at every `kappa` and varies only with `kappa`.
-The later sharpness suite in group 8 shows that this behavior is not uniform
+The later sharpness suite in group 9 shows that this behavior is not uniform
 over all admissible targets: specially constructed gamma shells do realize the
 dimension-dependent rate. See
 [`reports/natural_gradient_local_rate_report.tex`](reports/natural_gradient_local_rate_report.tex).
@@ -203,7 +203,45 @@ asymptotic noise floor for the Gaussian target (machine zero) and an
 `O(dt Psi)` floor for the non-Gaussian target (log–log slope ≈ 1.0). See
 [`reports/natural_gradient_covariance_bootstrap_report.tex`](reports/natural_gradient_covariance_bootstrap_report.tex).
 
-### 8. `natural_gradient_sharpness` — sharp global, local, and discrete rates
+### 8. `natural_gradient_fixed_step_barrier` — is the `O(kappa^2)` fixed-step rate intrinsic?
+
+Two counterexamples that together partition the fixed-stepsize axis, plus a
+Bures–Wasserstein contrast on the same targets.
+
+**Bump train** (manuscript `thm:sharp-disc`, Appendix C). The 1-D potential with
+exact condition number `kappa`, dimension-free `||V'''||_inf` and matched initial
+covariance `c_0 = 1/kappa` blocks both schemes for `N = T kappa^2 / gamma`
+iterations at the certified step. The appendix writes the center recursion with the
+constant `gamma/kappa^2`, which is exactly the per-step mean gain `dt * c_kappa`;
+treating it as a free parameter `s` retunes the same construction to any stepsize
+(`s = dt/kappa`), so the family certifies `Omega(T kappa / dt)`.
+
+**Two-cycle.** Both covariance maps are stationary wherever `c A = 1`, and there the
+mean recursion becomes `m+ = (1 - dt * secant/tangent) m`, where `secant = b(m,c)/m`
+is the *average* of `A` over `[0,m]` and `tangent = A(m,c)` is its endpoint value.
+These are independent and their ratio spans `[1/kappa, kappa]`, so setting it to
+`2/dt` makes the multiplier exactly `-1` and evenness closes an exact nonoptimal
+period-two orbit. This is realizable whenever `dt > 2/kappa`, with `min V'' = 1` and
+`max V'' = kappa` both **attained** (otherwise the example would only restate the
+textbook stability limit at a smaller true condition number).
+
+**Finding.** The `kappa^2` is intrinsic to fixed-step Fisher–Rao. For `dt <= 2/kappa`
+the retuned bump train forces `Omega(T kappa / dt)` (measured exponent `1.93` over
+`kappa in [128, 1024]`, iterates shadowing the ideal centers to machine precision);
+for `dt > 2/kappa` the two-cycle target makes both schemes never converge — all 40
+Fisher–Rao runs fail, the mean flips sign every iteration with amplitude and gap
+constant to 6 decimals, and the orbit survives a 1% perturbation of the
+initialization in every run. The envelope is minimized at the crossover
+`dt ~ 1/kappa` with value `~ kappa^2`, so `min_dt sup_V N = Theta(kappa^2)`.
+On the same targets the Bures–Wasserstein forward–backward step converges in all 60
+runs inside its certified `eta <= 1/beta` and first fails at exactly `eta = 2/beta`:
+its mean update carries no covariance preconditioner, so its multiplier is
+`1 - eta * secant` with `secant <= beta`, bounded away from `-1` uniformly in `c`.
+This supersedes an earlier reading of the bump-train experiment alone, which
+concluded the `kappa^2` was only the price of the certified step. See
+[`reports/natural_gradient_fixed_step_barrier_report.tex`](reports/natural_gradient_fixed_step_barrier_report.tex).
+
+### 9. `natural_gradient_sharpness` — sharp global, local, and discrete rates
 
 Adversarial lower-bound experiments for every rate regime in the sharp-rate
 note: a two-dimensional logarithmic spiral for the continuous global
@@ -523,7 +561,37 @@ and the report compiled by:
 ```bash
 cd reports
 tectonic natural_gradient_covariance_bootstrap_report.tex
+tectonic natural_gradient_fixed_step_barrier_report.tex
 ```
+
+## Reproducing the fixed-step barrier experiments
+
+Deterministic, 1-D, CPU-only. The bump train takes ~95 s for the full `kappa`
+grid up to 1024; the two-cycle study (including the basin sweep and the combined
+barrier sweep) takes ~8 min:
+
+```bash
+python scripts/natural_gradient_fixed_step_barrier/run_sharp_bump.py \
+    --config configs/natural_gradient_fixed_step_barrier/sharp_bump.yaml \
+    --outdir outputs/natural_gradient_fixed_step_barrier --overwrite
+```
+
+```bash
+python scripts/natural_gradient_fixed_step_barrier/run_two_cycle.py \
+    --config configs/natural_gradient_fixed_step_barrier/two_cycle.yaml \
+    --outdir outputs/natural_gradient_fixed_step_barrier --overwrite
+```
+
+This writes `sharp_bump_long.csv`, `sharp_bump_summary.csv`,
+`sharp_bump_slopes.csv`, `sharp_bump_gamma_sweep.csv` and
+`sharp_bump_metadata.json`, plus
+`two_cycle_summary.csv`, `two_cycle_basin.csv`, `two_cycle_targets.csv`,
+`two_cycle_barrier.csv` and `two_cycle_long.csv`. Add `--smoke` to either for the reduced grid
+(`outputs/natural_gradient_fixed_step_barrier_smoke/`). The headline columns are
+`slope_upper` in `sharp_bump_slopes.csv` (log-log exponent of `n_half` vs `kappa`
+over the top half of the grid) and `shadow_mean_err_over_w` / `cA_max` in the
+summary, which verify that the `theory` arm really is on the shadowed trajectory
+of `lem:bump-shadowing` rather than merely slow.
 
 ## Reproducing the natural-gradient local-rate production run
 
@@ -587,7 +655,7 @@ tectonic natural_gradient_sharpness_report.tex
 python reports/make_report_assets.py
 #    -> reports/assets/figs/*.pdf, *.png  and  reports/assets/tab_*.tex
 #    (use --only {omega_tau,local_rate,discretization,wfr,nonconvex_instability,
-#     stl_variance,covariance_bootstrap} to build one group)
+#     stl_variance,covariance_bootstrap,fixed_step_barrier} to build one group)
 
 # 2. compile the reports (tectonic resolves preamble.tex and assets/)
 cd reports
@@ -598,6 +666,7 @@ tectonic wfr_gradient_flow_report.tex
 tectonic natural_gradient_nonconvex_instability_report.tex
 tectonic natural_gradient_stl_variance_report.tex
 tectonic natural_gradient_covariance_bootstrap_report.tex
+tectonic natural_gradient_fixed_step_barrier_report.tex
 tectonic natural_gradient_sharpness_report.tex
 ```
 

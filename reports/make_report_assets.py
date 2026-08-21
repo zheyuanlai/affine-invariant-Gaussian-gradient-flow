@@ -1262,7 +1262,9 @@ def _tab_stl_algorithm_noise_floor(tail_df):
 
 def _tab_stl_runtime(alg_summary, est_meta, alg_meta):
     """Runtime / environment summary for both experiments."""
-    dev = alg_meta.get("torch_info", {}).get("device_name") or alg_meta.get("device")
+    alg_meta = alg_meta or {}
+    dev = (alg_meta.get("torch_info", {}).get("device_name")
+           or alg_meta.get("device") or "--")
     backend = alg_meta.get("backend", "--")
     est_wall = est_meta.get("wall_time_total", float("nan")) if est_meta else float("nan")
     alg_wall = alg_meta.get("wall_time_total", float("nan"))
@@ -1295,11 +1297,21 @@ def build_stl_variance_assets():
 
     est_df = pd.read_csv(os.path.join(STL_DIR, "estimator_variance.csv"))
     est_sum = pd.read_csv(os.path.join(STL_DIR, "estimator_variance_summary.csv"))
-    long_df = pd.read_csv(os.path.join(STL_DIR, "algorithm_results_long.csv"))
     tail_df = pd.read_csv(os.path.join(STL_DIR, "tail_noise_floor.csv"))
     alg_sum = pd.read_csv(os.path.join(STL_DIR, "algorithm_summary.csv"))
-    with open(os.path.join(STL_DIR, "run_metadata.json")) as fh:
-        alg_meta = json.load(fh)
+    # The raw trajectory CSV (>100 MB) and the run metadata are regenerable only
+    # on the original GPU host (see .gitignore); every asset the manuscript uses
+    # is built from the committed summary CSVs, so both inputs are optional.
+    long_path = os.path.join(STL_DIR, "algorithm_results_long.csv")
+    long_df = pd.read_csv(long_path) if os.path.exists(long_path) else None
+    if long_df is None:
+        print("  [info] algorithm_results_long.csv absent -> skipping "
+              "fig_stl_algorithm_gap_* (supplementary; not used by the manuscript)")
+    alg_meta = None
+    alg_meta_path = os.path.join(STL_DIR, "run_metadata.json")
+    if os.path.exists(alg_meta_path):
+        with open(alg_meta_path) as fh:
+            alg_meta = json.load(fh)
     est_meta = None
     est_meta_path = os.path.join(STL_DIR, "estimator_run_metadata.json")
     if os.path.exists(est_meta_path):
@@ -1310,7 +1322,7 @@ def build_stl_variance_assets():
         if kind in set(est_df.kind.unique()):
             _savefig(P.fig_estimator_variance_ratio(est_df, kind),
                      f"fig_stl_estimator_variance_ratio_{STL_KIND_FILE[kind]}")
-        if kind in set(long_df.kind.unique()):
+        if long_df is not None and kind in set(long_df.kind.unique()):
             fig = P.fig_algorithm_gap(long_df, kind)
             if fig is not None:
                 _savefig(fig, f"fig_stl_algorithm_gap_{STL_KIND_FILE[kind]}")
@@ -1502,6 +1514,253 @@ def build_covariance_bootstrap_assets():
     _tab_covboot_wasserstein(wboot)
 
 
+# ===========================================================================
+# sharp bump train (thm:sharp-disc)
+# ===========================================================================
+
+SHARP_ARM_TEX = {
+    "theory": r"$\Delta t=\gamma/\kappa$",
+    "const": r"$\Delta t=\gamma$",
+}
+SHARP_ARM_STYLE = {
+    "theory": ("o-", "#d62728"),
+    "const": ("s-", "#1f77b4"),
+}
+SHARP_FAMILY_TEX = {
+    "manuscript": r"Appendix~C train (built for $\Delta t=\gamma/\kappa$)",
+    "retuned": r"train retuned to the arm's own $\Delta t$",
+}
+
+
+def _sharp_fmt_int(x):
+    if x is None or not np.isfinite(x) or x < 0:
+        return "--"
+    return f"{int(round(x)):d}"
+
+
+def _fig_sharp_scaling(summary, name):
+    """Iterations to a constant-factor gap reduction vs kappa, one panel per family."""
+    df = summary[(summary.scheme == "riemannian") & (summary.n_half > 0)]
+    families = [f for f in ("manuscript", "retuned") if f in set(df.family)]
+    fig, axes = plt.subplots(1, len(families), figsize=(5.2 * len(families), 3.9),
+                             sharey=True)
+    axes = np.atleast_1d(axes)
+    for ax, family in zip(axes, families):
+        sub = df[df.family == family]
+        for arm, (fmt, color) in SHARP_ARM_STYLE.items():
+            g = sub[sub.arm == arm].sort_values("kappa")
+            if g.empty:
+                continue
+            ax.loglog(g.kappa, g.n_half, fmt, color=color, label=SHARP_ARM_TEX[arm])
+        k = np.array(sorted(sub.kappa.unique()), dtype=float)
+        anchor = float(sub[sub.arm == "theory"].n_half.min())
+        for power, shade, lab in ((1, "0.55", r"  $\kappa$"), (2, "0.3", r"  $\kappa^2$")):
+            ax.loglog(k, anchor * (k / k[0]) ** power, ":", color=shade, lw=1.0)
+            ax.text(k[-1], anchor * (k[-1] / k[0]) ** power, lab, color=shade, va="center")
+        ax.set_xlabel(r"condition number $\kappa$")
+        ax.set_title(SHARP_FAMILY_TEX.get(family, family))
+    axes[0].set_ylabel(r"iterations to $\Delta\mathcal{E}\leq\Delta\mathcal{E}_0/2$")
+    axes[0].legend(loc="upper left")
+    _savefig(fig, name)
+
+
+def _tab_sharp_scaling(summary, slopes):
+    """Iteration counts and fitted exponents, both schemes, both fixed steps."""
+    lines = [
+        r"\begin{tabular}{ll rrrr r}", r"\toprule",
+        r"train & step & \multicolumn{4}{c}{iterations to "
+        r"$\Delta\mathcal{E}\leq\Delta\mathcal{E}_0/2$} & exponent \\",
+        r"\cmidrule(lr){3-6}\cmidrule(lr){7-7}",
+        r" & & $\kappa{=}128$ & $\kappa{=}256$ & $\kappa{=}512$ & $\kappa{=}1024$ "
+        r"& $\kappa\in[128,1024]$ \\", r"\midrule",
+    ]
+    for fi, family in enumerate(("manuscript", "retuned")):
+        if fi:
+            lines.append(r"\midrule")
+        for ai, arm in enumerate(("theory", "const")):
+            for scheme in ("riemannian", "kl"):
+                sub = summary[(summary.family == family) & (summary.arm == arm)
+                              & (summary.scheme == scheme)]
+                sl = slopes[(slopes.family == family) & (slopes.arm == arm)
+                            & (slopes.scheme == scheme) & (slopes.metric == "n_half")]
+
+                def cell(kappa):
+                    r = sub[np.isclose(sub.kappa, kappa)]
+                    return _sharp_fmt_int(r.n_half.iloc[0]) if len(r) else "--"
+
+                short = {"manuscript": r"Appendix~C", "retuned": "retuned"}
+                head = short.get(family, family) if (ai == 0 and scheme == "riemannian") else ""
+                tag = "Riem." if scheme == "riemannian" else "KL"
+                exp_v = _fmt(sl.slope_upper.iloc[0], 2) if len(sl) else "--"
+                lines.append(
+                    f"{head} & {SHARP_ARM_TEX[arm]}, {tag} & {cell(128)} & {cell(256)} & "
+                    f"{cell(512)} & {cell(1024)} & {exp_v} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_sharp_scaling.tex", "\n".join(lines))
+
+
+def _tab_sharp_gamma(gamma_df):
+    """Fixed order-one step swept over its own constant: exponent and stability."""
+    lines = [
+        r"\begin{tabular}{l rr rr}", r"\toprule",
+        r" & \multicolumn{2}{c}{exponent, $\kappa\in[128,1024]$} "
+        r"& \multicolumn{2}{c}{all runs monotone / converged} \\",
+        r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
+        r"$\gamma$ ($=\Delta t$) & Riem. & KL & Riem. & KL \\", r"\midrule",
+    ]
+    for gamma in sorted(gamma_df.gamma.unique()):
+        sub = gamma_df[np.isclose(gamma_df.gamma, gamma)]
+
+        def cell(scheme, col):
+            r = sub[sub.scheme == scheme]
+            if not len(r):
+                return "--"
+            if col == "slope_upper":
+                return _fmt(r.slope_upper.iloc[0], 2)
+            ok = bool(r.all_monotone.iloc[0]) and bool(r.all_converged.iloc[0])
+            return r"\checkmark" if ok else r"$\times$"
+
+        lines.append(
+            f"${gamma:g}$ & {cell('riemannian', 'slope_upper')} & {cell('kl', 'slope_upper')} "
+            f"& {cell('riemannian', 'ok')} & {cell('kl', 'ok')} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_sharp_gamma.tex", "\n".join(lines))
+
+
+def _tab_sharp_shadowing(summary):
+    """Shadowing diagnostics: the theory arm really is on the lem:bump-shadowing orbit."""
+    sub = summary[(summary.family == "manuscript") & (summary.arm == "theory")
+                  & (summary.scheme == "riemannian")].sort_values("kappa")
+    lines = [
+        r"\begin{tabular}{r rr rr r}", r"\toprule",
+        r"$\kappa$ & $N_\kappa$ & $n_{1/2}$ & $n_{1/2}/N_\kappa$ & "
+        r"$\sup_j|m_j-x_j|/w_\kappa$ & $\sup_j|\kappa c_j-1|$ \\", r"\midrule",
+    ]
+    for _, r in sub.iterrows():
+        lines.append(
+            f"${r.kappa:g}$ & {_sharp_fmt_int(r.N_train)} & {_sharp_fmt_int(r.n_half)} & "
+            f"{_fmt(r.n_half_over_N_train, 3)} & {_fmt_sci(r.shadow_mean_err_over_w)} & "
+            f"{_fmt_sci(r.shadow_cov_err)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_sharp_shadowing.tex", "\n".join(lines))
+
+
+def _tab_two_cycle(summary, targets):
+    """Both Fisher--Rao schemes cycle; Bures--Wasserstein converges on the same target."""
+    lines = [
+        r"\begin{tabular}{r r rr rr r}", r"\toprule",
+        r"& & \multicolumn{2}{c}{Fisher--Rao, $\Delta t=\gamma$}"
+        r" & \multicolumn{2}{c}{Bures--Wasserstein, $\eta=1/\beta$} & \\",
+        r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-7}",
+        r"$\kappa$ & $\gamma$ & Riem. & KL & converged & $n_{\mathrm{tol}}$ "
+        r"& $\|V'''\|_\infty$ \\", r"\midrule",
+    ]
+    for kappa in sorted(summary.kappa.unique()):
+        for gamma in sorted(summary.gamma.unique()):
+            sub = summary[(summary.kappa == kappa) & (summary.gamma == gamma)]
+
+            def fr(scheme):
+                r = sub[sub.scheme == scheme]
+                if not len(r):
+                    return "--"
+                return r"cycles" if not int(r.converged.iloc[0]) else r"converges"
+
+            bwr = sub[(sub.scheme == "bures_wasserstein")
+                      & np.isclose(sub.get("bw_eta_multiplier", -1), 1.0)]
+            bw_ok = r"\checkmark" if len(bwr) and int(bwr.converged.iloc[0]) else r"$\times$"
+            bw_n = _sharp_fmt_int(bwr.n_tol.iloc[0]) if len(bwr) else "--"
+            tg = targets[(targets.kappa == kappa) & (targets.gamma == gamma)]
+            lh = _fmt(tg.hessian_lipschitz.iloc[0], 4) if len(tg) else "--"
+            lines.append(
+                f"${kappa:g}$ & ${gamma:g}$ & {fr('riemannian')} & {fr('kl')} & "
+                f"{bw_ok} & {bw_n} & {lh} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_two_cycle.tex", "\n".join(lines))
+
+
+def _tab_two_cycle_bw(summary):
+    """Bures--Wasserstein stepsize boundary: converges iff eta <= 1/beta (edge at 2/beta)."""
+    bw = summary[summary.family == "bures_wasserstein"]
+    lines = [
+        r"\begin{tabular}{l rr l}", r"\toprule",
+        r"$\eta$ & converged & runs & behaviour \\", r"\midrule",
+    ]
+    for mult in sorted(bw.bw_eta_multiplier.unique()):
+        sub = bw[np.isclose(bw.bw_eta_multiplier, mult)]
+        n_ok, n = int(sub.converged.sum()), len(sub)
+        note = "converges" if n_ok == n else ("oscillates" if n_ok == 0 else "mixed")
+        inside = r"\;(certified)" if mult <= 1.0 else ""
+        lines.append(rf"${mult:g}/\beta${inside} & {n_ok} & {n} & {note} \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_two_cycle_bw.tex", "\n".join(lines))
+
+
+def _tab_two_cycle_basin(basin):
+    """How large a perturbation of the initial mean still fails to converge."""
+    lines = [
+        r"\begin{tabular}{l rr l}", r"\toprule",
+        r"initial perturbation & non-convergent & runs & status \\", r"\midrule",
+    ]
+    for pert in sorted(basin.perturb.unique()):
+        # exact match: np.isclose would merge perturbations 0 and 1e-12 (atol=1e-8)
+        sub = basin[basin.perturb == pert]
+        n_bad, n = int((sub.converged == 0).sum()), len(sub)
+        tag = "all cycle" if n_bad == n else ("all escape" if n_bad == 0 else "mixed")
+        label = "$0$" if pert == 0 else rf"${pert:g}$"
+        lines.append(rf"{label} & {n_bad} & {n} & {tag} \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    _write_table("tab_two_cycle_basin.tex", "\n".join(lines))
+
+
+def _fig_barrier(barrier, name):
+    """The fixed-step barrier: worst case over both counterexamples, versus ``dt``."""
+    kappa = float(barrier.kappa.iloc[0])
+    fig, ax = plt.subplots(figsize=(6.6, 4.2))
+    bump = barrier[barrier.regime == "bump_train"].sort_values("dt")
+    cyc = barrier[barrier.regime == "two_cycle"].sort_values("dt")
+    ax.loglog(bump.dt, bump.n_half, "o-", color="#1f77b4",
+              label=r"bump train, $\Omega(T\kappa/\Delta t)$")
+    ymax = float(bump.n_half.max()) * 40 if len(bump) else 1e7
+    ymin = max(float(bump.n_half.min()) / 8, 1.0) if len(bump) else 1.0
+    if len(cyc):
+        ax.axvspan(float(cyc.dt.min()) * 0.75, float(cyc.dt.max()) * 1.4,
+                   color="#d62728", alpha=0.13)
+        ax.plot(cyc.dt, np.full(len(cyc), ymax * 0.5), "v", color="#d62728",
+                label=r"two-cycle: never converges")
+    ax.axvline(2.0 / kappa, color="0.35", ls="--", lw=1.2)
+    ax.text(2.0 / kappa * 1.15, ymin * 2.2, r"$\Delta t=2/\kappa$", color="0.35")
+    ax.axhline(kappa ** 2, color="0.6", ls=":", lw=1.0)
+    ax.text(float(bump.dt.min()), kappa ** 2 * 1.3, r"$\kappa^2$", color="0.5")
+    ax.set_xlabel(r"fixed stepsize $\Delta t$")
+    ax.set_ylabel("worst-case iterations to halve the gap")
+    ax.set_title(rf"Fixed-step barrier at $\kappa={kappa:g}$")
+    ax.set_ylim(ymin, ymax)
+    ax.legend(loc="upper right")
+    _savefig(fig, name)
+
+
+def build_fixed_step_barrier_assets():
+    """Figures and tables for the fixed-step lower-bound report."""
+    print("fixed-step barrier (bump train + two-cycle):")
+    d = os.path.join(_ROOT, "outputs", "natural_gradient_fixed_step_barrier")
+    summary = pd.read_csv(os.path.join(d, "sharp_bump_summary.csv"))
+    slopes = pd.read_csv(os.path.join(d, "sharp_bump_slopes.csv"))
+    gamma_df = pd.read_csv(os.path.join(d, "sharp_bump_gamma_sweep.csv"))
+    _fig_sharp_scaling(summary, "fig_sharp_bump_scaling")
+    _tab_sharp_scaling(summary, slopes)
+    _tab_sharp_gamma(gamma_df.drop_duplicates(subset=["gamma", "scheme"]))
+    _tab_sharp_shadowing(summary)
+
+    tc = pd.read_csv(os.path.join(d, "two_cycle_summary.csv"))
+    tgt = pd.read_csv(os.path.join(d, "two_cycle_targets.csv"))
+    basin = pd.read_csv(os.path.join(d, "two_cycle_basin.csv"))
+    barrier = pd.read_csv(os.path.join(d, "two_cycle_barrier.csv"))
+    _tab_two_cycle(tc, tgt)
+    _tab_two_cycle_bw(tc)
+    _tab_two_cycle_basin(basin)
+    _fig_barrier(barrier, "fig_fixed_step_barrier")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--repo-root", default=_ROOT)
@@ -1510,6 +1769,7 @@ def main():
                        "omega_tau", "local_rate", "discretization", "wfr",
                        "nonconvex_instability", "stl_variance",
                        "covariance_bootstrap", "natural_gradient_covariance_bootstrap",
+                       "fixed_step_barrier",
                    ],
                    default=None, help="Build only one group's assets.")
     args = p.parse_args()
@@ -1524,6 +1784,7 @@ def main():
         "stl_variance": build_stl_variance_assets,
         "covariance_bootstrap": build_covariance_bootstrap_assets,
         "natural_gradient_covariance_bootstrap": build_covariance_bootstrap_assets,
+        "fixed_step_barrier": build_fixed_step_barrier_assets,
     }
     # The covariance-bootstrap group has two alias keys pointing at one builder;
     # on a full run keep only one so it is not built twice.

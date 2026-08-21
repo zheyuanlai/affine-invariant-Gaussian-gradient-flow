@@ -1,0 +1,2870 @@
+\documentclass[11pt]{article}
+
+% ============================================================
+% Packages
+% ============================================================
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{aliascnt}
+\usepackage[nameinlink,capitalize]{cleveref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    citecolor=blue!60!black,
+    urlcolor=blue!60!black,
+    pdftitle={Covariance Bootstrap, Quadratic Rescue, and Gaussian-Core Sharp Regions for Gaussian Natural Gradient Variational Inference},
+    pdfauthor={}
+}
+
+% ============================================================
+% Theorem environments
+% ============================================================
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+
+\newaliascnt{proposition}{theorem}
+\newtheorem{proposition}[proposition]{Proposition}
+\aliascntresetthe{proposition}
+
+\newaliascnt{lemma}{theorem}
+\newtheorem{lemma}[lemma]{Lemma}
+\aliascntresetthe{lemma}
+
+\newaliascnt{corollary}{theorem}
+\newtheorem{corollary}[corollary]{Corollary}
+\aliascntresetthe{corollary}
+
+\theoremstyle{definition}
+\newaliascnt{assumption}{theorem}
+\newtheorem{assumption}[assumption]{Assumption}
+\aliascntresetthe{assumption}
+
+\newaliascnt{definition}{theorem}
+\newtheorem{definition}[definition]{Definition}
+\aliascntresetthe{definition}
+
+\theoremstyle{remark}
+\newaliascnt{remark}{theorem}
+\newtheorem{remark}[remark]{Remark}
+\aliascntresetthe{remark}
+
+\crefname{theorem}{Theorem}{Theorems}
+\Crefname{theorem}{Theorem}{Theorems}
+\crefname{proposition}{Proposition}{Propositions}
+\Crefname{proposition}{Proposition}{Propositions}
+\crefname{lemma}{Lemma}{Lemmas}
+\Crefname{lemma}{Lemma}{Lemmas}
+\crefname{corollary}{Corollary}{Corollaries}
+\Crefname{corollary}{Corollary}{Corollaries}
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+\crefname{definition}{Definition}{Definitions}
+\Crefname{definition}{Definition}{Definitions}
+\crefname{remark}{Remark}{Remarks}
+\Crefname{remark}{Remark}{Remarks}
+\crefname{algorithm}{Algorithm}{Algorithms}
+\Crefname{algorithm}{Algorithm}{Algorithms}
+\crefname{section}{Section}{Sections}
+\Crefname{section}{Section}{Sections}
+\crefname{appendix}{Appendix}{Appendices}
+\Crefname{appendix}{Appendix}{Appendices}
+
+% ============================================================
+% Macros
+% ============================================================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\SPD}{\mathbb{S}_{++}}
+\newcommand{\Sym}{\mathbb{S}}
+\newcommand{\Id}{I}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\grad}{\operatorname{grad}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\Frob}{\mathrm{F}}
+\newcommand{\post}{\mathrm{post}}
+\newcommand{\FR}{\mathrm{FR}}
+\newcommand{\BW}{\mathrm{BW}}
+\newcommand{\Riem}{\mathrm{R}}
+\newcommand{\calE}{\mathcal{E}}
+\newcommand{\PG}{\mathcal{P}_{\mathrm G}}
+\newcommand{\Aspace}{\mathcal{A}}
+\newcommand{\Fil}{\mathcal{F}}
+\newcommand{\STL}{\mathrm{STL}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\inner}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\logp}{\log_+}
+\newcommand{\glob}{\mathrm{glob}}
+\newcommand{\cov}{\mathrm{cov}}
+\newcommand{\loc}{\mathrm{loc}}
+\newcommand{\Gradnorm}{\mathsf{G}}
+\newcommand{\LH}{L_H}
+\newcommand{\barLH}{\overline{L}_H}
+\newcommand{\LB}{L_\Lambda}
+\newcommand{\Retr}{\operatorname{Retr}}
+\newcommand{\Kresc}{\mathsf{K}}
+\newcommand{\Fresc}{\mathsf{F}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Ureg}{\mathcal{U}}
+\newcommand{\Hreg}{\mathcal{H}}
+\newcommand{\FGauss}{F_{\mathrm G}}
+\newcommand{\gstar}{\gamma_\star}
+\newcommand{\gund}{\underline{\gamma}}
+\newcommand{\Lstar}{L_\star}
+\newcommand{\sharpthr}{\Delta^{\sharp}}
+\newcommand{\Kng}{K_{\mathrm{ng}}}
+\newcommand{\Kdisc}{K^{\mathrm{disc}}}
+\newcommand{\LHs}{L_{H,\star}}
+\newcommand{\PROOFHOLE}{{\color{red}\textsf{[\,proof to be inserted\,]}}}
+\newcommand{\TODO}[1]{{\color{red}$\blacktriangleright$~\textsf{TODO:}~\textit{#1}}}
+\newcommand{\SKEL}[1]{{\color{blue!55!black}\small$\ast$~\textsf{#1}}}
+\newcommand{\alphastar}{\alpha_\star}
+\newcommand{\betastar}{\beta_\star}
+\newcommand{\kappastar}{\kappa_\star}
+
+% ============================================================
+% Title
+% ============================================================
+\title{Gaussian Variational inference with Fisher--Rao gradient flow}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+    \TODO \\Abstract
+\end{abstract}
+
+\tableofcontents
+
+
+\section{Introduction}
+\label{sec:intro}
+
+\TODO{Opening: target $\pi\propto e^{-V}$ on $\R^{N_\theta}$, the Gaussian family
+$\mathcal{Q}=\{\N(m,C)\}$, the KL objective, and Gaussian VI as the intrinsic Fisher--Rao /
+affine-invariant natural-gradient flow. Motivate affine invariance as the organizing symmetry and
+foreshadow that Bures--Wasserstein enters only as a warm-start device.}
+
+\subsection{Two global obstructions and the global-to-local picture}
+\label{sec:intro-picture}
+\TODO{(1) Underdispersed covariance $\Rightarrow$ a covariance burn-in phase (residual
+$\varepsilon=1-cA$). (2) Intrinsic nonquadratic conditioning obstructs a dimension-free rate even
+after whitening. These produce the three-stage decomposition---covariance burn-in, global
+localization, local convergence---that organizes the paper; point forward to
+\Cref{thm:det-three-stage} (deterministic) and \Cref{cor:stoch-three-stage} (stochastic).}
+
+\subsection{Contributions}
+\label{sec:intro-contrib}
+
+\begin{description}
+\item[\textnormal{(I) Sharp deterministic global theory.}]
+An affine-invariant continuous-time rate in the \emph{intrinsic} condition number $\kappastar$
+(\Cref{thm:cont-global-star}), with an order-optimal covariance burn-in and a matching continuous-time
+lower bound (\Cref{thm:spiral-sharp,cor:cont-sharp}); and sharp fixed-step discrete complexity for both
+the Riemannian retraction and KL/Bregman schemes (\Cref{thm:Riem-global,thm:KL-global}) with a matching
+$\Omega(\kappa/\Delta t)$ lower bound (\Cref{thm:disc-global-sharp,cor:disc-global-sharp}). Covariance
+burn-in is removed by a Bures--Wasserstein warm start or a single quadratic-rescue Hessian query
+(\Cref{thm:disc-W-to-FR,thm:gauss-recovery,thm:disc-rescue-to-FR}), giving the three-stage complexity
+(\Cref{thm:det-three-stage}).
+\item[\textnormal{(II) Gaussian-core local theory.}]
+A decomposition $F=\FGauss+H$ that is exact for the Gaussian part and makes the certified local region
+\emph{sharp} for Gaussian targets (\Cref{thm:core-flow,cor:gauss-sharp}), with a discrete local
+contraction for both schemes (\Cref{thm:disc-local}).
+\item[\textnormal{(III) Stochastic algorithms, end to end.}]
+Price/Hessian sticking-the-landing algorithms (\Cref{alg:unified}) with pathwise covariance
+confinement; constant-step global convergence in two regimes (\Cref{thm:Riem-selfbound,thm:Riem-Hlip}
+and their KL analogues \Cref{thm:KL-selfbound,thm:KL-Hlip}), floor-free decreasing-step convergence
+(\Cref{thm:decreasing}), and a stochastic Gaussian-core local contraction with an end-to-end survival
+guarantee (\Cref{thm:stoch-local-Riem,thm:stoch-local-KL,cor:stoch-three-stage}).
+\end{description}
+
+\subsection{Main results at a glance}
+\label{sec:intro-tables}
+\TODO{One or two sentences on the reading convention: $\widetilde O/\widetilde\Omega$ hide logarithmic
+factors; $\kappastar$ is the affine-invariant intrinsic condition number and $\kappa=\beta/\alpha$ the
+extrinsic one, with $1\le\kappastar\le\kappa^2$.}
+
+\begin{table}[ht]
+\centering
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Dynamics / scheme} & \textbf{Global complexity} & \textbf{Sharpness} & \textbf{Local behavior}\\
+\midrule
+Continuous Fisher--Rao flow & $\widetilde O(\kappastar)$ & $\widetilde\Omega(\kappastar)$ (\Cref{thm:spiral-sharp}) & Gaussian-core rate\\
+Riemannian retraction (step $\Delta t$) & $\widetilde O(\kappa/\Delta t)$ & $\Omega(\kappa/\Delta t)$ (\Cref{thm:disc-global-sharp}) & geometric\\
+KL/Bregman resolvent (step $\Delta t$) & $\widetilde O(\kappa/\Delta t)$ & $\Omega(\kappa/\Delta t)$ (\Cref{thm:disc-global-sharp}) & geometric\\
+\bottomrule
+\end{tabular}
+\caption{Deterministic complexity summary. Global counts are to reach $F-F_\star\le\delta$; local rates
+hold on the certified region of \Cref{sec:local}. \TODO{finalize constants / footnote the
+input-radius dependence of the lower bounds.}}
+\label{tab:det-intro}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Regime} & \textbf{Outer iters} & \textbf{Batch $B$} & \textbf{Floor} & \textbf{Reference}\\
+\midrule
+Self-bounding (SLC only)    & $\widetilde O(\kappa^3)$ & $1$              & $O(\kappa N_\theta)$              & \Cref{thm:Riem-selfbound}\\
+Hessian--Lipschitz          & $\widetilde O(\kappa^2)$ & $1$              & $O(\kappa N_\theta^2\barLH^2/B)$  & \Cref{thm:Riem-Hlip}\\
+Decreasing step             & $O(1/\delta)$            & $1$              & $0$                               & \Cref{thm:decreasing}\\
+Local (non-exit)            & $O((4+\Gamma)^2)$        & $\gtrsim V_1$    & $O(N_\theta^2\LHs^2/B)$           & \Cref{thm:stoch-local-Riem}\\
+Gaussian target             & $1$                      & $1$              & $0$                               & \Cref{thm:gauss-recovery,prop:gauss-nofloor}\\
+\bottomrule
+\end{tabular}
+\caption{Stochastic complexity summary for the Price/Hessian STL scheme
+($\Gamma=O(1+N_\theta\log\kappa)$, $V_1=24+6N_\theta\LHs^2$); single-sample counts unless a batch is
+indicated. \TODO{cross-check floors against \Cref{sec:stoch}.}}
+\label{tab:stoch-intro}
+\end{table}
+
+\subsection{Related work}
+\label{sec:related}
+\TODO{Gaussian VI / natural gradient \citep{amari1998natural,opper2009variational}; Bures--Wasserstein
+gradient flow and forward--backward \citep{lambert2022variational,diao2023forward}; strongly-log-concave
+sampling rates \citep{chen2023sampling}; sticking-the-landing and its variance
+\citep{roeder2017sticking,kim2024stl,domke2023provable}. Two brief remarks on KLS-adjacent literature
+(not needed under strong log-concavity).}
+
+\subsection{Notation and organization}
+\label{sec:org}
+\TODO{Notation table; then a one-paragraph roadmap: \Cref{sec:setup} geometry/objective/algorithms;
+\Cref{sec:cont-conv} continuous-time theory and its sharpness; \Cref{sec:disc} discretization, global
+complexity, and burn-in removal; \Cref{sec:local} the Gaussian-core local theory; \Cref{sec:stoch} the
+stochastic theory; \Cref{sec:numerics} experiments; \Cref{sec:discussion} discussion.}
+
+
+\section{Fisher--Rao geometry, the variational objective, and algorithms}
+\label{sec:setup}
+
+We write the energy gap
+\[
+    \Delta(a):=\calE(a)-\calE(a_\star),
+    \qquad
+    \Delta_0:=\Delta(a_0),
+    \qquad
+    \Delta_n:=\Delta(a_n),
+\]
+and denote by $\Delta t>0$ the Fisher--Rao stepsize (written $h$ in one-step lemmas). Throughout,
+$\Delta t$ carries the differential $t$, so there is no clash with the energy gap $\Delta(\cdot)$;
+$N_\theta$ is the parameter dimension.
+
+\begin{assumption}[Strong log-concavity and smoothness]
+\label{assump:logconcave-smooth}
+There exist $0<\alpha\leq\beta<\infty$ with
+\[
+    \alpha\Id\preceq\nabla^2V(\theta)\preceq\beta\Id,
+    \qquad
+    \forall\theta\in\R^{N_\theta}.
+\]
+We write $\kappa:=\beta/\alpha\geq1$.
+\end{assumption}
+
+\Cref{assump:logconcave-smooth} is the standing regularity assumption throughout. The local phase
+of \Cref{sec:local} additionally uses whitened bounds $\alpha_\star,\beta_\star$ defined there, and
+the sharpened stochastic theory of \Cref{sec:stoch-Hlip} additionally uses a Hessian-Lipschitz
+assumption (\Cref{assump:global-Hess-Lip}).
+
+For $a=(m,C)\in\Aspace$ we write
+\begin{equation}
+\label{eq:gAR}
+    g(a):=-\E_{\rho_a}[\nabla V(X)],
+    \qquad
+    A(a):=\E_{\rho_a}[\nabla^2V(X)],
+    \qquad
+    R(a):=C^{-1}-A(a),
+\end{equation}
+and call $R(a)$ the \emph{precision residual}. \Cref{assump:logconcave-smooth} gives
+$\alpha\Id\preceq A(a)\preceq\beta\Id$. At the minimizer,
+\begin{equation}
+\label{eq:first-order}
+    g(a_\star)=0,
+    \qquad
+    A(a_\star)=C_\star^{-1},
+    \qquad\text{i.e.}\qquad
+    R(a_\star)=0 .
+\end{equation}
+We use the energy splitting $\calE=\calE_1+\calE_2$,
+\begin{equation}
+\label{eq:splitting}
+    \calE_1(a)=\E_{\rho_a}[\log\rho_a]=-\tfrac12\log\det C+\text{const.},
+    \qquad
+    \calE_2(a)=-\E_{\rho_a}[\log\rho_{\post}]=\E_{\rho_a}[V]+\log Z .
+\end{equation}
+
+\subsection{Initial covariance and the band constant}
+
+We assume $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$ and set
+\begin{equation}
+\label{eq:Lambda}
+    \lambda_0:=\lambda_{0,\min},
+    \qquad
+    \Lambda:=\max\Bigl\{\lambda_{0,\max},\frac1\alpha\Bigr\},
+    \qquad
+    \LB:=\beta\Lambda,
+    \qquad
+    \logp x:=\max\{\log x,0\}.
+\end{equation}
+Since $\Lambda\geq1/\alpha$ we always have $\LB\geq\kappa\geq1$.
+
+\subsection{The Gaussian Fisher--Rao metric}
+\label{sec:metric}
+
+\begin{definition}[Gaussian Fisher--Rao metric]
+\label{def:FR-metric}
+For $a=(m,C)\in\Aspace$ and tangent vectors
+$(u,X),(v,Y)\in\R^{N_\theta}\times\Sym(N_\theta)$, the intrinsic (information-geometric)
+Fisher--Rao metric on $\PG$ is
+\begin{equation}
+\label{eq:FR-metric}
+    g_a\bigl((u,X),(v,Y)\bigr)
+    :=
+    u^\top C^{-1}v+\frac12\Tr\bigl(C^{-1}XC^{-1}Y\bigr),
+\end{equation}
+with induced tangent norm
+\begin{equation}
+\label{eq:tangent-norm}
+    \norm{(u,X)}_{a,\FR}^2
+    :=
+    u^\top C^{-1}u+\frac12\norm{C^{-1/2}XC^{-1/2}}_{\Frob}^2 .
+\end{equation}
+We abbreviate $\inner{\cdot}{\cdot}_a:=g_a(\cdot,\cdot)$ and $\norm{\cdot}_a:=\norm{\cdot}_{a,\FR}$.
+\end{definition}
+
+The factor $\tfrac12$ on the covariance block is the one induced by the Fisher information of the
+Gaussian family.
+
+\begin{lemma}[Gaussian covariance derivative; Price's theorem, directional form]
+\label{lem:price-derivative}
+Let $C\in\SPD(N_\theta)$, $Y\in\Sym(N_\theta)$, and let $V\in C^2$ satisfy
+$\norm{\nabla^2V}_\op\leq\beta$. Write $a_\epsilon:=(m,C+\epsilon Y)$. Then
+\begin{equation}
+\label{eq:price-directional}
+    \frac{\dd}{\dd\epsilon}\bigg|_{\epsilon=0}\E_{\rho_{a_\epsilon}}[V]
+    =\frac12\Tr\bigl(Y\,A(a)\bigr),
+    \qquad
+    \frac{\dd}{\dd\epsilon}\bigg|_{\epsilon=0}\calE_1(a_\epsilon)
+    =-\frac12\Tr\bigl(YC^{-1}\bigr),
+\end{equation}
+and consequently
+\begin{equation}
+\label{eq:E-directional}
+    \frac{\dd}{\dd\epsilon}\bigg|_{\epsilon=0}\calE(a_\epsilon)
+    =\frac12\Tr\Bigl(Y\bigl(A(a)-C^{-1}\bigr)\Bigr)
+    =-\frac12\Tr\bigl(Y R(a)\bigr).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[Fisher--Rao gradient, flow, and gradient norm]
+\label{lem:FR-gradient}
+Under \Cref{def:FR-metric},
+\begin{equation}
+\label{eq:FR-grad}
+    \grad\calE(a)=\bigl(-Cg(a),\,-CR(a)C\bigr),
+\end{equation}
+so that the Fisher--Rao (natural) gradient flow $\dot a_t=-\grad\calE(a_t)$ is
+\begin{equation}
+\label{eq:NG-flow}
+    \frac{\dd m_t}{\dd t}=C_tg(a_t),
+    \qquad
+    \frac{\dd C_t}{\dd t}=C_t-C_tA(a_t)C_t .
+\end{equation}
+Moreover, defining the Fisher--Rao gradient norm
+\begin{equation}
+\label{eq:G-norm}
+    \Gradnorm(a)^2:=g(a)^\top Cg(a)+\frac12\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2 ,
+\end{equation}
+one has $\norm{\grad\calE(a)}_a^2=\Gradnorm(a)^2$ and, along \eqref{eq:NG-flow},
+$\tfrac{\dd}{\dd t}\Delta(a_t)=-\Gradnorm(a_t)^2$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{Deterministic schemes}
+
+The deterministic \emph{Riemannian retraction scheme} (covariance-exponential scheme) is
+\begin{equation}
+\label{eq:Riem-det}
+    m_{n+1}=m_n+\Delta t\,C_ng(a_n),
+    \qquad
+    C_{n+1}=C_n^{1/2}\exp\bigl(\Delta t(\Id-C_n^{1/2}A(a_n)C_n^{1/2})\bigr)C_n^{1/2},
+\end{equation}
+and the deterministic \emph{KL/Bregman scheme} is
+\begin{equation}
+\label{eq:KL-det}
+    m_{n+1}=m_n+\Delta t\,C_ng(a_n),
+    \qquad
+    C_{n+1}=(1+\Delta t)\bigl(C_n^{-1}+\Delta t\,A(a_n)\bigr)^{-1},
+\end{equation}
+equivalently $C_{n+1}^{-1}=\tfrac1{1+\Delta t}\bigl(C_n^{-1}+\Delta t\,A(a_n)\bigr)$.
+
+\begin{remark}[Terminology: retraction, not geodesic]
+\label{rem:not-geodesic}
+The covariance block $C\mapsto C^{1/2}\exp(\cdot)C^{1/2}$ is the exponential map of the
+affine-invariant metric on $\SPD(N_\theta)$, but \eqref{eq:Riem-det} pairs it with a Euclidean
+step in the mean, and we do not claim that the resulting map is the exponential map of the full
+Gaussian Fisher--Rao metric \eqref{eq:FR-metric}. All statements are proved for the retraction
+\eqref{eq:retraction} that the algorithms use; we therefore say \emph{Riemannian retraction
+scheme} rather than ``geodesic scheme''.
+\end{remark}
+
+\section{Continuous-time convergence and its sharpness}
+\label{sec:cont-conv}
+
+\subsection{Two basic inequalities}
+\label{sec:basic}
+
+\begin{lemma}[Bures--Wasserstein PL inequality on Gaussians]
+\label{lem:W2-PL}
+Under \Cref{assump:logconcave-smooth}, for every $a\in\Aspace$,
+\[
+    \norm{\grad^{W_2}\calE(a)}_{W_2}^2
+    =\norm{g(a)}^2+\Tr\bigl(R(a)CR(a)\bigr)
+    \geq2\alpha\,\Delta(a),
+\]
+where $\grad^{W_2}\calE(a)=(-g(a),-R(a))$ is the Gaussian-restricted Bures--Wasserstein gradient.
+\end{lemma}
+
+This is the Polyak--{\L}ojasiewicz inequality for the restricted gradient, following from the
+$\alpha$-geodesic convexity of $\calE$ along Bures--Wasserstein geodesics between Gaussians; see
+\citet{lambert2022variational,diao2023forward}.
+
+\begin{lemma}[Fisher--Rao/Wasserstein comparison]
+\label{lem:FR-W2}
+Let $a=(m,C)$ with $C\succeq\ell\Id$, $\ell>0$. Then
+\begin{equation}
+\label{eq:FR-W2}
+    \boxed{\;
+    \Gradnorm(a)^2
+    \;\geq\;
+    \frac{\ell}{2}\norm{\grad^{W_2}\calE(a)}_{W_2}^2
+    \;\geq\;
+    \alpha\ell\,\Delta(a).
+    \;}
+\end{equation}
+Moreover $\Gradnorm(a)^2\leq\norm{C}_\op\norm{\grad^{W_2}\calE(a)}_{W_2}^2$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{Continuous-time covariance bootstrap}
+\label{sec:cont}
+
+\begin{lemma}[Precision Duhamel formula]
+\label{lem:precision-duhamel}
+Let $P_t:=C_t^{-1}$. Along \eqref{eq:NG-flow},
+$\dot P_t=A(a_t)-P_t$, hence $P_t=e^{-t}P_0+\int_0^te^{-(t-s)}A(a_s)\,\dd s$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[Continuous covariance bootstrap]
+\label{lem:cont-cov}
+Under \Cref{assump:logconcave-smooth}, along \eqref{eq:NG-flow},
+\begin{equation}
+\label{eq:ell-t}
+    C_t\succeq\ell(t)\Id,
+    \qquad
+    \ell(t)=\frac{\lambda_0e^t}{1+\beta\lambda_0(e^t-1)},
+    \qquad\text{and}\qquad
+    C_t\preceq\Lambda\Id .
+\end{equation}
+In particular $C_t\succeq\tfrac1{2\beta}\Id$ for all $t\geq\logp\frac1{\beta\lambda_0}$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[Continuous-time global convergence; deterministic]
+\label{thm:cont-global}
+Under \Cref{assump:logconcave-smooth}, the flow \eqref{eq:NG-flow} satisfies
+\[
+    \boxed{\;
+    \Delta(a_t)\leq\Delta_0\bigl(1+\beta\lambda_0(e^t-1)\bigr)^{-1/\kappa}.
+    \;}
+\]
+Consequently, for $\delta\in(0,\Delta_0)$, the hitting time
+$T_{\mathrm c}^{\glob}(\delta):=\inf\{t\geq0:\Delta(a_t)\leq\delta\}$ obeys
+\[
+    T_{\mathrm c}^{\glob}(\delta)
+    \leq\log\!\left(1+\frac{(\Delta_0/\delta)^{\kappa}-1}{\beta\lambda_0}\right)
+    =O\!\left(\logp\frac1{\beta\lambda_0}+\kappa\logp\frac{\Delta_0}{\delta}\right).
+\]
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{Affine-invariant sharpening and continuous-time sharpness}
+\label{sec:cont-sharp}
+
+\subsubsection{Optimizer whitening and intrinsic conditioning}
+
+Let $a_\star=(m_\star,C_\star)$ be the unique optimizing Gaussian and set
+\begin{equation}
+\label{eq:optimizer-whitening}
+    \widehat m:=C_\star^{-1/2}(m-m_\star),\qquad
+    \widehat C:=C_\star^{-1/2}CC_\star^{-1/2},\qquad
+    \widehat V(z):=V(m_\star+C_\star^{1/2}z).
+\end{equation}
+The optimizer becomes $(\widehat m_\star,\widehat C_\star)=(0,\Id)$. Define the optimal whitened
+curvature constants
+\begin{equation}
+\label{eq:star-curvature}
+    \alphastar:=\inf_{z\in\R^{N_\theta}}\lambda_{\min}(\nabla^2\widehat V(z)),\qquad
+    \betastar:=\sup_{z\in\R^{N_\theta}}\lambda_{\max}(\nabla^2\widehat V(z)),\qquad
+    \kappastar:=\frac{\betastar}{\alphastar},
+\end{equation}
+and the whitened initial covariance floor
+$\lambda_{0,\star}:=\lambda_{\min}(\widehat C_0)=\lambda_{\min}(C_\star^{-1/2}C_0C_\star^{-1/2})$.
+
+\begin{lemma}[Optimizer whitening, flow covariance, and affine invariance]
+\label{lem:optimizer-whitening}
+Under \Cref{assump:logconcave-smooth}, the transformed parameters solve the same Gaussian Fisher--Rao
+system,
+\begin{equation}
+\label{eq:whitened-flow}
+    \dot{\widehat m}_t=\widehat C_t\widehat g(\widehat a_t),\qquad
+    \dot{\widehat C}_t=\widehat C_t-\widehat C_t\widehat A(\widehat a_t)\widehat C_t,
+\end{equation}
+where $\widehat g=-\E[\nabla\widehat V]$ and $\widehat A=\E[\nabla^2\widehat V]$. Moreover
+$\E_{Z\sim\N(0,\Id)}[\nabla\widehat V(Z)]=0$ and $\E_{Z\sim\N(0,\Id)}[\nabla^2\widehat V(Z)]=\Id$, so
+$\alphastar\leq1\leq\betastar$. The quantities $\alphastar,\betastar,\kappastar$ and the spectrum of
+$\widehat C_0$ are invariant under arbitrary invertible affine changes of the original coordinates.
+\end{lemma}
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[Relation between intrinsic and original condition numbers]
+\label{lem:kappa-star-kappa}
+Under \Cref{assump:logconcave-smooth}, $\tfrac1\beta\Id\preceq C_\star\preceq\tfrac1\alpha\Id$ and
+\begin{equation}
+\label{eq:kappa-star-kappa}
+    \tfrac1\kappa\Id\preceq\nabla^2\widehat V(z)\preceq\kappa\Id,\qquad 1\leq\kappastar\leq\kappa^2.
+\end{equation}
+The upper comparison can be very loose: for an anisotropic quadratic target, $\kappastar=1$ even when
+$\kappa$ is arbitrarily large.
+\end{lemma}
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[Whitened covariance floor]
+\label{lem:cont-cov-star}
+Along \eqref{eq:NG-flow}, in optimizer-whitened coordinates,
+$\widehat C_t\succeq\ell_\star(t)\Id$ with
+$\ell_\star(t):=\lambda_{0,\star}e^t/\bigl(1+\betastar\lambda_{0,\star}(e^t-1)\bigr)$; in particular
+$\widehat C_t\succeq(2\betastar)^{-1}\Id$ for $t\geq\logp\bigl(1/(\betastar\lambda_{0,\star})\bigr)$.
+\end{lemma}
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{Affine-invariant global upper bound}
+
+\begin{theorem}[Affine-invariant continuous-time global convergence]
+\label{thm:cont-global-star}
+Under \Cref{assump:logconcave-smooth}, for every $t\geq0$,
+\begin{equation}
+\label{eq:cont-star-decay}
+    \boxed{\Delta(a_t)\leq\Delta_0\bigl[1+\betastar\lambda_{0,\star}(e^t-1)\bigr]^{-1/\kappastar}.}
+\end{equation}
+Consequently, for every $\delta\in(0,\Delta_0)$,
+\begin{equation}
+\label{eq:cont-star-hitting-exact}
+    T_{\mathrm c}^{\glob}(\delta):=\inf\{t\geq0:\Delta(a_t)\leq\delta\}
+    \leq\log\!\Bigl(1+\tfrac{(\Delta_0/\delta)^{\kappastar}-1}{\betastar\lambda_{0,\star}}\Bigr),
+\end{equation}
+and in particular
+\begin{equation}
+\label{eq:cont-star-hitting-simple}
+    \boxed{T_{\mathrm c}^{\glob}(\delta)\leq\logp\frac1{\betastar\lambda_{0,\star}}
+    +\kappastar\log\frac{\Delta_0}{\delta}.}
+\end{equation}
+The original-coordinate estimate of \Cref{thm:cont-global} remains valid; one may take the minimum of
+the two.
+\end{theorem}
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[What is and is not encoded by $\kappastar$]
+The intrinsic condition number removes anisotropy that can be eliminated by an affine
+reparametrization. It does not, by itself, encode the initialization size: the factor
+$\log(\Delta_0/\delta)$, or an equivalent radius/input-size term, is indispensable, since if arbitrary
+initial means are allowed the worst-case time to reach a fixed energy level is infinite even for a
+quadratic target.
+\end{remark}
+
+\subsubsection{Sharpness of the continuous-time global-localization rate}
+
+\begin{theorem}[Continuous-time logarithmic-spiral lower bound]
+\label{thm:spiral-sharp}
+For every $K\geq16$ there is a globally $C^3$, even potential $V_K$ on $\R^2$ satisfying
+$\alpha\Id\preceq\nabla^2V_K\preceq\beta\Id$ with $\kappa=2K+1$ (the logarithmic-spiral construction,
+deferred to \Cref{app:spiral}), together with an admissible anisotropic initialization satisfying the
+general spectral condition $(1/\beta)\Id\preceq C_0\preceq(1/\alpha)\Id$, such that for any local level
+$\delta_{\mathrm{loc}}<\tfrac\alpha2 e^{-0.08}\norm{m_0}^2$ the exact Gaussian Fisher--Rao flow obeys
+\begin{equation}
+\label{eq:spiral-lower-time}
+    \boxed{T_{\mathrm{loc}}:=\inf\{t\geq0:\Delta(a_t)\leq\delta_{\mathrm{loc}}\}
+    \geq\frac K{100}\geq\frac{\kappastar(V_K)}{103}.}
+\end{equation}
+\end{theorem}
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{corollary}[Sharp polynomial dependence in dimension at least two]
+\label{cor:cont-sharp}
+For $N_\theta\geq2$, the worst-case polynomial dependence of the continuous-time global-localization
+phase on the affine-invariant condition number is
+\begin{equation}
+\label{eq:cont-sharp-rate}
+    \boxed{T_{\mathrm{loc}}=\widetilde\Theta(\kappastar),}
+\end{equation}
+under the general spectral initialization class, where the tilde suppresses logarithmic dependence on
+initialization size and localization accuracy. For the spiral family, $\kappastar=\Theta(\kappa)$ and
+$T_{\mathrm{loc}}\geq(\kappa-1)/200$.
+\end{corollary}
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Scope of the sharpness theorem]
+The matching construction uses an admissible anisotropic initial covariance. It does not establish an
+$\Omega(\kappastar)$ lower bound under the stricter initialization $C_0=\beta^{-1}\Id$. It also allows
+the initial radius to grow with $K$ (and, in a Hessian--Lipschitz variant, with $1/L_H$); the logarithm
+of that radius is part of the input size charged by the upper theorem. These restrictions should be
+retained whenever the sharpness result is quoted.
+\end{remark}
+
+\section{Discretization: global complexity, sharpness, and burn-in removal}
+\label{sec:disc}
+
+\subsection{The Riemannian one-step descent lemma}
+\label{sec:descent}
+
+Throughout this section $a=(m,C)$ is fixed and
+\begin{equation}
+\label{eq:S-def}
+    S:=\Id-C^{1/2}A(a)C^{1/2}=C^{1/2}R(a)C^{1/2},
+\end{equation}
+so that, by \eqref{eq:G-norm}, $\Gradnorm(a)^2=g(a)^\top Cg(a)+\tfrac12\norm{S}_{\Frob}^2$. We write
+the retraction
+\begin{equation}
+\label{eq:retraction}
+    \Retr_a(u,U):=\Bigl(m+u,\;C^{1/2}\exp\bigl(C^{-1/2}UC^{-1/2}\bigr)C^{1/2}\Bigr),
+\end{equation}
+which reproduces \eqref{eq:Riem-det} with stepsize $h$ on taking
+$(u,U)=-h\,\grad\calE(a)$, that is $u=hCg$ and $U=hCRC$,
+since $C^{-1/2}(hCRC)C^{-1/2}=hS$.
+
+\subsubsection{Two scalar inequalities}
+
+\begin{lemma}[Scalar inequality, deterministic step]
+\label{lem:scalar-det}
+Let $K\geq1$ and $0<h\leq1/K$. Then for every $s\in[1-K,1]$,
+\begin{equation}
+\label{eq:scalar-det}
+    \bigl(e^{hs/2}-1\bigr)(1-s)+\frac K2\bigl(e^{hs/2}-1\bigr)^2-\frac h2s
+    \;\leq\;
+    -\frac h2\Bigl(1-\frac{Kh}2\Bigr)s^2 .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[Scalar inequality, arbitrary retraction direction]
+\label{lem:scalar-stoch}
+For every $w\in[-1,1]$,
+\begin{equation}
+\label{eq:scalar-stoch}
+    \Bigl(e^{w/2}-1-\frac w2\Bigr)+\frac12\bigl(e^{w/2}-1\bigr)^2\;\leq\;\frac{w^2}2 .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{Deterministic one-step descent}
+
+\begin{lemma}[Deterministic Riemannian one-step descent]
+\label{lem:det-descent}
+Assume $0\preceq\nabla^2V\preceq\beta\Id$ and $C\preceq\Lambda\Id$; set $K:=\beta\Lambda$ and
+assume $K\geq1$. Let $0<h\leq1/K$ and
+$m^+:=m+hCg(a)$, $C^+:=C^{1/2}\exp(hS)C^{1/2}$, $a^+:=(m^+,C^+)$. Then
+\begin{equation}
+\label{eq:det-descent}
+    \boxed{\;
+    \calE(a^+)\;\leq\;\calE(a)-h\Bigl(1-\frac{Kh}2\Bigr)\Gradnorm(a)^2 .
+    \;}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{Retraction smoothness for arbitrary directions}
+
+\begin{lemma}[Retraction smoothness, constant $2\beta\Lambda$]
+\label{lem:retr-smooth}
+Assume $0\preceq\nabla^2V\preceq\beta\Id$ and $C\preceq\Lambda\Id$; set $K:=\beta\Lambda$ and
+$L:=2K$. Let $\zeta=(u,U)$ be any tangent vector at $a$ with
+\begin{equation}
+\label{eq:scope}
+    \norm{W}_\op\leq1,\qquad W:=C^{-1/2}UC^{-1/2}.
+\end{equation}
+Then
+\begin{equation}
+\label{eq:retr-smooth}
+    \boxed{\;
+    \calE\bigl(\Retr_a(\zeta)\bigr)
+    \;\leq\;
+    \calE(a)+\inner{\grad\calE(a)}{\zeta}_a+\frac L2\norm{\zeta}_a^2 .
+    \;}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{Riemannian retraction scheme: deterministic global theory}
+\label{sec:Riem-global}
+
+\begin{lemma}[Riemannian covariance bootstrap]
+\label{lem:Riem-cov}
+Assume \Cref{assump:logconcave-smooth}, $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$
+and $0<\Delta t\leq1/\LB$. Then $C_n\preceq\Lambda\Id$ for all $n\geq0$. Define
+\begin{equation}
+\label{eq:Riem-envelope}
+    L_0:=\min\Bigl\{\lambda_0,\frac1{2\beta}\Bigr\},
+    \qquad
+    L_{n+1}:=\frac{e^{\Delta t}L_n}{1+(e-1)\Delta t\,\beta L_n}.
+\end{equation}
+Then $C_n\succeq L_n\Id$ for all $n\geq0$, and with $y_n:=(\beta L_n)^{-1}$,
+\begin{equation}
+\label{eq:Riem-y}
+    y_n=y_\infty+(y_0-y_\infty)e^{-n\Delta t},
+    \qquad
+    y_\infty:=\frac{(e-1)\Delta t}{e^{\Delta t}-1}\in[1,e-1)\subset[1,2).
+\end{equation}
+Consequently $C_n\succeq\tfrac1{2\beta}\Id$ for all
+\begin{equation}
+\label{eq:Ncov-minus}
+    n\geq N_{\cov,-}^{\Riem}
+    :=\left\lceil\frac1{\Delta t}\logp\frac{y_0-y_\infty}{2-y_\infty}\right\rceil
+    =O\!\left(\frac1{\Delta t}\logp\frac1{\beta\lambda_0}\right),
+\end{equation}
+and, with $z_0:=\tfrac1{\alpha\lambda_{0,\max}}$ and $z_\infty:=\tfrac{\Delta t}{e^{\Delta t}-1}\in[\tfrac1{e-1},1)$,
+$C_n\preceq\tfrac2\alpha\Id$ for all $n\geq N_{\cov,+}^{\Riem}=O(1/\Delta t)$, where
+$N_{\cov,+}^{\Riem}=0$ if $z_0\geq\tfrac12$ and
+$N_{\cov,+}^{\Riem}=\lceil\Delta t^{-1}\log\tfrac{z_\infty-z_0}{z_\infty-1/2}\rceil$ otherwise.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[Deterministic Riemannian global contraction]
+\label{thm:Riem-global}
+Assume \Cref{assump:logconcave-smooth} and $0<\Delta t\leq1/\LB$. Along \eqref{eq:Riem-det}, with
+$L_n$ from \eqref{eq:Riem-envelope}:
+\begin{enumerate}
+\item For every $n\geq0$,
+$\Delta_{n+1}\leq\bigl(1-\alpha L_n\Delta t(1-\tfrac{\LB\Delta t}2)\bigr)\Delta_n$.
+\item For $n\geq N_{\cov,-}^{\Riem}$ one has $L_n\geq\tfrac1{2\beta}$ and
+$\Delta_{n+1}\leq\bigl(1-\tfrac{\Delta t}{4\kappa}\bigr)\Delta_n$.
+\item For $\delta\in(0,\Delta_0)$,
+$N_{\Riem}^{\glob}(\delta)\leq N_{\cov,-}^{\Riem}+\lceil\tfrac{4\kappa}{\Delta t}\log\tfrac{\Delta_0}\delta\rceil
+=O\bigl(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}+\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}\delta\bigr)$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{KL/Bregman scheme: deterministic global theory}
+\label{sec:KL-global}
+
+\begin{lemma}[KL covariance bootstrap]
+\label{lem:KL-cov}
+Assume \Cref{assump:logconcave-smooth} and $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$.
+Along \eqref{eq:KL-det}, $C_n\preceq\Lambda\Id$ for all $n\geq0$. With
+$L_0:=\min\{\lambda_0,\tfrac1{2\beta}\}$ and $L_{n+1}=\tfrac{(1+\Delta t)L_n}{1+\Delta t\,\beta L_n}$,
+one has $C_n\succeq L_n\Id$ with
+$L_n=\bigl(\beta[1+(\tfrac1{\beta L_0}-1)(1+\Delta t)^{-n}]\bigr)^{-1}$. Hence $C_n\succeq\tfrac1{2\beta}\Id$
+for all
+$n\geq N_{\cov,-}^{\KL}:=\lceil\tfrac{\logp(\tfrac1{\beta L_0}-1)}{\log(1+\Delta t)}\rceil
+=O(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0})$,
+and $C_n\preceq\tfrac2\alpha\Id$ for all $n\geq N_{\cov,+}^{\KL}:=\lceil\tfrac{\log2}{\log(1+\Delta t)}\rceil=O(1/\Delta t)$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{proposition}[KL/Bregman one-step estimate]
+\label{prop:KL-onestep}
+Let $0<\Delta t\leq1/\LB$ and $L_n\Id\preceq C_n\preceq\Lambda\Id$. Then, in the forward divergence,
+\[
+    \calE(a_{n+1})\leq\calE(a_n)-\frac1{\Delta t}\KL(\rho_{a_{n+1}}\|\rho_{a_n}),
+    \qquad
+    \KL(\rho_{a_{n+1}}\|\rho_{a_n})
+    \geq\frac{L_n\Delta t^2}{4(1+\Delta t\,\LB)^2}\norm{\grad^{W_2}\calE(a_n)}_{W_2}^2 .
+\]
+\end{proposition}
+
+The KL map \eqref{eq:KL-det} is a \emph{forward--backward} (proximal-gradient) step in the Gaussian
+KL/Bregman geometry, not a full-gradient mirror step: it linearizes the potential energy $\calE_2$
+explicitly and treats the entropy $\calE_1$ implicitly, which is what produces the implicit resolvent
+covariance update $C_{n+1}=(1+\Delta t)(C_n^{-1}+\Delta t\,A(a_n))^{-1}$. \Cref{app:KL-onestep} proves
+the proposition in full and self-contained form: the variational characterization and explicit maps
+(\Cref{lem:KL-argmin}), a scalar inequality for the covariance factor (\Cref{lem:scalar-KL}), and the
+one-step estimate itself (\Cref{lem:KL-onestep-app})---both the descent margin, proved directly by a
+Gaussian coupling of $\rho_{a_n}$ and $\rho_{a_{n+1}}$ together with \Cref{lem:scalar-KL}, and the
+lower-bound factor $\tfrac{L_n\Delta t^2}{4(1+\Delta t\LB)^2}$. Unlike the $W_2^2$-proximal
+Bures--Wasserstein forward--backward scheme of \citet{diao2023forward,lambert2022variational} (whose
+transport warm-start is used separately in \Cref{sec:transport-bootstrap}), the descent here is in the
+\emph{forward} KL divergence $\KL(\rho_{a_{n+1}}\|\rho_{a_n})$ and the constants are specific to the
+$\tfrac12$-Fisher--Rao normalization.
+
+\begin{theorem}[Deterministic KL/Bregman global contraction]
+\label{thm:KL-global}
+Assume \Cref{assump:logconcave-smooth} and $0<\Delta t\leq1/\LB$. Along \eqref{eq:KL-det}:
+\begin{enumerate}
+\item For every $n\geq0$,
+$\Delta_{n+1}\leq\bigl(1-\tfrac{\alpha L_n\Delta t}{2(1+\Delta t\,\LB)^2}\bigr)\Delta_n$.
+\item For $n\geq N_{\cov,-}^{\KL}$, $\Delta_{n+1}\leq\bigl(1-\tfrac{\Delta t}{16\kappa}\bigr)\Delta_n$.
+\item $N_{\KL}^{\glob}(\delta)\leq N_{\cov,-}^{\KL}+\lceil\tfrac{16\kappa}{\Delta t}\log\tfrac{\Delta_0}\delta\rceil
+=O\bigl(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}+\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}\delta\bigr)$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{Sharpness of fixed-step discrete global localization}
+\label{sec:disc-sharp}
+
+\begin{theorem}[Sharp fixed-step global localization for both discretizations]
+\label{thm:disc-global-sharp}
+Fix $\gamma\in(0,1/2]$ and $L_0>0$. There exist constants $T,q>0$ and $\kappa_0\geq1$, depending only on
+$\gamma$, $L_0$, and a fixed flat-top curvature bump $\varphi$, such that for every $\kappa\geq\kappa_0$
+there is an even potential $V_\kappa\in C^\infty(\R)$ satisfying
+\begin{equation}
+\label{eq:disc-sharp-final-assumptions}
+    1\leq V_\kappa''\leq\kappa,\qquad \|V_\kappa'''\|_\infty\leq L_0,
+\end{equation}
+and an initialization $m_0=Y\kappa^4/\gamma$, $c_0=1/\kappa$ (the bump-train construction, deferred to
+\Cref{app:bumptrain}), such that, when either fixed-step scheme is run with exact expectations and
+stepsize $h=\gamma/\kappa$,
+\begin{equation}
+\label{eq:disc-sharp-final-gap}
+    \Delta_n\geq q\,\Delta_0\qquad\text{for every }0\leq n\leq\bigl\lfloor T\kappa^2/\gamma\bigr\rfloor.
+\end{equation}
+Consequently, for constant-factor objective reduction,
+\begin{equation}
+\label{eq:disc-sharp-final-complexity}
+    N_{\Riem}=\Omega\!\Bigl(\tfrac{\kappa^2}{\gamma}\Bigr)=\Omega\!\Bigl(\tfrac{\kappa}{h}\Bigr),\qquad
+    N_{\KL}=\Omega\!\Bigl(\tfrac{\kappa^2}{\gamma}\Bigr)=\Omega\!\Bigl(\tfrac{\kappa}{h}\Bigr).
+\end{equation}
+The lower bound holds with $\kappastar=\kappa$, with the covariance initially in the curvature-scale
+band, and with a dimension-free Hessian--Lipschitz constant.
+\end{theorem}
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{corollary}[Sharpness of the global-localization prefactor]
+\label{cor:disc-global-sharp}
+For the globally fixed-step Riemannian and KL/Bregman schemes, the factor $\kappa/\Delta t$ in
+\Cref{thm:Riem-global,thm:KL-global} is sharp, up to constants independent of $\kappa$ for each fixed
+$\gamma=\kappa\Delta t$, for a constant-factor reduction of the energy. In particular, with
+$\Delta t=\Theta(\kappa^{-1})$, both methods have worst-case global-localization complexity
+$\Theta(\kappa^2)$ in the condition-number exponent. This remains true under the additional assumption
+$\|V'''\|_\infty=O(1)$.
+\end{corollary}
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Limitations of the lower bound]
+The theorem proves sharpness of the polynomial condition-number dependence for explicit methods
+committed to one globally fixed step. It does not rule out an $O(\kappa)$ global-localization result for
+an adaptive relative-curvature step, an Armijo or backtracking line search, or an implicit or
+Rosenbrock-stabilized mean update: the construction has $c_nA(m_n,c_n)\simeq1$, so a method whose
+stability test is based on the current relative curvature could accept an order-one step and avoid this
+particular slowdown.
+\end{remark}
+
+\subsection{Removing the covariance burn-in: transport and quadratic rescue}
+\label{sec:transport-bootstrap}
+
+The Fisher--Rao schemes converge globally from any positive-definite initialization, incurring only
+the logarithmic covariance burn-in $\logp\tfrac1{\beta\lambda_0}$ of
+\Cref{thm:cont-global,thm:Riem-global,thm:KL-global}. When removing that stage is desirable, two
+optional \emph{deterministic} initializers are available, and we develop both here. The first is a
+short Bures--Wasserstein transport warm-start (\Cref{subsec:transport-warmstart}): it is
+expectation-level, uses only $g(a)$ and $A(a)$, and requires no pointwise Hessian. The second, under
+a pointwise Hessian oracle, is the \emph{quadratic rescue} (\Cref{subsec:rescue-det}); this is
+precisely the single-query initializer that later drives the stochastic pipeline of
+\Cref{sec:stoch-schemes}, and we give it here in its deterministic role. Neither initializer is part
+of the mandatory algorithm and neither affects the local discretization factor; each merely deletes
+the $\logp\tfrac1{\beta\lambda_0}$ stage. They differ in oracle model and in geometry, as recorded in
+\Cref{rem:two-initializers}.
+
+\subsubsection{Bures--Wasserstein transport warm-start}
+\label{subsec:transport-warmstart}
+
+For $\dot C=C-CAC$, an eigenvalue $\mu_i$ obeys $\dot\mu_i=\mu_i(1-\mu_ih_i)$, $h_i\in[\alpha,\beta]$;
+in the underdispersed regime $\mu_i\ll1/\beta$ this gives $\dot\mu_i\approx\mu_i$ (multiplicative),
+so reaching $1/\beta$ from $\lambda_0$ costs time $\asymp\log(1/(\beta\lambda_0))$. The Gaussian
+Bures--Wasserstein flow
+\begin{equation}
+\label{eq:W-flow}
+    \dot m_t=g(a_t),\qquad \dot C_t=2\Id-C_tA(a_t)-A(a_t)C_t
+\end{equation}
+gives $\dot\mu_i=2(1-\mu_ih_i)\approx2$ (additive, scale-independent). Transport is thus efficient
+for the covariance warm-up $0\to O(1/\beta)$, Fisher--Rao for shape calibration $1/\beta\to1/\alpha$.
+The flow \eqref{eq:W-flow} is not affine invariant, so the scale $1/\beta$ is stated in the given
+coordinates.
+
+\begin{lemma}[Wasserstein covariance bootstrap]
+\label{lem:W-cov-bootstrap}
+Under \Cref{assump:logconcave-smooth}, along \eqref{eq:W-flow},
+$C_t\succeq\ell_W(t)\Id$ with $\ell_W(t):=\tfrac1\beta+(\lambda_0-\tfrac1\beta)e^{-2\beta t}$, and
+$C_t\preceq\Lambda\Id$. Consequently, for $c\in(0,1)$,
+$T_W^{\mathrm c}(c):=\tfrac1{2\beta}\log\tfrac{1-\beta\lambda_0}{1-c}$ if $\lambda_0<c/\beta$ (and $0$
+otherwise) satisfies $C_{T_W^{\mathrm c}(c)}\succeq\tfrac c\beta\Id$; the warm-up time is $O(1/\beta)$,
+with no logarithmic dependence on $\lambda_0$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[One-step Wasserstein covariance floor]
+\label{lem:one-step-W}
+Given $a=(m,C)$, $\eta>0$, put $M:=\Id-\eta A(a)$, $m^+:=m+\eta g(a)$, $\widetilde C:=MCM$, and
+\begin{equation}
+\label{eq:W-FB-cov}
+    C^+:=\tfrac12\bigl(\widetilde C+2\eta\Id+[\widetilde C(\widetilde C+4\eta\Id)]^{1/2}\bigr).
+\end{equation}
+If $C\preceq\Lambda\Id$ and $0<\eta\leq1/\beta$, then $C^+\succeq\eta\Id$, $C^+\preceq\Lambda\Id$, and
+the Bures--Wasserstein forward--backward descent inequality gives $\calE(m^+,C^+)\leq\calE(m,C)$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[Discrete transport-warm-started natural gradient; deterministic]
+\label{thm:disc-W-to-FR}
+Assume \Cref{assump:logconcave-smooth}. Fix $c\in(0,1]$, $\eta:=c/\beta$. If $\lambda_0<c/\beta$
+perform one step \eqref{eq:W-FB-cov}; otherwise skip it. Then run \eqref{eq:Riem-det} with
+$0<\Delta t\leq\min\{1/\LB,\,2/(4+\Gamma),\,1/(\beta_\star\bar\Lambda_{\delta_{\Riem}})\}$. For small
+$\epsilon>0$,
+\[
+    \boxed{
+    N_{W\to\Riem}(\epsilon;c)
+    =\mathbf 1_{\{\lambda_0<c/\beta\}}
+    +O\!\left(\frac\kappa{c\,\Delta t}\logp\frac{\Delta_0}{\delta_{\Riem}}+\frac{4+\Gamma}{\Delta t}\log\frac1\epsilon\right),
+    }
+\]
+with $\delta_{\Riem}$ a level admissible for \Cref{thm:disc-local}. The same holds for
+\eqref{eq:KL-det} with $\delta_{\Riem}\to\delta_{\KL}$ and $4+\Gamma\to4+2\Delta t+\Gamma$.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}
+\label{rem:transport-caveat}
+The transport warm-start removes the small-initial-covariance burn-in. It does not improve the
+local discretization factor $(4+\Gamma)/\Delta t$; the local stiffness is separate from the global
+covariance warm-up.
+\end{remark}
+
+\subsubsection{Deterministic quadratic rescue}
+\label{subsec:rescue-det}
+
+The second burn-in remover is available whenever a pointwise Hessian can be queried at a single
+point. It is exactly the initializer used by the stochastic pipeline of \Cref{sec:stoch-schemes};
+we state and analyse it here in its deterministic role.
+
+\begin{definition}[Quadratic rescue]
+\label{def:rescue}
+Given $m_{\mathrm{in}}\in\R^{N_\theta}$, query the oracle at $m_{\mathrm{in}}$:
+$G_{\mathrm{in}}:=\nabla V(m_{\mathrm{in}})$, $H_{\mathrm{in}}:=\nabla^2V(m_{\mathrm{in}})$, and set
+\begin{equation}
+\label{eq:rescue}
+    \boxed{\;
+    m_0:=m_{\mathrm{in}}-H_{\mathrm{in}}^{-1}G_{\mathrm{in}},
+    \qquad
+    C_0:=H_{\mathrm{in}}^{-1}.
+    \;}
+\end{equation}
+\end{definition}
+
+\begin{lemma}[Curvature-scale covariance rescue]
+\label{lem:rescue-band}
+Under \Cref{assump:logconcave-smooth}, \eqref{eq:rescue} gives $\tfrac1\beta\Id\preceq C_0\preceq\tfrac1\alpha\Id$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[Exact one-query recovery of Gaussian targets]
+\label{thm:gauss-recovery}
+Suppose $V(x)=\tfrac12(x-\mu)^\top H(x-\mu)+c$ with $H\succ0$. Then \eqref{eq:rescue} gives $m_0=\mu$,
+$C_0=H^{-1}$, so $a_0=a_\star$ and $\Delta(a_0)=0$, for both the Riemannian and KL schemes. Over the
+class of unknown Gaussian targets, the oracle complexity is exactly one.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[Quadratic-rescued deterministic natural gradient; no covariance burn-in]
+\label{thm:disc-rescue-to-FR}
+Assume \Cref{assump:logconcave-smooth}, and initialize by the quadratic rescue of
+\Cref{def:rescue}. By \Cref{lem:rescue-band} then $\tfrac1\beta\Id\preceq C_0\preceq\tfrac1\alpha\Id$,
+so $\lambda_0:=\lambda_{0,\min}\geq\tfrac1\beta$. Consequently, in the covariance envelopes of
+\Cref{lem:Riem-cov,lem:KL-cov}, $L_0:=\min\{\lambda_0,\tfrac1{2\beta}\}=\tfrac1{2\beta}$ and
+$y_0:=(\beta L_0)^{-1}=2$, so the covariance floor $\tfrac1{2\beta}\Id$ holds from $n=0$ and the
+burn-in count is $N_{\mathrm{cov},-}^{\Riem}=N_{\mathrm{cov},-}^{\KL}=0$. Running \eqref{eq:Riem-det}
+(resp.\ \eqref{eq:KL-det}) with
+$0<\Delta t\leq\min\{1/\LB,\,2/(4+\Gamma),\,1/(\beta_\star\bar\Lambda_{\delta_\bullet})\}$, for small
+$\epsilon>0$,
+\[
+    \boxed{\;
+    N_{\mathrm{rescue}\to\bullet}(\epsilon)
+    =1
+    +O\!\left(\frac\kappa{\Delta t}\logp\frac{\Delta_0}{\delta_\bullet}
+    +\frac{c_\bullet}{\Delta t}\log\frac1\epsilon\right),
+    \qquad
+    c_{\Riem}=4+\Gamma,\quad c_{\KL}=4+2\Delta t+\Gamma,
+    \;}
+\]
+where the additive $1$ counts the single deterministic Hessian query, $\delta_\bullet$ is a level
+admissible for \Cref{thm:disc-local}, and $\Delta_0:=\Delta(a_0)$ is finite (bounded in
+\Cref{lem:rescue-energy} under \Cref{assump:global-Hess-Lip}, and $\Delta_0=0$ for Gaussian targets
+by \Cref{thm:gauss-recovery}). In particular the $\logp\tfrac1{\beta\lambda_0}$ burn-in stage of
+\Cref{thm:det-three-stage} is eliminated.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Two initializers, one oracle distinction]
+\label{rem:two-initializers}
+Both warm-starts delete the $\logp\tfrac1{\beta\lambda_0}$ stage but sit in different oracle models
+and geometries. The transport warm-start (\Cref{thm:disc-W-to-FR}) is \emph{expectation-level}: it
+uses $g(a)$ and $A(a)=\E_{\rho_a}[\nabla^2V]$ and inflates the covariance additively along the
+Bures--Wasserstein forward--backward step, so it never queries a pointwise Hessian and only guarantees
+a covariance \emph{floor} $C_0\succeq\tfrac c\beta\Id$ (the lower band edge; $c=1$ gives $\tfrac1\beta\Id$),
+without matching the pointwise curvature. The quadratic rescue (\Cref{thm:disc-rescue-to-FR}) is a single
+\emph{pointwise-Hessian} (local-curvature/Newton) query and lands directly on the full curvature
+band $[\tfrac1\beta,\tfrac1\alpha]$, exact for Gaussian targets. Thus transport trades a weaker
+oracle for a coarser landing scale, while the rescue trades one Hessian evaluation for exact
+Gaussian recovery; the ensuing Fisher--Rao iterations are identical.
+\end{remark}
+
+\subsection{Deterministic three-stage complexity}
+\label{sec:three-stage}
+
+\begin{theorem}[Deterministic three-stage complexity]
+\label{thm:det-three-stage}
+Assume \Cref{assump:logconcave-smooth} and $\lambda_{0,\min}\Id\preceq C_0\preceq\lambda_{0,\max}\Id$.
+Let $\delta_{\mathrm c}>0$ be admissible for \Cref{thm:core-flow} with
+$\rho_{\mathrm{core}}(\delta_{\mathrm c})\geq\gund$, and $\delta_{\Riem},\delta_{\KL}>0$ admissible for
+\Cref{thm:disc-local}; such levels exist by \Cref{cor:core-universal} and \Cref{thm:disc-local}.
+For sufficiently small $\epsilon>0$:
+\begin{enumerate}
+\item \textup{(Continuous flow.)}
+$T_{\mathrm c}(\epsilon)=O\bigl(\logp\tfrac1{\beta\lambda_0}+\kappa\logp\tfrac{\Delta_0}{\delta_{\mathrm c}}+(4+\Gamma)\log\tfrac1\epsilon\bigr)$
+gives $\norm{a_T-a_\star}_\star^2\leq\epsilon$.
+\item \textup{(Riemannian, $0<\Delta t\leq\min\{1/\LB,2/(4+\Gamma),1/(\beta_\star\bar\Lambda_{\delta_{\Riem}})\}$.)}
+$N_{\Riem}(\epsilon)=O\bigl(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}+\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}{\delta_{\Riem}}+\tfrac{4+\Gamma}{\Delta t}\log\tfrac1\epsilon\bigr)$.
+\item \textup{(KL, same window.)}
+$N_{\KL}(\epsilon)=O\bigl(\tfrac1{\Delta t}\logp\tfrac1{\beta\lambda_0}+\tfrac\kappa{\Delta t}\logp\tfrac{\Delta_0}{\delta_{\KL}}+\tfrac{4+2\Delta t+\Gamma}{\Delta t}\log\tfrac1\epsilon\bigr)$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{corollary}[Burn-in-free three-stage complexity]
+\label{cor:burnin-free}
+Under \Cref{assump:logconcave-smooth}, initialize by either the quadratic rescue
+(\Cref{thm:disc-rescue-to-FR}) or the transport warm-start (\Cref{thm:disc-W-to-FR}) \emph{with target
+$c=1$} (i.e.\ $\eta=1/\beta$, at most one forward--backward step). Both land $C_0\succeq\tfrac1\beta\Id$,
+so $\lambda_0\geq\tfrac1\beta$, and the first stage of \Cref{thm:det-three-stage} is removed: for both
+discretizations
+\[
+    N_\bullet(\epsilon)=n_{\mathrm{init}}
+    +O\!\left(\frac\kappa{\Delta t}\logp\frac{\Delta_0}{\delta_\bullet}
+    +\frac{c_\bullet}{\Delta t}\log\frac1\epsilon\right),
+    \qquad c_{\Riem}=4+\Gamma,\quad c_{\KL}=4+2\Delta t+\Gamma,
+\]
+where $n_{\mathrm{init}}\in\{0,1\}$ is the warm-start ($1$ Hessian query for the rescue, or
+$\mathbf 1_{\{\lambda_0<1/\beta\}}\leq1$ forward--backward steps for transport) and $\Delta_0=\Delta(a_0)$
+is the energy of the warm-started initializer; for Gaussian targets the rescue gives $\Delta_0=0$ and
+the localization stage vanishes as well.
+\end{corollary}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\section{Local convergence via the Gaussian core}
+\label{sec:local}
+
+The organizing principle of the local theory is a \emph{Gaussian-core decomposition}. The natural
+gradient field of the standard Gaussian target is nonlinear in the covariance but can be dissipated
+exactly; treating it as a Taylor remainder discards a large, genuinely dissipative contribution. We
+write
+\[
+    F=\FGauss+H,
+    \qquad
+    \FGauss(m,C):=(-Cm,\;C-C^2),
+\]
+retain $\FGauss$ exactly, and Taylor-bound only the non-Gaussian perturbation $H$. Because
+$H\equiv0$ whenever the target is Gaussian, the certified energy-sublevel region is sharp for
+Gaussian targets.
+
+\subsection{Whitened coordinates and the linearized gap}
+\label{subsec:whitened}
+
+Define $\widehat m:=C_\star^{-1/2}(m-m_\star)$, $\widehat C:=C_\star^{-1/2}CC_\star^{-1/2}$, and
+$\widehat V(z):=V(m_\star+C_\star^{1/2}z)$. Let $0<\alpha_\star\leq\beta_\star<\infty$ satisfy
+$\alpha_\star\Id\preceq\nabla^2\widehat V(z)\preceq\beta_\star\Id$, with
+$\kappa_\star:=\beta_\star/\alpha_\star$. By \eqref{eq:first-order},
+$\E_{\N(0,\Id)}[\nabla\widehat V]=0$ and $\E_{\N(0,\Id)}[\nabla^2\widehat V]=\Id$, so
+$\alpha_\star\leq1\leq\beta_\star$, and one may take $\alpha_\star\geq1/\kappa$,
+$\beta_\star\leq\kappa$, $\kappa_\star\leq\kappa^2$. Throughout this section we work in whitened
+coordinates: $a=(m,C)$ denotes the whitened parameter, $a_\star=(0,\Id)$. Statements transfer back
+through the fixed equilibrium norms
+\begin{equation}
+\label{eq:local-norms}
+    \norm{a-a_\star}_\star^2:=\norm{\widehat m}^2+\tfrac12\norm{\widehat C-\Id}_{\Frob}^2,
+    \qquad
+    \norm{a-a_\star}_{\star,\Delta t}^2:=\norm{\widehat m}^2+\tfrac{1+\Delta t}2\norm{\widehat C-\Id}_{\Frob}^2 .
+\end{equation}
+We write $\xi:=a-a_\star$, $D(a):=\norm{\xi}_\star^2$, and $F(a):=(Cg(a),\,C-CA(a)C)$, so
+\eqref{eq:NG-flow} reads $\dot a=F(a)$, $F(a_\star)=0$. Set
+\begin{equation}
+\label{eq:Gamma}
+    \Gamma:=\min\Bigl\{\beta_\star-1,\,N_\theta\bigl(3+\tfrac4{\sqrt\pi}(1+\log\kappa_\star)\bigr)\Bigr\},
+    \qquad
+    \gund:=\frac1{4+\Gamma} .
+\end{equation}
+
+\begin{definition}[Linearized score operators]
+\label{def:linear-score-ops}
+Let $Z\sim\N(0,\Id)$ and $B(Z):=\nabla^2\widehat V(Z)$, so $\E B(Z)=\Id$. For $u\in\R^{N_\theta}$,
+$X\in\Sym(N_\theta)$ define
+$\mathcal T[X]_k:=\E[\Tr(XB(Z))Z_k]$, $\mathcal T^*[u]_{ij}:=\E[(u^\top Z)B_{ij}(Z)]$, and
+$\mathcal H[X]_{ij}:=\E[B_{ij}(Z)(Z^\top XZ-\Tr X)]$. Gaussian score identities give
+$u^\top\mathcal T[X]=\Tr(\mathcal T^*[u]X)$ and $\Tr(\mathcal H[X]Y)=\Tr(X\mathcal H[Y])$.
+\end{definition}
+
+\begin{lemma}[Diagonal-mode bounds]
+\label{lem:linear-diagonal-bounds}
+Fix an orthogonal basis in which $X=\diag(\lambda)$, and set $\widetilde T_{ki}:=\E[B_{ii}(Z)Z_k]$,
+$G_{ij}:=\E[B_{ii}(Z)Z_j^2]$, $D:=G-\mathbf1\mathbf1^\top$. Then $D$ is symmetric,
+\begin{equation}
+\label{eq:T-Schur}
+    \widetilde T^\top\widetilde T\preceq\Id+D,
+    \qquad\text{and}\qquad
+    \lambda_{\max}(D)\leq\Gamma .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{proposition}[Linearized gap]
+\label{prop:linearized}
+Let $J_\star:=DF(a_\star)$ and $\Lstar:=-J_\star$. Then
+\[
+    \Lstar(u,X)=\Bigl(u+\tfrac12\mathcal T[X],\;X+\mathcal T^*[u]+\tfrac12\mathcal H[X]\Bigr),
+\]
+$\Lstar$ is self-adjoint in $\inner{\cdot}{\cdot}_\star$, and with
+$\gstar:=\lambda_{\min}(\Lstar)$, $\Lambda_\star:=\lambda_{\max}(\Lstar)$,
+\begin{equation}
+\label{eq:linear-gap-bounds}
+    \boxed{\;\frac1{4+\Gamma}\leq\gstar\leq\Lambda_\star\leq\frac{4+\Gamma}2 .\;}
+\end{equation}
+For a Gaussian target, $\mathcal T=0$, $\mathcal H=0$, and $\gstar=\Lambda_\star=1$.
+\end{proposition}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{proposition}[Linearized contractions of the deterministic maps]
+\label{prop:linearized-maps}
+Let $T_{\Riem,h}$, $T_{\KL,h}$ be the maps \eqref{eq:Riem-det}, \eqref{eq:KL-det} in whitened
+coordinates. If $0<h\leq2/(4+\Gamma)$, then
+\[
+    \|DT_{\Riem,h}(a_\star)\xi\|_\star\leq\Bigl(1-\tfrac h{4+\Gamma}\Bigr)\|\xi\|_\star,
+    \qquad
+    \|DT_{\KL,h}(a_\star)\xi\|_{\star,h}\leq\Bigl(1-\tfrac h{4+2h+\Gamma}\Bigr)\|\xi\|_{\star,h}.
+\]
+\end{proposition}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{Energy geometry: entropy-enhanced coercivity and bands}
+
+\begin{lemma}[Entropy-enhanced coercivity]
+\label{lem:entropy-coerc}
+Write $B:=C^{1/2}$ with eigenvalues $s_1,\dots,s_{N_\theta}$ and
+$\phi_{\alpha_\star}(s):=s-1-\log s+\tfrac{\alpha_\star}2(s-1)^2$. Then
+\begin{equation}
+\label{eq:entropy-coerc}
+    \Delta(m,C)\geq\frac{\alpha_\star}2\norm{m}^2+\sum_{i=1}^{N_\theta}\phi_{\alpha_\star}(s_i).
+\end{equation}
+For a Gaussian target ($\alpha_\star=1$) this is an equality and
+$\Delta_{\mathrm G}(m,C)=\tfrac12\norm{m}^2+\sum_i\varphi(c_i)$ with $\varphi(c):=\tfrac12(c-1-\log c)$
+and $c_i$ the eigenvalues of $C$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{corollary}[Covariance band and norm conversion]
+\label{cor:band}
+$\phi_{\alpha_\star}$ is strictly decreasing on $(0,1)$, increasing on $(1,\infty)$, with minimum
+$0$ at $1$. For $\delta>0$ let $0<s_-(\delta)<1<s_+(\delta)$ solve $\phi_{\alpha_\star}(s)=\delta$,
+and set $\ell_\delta:=s_-(\delta)^2$, $U_\delta:=s_+(\delta)^2$. Then $\Delta(a)\leq\delta$ implies
+$\ell_\delta\Id\preceq C\preceq U_\delta\Id$. With
+\[
+    \vartheta(\delta):=\sup_{s\in[s_-,s_+],\,s\neq1}\frac{(s^2-1)^2}{2\phi_{\alpha_\star}(s)}
+    \leq\frac{(1+s_+)^2}{\alpha_\star+s_+^{-2}},
+    \qquad
+    \mathfrak b(\delta)^2:=\max\Bigl\{\tfrac2{\alpha_\star},\vartheta(\delta)\Bigr\},
+\]
+one has $\Delta(a)\leq\delta\Rightarrow\norm{a-a_\star}_\star\leq\mathfrak b(\delta)\sqrt\delta$, and
+$\norm{a-a_\star}_{\star,\Delta t}\leq\mathfrak b_{\Delta t}(\delta)\sqrt\delta$ with
+$\mathfrak b_{\Delta t}(\delta)^2:=\max\{2/\alpha_\star,(1+\Delta t)\vartheta(\delta)\}$. For a
+Gaussian target, $\ell_\delta,U_\delta$ are the roots of $\varphi(c)=\delta$.
+\end{corollary}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{definition}[Regions, hull, moduli]
+\label{def:region}
+For $\delta>0$, $\Ureg_\delta:=\{a:\Delta(a)\leq\delta\}$ and
+$\Hreg_\delta:=\{a_\star+s(a-a_\star):a\in\Ureg_\delta,s\in[0,1]\}$. Set
+$\bar\Lambda_\delta:=\max\{U_\delta,1/\alpha_\star\}$ and the non-Gaussian moduli
+\[
+    \mathcal B_\delta:=\sup_{a\in\Hreg_\delta}\norm{A(a)-\Id}_{\op},
+    \quad
+    \Sigma_\delta:=\sup_{a\in\Hreg_\delta}\bigl(\E_{\rho_a}\norm{\nabla^2\widehat V(X)-A(a)}_{\Frob}^2\bigr)^{1/2},
+    \quad
+    \bar\Sigma_\delta:=\min\{\Sigma_\delta,\beta_\star-\alpha_\star\}.
+\]
+All three vanish for Gaussian targets and are nondecreasing in $\delta$.
+\end{definition}
+
+\begin{lemma}[Geometry and invariance]
+\label{lem:region-geom}
+Let $\delta>0$, $a=(m,C)\in\Ureg_\delta$. Then (i) $\ell_\delta\Id\preceq C\preceq U_\delta\Id$ and
+$\norm{a-a_\star}_\star\leq\mathfrak b(\delta)\sqrt\delta$; (ii) every $a'\in\Hreg_\delta$ satisfies
+the same bounds; (iii) $\Ureg_\delta$ is compact; (iv) $\Ureg_\delta$ is forward invariant for the
+flow, and for any scheme step with $\calE(a_{n+1})\leq\calE(a_n)$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{The exact Gaussian core}
+
+\begin{lemma}[Gaussian-core dissipation]
+\label{lem:gauss-core}
+Let $\FGauss(m,C):=(-Cm,\,C-C^2)$, the natural gradient field of the standard Gaussian target
+$\widehat V_{\mathrm G}(z)=\tfrac12\norm z^2$. Then:
+\begin{enumerate}
+\item $D\FGauss(a_\star)=-\Id$ on $\R^{N_\theta}\times\Sym(N_\theta)$.
+\item For every $a=(m,C)$, with $\xi=a-a_\star$,
+$\inner{\xi}{\FGauss(a)}_\star=-m^\top Cm-\tfrac12\Tr\bigl(C(C-\Id)^2\bigr)=-\tfrac12q_{\mathrm G}(a)D(a)$,
+where $q_{\mathrm G}(a):=\dfrac{2m^\top Cm+\Tr(C(C-\Id)^2)}{\norm m^2+\tfrac12\norm{C-\Id}_{\Frob}^2}$.
+\item $q_{\mathrm G}(a)\geq2\lambda_{\min}(C)$, with equality when $m=0$ and $C-\Id$ is supported on
+a minimal eigendirection of $C$; hence on $\Ureg_\delta$,
+$\inner{\xi}{\FGauss(a)}_\star\leq-\ell_\delta D(a)$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{The non-Gaussian perturbation}
+
+Write $H:=F-\FGauss$. Since $g_{\mathrm G}(a)=-m$ and $A_{\mathrm G}(a)=\Id$,
+\begin{equation}
+\label{eq:H-def}
+    H(a)=\bigl(C(g(a)+m),\;-C(A(a)-\Id)C\bigr),\qquad H(a_\star)=0 .
+\end{equation}
+Both components vanish identically when $\widehat V=\widehat V_{\mathrm G}$.
+
+\begin{lemma}[Score identities and the sharp second-score constant]
+\label{lem:second-score}
+Fix $a=(m,C)$, $\zeta=(u,U)$, $v:=C^{-1/2}u$, $S:=C^{-1/2}UC^{-1/2}$,
+$t:=\norm\zeta_a=(\norm v^2+\tfrac12\norm S_{\Frob}^2)^{1/2}$, $X=m+C^{1/2}Z$. With
+$q_\zeta:=v^\top Z+\tfrac12(Z^\top SZ-\Tr S)$ and
+$\chi_\zeta:=q_\zeta^2+(\tfrac12\Tr S^2-\norm v^2-2v^\top SZ-Z^\top S^2Z)$, for $\phi$ of polynomial
+growth and $\Phi(a):=\E_{\rho_a}[\phi(X)]$,
+\[
+    D\Phi(a)[\zeta]=\E[\phi\,q_\zeta],
+    \qquad
+    D^2\Phi(a)[\zeta,\zeta]=\E[\phi\,\chi_\zeta].
+\]
+Moreover $q_\zeta$ has Hermite chaoses $1,2$ and $\chi_\zeta$ has chaoses $2,3,4$; in particular
+$\E[q_\zeta]=\E[\chi_\zeta]=0$, $\E[Z\chi_\zeta]=0$, $\E[q_\zeta^2]=t^2$, and
+$\norm{\chi_\zeta}_{L^2}\leq\sqrt6\,t^2$ (sharp, attained by rank-one covariance directions).
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[Non-Gaussian second-differential modulus]
+\label{lem:Kng}
+Define
+\[
+    \Kng(\delta):=\sup_{a\in\Hreg_\delta}\;\sup_{\zeta\neq0}\;\frac{\norm{D^2H(a)[\zeta,\zeta]}_\star}{\norm\zeta_\star^2}.
+\]
+Then
+\[
+    \Kng(\delta)\leq\bigl(K_{\mathrm{ng},m}(\delta)^2+\tfrac12K_{\mathrm{ng},C}(\delta)^2\bigr)^{1/2},
+\]
+with
+\[
+    K_{\mathrm{ng},m}(\delta):=\frac{U_\delta^{3/2}}{\ell_\delta^2}\bigl(\sqrt3\bar\Sigma_\delta+\Sigma_\delta+\sqrt{\Sigma_\delta^2+2\mathcal B_\delta^2}\bigr),
+    \quad
+    K_{\mathrm{ng},C}(\delta):=\frac{U_\delta^2}{\ell_\delta^2}\bigl((4\sqrt2+\sqrt6)\Sigma_\delta+4\mathcal B_\delta\bigr).
+\]
+In particular $\Kng(\delta)=0$ for Gaussian targets, and, with the spectral-band factors
+$U_\delta,\ell_\delta$ of \Cref{cor:band} held fixed,
+$\Kng(\delta)=O\!\bigl(\tfrac{U_\delta^2}{\ell_\delta^2}(\mathcal B_\delta+\Sigma_\delta)\bigr)$; the
+band factors must be retained in the $O(\cdot)$ since they degrade as $\delta$ grows.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{corollary}[Non-Gaussian Taylor remainder]
+\label{cor:taylor-ng}
+For $a=a_\star+\xi\in\Ureg_\delta$, write $F(a)=J_\star\xi+N_{\mathrm G}(\xi)+R_{\mathrm{ng}}(\xi)$
+with $N_{\mathrm G}(\xi):=\FGauss(a)-J_{\mathrm G}\xi$ ($J_{\mathrm G}=-\Id$) and
+$R_{\mathrm{ng}}(\xi):=H(a)-DH(a_\star)\xi$. Then
+$\norm{R_{\mathrm{ng}}(\xi)}_\star\leq\tfrac12\Kng(\delta)\norm\xi_\star^2$.
+\end{corollary}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{Main continuous-time local theorem and sharpness}
+
+\begin{theorem}[Gaussian-core local convergence of the flow]
+\label{thm:core-flow}
+Let $0<\gamma_0\leq\gstar$ and $\delta>0$, and set
+\begin{equation}
+\label{eq:rho-core}
+    \rho_{\mathrm{core}}(\delta):=2\gamma_0-2+2\ell_\delta-\Kng(\delta)\,\mathfrak b(\delta)\sqrt\delta .
+\end{equation}
+If $\rho_{\mathrm{core}}(\delta)>0$ and $\Delta(a_0)\leq\delta$, then the flow \eqref{eq:NG-flow}
+remains in $\Ureg_\delta$ and $D(a_t)\leq e^{-\rho_{\mathrm{core}}(\delta)t}D(a_0)$ for all $t\geq0$.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{corollary}[Universal certified level]
+\label{cor:core-universal}
+With $\gamma_0=\gund$, $\rho_{\mathrm{core}}(\delta)\to2\gund$ as $\delta\downarrow0$, so for every
+$\rho<2\gund$ there is $\delta_{\mathrm c}(\rho)>0$ with $\rho_{\mathrm{core}}(\delta)\geq\rho$ on
+$(0,\delta_{\mathrm c}(\rho)]$.
+\end{corollary}
+
+\begin{corollary}[Exact sharpness for Gaussian targets]
+\label{cor:gauss-sharp}
+Let the target be Gaussian. Then $\gstar=1$, $\Kng\equiv0$, and \Cref{thm:core-flow} holds with the
+exact rate $\rho_{\mathrm{core}}(\delta)=2\ell_\delta$. Consequently, for every $\rho\in(0,2)$, the
+largest energy sublevel on which rate $\rho$ is certified is $\{\Delta\leq\sharpthr_{\mathrm G}(\rho)\}$
+with
+\begin{equation}
+\label{eq:gauss-sharp-thresh}
+    \sharpthr_{\mathrm G}(\rho)=\varphi\Bigl(\tfrac\rho2\Bigr)=\tfrac12\Bigl(\tfrac\rho2-1-\log\tfrac\rho2\Bigr),
+\end{equation}
+independent of dimension, and this threshold is attained (\Cref{prop:sharp}).
+\end{corollary}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{definition}[Instantaneous rate and maximal threshold]
+\label{def:sharp}
+For $a\neq a_\star$, set
+\[
+    q_{\mathrm c}(a):=\frac{-2\inner{a-a_\star}{F(a)}_\star}{\norm{a-a_\star}_\star^2},
+    \qquad
+    \sharpthr(\rho):=\inf\{\Delta(a):a\neq a_\star,\;q_{\mathrm c}(a)<\rho\}.
+\]
+\end{definition}
+
+\begin{proposition}[The benchmark is exact and dominates the certified level]
+\label{prop:sharp}
+Let $\rho>0$. (1) If $\Delta(a_0)<\sharpthr(\rho)$ then $D(a_t)\leq e^{-\rho t}D(a_0)$ for all
+$t\geq0$. (2) For every $\delta>\sharpthr(\rho)$ there is $a_0$ with $\Delta(a_0)\leq\delta$ and
+instantaneous rate $<\rho$; so $\sharpthr(\rho)$ is the largest energy threshold guaranteeing rate
+$\rho$. (3) For a Gaussian target, $\sharpthr(\rho)=\sharpthr_{\mathrm G}(\rho)=\varphi(\rho/2)$ for
+$\rho\in(0,2)$, in every dimension, and the certified level of \Cref{cor:gauss-sharp} attains it.
+\end{proposition}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Rate versus region]
+\label{rem:rate-region}
+For Gaussian targets both region and rate are exact. The universal bound $\gund=1/(4+\Gamma)$ is
+used only for general targets as a lower bound on $\gstar$; when the exact gap is available it
+should be used in \eqref{eq:rho-core}. As $\delta\downarrow0$, $\rho_{\mathrm{core}}(\delta)\to2\gstar$,
+the exact asymptotic squared-norm rate.
+\end{remark}
+
+\subsection{Deterministic discrete schemes: exact Gaussian intervals}
+\label{subsec:disc-local}
+
+\begin{proposition}[Exact Gaussian KL map and sharp interval]
+\label{prop:kl-gauss}
+Let the target be Gaussian, so \eqref{eq:KL-det} becomes
+$m_{n+1}=(\Id-\Delta t\,C_n)m_n$, $C_{n+1}=(1+\Delta t)C_n(\Id+\Delta t\,C_n)^{-1}$. In the
+eigenbasis of $C_n$ the scalar factors are
+$r_m(c)=(1-\Delta t\,c)^2$, $r_C(c)=(1+\Delta t\,c)^{-2}$, $c^+=\tfrac{(1+\Delta t)c}{1+\Delta t\,c}$.
+Fix $0<\Delta t<2$ and $q\in(0,1)$ with $q\geq q_0(\Delta t):=\max\{(1+\Delta t)^{-2},(1-\Delta t)^2\}$,
+and set $I_{\Delta t}^{\mathrm{KL}}(q):=[\tfrac{q^{-1/2}-1}{\Delta t},\tfrac{1+\sqrt q}{\Delta t}]\ni1$.
+Then $r_m(c),r_C(c)\leq q$ on $I_{\Delta t}^{\mathrm{KL}}(q)$; $c\mapsto c^+$ maps
+$I_{\Delta t}^{\mathrm{KL}}(q)$ into itself; and if $\operatorname{spec}(C_n)\subseteq I_{\Delta t}^{\mathrm{KL}}(q)$
+then $D_{\Delta t}(a_{n+k})\leq q^kD_{\Delta t}(a_n)$ for all $k\geq0$. For $\Delta t\leq\sqrt2$,
+$q_0(\Delta t)=(1+\Delta t)^{-2}$.
+\end{proposition}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{proposition}[General-target discrete local convergence]
+\label{thm:disc-local}
+Fix a scheme $\bullet\in\{\Riem,\KL\}$ with certified linearized gap $\gamma_\bullet$
+($\gamma_{\Riem}=\gund$, $\gamma_{\KL}=\tfrac1{4+2\Delta t+\Gamma}$) and norm $\norm\cdot_{\star,\bullet}$
+($\norm\cdot_\star$ resp.\ $\norm\cdot_{\star,\Delta t}$), with associated norm-conversion constant
+$\mathfrak b_{\star,\bullet}(\delta)$ defined by $\Delta(a)\leq\delta\Rightarrow\norm{a-a_\star}_{\star,\bullet}\leq\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta$:
+explicitly $\mathfrak b_{\star,\Riem}(\delta):=\mathfrak b(\delta)$ and
+$\mathfrak b_{\star,\KL}(\delta):=\mathfrak b_{\Delta t}(\delta)$, both of \Cref{cor:band}, with the clean
+comparison $\mathfrak b_{\Delta t}(\delta)\leq\sqrt{1+\Delta t}\,\mathfrak b(\delta)$ (immediate from
+$\mathfrak b_{\Delta t}(\delta)^2=\max\{2/\alpha_\star,(1+\Delta t)\vartheta(\delta)\}\leq(1+\Delta t)\mathfrak b(\delta)^2$).
+For the scheme map $T$ put
+$\Kdisc(\delta):=\Delta t^{-1}\sup_{a\in\Hreg_\delta}\norm{D^2T(a)}_{\star,\bullet}$, finite by
+\Cref{rem:Kdisc-finite}, where $\norm{D^2T(a)}_{\star,\bullet}:=\sup_{\norm\xi_{\star,\bullet}=1}\norm{D^2T(a)[\xi,\xi]}_{\star,\bullet}$
+is the operator norm of the bilinear map $D^2T(a)$ in the scheme norm. Suppose
+\[
+    0<\Delta t\leq\min\Bigl\{\tfrac2{4+\Gamma},\tfrac1{\beta_\star\bar\Lambda_\delta}\Bigr\},
+    \qquad
+    \Kdisc(\delta)\,\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\leq\gamma_\bullet .
+\]
+If $\Delta(a_0)\leq\delta$, then the iterates remain in $\Ureg_\delta$ and
+$\norm{a_n-a_\star}_{\star,\bullet}\leq(1-\tfrac12\Delta t\,\gamma_\bullet)^n\norm{a_0-a_\star}_{\star,\bullet}$.
+Since $\Kdisc(\delta)\to\Kdisc(0)<\infty$ and $\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\to0$, the
+radius condition holds for all small $\delta$.
+\end{proposition}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[One-step local map contraction before exit]
+\label{lem:local-map-contraction}
+Fix $\bullet\in\{\Riem,\KL\}$ and a level $\delta>0$ satisfying the radius condition
+$\Kdisc(\delta)\,\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\leq\gamma_\bullet$ of \Cref{thm:disc-local}.
+If $0<\Delta t\leq\tfrac2{4+\Gamma}$, then for \emph{every} $a\in\Ureg_\delta$ the deterministic scheme
+map $T_\bullet$ satisfies
+\[
+    \norm{T_\bullet(a)-a_\star}_{\star,\bullet}\leq\Bigl(1-\tfrac12\Delta t\,\gamma_\bullet\Bigr)\norm{a-a_\star}_{\star,\bullet}.
+\]
+No energy-descent hypothesis is used; in particular the bound requires \emph{not}
+$\Delta t\leq1/(\beta_\star\bar\Lambda_\delta)$, and no forward-invariance is asserted---this is purely
+the one-step contraction of $T_\bullet$ at the single point $a$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Finiteness and continuity of $\Kdisc$]
+\label{rem:Kdisc-finite}
+The bound $\Kdisc(\delta)<\infty$ requires more than compactness of $\Hreg_\delta$: it needs
+$D^2T$ \emph{continuous} on a neighborhood of the hull. Under \Cref{assump:logconcave-smooth} the
+Gaussian-expectation maps $g(a)=-\E_{\rho_a}[\nabla V]$ and $A(a)=\E_{\rho_a}[\nabla^2V]$ are obtained
+by differentiating $\E_{\rho_a}[\,\cdot\,]$ under the integral, which is licensed for observables of at
+most polynomial growth (here $\nabla V$ grows linearly); each parameter derivative brings down a
+Gaussian score polynomial, so $g$ and $A$ are $C^\infty$ in $(m,C)$ on every spectrally bounded compact
+subset of $\Aspace$. Both scheme maps $T$ (the Riemannian matrix-exponential retraction and the KL
+resolvent $C\mapsto(1+\Delta t)(C^{-1}+\Delta t A)^{-1}$) are smooth functions of $g,A,C$ with $C$
+bounded away from $0$ and $\infty$ on $\Hreg_\delta$, hence $C^2$ there with $D^2T$ continuous. The
+supremum of a continuous function over the compact hull is finite, giving $\Kdisc(\delta)<\infty$;
+continuity in $\delta$ and shrinking of the hull as $\delta\downarrow0$ give
+$\Kdisc(\delta)\to\Kdisc(0)<\infty$.
+\end{remark}
+
+\subsection{Online entry criteria}
+\label{subsec:entry}
+
+The energy test $\Delta(a_n)\leq\delta$ is not directly computable, since $\calE(a_\star)$ is
+unknown. The following sufficient tests use only the current iterate and known target quantities,
+in original coordinates. They are \emph{exact-expectation} tests: they presuppose the population
+quantities $g(a)$ and $A(a)$; a Monte Carlo implementation would replace them by estimators and
+require a concentration-adjusted (confidence) version of the gate. Moreover the threshold
+$\delta_{\mathrm{loc}}$ they compare against is only \emph{implicitly} available in general (it must
+first be certified admissible for \Cref{thm:disc-local}, whose constant $\Kdisc(\delta)$ is bounded
+but not given in closed form), so the test is executable only after such a $\delta_{\mathrm{loc}}$
+has been fixed. The conservative bounds of \Cref{rem:threshold-computable} give a precomputable
+\emph{continuous-time} threshold; for the discrete schemes the admissible level remains implicit
+until an explicit upper bound on $\Kdisc(\delta)$ is supplied.
+
+\begin{proposition}[Exact-expectation residual gate, original coordinates]
+\label{prop:entry-residual}
+At $a=(m,C)$ set $g(a)=-\E_{\rho_a}[\nabla V(X)]$, $A(a)=\E_{\rho_a}[\nabla^2V(X)]$, and
+$\mathcal R_{\mathrm{BW}}(a)^2:=\norm{g(a)}^2+\Tr[(C^{-1}-A(a))C(C^{-1}-A(a))]$. Then
+$\mathcal R_{\mathrm{BW}}(a)^2\geq2\alpha\Delta(a)$, so for any a priori certified local level
+$\delta_{\mathrm{loc}}$,
+\[
+    \mathcal R_{\mathrm{BW}}(a_n)^2\leq2\alpha\,\delta_{\mathrm{loc}}
+    \;\Longrightarrow\;
+    \Delta(a_n)\leq\delta_{\mathrm{loc}} .
+\]
+The left-hand side requires neither $C_\star$, $m_\star$, nor $\calE(a_\star)$. When a covariance
+floor $C_n\succeq\ell_n\Id$ is available, the Fisher--Rao gradient norm gives an alternative
+intrinsic test, $\Gradnorm(a_n)^2\leq\alpha\ell_n\delta_{\mathrm{loc}}\Rightarrow\Delta(a_n)\leq\delta_{\mathrm{loc}}$,
+which by \Cref{lem:FR-W2} is more restrictive than the Bures--Wasserstein gate. For the continuous
+flow and either deterministic discretization, once either test triggers the corresponding
+energy-descent property keeps $\Delta(a_k)\leq\delta_{\mathrm{loc}}$ at all subsequent times or
+iterations. For the stochastic schemes, neither pathwise nor expected containment follows from this
+gate alone: the one-step recursion $\E[\Delta_{n+1}\mid\Fil_n]\leq q\Delta_n+\eta$ with $\eta>0$ gives
+only $\E[\Delta_{n+1}\mid\Fil_n]\leq q\delta_{\mathrm{loc}}+\eta$, which is $\leq\delta_{\mathrm{loc}}$
+only if $\delta_{\mathrm{loc}}\geq\eta/(1-q)$, i.e.\ if the threshold dominates the corresponding
+stochastic floor. An expected-containment statement therefore requires either that condition or a
+separate stochastic local-stability argument.
+\end{proposition}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Precomputable conservative threshold]
+\label{rem:threshold-computable}
+The level $\delta_{\mathrm{loc}}$ is target-adaptive through
+$\alpha_\star,\beta_\star,\Sigma_\delta,\mathcal B_\delta,\Kng$. A precomputable conservative
+choice follows from the a priori bounds $\alpha_\star\geq\kappa^{-1}$, $\beta_\star\leq\kappa$,
+$\Sigma_\delta\leq\sqrt{N_\theta}(\beta_\star-\alpha_\star)$,
+$\mathcal B_\delta\leq\max\{\beta_\star-1,1-\alpha_\star\}$, which reduce the \emph{continuous-time}
+admissibility condition $\rho_{\mathrm{core}}(\delta)>0$ of \Cref{thm:core-flow} to a scalar
+inequality in $\alpha,\beta,N_\theta$. This does \emph{not} make the \emph{discrete} admissibility
+condition $\Kdisc(\delta)\,\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\leq\gamma_\bullet$ explicit,
+because no closed-form upper bound on $\Kdisc(\delta)=\Delta t^{-1}\sup_{a\in\Hreg_\delta}\norm{D^2T(a)}_{\star,\bullet}$
+is supplied here; an explicit bound on $\Kdisc(\delta)$ in terms of the target parameters is still
+required for a fully precomputable discrete switching threshold.
+\end{remark}
+
+\section{Stochastic algorithms}
+\label{sec:stoch}
+
+\subsection{The Price/Hessian oracle and the stochastic schemes}
+\label{sec:stoch-schemes}
+
+\begin{definition}[Price/Hessian oracle]
+\label{def:oracle}
+Given $X\in\R^{N_\theta}$, the oracle returns the pair $\bigl(\nabla V(X),\,\nabla^2V(X)\bigr)$.
+\end{definition}
+
+Fix a batch size $B\geq1$. Let $\Fil_n:=\sigma(a_0,\ldots,a_n)$, $\xi_{n,s}\overset{\text{iid}}{\sim}\N(0,\Id)$,
+$X_{n,s}:=m_n+C_n^{1/2}\xi_{n,s}$, $H_{n,s}:=\nabla^2V(X_{n,s})$.
+
+\subparagraph{Mean/score estimator: STL.}
+\begin{equation}
+\label{eq:STL-score}
+    \overline b_n:=\frac1B\sum_{s=1}^B\bigl(-\nabla V(X_{n,s})+C_n^{-1}(X_{n,s}-m_n)\bigr)
+    =\frac1B\sum_{s=1}^B\bigl(-\nabla V(X_{n,s})+C_n^{-1/2}\xi_{n,s}\bigr).
+\end{equation}
+
+\subparagraph{Covariance estimator: Price/Hessian.}
+$\overline H_n:=\tfrac1B\sum_{s=1}^BH_{n,s}$, $\overline K_n:=C_n^{-1}-\overline H_n$. Both are
+conditionally unbiased,
+\begin{equation}
+\label{eq:STL-unbiased}
+    \E[\overline b_n\mid\Fil_n]=g(a_n),
+    \qquad
+    \E[\overline K_n\mid\Fil_n]=R(a_n).
+\end{equation}
+
+\subparagraph{The global update.}
+The \emph{minibatch Price/Hessian Riemannian scheme} is
+\begin{equation}
+\label{eq:Riem-STL}
+    m_{n+1}=m_n+\Delta t\,C_n\overline b_n,
+    \qquad
+    C_{n+1}=C_n^{1/2}\exp\bigl(\Delta t(\Id-C_n^{1/2}\overline H_nC_n^{1/2})\bigr)C_n^{1/2},
+\end{equation}
+and the \emph{minibatch Price/Hessian KL scheme} is
+\begin{equation}
+\label{eq:KL-STL}
+    m_{n+1}=m_n+\Delta t\,C_n\overline b_n,
+    \qquad
+    C_{n+1}=(1+\Delta t)\bigl(C_n^{-1}+\Delta t\,\overline H_n\bigr)^{-1}.
+\end{equation}
+STL enters through the score $\overline b_n$; the covariance part is Price/Hessian. Since each
+$H_{n,s}$ has spectrum in $[\alpha,\beta]$ a.s., so does the average:
+\begin{equation}
+\label{eq:pathwise-Hess}
+    \alpha\Id\preceq\overline H_n\preceq\beta\Id\qquad\text{almost surely.}
+\end{equation}
+This almost-sure spectral bound is the structural reason the Price/Hessian oracle admits an
+unconditional global theory.
+
+\begin{remark}[Price's identity and the choice of covariance oracle]
+\label{rem:price}
+By Gaussian integration by parts, for $X=m+C^{1/2}\xi$, $\E[\xi\,\nabla V(X)^\top]=C^{1/2}A(a)$, so
+$A(a)$ admits both a sampled-Hessian and a gradient-only representation. We use the sampled Hessian:
+it is the representation with the almost-sure spectral bound \eqref{eq:pathwise-Hess}, which is
+exactly what the pathwise confinement arguments require. The gradient-only representation has
+unbounded samplewise spectrum; none of the pathwise statements below apply to it.
+\end{remark}
+
+\subsubsection{The quadratic rescue}
+\label{subsec:rescue}
+
+The stochastic pipeline is initialized by the single deterministic Price/Hessian query of the
+\emph{quadratic rescue} (\Cref{def:rescue}), developed for the deterministic theory in
+\Cref{subsec:rescue-det}: it sets $m_0=m_{\mathrm{in}}-H_{\mathrm{in}}^{-1}G_{\mathrm{in}}$,
+$C_0=H_{\mathrm{in}}^{-1}$, places the covariance on the curvature band
+$\tfrac1\beta\Id\preceq C_0\preceq\tfrac1\alpha\Id$ (\Cref{lem:rescue-band}), and recovers the exact
+optimizer in one query for Gaussian targets (\Cref{thm:gauss-recovery}). We record here the energy
+quality of the rescued initializer for non-Gaussian targets, used by the global stochastic
+complexity bounds.
+
+\begin{lemma}[Rescue energy for nonquadratic targets]
+\label{lem:rescue-energy}
+Under \Cref{assump:logconcave-smooth}, \Cref{lem:rescue-band} places $C_0$ on the band
+$[\tfrac1\beta,\tfrac1\alpha]$ pathwise, and $\Delta(a_0)$ is a deterministic finite quantity. Under
+the additional Hessian-Lipschitz \Cref{assump:global-Hess-Lip}, for the point-Newton rescue
+$H_{\mathrm{in}}:=\nabla^2V(m_{\mathrm{in}})$, $C_0=H_{\mathrm{in}}^{-1}$,
+$m_0=m_{\mathrm{in}}-H_{\mathrm{in}}^{-1}\nabla V(m_{\mathrm{in}})$ of Phase~0
+(\Cref{alg:unified}), writing $r_{\mathrm{in}}:=\norm{m_{\mathrm{in}}-m_\star}$,
+\[
+    \norm{m_0-m_\star}\leq\frac{\LH}{2\alpha}\Bigl(r_{\mathrm{in}}^2+\frac{N_\theta}\alpha\Bigr),
+    \qquad
+    \norm{C_0-C_\star}_{\Frob}\leq\frac{\sqrt{N_\theta}\,\LH}{\alpha^2}\Bigl(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha}\Bigr),
+\]
+and hence
+$\Delta(a_0)\leq\tfrac{\beta\LH^2}{8\alpha^2}(r_{\mathrm{in}}^2+\tfrac{N_\theta}\alpha)^2+\tfrac{\beta N_\theta\LH}{2\alpha^2}(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha})$,
+which vanishes when $\LH=0$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+\subsubsection{Pathwise covariance bands}
+\label{subsec:bands}
+
+\begin{lemma}[Covariance bands for the rescued schemes]
+\label{lem:stoch-band}
+Assume \Cref{assump:logconcave-smooth} and initialize with \eqref{eq:rescue}, so
+$\tfrac1\beta\Id\preceq C_0\preceq\tfrac1\alpha\Id$.
+\begin{enumerate}
+\item \textup{(Riemannian.)} If $0<\Delta t\leq1/\kappa$, then almost surely
+$\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$ for all $n\geq0$.
+\item \textup{(KL/Bregman.)} For every $\Delta t>0$, almost surely
+$\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$ for all $n\geq0$.
+\end{enumerate}
+No stopping time, clipping, or containment hypothesis is used.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{algorithm}[t]
+\caption{Quadratic-rescued minibatch Price/Hessian STL Fisher--Rao scheme}
+\label{alg:unified}
+\begin{algorithmic}[1]
+\Require initial mean $m_{\mathrm{in}}$; scheme selector $\mathsf S\in\{\Riem,\KL\}$; batch size $B$;
+stepsizes $\Delta t_n>0$; iteration count $N$
+\State \textbf{Phase 0 (quadratic rescue; one query).} Query the oracle at $m_{\mathrm{in}}$:
+$G_{\mathrm{in}}\gets\nabla V(m_{\mathrm{in}})$, $H_{\mathrm{in}}\gets\nabla^2V(m_{\mathrm{in}})$;
+set $m_0\gets m_{\mathrm{in}}-H_{\mathrm{in}}^{-1}G_{\mathrm{in}}$, $C_0\gets H_{\mathrm{in}}^{-1}$
+\State \textbf{Phase I (Price/Hessian STL iterations).}
+\For{$n=0,\dots,N-1$}
+    \State Draw $\xi_{n,s}\overset{\text{iid}}{\sim}\N(0,\Id)$, $X_{n,s}\gets m_n+C_n^{1/2}\xi_{n,s}$, $s=1,\dots,B$; query the oracle at each $X_{n,s}$
+    \State $\overline b_n\gets\frac1B\sum_s(-\nabla V(X_{n,s})+C_n^{-1/2}\xi_{n,s})$ \Comment{STL score}
+    \State $\overline H_n\gets\frac1B\sum_s\nabla^2V(X_{n,s})$ \Comment{Price/Hessian covariance}
+    \State $m_{n+1}\gets m_n+\Delta t_n\,C_n\overline b_n$
+    \If{$\mathsf S=\Riem$}
+        \State $C_{n+1}\gets C_n^{1/2}\exp\bigl(\Delta t_n(\Id-C_n^{1/2}\overline H_nC_n^{1/2})\bigr)C_n^{1/2}$
+    \Else
+        \State $C_{n+1}\gets(1+\Delta t_n)\bigl(C_n^{-1}+\Delta t_n\overline H_n\bigr)^{-1}$
+    \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Intrinsic sticking-the-landing variance}
+\label{sec:intrinsic-STL}
+
+For a single sample $X\sim\rho_a$, the single-sample tangent noise is
+$\xi(a;X):=(-C\varepsilon_b,\,-C\varepsilon_RC)$ with $\varepsilon_b:=\widehat b-g(a)$,
+$\varepsilon_R:=-(\nabla^2V(X)-A(a))$, and the minibatch noise is
+$\overline\xi_n:=\widehat\grad\calE(a_n)-\grad\calE(a_n)=\tfrac1B\sum_s\xi(a_n;X_{n,s})$.
+
+\begin{definition}[Intrinsic Hessian fluctuation]
+\label{def:Psi}
+$\Psi(a):=\E_{X\sim\rho_a}\bigl[\norm{C^{1/2}(\nabla^2V(X)-A(a))C^{1/2}}_{\Frob}^2\bigr]$.
+\end{definition}
+
+\begin{lemma}[Intrinsic STL variance bound]
+\label{lem:intrinsic-STL}
+Under \Cref{assump:logconcave-smooth}, the STL noises are conditionally centered, and, with
+$\norm{\xi(a;X)}_{a,\FR}^2=\varepsilon_b^\top C\varepsilon_b+\tfrac12\norm{C^{1/2}\varepsilon_RC^{1/2}}_{\Frob}^2$,
+\begin{equation}
+\label{eq:intrinsic-mean}
+    \E\bigl[\varepsilon_b^\top C\varepsilon_b\bigr]\leq\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2+\Psi(a),
+    \qquad
+    \E\bigl[\norm{\xi(a;X)}_{a,\FR}^2\bigr]\leq2\,\Gradnorm(a)^2+\frac32\,\Psi(a).
+\end{equation}
+Consequently, for every $B\geq1$,
+$\E[\norm{\overline\xi_n}_{a_n,\FR}^2\mid\Fil_n]\leq B^{-1}(2\Gradnorm(a_n)^2+\tfrac32\Psi(a_n))$.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Regularity]
+\label{rem:regularity}
+The differentiations above transfer to Gaussian score polynomials for observables of at most
+polynomial growth, which holds under \Cref{assump:logconcave-smooth} since $\nabla V$ grows at most
+linearly; no third or fourth derivatives of $V$ are used. When $\nabla^2V$ is only Lipschitz it is
+differentiable a.e., and the Gaussian Poincar\'e step is applied to the Lipschitz map
+$F(X)=-\nabla V(X)+C^{-1}(X-m)$ using its weak derivative $\nabla F=C^{-1}-\nabla^2V$ (equivalently by
+mollification), which is all the inequality requires.
+\end{remark}
+
+\subsubsection{Assumption-minimal regime: the self-bounding estimate}
+\label{sec:stoch-selfbound}
+
+\begin{lemma}[Self-bounding estimate for the intrinsic fluctuation]
+\label{lem:Psi-self-bound}
+Under \Cref{assump:logconcave-smooth}, if $C\preceq\Lambda\Id$ and $\LB=\beta\Lambda$, then
+\begin{equation}
+\label{eq:Psi-self-bound}
+    \boxed{\;
+    \Psi(a)\leq2\LB N_\theta+\LB\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2
+    \leq2\LB N_\theta+2\LB\,\Gradnorm(a)^2 .
+    \;}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{corollary}[Self-bounded second moment]
+\label{cor:second-moment}
+If $C\preceq\Lambda\Id$, then for every $B\geq1$,
+\begin{equation}
+\label{eq:second-moment}
+    \E\bigl[\norm{\widehat\grad\calE(a)}_{a,\FR}^2\mid a\bigr]
+    \leq\rho_B\,\Gradnorm(a)^2+\frac{3\LB N_\theta}B,
+    \qquad
+    \rho_B:=1+\frac{2+3\LB}B .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{Hessian-Lipschitz regime}
+\label{sec:stoch-Hlip}
+
+\begin{assumption}[Global Hessian-Lipschitzness]
+\label{assump:global-Hess-Lip}
+There is $\LH<\infty$ with $\norm{\nabla^2V(x)-\nabla^2V(y)}_\op\leq\LH\norm{x-y}$ for all $x,y$. We
+write the dimensionless parameter $\barLH:=\LH/\alpha^{3/2}$; a Gaussian target has $\LH=\barLH=0$.
+\end{assumption}
+
+\begin{lemma}[Hessian-Lipschitz control of the intrinsic fluctuation]
+\label{lem:Psi-Hg}
+Under \Cref{assump:global-Hess-Lip}, $\Psi(a)\leq\LH^2\norm{C}_\op(\Tr C)^2$. On the band
+$C\preceq\tfrac1\alpha\Id$,
+\begin{equation}
+\label{eq:Psi-Hg}
+    \boxed{\;\Psi(a)\leq\Psi_H:=\frac{N_\theta^2\LH^2}{\alpha^3}=N_\theta^2\barLH^2 .\;}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+\subsection{Stochastic global convergence: Riemannian variant}
+\label{sec:stoch-Riem}
+
+On the rescued bands, \Cref{lem:FR-W2} gives the Fisher--Rao PL inequalities
+\begin{equation}
+\label{eq:PL-bands}
+    \Gradnorm(a_n)^2\geq\frac1{2\kappa}\Delta_n\ \ (\text{Riemannian band }C_n\succeq\tfrac1{2\beta}\Id),
+    \qquad
+    \Gradnorm(a_n)^2\geq\frac1\kappa\Delta_n\ \ (\text{KL band }C_n\succeq\tfrac1\beta\Id).
+\end{equation}
+
+\begin{lemma}[Riemannian stochastic one-step descent]
+\label{lem:Riem-onestep-stoch}
+Assume \Cref{assump:logconcave-smooth} and $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$. For
+one step of \eqref{eq:Riem-STL} with $0<\Delta t\leq1/\kappa$,
+\begin{equation}
+\label{eq:Riem-onestep-Psi}
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq\Delta_n-\Delta t\Bigl(1-\kappa\Delta t\bigl(1+\tfrac2B\bigr)\Bigr)\Gradnorm(a_n)^2
+    +\frac{3\kappa\Delta t^2}{2B}\Psi(a_n).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[Riemannian, Hessian-Lipschitz]
+\label{thm:Riem-Hlip}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip}, initialize with \eqref{eq:rescue}, and
+run \eqref{eq:Riem-STL} with $B\geq1$ and $\Delta t=\tfrac1{2\kappa(1+2/B)}$. Then for every $N\geq0$,
+\begin{equation}
+\label{eq:Riem-Hlip}
+    \boxed{\;
+    \E\Delta_N\leq\Bigl(1-\frac1{8\kappa^2(1+2/B)}\Bigr)^N\Delta(a_0)+\frac{3\kappa}{B+2}\,N_\theta^2\barLH^2 .
+    \;}
+\end{equation}
+For $B=1$: $\Delta t=\tfrac1{6\kappa}$, $\E\Delta_N\leq(1-\tfrac1{24\kappa^2})^N\Delta(a_0)+\kappa N_\theta^2\barLH^2$,
+so the single-sample iteration and oracle complexities are $N_{\Riem}=\widetilde O(\kappa^2)$ and
+$Q_{\Riem}=1+\widetilde O(\kappa^2)$.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[Riemannian, assumption-minimal self-bounding]
+\label{thm:Riem-selfbound}
+Assume \Cref{assump:logconcave-smooth}, initialize with \eqref{eq:rescue}, and run \eqref{eq:Riem-STL}
+with $B\geq1$ and $\Delta t=\tfrac1{2\kappa\rho_B}$, $\rho_B:=1+\tfrac{2+3\kappa}B$. Then for every
+$N\geq0$,
+\begin{equation}
+\label{eq:Riem-selfbound}
+    \boxed{\;
+    \E\Delta_N\leq\Bigl(1-\frac1{8\kappa^2\rho_B}\Bigr)^N\Delta(a_0)+\frac{6\kappa^2N_\theta}{B+2+3\kappa} .
+    \;}
+\end{equation}
+The floor is $O(\kappa N_\theta)$ for every $B\lesssim\kappa$ and at most $2\kappa N_\theta$ for every
+$B\geq1$. For $B=1$, $\rho_1=3+3\kappa\asymp\kappa$, giving $N_{\Riem}=\widetilde O(\kappa^3)$; for
+$B=\Theta(\kappa)$, $\rho_B=O(1)$, giving $N_{\Riem}=\widetilde O(\kappa^2)$ rounds and
+$Q_{\Riem}=BN_{\Riem}=\widetilde O(\kappa^3)$ oracle pairs. No Hessian-Lipschitz assumption is used.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+\subsection{Stochastic global convergence: KL/Bregman variant}
+\label{sec:stoch-KL}
+
+The KL/Bregman scheme \eqref{eq:KL-STL} enjoys the tighter pathwise band of
+\Cref{lem:stoch-band}(2), $\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$ for \emph{every}
+$\Delta t>0$, and the corresponding Fisher--Rao PL inequality from \eqref{eq:PL-bands},
+$\Gradnorm(a_n)^2\geq\tfrac1\kappa\Delta_n$. The key observation is that the implicit resolvent
+covariance update is exactly an affine-invariant exponential retraction, so the one-step estimate
+follows from the arbitrary-direction retraction smoothness of \Cref{lem:retr-smooth} without any
+principal-square-root coupling.
+
+\begin{lemma}[Logarithmic tangent of the KL resolvent update]
+\label{lem:KL-logtangent}
+Fix $a=(m,C)$ with $\tfrac1\beta\Id\preceq C\preceq\tfrac1\alpha\Id$ and $\alpha\Id\preceq\overline H\preceq\beta\Id$,
+and set $P:=C^{1/2}\overline HC^{1/2}$, so that $\tfrac1\kappa\Id\preceq P\preceq\kappa\Id$. Write
+$\overline S:=\Id-P$ and define the logarithmic tangent
+\begin{equation}
+\label{eq:Wlog}
+    W(P):=\log(1+\Delta t)\,\Id-\log(\Id+\Delta t\,P).
+\end{equation}
+Then the KL covariance update $C^+=(1+\Delta t)(C^{-1}+\Delta t\,\overline H)^{-1}$ satisfies
+\begin{equation}
+\label{eq:KL-retr}
+    C^+=C^{1/2}e^{W(P)}C^{1/2},
+    \qquad\text{equivalently}\qquad
+    a^+=\Retr_a\bigl(\Delta t\,C\overline b,\;C^{1/2}W(P)C^{1/2}\bigr),
+\end{equation}
+where $\overline b$ is the minibatch STL score. Moreover, with $\mathcal R(P):=W(P)-\Delta t\,\overline S$,
+\begin{equation}
+\label{eq:Wlog-bounds}
+    \norm{W(P)}_\op\leq\Delta t\,\kappa,
+    \qquad
+    \norm{W(P)}_{\Frob}\leq\Delta t\,\norm{\overline S}_{\Frob},
+    \qquad
+    \norm{\mathcal R(P)}_{\Frob}\leq\kappa\,\Delta t^2\,\norm{\overline S}_{\Frob}.
+\end{equation}
+In particular, for $\Delta t\leq1/(8\kappa)$, $\norm{W(P)}_\op\leq\tfrac18<1$, so the tangent
+$\zeta:=(\Delta t\,C\overline b,\,C^{1/2}W(P)C^{1/2})$ satisfies the scope condition \eqref{eq:scope}.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[KL stochastic one-step descent]
+\label{lem:KL-onestep-stoch}
+Assume \Cref{assump:logconcave-smooth} and $\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$. For
+one step of \eqref{eq:KL-STL} with $0<\Delta t\leq1/(8\kappa)$,
+\begin{equation}
+\label{eq:KL-onestep-Psi}
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq\Delta_n-\frac{\Delta t}2\,\Gradnorm(a_n)^2
+    +\frac{7\kappa\,\Delta t^2}{4B}\,\Psi(a_n).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[KL, Hessian-Lipschitz]
+\label{thm:KL-Hlip}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip}, initialize with \eqref{eq:rescue},
+and run \eqref{eq:KL-STL} with $B\geq1$ and $\Delta t=\tfrac1{8\kappa}$. Then for every $N\geq0$,
+\begin{equation}
+\label{eq:KL-Hlip}
+    \boxed{\;
+    \E\Delta_N\leq\Bigl(1-\frac1{16\kappa^2}\Bigr)^N\Delta(a_0)+\frac{7\kappa}{16B}\,N_\theta^2\barLH^2 .
+    \;}
+\end{equation}
+For $B=1$ the single-sample iteration and oracle complexities are $N_{\KL}=\widetilde O(\kappa^2)$ and
+$Q_{\KL}=1+\widetilde O(\kappa^2)$.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[KL, assumption-minimal self-bounding]
+\label{thm:KL-selfbound}
+Assume \Cref{assump:logconcave-smooth}, initialize with \eqref{eq:rescue}, and run \eqref{eq:KL-STL}
+with $B\geq1$ and $\Delta t=\min\{\tfrac1{8\kappa},\tfrac B{14\kappa^2}\}$. Then for every $N\geq0$,
+\begin{equation}
+\label{eq:KL-selfbound}
+    \boxed{\;
+    \E\Delta_N\leq\Bigl(1-\frac{\Delta t}{4\kappa}\Bigr)^N\Delta(a_0)+14\kappa^3\Delta t\,\frac{N_\theta}B .
+    \;}
+\end{equation}
+For $B\leq\tfrac74\kappa$, $\Delta t=\tfrac B{14\kappa^2}$, the floor is exactly $\kappa N_\theta$ and
+the contraction is $1-\tfrac B{56\kappa^3}$; for $B=1$ this gives $N_{\KL}=\widetilde O(\kappa^3)$, and
+for $B=\Theta(\kappa)$, $N_{\KL}=\widetilde O(\kappa^2)$ rounds and $Q_{\KL}=\widetilde O(\kappa^3)$
+oracle pairs. No Hessian-Lipschitz assumption is used.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[The two schemes side by side]
+\label{rem:KL-vs-Riem}
+On the rescued bands the two schemes attain the same leading complexity in each regime:
+$\widetilde O(\kappa^2)$ single-sample iterations under \Cref{assump:global-Hess-Lip} and
+$\widetilde O(\kappa^3)$ under \Cref{assump:logconcave-smooth} alone, both unconditionally. The KL band
+$\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$ holds for every $\Delta t>0$ and gives the
+stronger PL constant $\tfrac1\kappa$ (versus $\tfrac1{2\kappa}$ for the Riemannian band
+$\tfrac1{2\beta}\Id\preceq C_n$), while the Riemannian scheme requires $\Delta t\leq1/\kappa$ to
+maintain its band. The structural reason the KL analysis matches the Riemannian one is
+\Cref{lem:KL-logtangent}: the implicit resolvent update is the exponential retraction
+$C^{1/2}e^{W(P)}C^{1/2}$ with $W(P)$ a spectral function of the sampled relative Hessian $P$, so its
+first-order stochastic part is unbiased and only a second-order fluctuation survives. Both floors are
+proportional to $\Psi_H=N_\theta^2\barLH^2$ (Hessian-Lipschitz) or $\kappa N_\theta$ (self-bounding),
+and both vanish at the estimator level for Gaussian targets (\Cref{prop:gauss-nofloor}).
+\end{remark}
+\subsection{Stochastic local convergence: Gaussian-core Price/Hessian--STL theory}
+\label{sec:stoch-local}
+
+The global stochastic theorems (\Cref{sec:stoch-Riem,sec:stoch-KL}) drive $\E\Delta_N$ to a
+$\kappa$-dependent floor at the global $\kappa$-dependent rate. Once an iterate has entered a
+certified local region $\Ureg_{\delta_\bullet}$, however, the \emph{deterministic} discrete local
+map contracts at the rate of \Cref{thm:disc-local}. The local linearized spectral scale is
+$4+\Gamma=O(1+N_\theta\log\kappa)$ (after whitening, independent of the global covariance
+conditioning); together with the universal certified stepsize $\Delta t=\Theta((4+\Gamma)^{-1})$ in the
+large-batch branch $B\gtrsim V_1$ ($V_1=24+6N_\theta\LHs^2$) this yields the
+$O((4+\Gamma)^2\log\tfrac1\epsilon)$ iteration bound derived below (\Cref{rem:local-condnum}),
+quadratic in the scale (for general $B$, with the extra factor $\max\{1,V_1/B\}$). This section gives the stochastic analogue of \Cref{thm:disc-local}: a mean-square
+contraction on the non-exit event, i.e.\ a bound on $\E[\norm{a_N-a_\star}_{\star,\bullet}^2;\tau>N]$,
+with a \emph{target-adaptive} additive floor proportional to the \emph{squared} whitened
+Hessian-Lipschitz modulus $\LHs^2$, together with a finite-horizon high-probability containment bound. This is a
+\emph{killed-process} quantity (trajectories that have exited by time $N$ contribute zero), not the
+mean square of the stopped process $a_{N\wedge\tau}$; the containment proposition supplies the exit
+control that makes it operative. As already noted in \Cref{prop:entry-residual}, a gate alone yields
+neither pathwise nor expected containment for the stochastic schemes; the results here are the
+promised separate stability argument. The standing assumptions do not guarantee bounded support for
+the STL mean-score noise: even for a Gaussian target, away from $C=\Id$ it equals
+$(C^{-1/2}-C^{1/2})Z$ (see the Gaussian example below), which is unbounded---this single counterexample
+already shows that pathwise invariance of a bounded local energy sublevel cannot be guaranteed under
+the standing assumptions at fixed stepsize without projection, clipping, or safeguarding, so the
+honest statements are non-exit contraction plus exit-probability control rather than infinite-horizon
+containment. For Gaussian targets $\LHs=0$, the
+\emph{additive} floor vanishes (\Cref{cor:stoch-local-gauss}); the noise is pathwise zero (deterministic
+contraction, no exit control) whenever $C_0=C_\star$, even if $m_0\neq m_\star$, with quadratic rescue
+the special case $a_0=a_\star$, while generic $C_0\neq C_\star$ retains unbounded mean noise.
+
+\subsubsection{Whitened reduction and the local modulus}
+\label{subsec:local-whiten}
+
+The Fisher--Rao and KL natural-gradient schemes are equivariant under invertible affine
+reparametrization of $\R^{N_\theta}$. Whitening by $C_\star^{1/2}$ maps $a_\star$ to $(0,\Id)$ and
+$V$ to the whitened potential $\widehat V(z)=V(m_\star+C_\star^{1/2}z)$ of \Cref{sec:local}, under
+which $\alpha_\star\Id\preceq\nabla^2\widehat V\preceq\beta_\star\Id$, $A(a_\star)=\Id$, and the
+minibatch updates \eqref{eq:Riem-STL}--\eqref{eq:KL-STL} take the same form with $V\to\widehat V$,
+$\nabla^2 V\to\nabla^2\widehat V$. We work in these coordinates throughout the section; $C$ denotes
+the (whitened) covariance and $\overline H_n=\tfrac1B\sum_s\nabla^2\widehat V(X_{n,s})$, so that
+$\alpha_\star\Id\preceq\overline H_n\preceq\beta_\star\Id$ almost surely by \eqref{eq:pathwise-Hess}.
+Write
+\[
+    \overline\varepsilon_{b,n}:=\overline b_n-g(a_n),\qquad
+    \overline\varepsilon_{H,n}:=\overline H_n-A(a_n),
+\]
+which are conditionally centered by \eqref{eq:STL-unbiased}; at the single-sample level
+$\varepsilon_b:=\bigl(-\nabla\widehat V(X)+C^{-1}(X-m)\bigr)-g(a)$ and
+$\varepsilon_H:=\nabla^2\widehat V(X)-A(a)=-\varepsilon_R$, so that
+$\E\norm{\varepsilon_H}_{\Frob}^2$ is the (un-whitened-weighted) form of the intrinsic fluctuation
+$\Psi$ of \Cref{def:Psi}.
+
+\begin{lemma}[Whitened local Hessian-Lipschitz modulus]
+\label{lem:whitened-HessLip}
+Under \Cref{assump:global-Hess-Lip} (global modulus $\LH$), the whitened potential $\widehat V$ has a
+Hessian-Lipschitz modulus $\LHs$, i.e.\
+$\norm{\nabla^2\widehat V(x)-\nabla^2\widehat V(y)}_{\op}\leq\LHs\norm{x-y}$ for all $x,y$, with
+\[
+    \LHs\leq\LH\,\norm{C_\star}_{\op}^{3/2}\leq\LH\,\alpha^{-3/2}=\barLH .
+\]
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{definition}[Stochastically admissible level]
+\label{def:stoch-admissible}
+For a fixed scheme $\bullet\in\{\Riem,\KL\}$ and a fixed stepsize $\Delta t$, a level $\delta_\bullet>0$
+is \emph{stochastically admissible} (for that $\Delta t$) if the discrete radius condition
+$\Kdisc(\delta_\bullet)\,\mathfrak b_{\star,\bullet}(\delta_\bullet)\sqrt{\delta_\bullet}\leq\gamma_\bullet$
+of \Cref{thm:disc-local} holds and additionally
+\[
+    \ell_{\delta_\bullet}\geq\tfrac12,\qquad U_{\delta_\bullet}\leq\tfrac32,\qquad
+    \mathfrak b_{\star,\bullet}(\delta_\bullet)\sqrt{\delta_\bullet}\leq1 .
+\]
+This is a joint condition on the pair $(\Delta t,\delta_\bullet)$: $\Kdisc$, $\gamma_\bullet$ (for KL),
+and $\mathfrak b_{\star,\bullet}$ all depend on $\Delta t$, so it is understood that $\Delta t$ is fixed
+first---satisfying the linearized-gap and stochastic-absorption bounds of
+\Cref{thm:stoch-local-Riem,thm:stoch-local-KL}---and $\delta_\bullet$ chosen afterward.
+\end{definition}
+
+\begin{remark}[Existence]
+\label{rem:stoch-admissible-exists}
+As $\delta\downarrow0$, the band roots satisfy $\ell_\delta\uparrow1$ and $U_\delta\downarrow1$
+(\Cref{cor:band}), $\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\to0$, and, \emph{for every fixed
+admissible stepsize $\Delta t>0$}, $\Kdisc(\delta)\to\Kdisc(0)<\infty$ as $\delta\downarrow0$ (the
+supremum of the continuous $\Delta t^{-1}D^2T_{\bullet,\Delta t}$ over the shrinking hull
+$\Hreg_\delta\to\{a_\star\}$, finite by \Cref{rem:Kdisc-finite}), so the discrete radius condition
+$\Kdisc(\delta)\mathfrak b_{\star,\bullet}(\delta)\sqrt\delta\leq\gamma_\bullet$ holds for all small
+$\delta$. Hence, for every fixed admissible $\Delta t$, sufficiently small stochastically admissible
+levels $\delta_\bullet$ exist. On $\Ureg_{\delta_\bullet}$ one has
+$\tfrac12\Id\preceq C\preceq\tfrac32\Id$ by \Cref{cor:band}(i), which is the band hypothesis of the
+variance lemma below. This is an \emph{existence} statement: the manuscript does not give a
+closed-form value of the switching level $\delta_\bullet$ in terms of $\alpha,\beta,N_\theta,\LH$
+alone, since $\Kdisc$ is defined through a supremum of $D^2T_{\bullet,\Delta t}$ over the local hull
+and is not bounded in closed form here; an explicit upper bound on $\Kdisc$ (a natural later
+strengthening) would make the discrete switching threshold precomputable.
+\end{remark}
+
+\subsubsection{Local Price/Hessian--STL variance}
+\label{subsec:local-var}
+
+\begin{lemma}[Local variance decomposition]
+\label{lem:local-variance}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip}, work in whitened coordinates, and let
+$a=(m,C)$ with $\tfrac12\Id\preceq C\preceq\tfrac32\Id$. Then for a single sample $X\sim\rho_a$,
+\begin{equation}
+\label{eq:local-var}
+    \E\Bigl[\norm{\varepsilon_b}^2+\tfrac12\norm{\varepsilon_H}_{\Frob}^2\Bigr]
+    \leq V_0+V_1\,\norm{a-a_\star}_\star^2,
+    \qquad
+    V_0:=3N_\theta^2\LHs^2,\quad V_1:=24+6N_\theta\LHs^2 .
+\end{equation}
+By conditional independence, the minibatch noise obeys
+$\E[\norm{\overline\varepsilon_b}^2+\tfrac12\norm{\overline\varepsilon_H}_{\Frob}^2\mid\Fil]\leq B^{-1}(V_0+V_1\norm{a-a_\star}_\star^2)$.
+At the optimizer, $\E[\norm{\varepsilon_b(a_\star)}^2+\tfrac12\norm{\varepsilon_H(a_\star)}_{\Frob}^2]\leq\sigma_\star^2:=\tfrac32N_\theta^2\LHs^2$,
+which is $0$ for Gaussian targets.
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{One-step stochastic perturbation of the local maps}
+\label{subsec:local-perturb}
+
+We compare one stochastic step to the deterministic local step $T_\bullet$ of \Cref{thm:disc-local}.
+The following elementary bounds on the matrix exponential are the only nonlinear ingredient.
+
+\begin{lemma}[Exponential perturbation bounds]
+\label{lem:exp-perturb}
+Let $S,\widehat S\in\Sym(N_\theta)$ with $S\preceq\Id$, $\widehat S\preceq\Id$, put
+$\Delta:=\widehat S-S$, and let $0<\Delta t\leq1$. Then
+\begin{align*}
+\textup{(i)}\quad & \norm{e^{\Delta t\widehat S}-e^{\Delta tS}}_{\Frob}\leq e\,\Delta t\,\norm{\Delta}_{\Frob},\\
+\textup{(ii)}\quad & \norm{e^{\Delta t\widehat S}-e^{\Delta tS}-D\exp(\Delta tS)[\Delta t\Delta]}_{\Frob}
+\leq\tfrac{e}{2}\,\Delta t^2\,\norm{\Delta}_{\op}\norm{\Delta}_{\Frob}.
+\end{align*}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[One-step perturbation, Riemannian]
+\label{lem:local-perturb-Riem}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip}, work in whitened coordinates, and let
+$a=(m,C)$ with $\tfrac12\Id\preceq C\preceq\tfrac32\Id$ and $\norm{T_{\Riem}(a)-a_\star}_\star\leq1$,
+where $T_{\Riem}$ is the deterministic map of \eqref{eq:Riem-det} and $\widehat a^+$ the one stochastic
+step \eqref{eq:Riem-STL} with batch $B$ and $0<\Delta t\leq1$. Then
+\[
+    \E\bigl[\norm{\widehat a^+-a_\star}_\star^2\mid\Fil\bigr]
+    \leq\norm{T_{\Riem}(a)-a_\star}_\star^2+\frac{64\,\Delta t^2}{B}\bigl(V_0+V_1\norm{a-a_\star}_\star^2\bigr).
+\]
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{lemma}[One-step perturbation, KL]
+\label{lem:local-perturb-KL}
+Under the hypotheses of \Cref{lem:local-perturb-Riem} but for the KL maps
+\eqref{eq:KL-det}/\eqref{eq:KL-STL} and the norm $\norm\cdot_{\star,\Delta t}$ (with
+$\norm{T_{\KL}(a)-a_\star}_{\star,\Delta t}\leq1$),
+\[
+    \E\bigl[\norm{\widehat a^+-a_\star}_{\star,\Delta t}^2\mid\Fil\bigr]
+    \leq\norm{T_{\KL}(a)-a_\star}_{\star,\Delta t}^2+\frac{68\,\Delta t^2}{B}\bigl(V_0+V_1\norm{a-a_\star}_\star^2\bigr).
+\]
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{Localized non-exit mean-square contraction}
+\label{subsec:local-contraction}
+
+\begin{theorem}[Stochastic local convergence, Riemannian]
+\label{thm:stoch-local-Riem}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip}, work in whitened coordinates, and set
+$A_{\Riem}:=4+\Gamma$, $\mu_{\Riem}:=1/(2A_{\Riem})$, $V_1=24+6N_\theta\LHs^2$. Fix a stepsize
+\[
+    0<\Delta t\leq\min\Bigl\{\tfrac{2}{4+\Gamma},\ \tfrac{B}{256\,A_{\Riem}\,V_1}\Bigr\},
+\]
+and let $\delta_{\Riem}$ be stochastically admissible for this $\Delta t$ (\Cref{def:stoch-admissible}).
+Run \eqref{eq:Riem-STL} with batch $B$.
+Let $\tau_{\Riem}:=\inf\{n\geq0:a_n\notin\Ureg_{\delta_{\Riem}}\}$ and $a_0\in\Ureg_{\delta_{\Riem}}$.
+Then for all $N\geq0$,
+\[
+    \boxed{\;
+    \E\bigl[\norm{a_N-a_\star}_\star^2\,\mathbf 1_{\{\tau_{\Riem}>N\}}\bigr]
+    \leq\bigl(1-\mu_{\Riem}\Delta t\bigr)^N\norm{a_0-a_\star}_\star^2
+    +\frac{384\,\Delta t\,(4+\Gamma)\,N_\theta^2\LHs^2}{B}.
+    \;}
+\]
+The left-hand side is the \emph{non-exit} (killed) second moment: trajectories that leave
+$\Ureg_{\delta_{\Riem}}$ by time $N$ contribute zero, so this is not the mean square of the stopped
+process $a_{N\wedge\tau_{\Riem}}$; \Cref{prop:finite-horizon} bounds the discarded mass
+$\Prob(\tau_{\Riem}\leq N)$, and the two together give an operative guarantee.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{theorem}[Stochastic local convergence, KL]
+\label{thm:stoch-local-KL}
+Under the analogous hypotheses, set $A_{\KL}:=4+2\Delta t+\Gamma$, $\mu_{\KL}:=1/(2A_{\KL})$. Fix a
+stepsize
+\[
+    0<\Delta t\leq\min\Bigl\{\tfrac2{4+\Gamma},\ \tfrac{B}{272\,A_{\KL}\,V_1}\Bigr\},
+\]
+let $\delta_{\KL}$ be stochastically admissible for this $\Delta t$, and put $\tau_{\KL}:=\inf\{n:a_n\notin\Ureg_{\delta_{\KL}}\}$;
+running \eqref{eq:KL-STL} with batch $B$, one has for $a_0\in\Ureg_{\delta_{\KL}}$ and all $N\geq0$,
+\[
+    \boxed{\;
+    \E\bigl[\norm{a_N-a_\star}_{\star,\Delta t}^2\,\mathbf 1_{\{\tau_{\KL}>N\}}\bigr]
+    \leq\bigl(1-\mu_{\KL}\Delta t\bigr)^N\norm{a_0-a_\star}_{\star,\Delta t}^2
+    +\frac{408\,\Delta t\,(4+2\Delta t+\Gamma)\,N_\theta^2\LHs^2}{B}.
+    \;}
+\]
+As in the Riemannian case the left-hand side is the non-exit (killed) second moment, paired with the
+exit bound of \Cref{prop:finite-horizon}.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{Finite-horizon containment}
+\label{subsec:finite-horizon}
+
+The non-exit bounds contract the surviving mass on $\{\tau_\bullet>N\}$; to control the discarded mass
+we bound the exit probability. Fix a radius $r_\bullet>0$ with $r_\bullet\leq\tfrac1{2\sqrt2}$ and
+$\{a:\norm{a-a_\star}_{\star,\bullet}\leq r_\bullet\}\subseteq\Ureg_{\delta_\bullet}$ (both hold for
+$r_\bullet$ small, the first forcing $\tfrac12\Id\preceq C\preceq\tfrac32\Id$ since then
+$\norm{C-\Id}_{\Frob}\leq\sqrt2\,r_\bullet\leq\tfrac12$), and let
+$\tau_{r_\bullet}:=\inf\{n\geq0:\norm{a_n-a_\star}_{\star,\bullet}>r_\bullet\}$.
+
+\begin{proposition}[Exit probability]
+\label{prop:finite-horizon}
+In the setting of \Cref{thm:stoch-local-Riem} (resp.\ \Cref{thm:stoch-local-KL}), with
+$q_\bullet:=1-\mu_\bullet\Delta t$ and $\eta_\bullet$ the corresponding one-step floor increment
+($\eta_{\Riem}=192\Delta t^2N_\theta^2\LHs^2/B$, $\eta_{\KL}=204\Delta t^2N_\theta^2\LHs^2/B$), if
+$a_0$ satisfies $\norm{a_0-a_\star}_{\star,\bullet}\leq r_\bullet$ then for every $N\geq1$,
+\[
+    \Prob\bigl(\tau_{r_\bullet}\leq N\bigr)
+    \leq\frac{q_\bullet\,\norm{a_0-a_\star}_{\star,\bullet}^2+N\,\eta_\bullet}{(1-q_\bullet)\,r_\bullet^2}
+    =\frac{q_\bullet\,\norm{a_0-a_\star}_{\star,\bullet}^2+N\,\eta_\bullet}{\mu_\bullet\,\Delta t\,r_\bullet^2}.
+\]
+The two terms are controlled separately: the batch $B$ affects only $\eta_\bullet$, not the
+initial-condition term $q_\bullet\norm{a_0-a_\star}_{\star,\bullet}^2/(\mu_\bullet\Delta t\,r_\bullet^2)$,
+so containment needs both a \emph{deep-entry} condition on $a_0$ and a batch condition. Indeed
+$\Prob(\tau_{r_\bullet}\leq N)\leq\epsilon'$ holds whenever
+\[
+    \norm{a_0-a_\star}_{\star,\bullet}^2\leq\frac{\epsilon'}2\,\frac{\mu_\bullet\Delta t\,r_\bullet^2}{q_\bullet}
+    \qquad\text{and}\qquad
+    N\eta_\bullet\leq\frac{\epsilon'}2\,\mu_\bullet\Delta t\,r_\bullet^2,
+\]
+the latter, on substituting $\eta_\bullet=c'_\bullet\Delta t^2N_\theta^2\LHs^2/B$ ($c'_{\Riem}=192$,
+$c'_{\KL}=204$), becoming
+$\dfrac{c'_\bullet N\Delta t^2N_\theta^2\LHs^2}{B}\leq\dfrac{\epsilon'}2\mu_\bullet\Delta t\,r_\bullet^2$,
+i.e.\
+\[
+    B\geq\frac{2c'_\bullet\,N\,\Delta t\,N_\theta^2\LHs^2}{\epsilon'\,\mu_\bullet\,r_\bullet^2}
+    =\frac{c_\bullet\,N\,\Delta t\,N_\theta^2\LHs^2}{\epsilon'\,\mu_\bullet\,r_\bullet^2},
+    \qquad c_{\Riem}=384,\quad c_{\KL}=408.
+\]
+The deep-entry requirement motivates two nested regions
+$\mathcal U_{\mathrm{in}}\subsetneq\mathcal U_{\mathrm{out}}$: the local phase is entered on the smaller
+$\mathcal U_{\mathrm{in}}$ (guaranteeing small $\norm{a_0-a_\star}_{\star,\bullet}$) while the exit time
+is measured against the larger $\mathcal U_{\mathrm{out}}$ (radius $r_\bullet$); \Cref{cor:stoch-three-stage}
+supplies the high-probability entry into $\mathcal U_{\mathrm{in}}$.
+\end{proposition}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{Local rate, condition number, and the Gaussian limit}
+\label{subsec:local-condnum}
+
+\begin{remark}[Condition-number dependence and two stepsize regimes]
+\label{rem:local-condnum}
+By $\kappa_\star\leq\kappa^2$ (so $\log\kappa_\star\leq2\log\kappa$) and the definition of $\Gamma$,
+\[
+    \Gamma\leq N_\theta\Bigl(3+\tfrac4{\sqrt\pi}(1+2\log\kappa)\Bigr)=O(1+N_\theta\log\kappa),
+    \qquad A_\bullet=4+O(\Delta t)+\Gamma=O(1+N_\theta\log\kappa).
+\]
+Crucially, \Cref{lem:local-map-contraction} removed the energy-descent bound
+$\Delta t\leq1/(\beta_\star\bar\Lambda_\delta)$ from the stochastic local stepsize condition: since
+$\bar\Lambda_\delta\geq1/\alpha_\star$ gives $\beta_\star\bar\Lambda_\delta\geq\kappa_\star$ (up to
+$\kappa^2$), retaining that bound would have forced $\Delta t=O(\kappa^{-2})$ and contaminated the
+local rate with a spurious polynomial-$\kappa$ factor. Write $A_0:=4+\Gamma$, so $A_{\Riem}=A_0$ and,
+since $\Delta t\leq2/A_0\leq\tfrac12$ (as $A_0\geq4$), $A_{\KL}=A_0+2\Delta t\leq A_0+1$. The corrected
+windows are
+\[
+    0<\Delta t\leq\min\Bigl\{\tfrac2{A_0},\ \tfrac{B}{256\,A_0\,V_1}\Bigr\}\ (\Riem),
+    \qquad
+    0<\Delta t\leq\min\Bigl\{\tfrac2{A_0},\ \tfrac{B}{272\,A_{\KL}\,V_1}\Bigr\}\ (\KL),
+\]
+with $V_1=24+6N_\theta\LHs^2$; the first (linearized-gap) restriction is $\Delta t\leq2/(4+\Gamma)$ for
+both schemes. The Riemannian choice below is the largest value permitted by the two displayed
+sufficient conditions; the KL choice is an explicit \emph{conservative} certified stepsize that avoids
+the implicit dependence of $A_{\KL}$ on $\Delta t$ by replacing $A_{\KL}$ with $A_0+1$:
+\[
+    \Delta t_{\Riem}^\star:=\min\Bigl\{\tfrac2{A_0},\ \tfrac{B}{256\,A_0\,V_1}\Bigr\},
+    \qquad
+    \Delta t_{\KL}^\star:=\min\Bigl\{\tfrac2{A_0},\ \tfrac{B}{272\,(A_0+1)\,V_1}\Bigr\}\leq\tfrac{B}{272\,A_{\KL}\,V_1}.
+\]
+(The exact largest KL stepsize solves $2\Delta t^2+A_0\Delta t-\tfrac{B}{272V_1}\leq0$, i.e.\
+$\Delta t\leq\min\{\tfrac2{A_0},\,\tfrac14(\sqrt{A_0^2+B/(34V_1)}-A_0)\}$; the conservative choice above is
+simpler and of the same order.)
+At $\Delta t_\bullet^\star$ the per-step non-exit factor is
+$q_\bullet=1-\mu_\bullet\Delta t_\bullet^\star=1-\Theta\!\bigl(A_0^{-2}\min\{1,B/V_1\}\bigr)$ for both
+schemes (using $\mu_{\KL}\Delta t_{\KL}^\star\geq\Delta t_{\KL}^\star/(2(A_0+1))$). The floor
+$F_\bullet=c'_\bullet\Delta t\,A_\bullet N_\theta^2\LHs^2/B$ ($c'_{\Riem}=384$, $c'_{\KL}=408$)
+evaluates, via $\Delta t_\bullet^\star A_\bullet=\Theta(\min\{2,B/(c_\bullet V_1)\})$ ($c_{\Riem}=256$,
+$c_{\KL}=272$), to
+\[
+    F_\bullet=O\!\Bigl(N_\theta^2\LHs^2\min\{\tfrac1B,\tfrac1{V_1}\}\Bigr)
+    =\begin{cases}O(N_\theta^2\LHs^2/B), & B\gtrsim V_1,\\[1mm] O(N_\theta^2\LHs^2/V_1), & B\lesssim V_1,\end{cases}
+\]
+so the simplified floor $O(N_\theta^2\LHs^2/B)$ holds precisely in the large-batch branch. Hence, for
+both schemes,
+\[
+    N_{\mathrm{loc}}=\frac1{1-q_\bullet}\log\frac{r_0^2}\epsilon
+    =O\!\Bigl((4+\Gamma)^2\max\{1,V_1/B\}\log\tfrac{r_0^2}\epsilon\Bigr).
+\]
+Two regimes result.
+\emph{(i) Small-$\Gamma$ regime} (which includes sufficiently near-Gaussian targets). If $\Gamma=O(1)$
+(e.g.\ $\beta_\star-1=O(1)$) and $V_1/B=O(1)$ (batch $B\gtrsim V_1$), then $A_\bullet=O(1)$,
+$\Delta t_\bullet^\star=\Theta(1)$, and $N_{\mathrm{loc}}=O(\log\tfrac1\epsilon)$, \emph{independent of
+$\kappa$}. (This no longer requires
+$\beta_\star\bar\Lambda_\delta=O(1)$, which the removed constraint would have demanded; $\Gamma=O(1)$
+alone does not bound $V_1$ or the admissible radius, so the batch condition $B\gtrsim V_1$ is stated
+separately.)
+\emph{(ii) Universal window.} When $\Gamma$ grows, the worst case $\Gamma=\Theta(N_\theta\log\kappa)$
+gives, in the large-batch branch $B\gtrsim V_1$,
+$N_{\mathrm{loc}}=O\bigl((4+\Gamma)^2\log\tfrac1\epsilon\bigr)=O\bigl((N_\theta\log\kappa)^2\log\tfrac1\epsilon\bigr)$;
+for general $B$ this carries the extra factor $\max\{1,V_1/B\}$.
+Thus, suppressing dimension and the non-Gaussianity factor $V_1/B$, the universal local complexity is
+$O((\log\kappa)^2\log\tfrac1\epsilon)$. A genuinely intermediate $O(N_\theta\log\kappa\cdot\log\tfrac1\epsilon)$
+bound, valid when $\Gamma=\Theta(\log\kappa)$ while $\Delta t=\Theta(1)$, is \emph{not} proved here: it
+would require a sharper $\Gamma$-independent linearized-gap stepsize theorem. This is the same
+limitation flagged in the deterministic three-stage analysis and is separate from the
+polynomial-$\kappa$ global floor.
+\end{remark}
+
+\begin{corollary}[Gaussian targets: zero additive floor; deterministic under matched covariance; exact recovery under rescue]
+\label{cor:stoch-local-gauss}
+If $V(x)=\tfrac12(x-\mu)^\top H(x-\mu)+c$ with $H\succ0$, then $\LHs=0$, so $V_0=\sigma_\star^2=0$ and
+$\eta_\bullet=0$. Under the stepsize hypotheses of the corresponding stochastic-local theorem
+(\Cref{thm:stoch-local-Riem,thm:stoch-local-KL})---in particular $0<\Delta t\leq2/(4+\Gamma)=\tfrac12$
+for Gaussian targets, since $\Gamma=0$, which gives $|1-\Delta t|<1$---three cases are distinguished by
+the covariance initialization (whitened, so $C_\star=\Id$).
+\begin{enumerate}
+\item[(a)] \emph{Generic $C_0\neq\Id$.} The \emph{additive} floors in
+\Cref{thm:stoch-local-Riem,thm:stoch-local-KL} vanish, and the exit bound of
+\Cref{prop:finite-horizon} loses its $N$-growing term:
+\[
+    \E[\norm{a_N-a_\star}_{\star,\bullet}^2;\tau_\bullet>N]\leq(1-\mu_\bullet\Delta t)^N\norm{a_0-a_\star}_{\star,\bullet}^2,
+    \qquad
+    \Prob(\tau_{r_\bullet}\leq N)\leq\frac{q_\bullet\norm{a_0-a_\star}_{\star,\bullet}^2}{\mu_\bullet\Delta t\,r_\bullet^2}.
+\]
+These remain mean-square / in-probability statements: the STL mean-score noise
+$\varepsilon_b=(C^{-1/2}-C^{1/2})Z$ is nonzero whenever $C\neq\Id$, so contraction is \emph{not}
+pathwise and the exit probability is \emph{not} zero. The state-dependent constant $V_1=24$ survives
+($V_1$ does not contain $\LHs$), so the mean noise persists along any trajectory with $C\neq\Id$.
+\item[(b)] \emph{Matched covariance $C_0=\Id$ (i.e.\ $C_0=C_\star$), $m_0\neq0$.} Then
+$\varepsilon_b=(C^{-1/2}-C^{1/2})Z=0$ and $\varepsilon_H=\nabla^2\widehat V-A(a)=0$ pathwise, both
+covariance updates fix $C_n\equiv\Id$, and the mean update is \emph{deterministic},
+$m_{n+1}=(1-\Delta t)m_n$ for both schemes. The iterate is therefore pathwise deterministic and
+contracts to $a_\star$ with no stochastic noise---so no exit-probability control is needed---even
+though $m_0\neq m_\star$. Thus zero-noise pathwise evolution requires only $C_0=C_\star$, not
+$a_0=a_\star$.
+\item[(c)] \emph{Quadratic-rescue initialization.} The rescue sets $a_0=a_\star$ exactly
+(\Cref{thm:gauss-recovery}), the special case of (b) with $m_0=0$; then $a_n\equiv a_\star$ for all $n$
+and the pipeline returns $a_\star$ after the single query. No local phase is needed.
+\end{enumerate}
+Part~(a) is the local mean-square form of the sticking-the-landing zero-\emph{additive}-floor property
+(\Cref{prop:gauss-nofloor}); part~(b) is zero-noise pathwise contraction under matched covariance; and
+exactness at $a_\star$ is special to (c).
+\end{corollary}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsubsection{Global-to-local entry}
+\label{subsec:global-to-local}
+
+The local theorems assume entry into the certified region. The following corollary supplies that
+entry from the global stochastic guarantees, completing the stochastic three-stage story with a
+single union bound. It uses the two nested regions of \Cref{prop:finite-horizon}: entry is certified
+on the inner level $\delta_{\mathrm{in}}$, while the exit time is measured against the outer ball of
+radius $r_\bullet$.
+
+\begin{corollary}[Stochastic global-to-local pipeline]
+\label{cor:stoch-three-stage}
+Fix a scheme $\bullet$, a stochastically admissible outer level $\delta_{\mathrm{out}}$ with radius
+$r_\bullet\leq\tfrac1{2\sqrt2}$ satisfying $\{a:\norm{a-a_\star}_{\star,\bullet}\leq r_\bullet\}\subseteq\Ureg_{\delta_{\mathrm{out}}}$,
+and stepsize/batch $(\Delta t,B)$ satisfying the hypotheses of \Cref{thm:stoch-local-Riem} (resp.\
+\Cref{thm:stoch-local-KL}) at level $\delta_{\mathrm{out}}$. Fix failure budgets
+$\epsilon_{\mathrm{ent}},\epsilon'\in(0,1)$ and an inner level $\delta_{\mathrm{in}}\leq\delta_{\mathrm{out}}$
+small enough for the deep-entry condition
+\[
+    \mathfrak b_{\star,\bullet}(\delta_{\mathrm{in}})^2\,\delta_{\mathrm{in}}
+    \leq\frac{\epsilon'}2\cdot\frac{\mu_\bullet\Delta t\,r_\bullet^2}{q_\bullet},\qquad q_\bullet=1-\mu_\bullet\Delta t .
+\]
+Run a stochastic global scheme (\Cref{thm:Riem-Hlip,thm:Riem-selfbound,thm:KL-Hlip,thm:KL-selfbound}
+at constant step, or \Cref{thm:decreasing}) for $N_1$ steps until $\E\Delta_{N_1}\leq\epsilon_{\mathrm{ent}}\delta_{\mathrm{in}}$
+(achievable when the global floor is below $\epsilon_{\mathrm{ent}}\delta_{\mathrm{in}}$ at constant step,
+or for $N_1$ large under the decreasing schedule), then switch to the local scheme with batch
+$B\geq c_\bullet N_2\Delta t\,N_\theta^2\LHs^2/(\epsilon'\mu_\bullet r_\bullet^2)$ ($c_{\Riem}=384$,
+$c_{\KL}=408$). Write $E_{\mathrm{in}}:=\{a_{N_1}\in\Ureg_{\delta_{\mathrm{in}}}\}$ and the shifted exit
+time $\tau^{(N_1)}:=\inf\{n\geq0:\norm{a_{N_1+n}-a_\star}_{\star,\bullet}>r_\bullet\}$. Then for any local
+horizon $N_2$,
+\[
+    \Prob\bigl(E_{\mathrm{in}}\cap\{\tau^{(N_1)}>N_2\}\bigr)\geq 1-\epsilon_{\mathrm{ent}}-\epsilon',
+\]
+and the entry-restricted non-exit second moment obeys
+\[
+    \E\bigl[\norm{a_{N_1+N_2}-a_\star}_{\star,\bullet}^2\,;\,E_{\mathrm{in}},\,\tau^{(N_1)}>N_2\bigr]
+    \leq(1-\mu_\bullet\Delta t)^{N_2}\,\mathfrak b_{\star,\bullet}(\delta_{\mathrm{in}})^2\delta_{\mathrm{in}}
+    +F_\bullet,
+\]
+with the explicit floors
+$F_{\Riem}=\dfrac{384\,\Delta t\,(4+\Gamma)\,N_\theta^2\LHs^2}{B}$ and
+$F_{\KL}=\dfrac{408\,\Delta t\,(4+2\Delta t+\Gamma)\,N_\theta^2\LHs^2}{B}$. The restriction to
+$E_{\mathrm{in}}$ is necessary: on $E_{\mathrm{in}}^c$ the iterate may lie in the outer ball with
+$\norm{a_{N_1}-a_\star}_{\star,\bullet}$ only bounded by $r_\bullet$ (not $r_0$), so the local
+contraction does not control that mass.
+\end{corollary}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[What is and is not proved]
+\label{rem:stoch-local-scope}
+\Cref{thm:stoch-local-Riem,thm:stoch-local-KL} are \emph{non-exit} (killed-process) statements: they
+bound the mean-square deviation on the survival event $\{\tau_\bullet>N\}$, and do not claim a
+pathwise or stopped-process bound. They are localized because a bounded local energy sublevel cannot
+be pathwise invariant at fixed stepsize: the standing assumptions do not guarantee bounded support for
+the STL mean-score noise. Even for a standard Gaussian target, away from $C=\Id$ it equals
+$(C^{-1/2}-C^{1/2})Z$ and so has unbounded support---this counterexample alone suffices---so a
+projection, clipping, or safeguarding mechanism would be needed for pathwise containment. We do \emph{not} assert almost-sure eventual exit; the present assumptions simply do not
+imply infinite-horizon almost-sure containment in a bounded region. Note that the sampled-Hessian
+covariance noise $\varepsilon_H$ is, by contrast, bounded a.s.\ ($\alpha_\star\Id\preceq\overline H_n\preceq\beta_\star\Id$),
+so it is specifically the mean/score component that obstructs pathwise invariance.
+\Cref{prop:finite-horizon} converts the non-exit bound into the operative guarantee: with a deep-entry
+condition on $a_0$ and a batch $B=\Omega(N)$, the iterate stays in the band over horizon $N$ with high
+probability, and on that event the floor is $O(\Delta t\,A_\bullet N_\theta^2\LHs^2/B)$. The floor
+constants ($V_0,V_1$; the aggregate coefficients $64,68$; the exponential-remainder constant $e/2$)
+are explicit and conservative, proved in \Cref{lem:local-variance,lem:exp-perturb,lem:local-perturb-Riem,lem:local-perturb-KL};
+they are not optimized, and only their orders in $(\Delta t,N_\theta,\LHs,B,A_\bullet)$ enter the
+conclusions.
+\end{remark}
+
+\subsection{Floor-free convergence via decreasing stepsizes}
+\label{sec:decreasing}
+
+At constant stepsize the algorithm converges to a floor. \emph{Under Hessian-Lipschitzness}
+(\Cref{assump:global-Hess-Lip}), a common decreasing schedule removes the floor and gives floor-free
+$O(1/N)$ convergence for non-Gaussian targets, unconditionally for both schemes. It is stated only in
+the Hessian-Lipschitz regime: in the assumption-minimal self-bounding regime the stability threshold
+is $\Delta t=\Theta(\kappa^{-2})$ rather than $1/(8\kappa)$, so the schedule
+\eqref{eq:decreasing-schedule} does not apply as written and a separate schedule and recursion would
+be required.
+
+\begin{theorem}[Decreasing-stepsize floor-free convergence]
+\label{thm:decreasing}
+Assume \Cref{assump:logconcave-smooth,assump:global-Hess-Lip}, initialize with \eqref{eq:rescue},
+and run either \eqref{eq:Riem-STL} or \eqref{eq:KL-STL} with the schedule
+\begin{equation}
+\label{eq:decreasing-schedule}
+    \Delta t_n=\frac{8\kappa}{n+n_0},
+    \qquad
+    n_0\geq64\kappa^2 .
+\end{equation}
+Then $\Delta t_n\leq1/(8\kappa)$ for all $n\geq0$, and with $c_{\mathsf S}:=\tfrac74$,
+$\Psi_H=N_\theta^2\barLH^2$,
+\begin{equation}
+\label{eq:decreasing-rate}
+    \boxed{\;
+    \E\Delta_N\leq\frac{K}{N+n_0},
+    \qquad
+    K:=\max\Bigl\{\frac{64\,c_{\mathsf S}\,\kappa^3\Psi_H}B,\;n_0\,\Delta(a_0)\Bigr\}.
+    \;}
+\end{equation}
+In particular, with the canonical offset $n_0=\lceil64\kappa^2\rceil$,
+\begin{equation}
+\label{eq:decreasing-rate-canonical}
+    K=\widetilde O\!\Bigl(\frac{\kappa^3N_\theta^2\barLH^2}B+\kappa^2\Delta(a_0)\Bigr);
+\end{equation}
+for a larger offset $n_0\gg\kappa^2$ the initialization contribution $n_0\Delta(a_0)$ scales with the
+chosen $n_0$ rather than $\kappa^2$.
+\end{theorem}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Reading the floor-free rate]
+\label{rem:decreasing-reading}
+The bound \eqref{eq:decreasing-rate} is a genuine $O(1/N)$ decay to zero, not to a floor: the
+$\Psi_H$-dependent term is carried inside $K$ and divided by $N+n_0$. For a Gaussian target
+$\Psi_H=0$ and $\Delta(a_0)=0$ (\Cref{thm:gauss-recovery}), so $K=0$ and convergence is immediate.
+The schedule requires only $\barLH<\infty$ to define $K$; the iteration itself does not use $\LH$.
+\end{remark}
+
+\subsection{Gaussian targets: the vanishing floor}
+\label{sec:gauss-nofloor}
+
+Every stochastic floor in \Cref{sec:stoch-Riem,sec:stoch-KL} originates from the intrinsic Hessian
+fluctuation $\Psi$ entering the one-step estimates \eqref{eq:Riem-onestep-Psi} and
+\eqref{eq:KL-onestep-Psi}. The Hessian-Lipschitz floors
+(\Cref{thm:Riem-Hlip,thm:KL-Hlip}) display this directly, being proportional to
+$\Psi_H=N_\theta^2\barLH^2$; the self-bounding floors (\Cref{thm:Riem-selfbound,thm:KL-selfbound})
+no longer show $\Psi$ explicitly only because the coarse universal estimate of
+\Cref{lem:Psi-self-bound} has already been substituted. Since $\Psi\equiv0$ for Gaussian targets at
+the estimator level, all of them vanish once one returns to the intrinsic one-step; this is the
+sticking-the-landing zero-floor property in the intrinsic metric.
+
+\begin{proposition}[Zero intrinsic fluctuation for Gaussian targets]
+\label{prop:gauss-nofloor}
+If $V(x)=\tfrac12(x-\mu)^\top H(x-\mu)+c$ with $H\succ0$, then $\nabla^2V(X)=H$ for all $X$, so
+$A(a)=H$ and $\Psi(a)\equiv0$ for every $a\in\Aspace$; the additive stochastic term in the
+\emph{intrinsic} $\Psi$-dependent one-step inequalities of \Cref{sec:stoch-Riem,sec:stoch-KL} (the
+Riemannian and KL intrinsic estimates) therefore vanishes \emph{unconditionally} (the coarse
+self-bounding recursions, in which the universal bound on $\Psi$ has already been substituted, retain
+explicit residual terms and do not visibly vanish).
+Consequently, \emph{under the covariance-band and stepsize hypotheses of the corresponding global
+one-step theorem}---the band $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$ (Riemannian) resp.\
+$\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$ (KL) and the stepsize of \Cref{thm:Riem-Hlip}
+resp.\ \Cref{thm:KL-Hlip}, with pathwise band persistence given by the stochastic covariance-band
+\Cref{lem:stoch-band} and satisfied from $n=0$ by the quadratic-rescued pipeline
+(\Cref{thm:disc-rescue-to-FR})---both schemes contract geometrically with no floor:
+\[
+    \E\Delta_N\leq(1-c\kappa^{-2})^N\Delta(a_0),
+\]
+with $c=\tfrac1{24}$ (Riemannian, $B=1$) or $c=\tfrac1{16}$ (KL). Under quadratic rescue $a_0=a_\star$
+(\Cref{thm:gauss-recovery}), so $\Delta(a_0)=0$ and the iterates remain exactly at $a_\star$; the
+geometric statement is then trivially satisfied but exact. (The factors $c\kappa^{-2}$ are
+band-dependent; $\Psi\equiv0$ alone gives the pure descent but not the $\kappa^{-2}$ rate.)
+\end{proposition}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{remark}[Scope of the zero-floor property]
+\label{rem:gauss-nofloor-scope}
+The zero-floor property is specific to Gaussian targets: it requires the sampled Hessian
+$\nabla^2V(X)$ to equal its mean $A(a)$ pathwise, i.e.\ a constant Hessian. For a non-Gaussian
+strongly log-concave target, $\Psi$ is strictly positive on any neighborhood where $\nabla^2V$
+varies, and the constant-stepsize floor is genuinely nonzero; floor-free convergence then requires the
+decreasing schedule of \Cref{thm:decreasing}.
+\end{remark}
+
+\subsection{Complexity summary and regime comparison}
+\label{sec:regime-comparison}
+
+\Cref{tab:complexity} collects the stochastic complexities. Throughout, the rescue contributes one
+deterministic query; the reported iteration counts are those of Phase~I. The four constant-stepsize
+global rows and the decreasing-stepsize row are unconditional expectation bounds at single sample
+($B=1$); the two local rows are localized non-exit bounds, conditional on certified entry into
+$\Ureg_{\delta_\bullet}$, shown with general batch $B$ (minibatching is central to the local survival
+result). Here $\widetilde O$ suppresses factors logarithmic in $\kappa$, $N_\theta$,
+$\Delta(a_0)/\epsilon$, and $\barLH$.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llccc}
+\hline
+Scheme / regime & controlled qty & floor & contraction & $N$ (to $\epsilon$ above floor) \\
+\hline
+Riem., self-bounding & $\E\Delta_N$ & $O(\kappa N_\theta)$ & $1-\Theta(\kappa^{-3})$ & $\widetilde O(\kappa^3)$ \\
+Riem., Hess.-Lip. & $\E\Delta_N$ & $O(\kappa N_\theta^2\barLH^2)$ & $1-\Theta(\kappa^{-2})$ & $\widetilde O(\kappa^2)$ \\
+KL, self-bounding & $\E\Delta_N$ & $O(\kappa N_\theta)$ & $1-\Theta(\kappa^{-3})$ & $\widetilde O(\kappa^3)$ \\
+KL, Hess.-Lip. & $\E\Delta_N$ & $O(\kappa N_\theta^2\barLH^2)$ & $1-\Theta(\kappa^{-2})$ & $\widetilde O(\kappa^2)$ \\
+\hline
+Riem., local (non-exit, $B{\gtrsim}V_1$) & $\E[r_N^2;\tau{>}N]$ & $O(N_\theta^2\LHs^2/B)$ & $1-\Theta((4+\Gamma)^{-2})$ & $\widetilde O((4+\Gamma)^2)$ \\
+KL, local (non-exit, $B{\gtrsim}V_1$) & $\E[r_N^2;\tau{>}N]$ & $O(N_\theta^2\LHs^2/B)$ & $1-\Theta((4+\Gamma)^{-2})$ & $\widetilde O((4+\Gamma)^2)$ \\
+\hline
+Decreasing step & $\E\Delta_N$ & $0$ & --- & $\widetilde O\!\bigl(\tfrac{\kappa^3N_\theta^2\barLH^2+\kappa^2\Delta(a_0)}{\epsilon}\bigr)$ \\
+Gaussian target & $\E\Delta_N$ & $0$ & --- & $0$ \\
+\hline
+\end{tabular}
+\caption{Stochastic complexity across regimes; global rows are displayed at $B=1$, local rows retain
+general batch $B$. The
+iteration counts $N$ are to accuracy $\epsilon$ \emph{above the stated floor} (the constant-stepsize
+rows do not converge below their floor). The
+self-bounding rows use \Cref{assump:logconcave-smooth}; the Hessian-Lipschitz and decreasing-step
+rows additionally use \Cref{assump:global-Hess-Lip}. Minibatching $B=\Theta(\kappa)$ trades the
+self-bounding regime to $\widetilde O(\kappa^2)$ rounds at $\widetilde O(\kappa^3)$ total oracle
+pairs. The decreasing-step row is at $B=1$ (general $B$ carries a $1/B$ on the stochastic term) and
+uses the canonical offset $n_0=\lceil64\kappa^2\rceil$ of \eqref{eq:decreasing-rate-canonical}, under
+which the initialization term is $\kappa^2\Delta(a_0)$; it has zero asymptotic floor. The Gaussian
+row is exact after the one rescue query. The two \emph{local (non-exit)} rows
+(\Cref{sec:stoch-local}) apply once the iterate has entered the certified region
+$\Ureg_{\delta_\bullet}$: they control the non-exit (killed) second moment
+$\E[\norm{a_N-a_\star}_{\star,\bullet}^2;\tau{>}N]$ (not $\E\Delta_N$; on $\Ureg_{\delta_\bullet}$ these
+are related by the coercivity bound $\norm{a-a_\star}_\star^2\leq\mathfrak b(\delta_\bullet)^2\Delta(a)$
+of \Cref{cor:band}, the direction used for the entry conversion) at the
+target-adaptive local rate (with $\Delta t=\Theta((4+\Gamma)^{-1})$ under the universal window),
+paired with the finite-horizon containment of \Cref{prop:finite-horizon} and the entry corollary
+\Cref{cor:stoch-three-stage}; their floor is proportional to $\LHs^2\leq\barLH^2$ and its additive part
+vanishes for Gaussian targets. The displayed local contraction $1-\Theta((4+\Gamma)^{-2})$ and count
+$\widetilde O((4+\Gamma)^2)$ are the large-batch branch $B\gtrsim V_1$; for general $B$ they read
+$1-\Theta\bigl((4+\Gamma)^{-2}\min\{1,B/V_1\}\bigr)$ and $\widetilde O\bigl((4+\Gamma)^2\max\{1,V_1/B\}\bigr)$
+(\Cref{rem:local-condnum}). In the small-$\Gamma$ regime ($\Gamma=O(1)$, $B\gtrsim V_1$; including
+sufficiently near-Gaussian targets) the count is $\widetilde O((4+\Gamma)^2)=O(1)$ in its
+$\kappa$-dependence, i.e.\ $O(\log\tfrac1\epsilon)$ (only the squared form follows from the theorem,
+though $4+\Gamma=O(1)$ makes $O(4+\Gamma)$ and $O((4+\Gamma)^2)$ coincide). The local $N$-column is a
+\emph{round} complexity for contraction of the killed second moment; enforcing the finite-horizon
+survival probability of \Cref{prop:finite-horizon} requires the additional horizon-dependent batch
+$B=\Omega\bigl(N N_\theta^2\LHs^2/(\epsilon' r_\bullet^2)\bigr)$ and may raise the total oracle
+complexity, so these rows are not high-probability oracle-complexity results.}
+\label{tab:complexity}
+\end{table}
+
+\subparagraph{The $\kappa^3\to\kappa^2$ improvement.}
+The single-sample gap between the two constant-stepsize regimes is exactly one factor of $\kappa$.
+Under \Cref{assump:logconcave-smooth} alone, the self-bounding estimate
+(\Cref{lem:Psi-self-bound}) charges the fluctuation $\Psi$ against the gradient norm, forcing the
+stepsize down to $\Delta t=\Theta(\kappa^{-2})$ (through $\rho_B\asymp\kappa$ at $B=1$) and giving
+contraction $1-\Theta(\kappa^{-3})$. Under the additional \Cref{assump:global-Hess-Lip}, the
+fluctuation is controlled by the target's nonquadraticity directly (\Cref{lem:Psi-Hg}), decoupling
+it from the gradient norm; the stepsize rises to $\Delta t=\Theta(\kappa^{-1})$ and the contraction
+improves to $1-\Theta(\kappa^{-2})$. The floor changes correspondingly from $O(\kappa N_\theta)$,
+which is dimension-linear and target-agnostic, to $O(\kappa N_\theta^2\barLH^2)$, which is
+dimension-quadratic but proportional to the squared non-Gaussianity $\barLH^2$ and hence far
+smaller for near-Gaussian targets.
+
+\subparagraph{Scope and limitations.}
+The stochastic theory presupposes a Price/Hessian oracle (\Cref{def:oracle}); the almost-sure
+spectral bound \eqref{eq:pathwise-Hess} it provides is what makes the covariance band forward
+invariant pathwise (\Cref{lem:stoch-band}) and the global theorems unconditional. A gradient-only
+covariance estimator does not enjoy this bound (\Cref{rem:price}), and the pathwise arguments do not
+transfer to it. The Hessian-Lipschitz floor scales as $N_\theta^2$; the whitened per-eigenvalue
+refinement that would reduce this to $N_\theta$ is not pursued here. Both the global Riemannian and KL
+stochastic rates are unconditional (the KL analysis matches the Riemannian one through the
+exponential-retraction identity of \Cref{lem:KL-logtangent}); the local rates are non-exit bounds,
+conditional on certified entry and paired with finite-horizon exit control. All constants are stated
+explicitly and are those derived in the one-step lemmas; no unspecified absolute constants enter the
+boxed bounds.
+The stochastic local theory (\Cref{sec:stoch-local}) is deliberately a \emph{non-exit}
+(killed-process) statement, not a stopped-process bound: because the STL mean-score noise generally
+has unbounded support under Gaussian sampling (the sampled-Hessian covariance noise, by contrast, is
+bounded a.s.), and because the standing assumptions do not provide bounded STL mean-score noise,
+pathwise invariance of a bounded local sublevel cannot be guaranteed at fixed stepsize without
+projection, clipping, or another safeguard (the Gaussian $C\neq\Id$ counterexample $(C^{-1/2}-C^{1/2})Z$
+shows no general pathwise-invariance theorem is possible); so the operative guarantee is mean-square
+contraction on the survival event plus the
+finite-horizon exit-probability bound of \Cref{prop:finite-horizon}. Under a deep-entry condition on
+the initialization and a batch $B=\Omega(N)$, a horizon-$N$ run stays in the band with high
+probability; \Cref{cor:stoch-three-stage} supplies the high-probability entry from the global phase by
+Markov's inequality. We do not claim almost-sure infinite-horizon containment in general; for Gaussian
+targets, however, the noise is pathwise zero whenever $C_0=C_\star$, yielding deterministic contraction
+and \emph{exact pathwise containment} for any matched-covariance initialization in the certified region
+(\Cref{cor:stoch-local-gauss}(b)). Quadratic rescue is the special case $a_0=a_\star$, for which exact
+recovery and stationarity ($a_n\equiv a_\star$) occur immediately with no iterative phase. The explicit constants
+($V_0,V_1$, the aggregate $64,68$, the exponential remainder $e/2$) are conservative and not
+optimized (\Cref{rem:stoch-local-scope}); only their orders enter the conclusions.
+
+\subparagraph{Per-iteration linear algebra.}
+The complexities above count Price/Hessian oracle pairs, not dense linear algebra. Each iteration
+also performs, in the ambient dimension $N_\theta$: a matrix exponential and a symmetric
+factorization for the Riemannian covariance update, or a symmetric positive-definite solve/inverse
+for the KL resolvent update, each $O(N_\theta^3)$; $B$ oracle pairs; and $O(N_\theta^2)$ vector work
+for the STL score. The one-time rescue is one gradient/Hessian pair and one SPD solve. Thus the
+wall-clock cost per iteration is $O(N_\theta^3+B\,c_{\mathrm{oracle}})$, and oracle complexity should
+not be read as total arithmetic complexity when $N_\theta$ is large.
+
+\section{Numerical illustrations}
+\label{sec:numerics}
+\TODO{Confirmatory experiments (one figure + a two-line takeaway each): covariance burn-in scaling;
+global localization vs.\ $\kappastar$ on the spiral family (continuous-flow fixed point, not the
+discrete map); the fixed-step lower bound (bump train; reproduce the energy ratio $\approx0.273$
+across $\kappa\in\{10,20,40,80,160\}$); Gaussian-core exactness of the certified region; the local-rate
+frontier (radial-softplus counterexample); and stochastic end-to-end behavior (Monte Carlo on a
+non-Gaussian target with analytic energy).}
+
+\section{Discussion and open problems}
+\label{sec:discussion}
+\TODO{Open problems: the continuous-time global-localization lower bound (the open ledger cell), with a
+necessary-conditions checklist for any future construction; the $N_\theta^{p}$, $p\in[1/4,1)$ local-rate
+frontier and whether the counterexamples Codazzi/Bochner structure closes it; reducing the variance
+floor $N_\theta^2\to N_\theta$ and the global $\kappa$-exponent to $\sqrt\kappa$; removing the squared
+$(4+\Gamma)^2$ local factor via KL/Bregman A-stability; and the Gaussian-mixture extension (WFR flow),
+where spectral covariance propagation fails unconditionally.}
+
+\appendix
+
+\section{The logarithmic-spiral construction}
+\label{app:spiral}
+\TODO{Insert the full logarithmic-spiral potential $V_K$ on $\R^2$, the admissible anisotropic
+initialization, the global Hessian certificate, the Gaussian shadowing certificate, and the
+optimizer-covariance / $\kappastar$ computation supporting \Cref{thm:spiral-sharp,cor:cont-sharp}.}
+
+\section{The bump-train construction}
+\label{app:bumptrain}
+\TODO{Insert the flat-top curvature bump $\varphi$, the bump train, the geometry of the centers,
+regularity and exact condition number, averaged curvature and score at the centers, uniform discrete
+shadowing for both covariance maps, and the macroscopic objective-gap lemma supporting
+\Cref{thm:disc-global-sharp,cor:disc-global-sharp}.}
+
+\section{Proof of the deterministic KL/Bregman one-step estimate}
+\label{app:KL-onestep}
+
+This appendix proves \Cref{prop:KL-onestep} in full, with no imported constants. Throughout, fix
+$a=(m,C)$ with $L_n\Id\preceq C\preceq\Lambda\Id$, write $A:=A(a)$, $g:=g(a)$, $R:=C^{-1}-A$,
+$\LB=\beta\Lambda\geq1$, and assume $0<\Delta t\leq1/\LB$. Recall $\calE=\calE_1+\calE_2$ with
+$\calE_1(a)=-\tfrac12\log\det C+\text{const}$ and $\calE_2(a)=\E_{\rho_a}[V]$, and the Bonnet--Price
+identities $\nabla_m\calE_2=\E_{\rho_a}[\nabla V]=-g$, $\nabla_C\calE_2=\tfrac12\E_{\rho_a}[\nabla^2V]=\tfrac12A$.
+The descent argument uses only convexity and $\beta$-smoothness of $V$ ($0\preceq\nabla^2V\preceq\beta\Id$),
+which hold under \Cref{assump:logconcave-smooth}.
+
+\subsection{Variational characterization and explicit maps}
+\label{app:KL-var}
+
+\begin{lemma}
+\label{lem:KL-argmin}
+The KL/Bregman update \eqref{eq:KL-det} is the forward--backward proximal step
+\begin{equation}
+\label{eq:KL-argmin}
+    a_{n+1}=\arg\min_{a'=(m',C')}\Bigl\{\Delta t\,\inner{\nabla\calE_2(a)}{a'-a}+\Delta t\,\calE_1(a')+\KL(\rho_{a'}\|\rho_a)\Bigr\},
+\end{equation}
+which linearizes the potential $\calE_2$ explicitly and treats the entropy $\calE_1$ implicitly, and
+its minimizer is
+\begin{equation}
+\label{eq:KL-maps}
+    m_{n+1}=m+\Delta t\,C g,
+    \qquad
+    C_{n+1}=(1+\Delta t)(C^{-1}+\Delta t\,A)^{-1}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{A scalar inequality for the covariance factor}
+\label{app:KL-scalar}
+
+\begin{lemma}
+\label{lem:scalar-KL}
+Let $0<\Delta t\leq1/\LB$, $\mu\in[0,\LB]$, and $b:=\sqrt{(1+\Delta t)/(1+\Delta t\,\mu)}$. Then
+\begin{equation}
+\label{eq:scalar-KL}
+    \mu(b-1)-\log b+\frac{\LB}2(b-1)^2\leq-\frac1{2\Delta t}\bigl(b^2-1-2\log b\bigr).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\subsection{Forward-KL descent and Wasserstein-gradient lower bound}
+\label{app:KL-descent}
+
+\begin{lemma}
+\label{lem:KL-onestep-app}
+For $0<\Delta t\leq1/\LB$,
+\begin{equation}
+\label{eq:KL-descent-app}
+    \calE(a_{n+1})\leq\calE(a)-\frac1{\Delta t}\KL(\rho_{a_{n+1}}\|\rho_a),
+\end{equation}
+and, with $\grad^{W_2}\calE(a)=(-g,-R)$ and
+$\norm{\grad^{W_2}\calE(a)}_{W_2}^2=\norm g^2+\Tr(RCR)$ (\Cref{lem:W2-PL}),
+\begin{equation}
+\label{eq:KL-lower}
+    \KL(\rho_{a_{n+1}}\|\rho_a)\geq\frac{L_n\Delta t^2}{4(1+\Delta t\,\LB)^2}\,\norm{\grad^{W_2}\calE(a)}_{W_2}^2 .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+Together \Cref{lem:KL-argmin,lem:scalar-KL,lem:KL-onestep-app} prove \Cref{prop:KL-onestep}. Every
+constant---the variational maps, the descent margin, and the lower-bound factor
+$\tfrac{L_n\Delta t^2}{4(1+\Delta t\LB)^2}$---is derived here; nothing is imported.
+
+\section{Non-Gaussian local modulus: detailed derivation}
+\label{app:Kng}
+
+This appendix gives the full auditable proofs of the score identities (\Cref{lem:second-score}) and
+the non-Gaussian modulus bound (\Cref{lem:Kng}). We use the whitened notation of \Cref{sec:local}:
+$v=C^{-1/2}u$, $S=C^{-1/2}UC^{-1/2}$, $t=\norm\zeta_a$, $X=m+C^{1/2}Z$, $Z\sim\N(0,\Id)$, and
+$\bar\Sigma_\delta:=\min\{\Sigma_\delta,\beta_\star-\alpha_\star\}$. Recall the whitened score
+generator $\mathcal L$ (Ornstein--Uhlenbeck), which acts as multiplication by $-k$ on the $k$-th
+Hermite chaos, so that for $\phi=\sum_{k\geq1}\phi_k$ one has, by Gaussian integration by parts
+($-\mathcal L=\nabla^*\nabla$),
+$\E\norm{\nabla(-\mathcal L)^{-1}\phi}^2=\E[\phi\,(-\mathcal L)^{-1}\phi]=\sum_{k\geq1}\tfrac1k\norm{\phi_k}_{L^2}^2$.
+In particular, when $\phi$ has only chaoses $\geq2$ (as does $\chi_\zeta$),
+$\E\norm{\nabla(-\mathcal L)^{-1}\phi}^2\leq\tfrac12\norm\phi_{L^2}^2$; the bound fails for chaos-one
+$\phi$ (e.g.\ $\phi=Z_1$ gives equality with constant $1$), but only chaoses $\geq2$ occur below.
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\begin{proof}
+\PROOFHOLE
+\end{proof}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

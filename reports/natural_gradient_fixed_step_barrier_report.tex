@@ -1,0 +1,345 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+
+\newcommand{\calE}{\mathcal{E}}
+\newcommand{\DeltaE}{\Delta\calE}
+
+\title{The Fixed-Step Barrier for Gaussian Natural Gradient\\
+\large Two counterexamples, and why Bures--Wasserstein escapes}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The manuscript proves that the fixed-step Gaussian natural gradient schemes reach a
+constant-factor reduction of the objective in $\Theta(\kappa^2)$ iterations at the
+globally certified stepsize $\Delta t=\Theta(\kappa^{-1})$, and that the bump-train
+construction of Appendix~C makes this sharp. Bures--Wasserstein achieves
+$O(\kappa)$. This report settles whether the extra factor is a proof artifact.
+It is not. Two counterexamples partition the fixed-step axis. For
+$\Delta t\le2/\kappa$ the bump train, retuned to the step in question, certifies
+$\Omega(T\kappa/\Delta t)$; we reproduce it numerically with fitted exponent $1.93$
+over $\kappa\in[128,1024]$. For $\Delta t>2/\kappa$ an \emph{exact nonoptimal
+period-two orbit} exists: we construct an even $C^\infty$ potential whose curvature
+range is exactly $[1,\kappa]$ with both bounds attained and
+$\|V'''\|_\infty=L_H$ dimension-free, on which both the Riemannian and the
+KL/Bregman scheme cycle forever. All $40$ Fisher--Rao runs fail to converge, and the
+orbit is not a knife edge --- every run still cycles under a $1\%$ relative
+perturbation of the initialization. The two regimes overlap only at
+$\Delta t\asymp1/\kappa$, where the bump-train count is $\asymp\kappa^2$: the best
+fixed step is $\Theta(1/\kappa)$ and the resulting $\Theta(\kappa^2)$ is intrinsic to
+fixed-step Fisher--Rao. On the \emph{same} targets the Bures--Wasserstein
+forward--backward step converges at its certified $\eta\le1/\beta$ in all $60$ runs,
+and first fails at exactly $\eta=2/\beta$. The mechanism is structural: the
+Fisher--Rao mean multiplier is $1-\Delta t\,c\,(\text{secant})$ and covariance
+stationarity pins $c$ to the reciprocal of the \emph{tangent}, so the multiplier is
+governed by a secant-to-tangent ratio that ranges over $[\kappa^{-1},\kappa]$;
+the Bures--Wasserstein mean update carries no covariance factor, so its multiplier is
+$1-\eta\,(\text{secant})$ and $\beta$ alone controls it. This report supersedes the
+earlier reading of the bump-train experiment, which concluded that the $\kappa^2$ was
+the price of the certified step; that conclusion was drawn from one construction and
+is corrected in Section~\ref{sec:correction}.
+\end{abstract}
+
+\section{Setup}
+\label{sec:setup}
+
+Normalize $\alpha=1$, $\beta=\kappa$ and write $a=(m,c)\in\R\times(0,\infty)$. For
+$X\sim\N(m,c)$ put $b(m,c):=\E[V'(X)]$ and $A(m,c):=\E[V''(X)]$. The two Fisher--Rao
+discretizations are
+\begin{equation}\label{eq:R-map}
+    m^+=m-\Delta t\,c\,b(m,c),
+    \qquad
+    c^+=c\exp\bigl(\Delta t[1-cA(m,c)]\bigr)
+\end{equation}
+and
+\begin{equation}\label{eq:KL-map}
+    m^+=m-\Delta t\,c\,b(m,c),
+    \qquad
+    c^+=\frac{(1+\Delta t)c}{1+\Delta t\,cA(m,c)} ,
+\end{equation}
+and the Bures--Wasserstein forward--backward step
+of Lambert et al.\ (arXiv:2304.05398) is
+\begin{equation}\label{eq:BW-map}
+    m^+=m-\eta\,b(m,c),
+    \qquad
+    \tilde c=(1-\eta A(m,c))^2c,
+    \qquad
+    c^+=\tfrac12\Bigl(\tilde c+2\eta+\sqrt{\tilde c(\tilde c+4\eta)}\Bigr),
+\end{equation}
+whose certified stepsize is $\eta\le1/\beta$. The objective is
+$\calE(m,c)=\E_{\N(m,c)}[V]-\tfrac12\log c$ and $\DeltaE$ is its gap.
+
+The single structural difference that this report turns on is visible already in
+\eqref{eq:R-map}--\eqref{eq:BW-map}: the Fisher--Rao mean update is preconditioned by
+$c$ and the Bures--Wasserstein one is not.
+
+Every quantity below is deterministic --- closed-form potentials, tabulated profile
+antiderivatives and Gauss--Hermite quadrature. No Monte Carlo, no randomness.
+
+\section{Regime $\Delta t\le2/\kappa$: the bump train}
+\label{sec:bump}
+
+Appendix~C generates bump centers by
+$x_{j+1}=x_j-s[x_j+H_\kappa(N_\kappa-j+\tfrac12)]$ with $s=\gamma/\kappa^2$. That
+constant is exactly the per-step mean gain $\Delta t\,c_\kappa$ at the certified step
+$\Delta t=\gamma/\kappa$ and the matched covariance $c_\kappa=1/\kappa$.
+
+\begin{remark}[The bump train is a template]
+\label{rem:template}
+Every hypothesis of the center lemma is $s$-free: summing the recursion gives
+$x_0-x_{N_\kappa}\le\frac{\kappa^2}s(TY+\tfrac12C_\varphi T^2)$, so
+$x_{N_\kappa}\ge\tfrac34x_0$ reduces to a constraint on $(T,Y)$ alone. Setting
+$s=\Delta t/\kappa$ therefore aims the same construction at any stepsize, and with
+$N_\kappa=T/s$ blocked steps it certifies $\Omega(T\kappa/\Delta t)$ iterations.
+\end{remark}
+
+Numerically the certified arm reproduces the theorem exactly
+(Tables~\ref{tab:shadowing} and~\ref{tab:scaling}): the iterates shadow the ideal centers to machine
+precision, $c_nA_n=1$ throughout, $n_{1/2}/N_\kappa\to1.042$ at $\kappa=1024$, and
+the fitted exponent over $\kappa\in[128,1024]$ is $1.93$ for both schemes.
+
+\begin{table}[t]
+\centering
+\input{assets/tab_sharp_shadowing.tex}
+\caption{Certified arm $\Delta t=\gamma/\kappa$ on the Appendix~C train (Riemannian;
+KL agrees to one iteration). Both shadowing errors are the sup over
+$0\le j\le N_\kappa$ and vanish to machine precision.}
+\label{tab:shadowing}
+\end{table}
+
+\begin{table}[t]
+\centering
+\input{assets/tab_sharp_scaling.tex}
+\caption{Iterations to a constant-factor gap reduction on the bump train.
+``Exponent'' is the least-squares slope of $\log n_{1/2}$ against $\log\kappa$ over
+the upper half of the grid. Both stepsize rules are fixed scalars.}
+\label{tab:scaling}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_sharp_bump_scaling.pdf}
+\caption{Bump train, iterations to $\DeltaE\le\DeltaE_0/2$ versus $\kappa$. Left: the
+Appendix~C train, built against $\Delta t=\gamma/\kappa$; an order-one step leaves
+that particular obstruction entirely. Right: the same construction retuned to each
+arm's own step, where the exponent is $1$. Section~\ref{sec:cycle} shows why the left panel
+does not license an order-one step.}
+\label{fig:scaling}
+\end{figure}
+
+\section{Regime $\Delta t>2/\kappa$: an exact two-cycle}
+\label{sec:cycle}
+
+\subsection{The mechanism}
+
+Both Fisher--Rao covariance maps are stationary exactly where $cA(m,c)=1$: at such a
+state \eqref{eq:R-map} gives $c^+=c\,e^0=c$ and \eqref{eq:KL-map} gives
+$c^+=(1+\Delta t)c/(1+\Delta t)=c$. The iteration then collapses to the scalar
+recursion
+\begin{equation}\label{eq:multiplier}
+    m^+=\Bigl(1-\Delta t\,c\,\frac{b(m,c)}{m}\Bigr)m
+      =\Bigl(1-\Delta t\,\frac{\text{secant}}{\text{tangent}}\Bigr)m,
+    \qquad
+    \text{secant}:=\frac{b(m,c)}m,\quad \text{tangent}:=A(m,c),
+\end{equation}
+using $c=1/A(m,c)$. For an even potential $b(m,c)=\int_0^mA(t,c)\,\dd t$, so the
+secant is the \emph{average} of $A$ over $[0,m]$ while the tangent is its
+\emph{endpoint} value. These are independent, and both lie in $[\alpha,\beta]$, so
+their ratio ranges over $[\kappa^{-1},\kappa]$. Choosing the ratio equal to
+$2/\Delta t$ makes the multiplier exactly $-1$, and evenness closes the orbit:
+\begin{equation}\label{eq:orbit}
+    (M,c)\;\longmapsto\;(-M,c)\;\longmapsto\;(M,c).
+\end{equation}
+The ratio $2/\Delta t$ is attainable precisely when $2/\Delta t\le\kappa$, that is
+when $\Delta t\ge2/\kappa$.
+
+Concretely, with $q:=2/\Delta t$, $p:=(\kappa+1)/(q+1)$ and $r:=qp$, one needs an even
+potential with $A(M,1/p)=p$ and $b(M,1/p)=rM$; then $c=1/p$ gives $cA=1$ and the
+multiplier is $1-\Delta t\,r/p=1-\Delta t\,q=-1$.
+
+\subsection{Realization with tight constants}
+
+The construction is only meaningful if the potential's condition number really is
+$\kappa$. A potential with $V''\in[p,P]$ and $P/p=O(1)$ would reproduce the orbit,
+but it would then merely restate the textbook explicit-step stability limit
+$\Delta t<2/\kappa_{\mathrm{true}}$ at $\kappa_{\mathrm{true}}=O(1)$, which is not a
+counterexample to anything. We therefore build $V''$ so that both curvature bounds are
+\emph{attained}:
+\begin{equation}\label{eq:cycle-potential}
+    V''(x)=
+    \begin{cases}
+        \kappa, & |x|\le x_1 \quad\text{(maximum attained)},\\
+        1, & x_1+d\le|x|\le x_2 \quad\text{(minimum attained)},\\
+        p, & |x|\ge x_2+d \quad\text{(sets $A(M,c)=p$)},
+    \end{cases}
+\end{equation}
+with $C^\infty$ transitions of width $d$, and $x_1$ solved by a scalar root-find so
+that $b(M,c)=rM$ exactly. The steepest transition has height $\kappa-1$, so
+$d=\Theta(\kappa/L_H)$ and $M=\Theta(\kappa/L_H)$: the family is admissible for any
+prescribed dimension-free Hessian-Lipschitz budget, exactly as the bump train is. The
+optimizer is $(0,1/\kappa)$, since $V''=\kappa$ on a neighbourhood of the origin of
+radius $x_1=\Theta(\kappa)$, and $\DeltaE(M,1/p)>0$, so the orbit is genuinely
+nonoptimal.
+
+The realization is exact to machine precision at every $(\kappa,\gamma)$ tested:
+$\min V''=1$ and $\max V''=\kappa$ so $\kappa_{\mathrm{realized}}=\kappa$,
+$\|V'''\|_\infty=L_H=1.0000$, $cA(M,c)=1$ to $12$ digits, and the mean multiplier is
+$-1$ to $12$ digits.
+
+\subsection{Result}
+
+\begin{table}[t]
+\centering
+\input{assets/tab_two_cycle.tex}
+\caption{Both Fisher--Rao schemes cycle forever at every fixed order-one $\gamma$
+tested; the Bures--Wasserstein step converges on the \emph{same} target at its
+certified $\eta=1/\beta$. The last column confirms the Hessian-Lipschitz budget is
+respected, so the targets are admissible under the manuscript's additional smoothness
+assumption.}
+\label{tab:two-cycle}
+\end{table}
+
+Across the grid, all $40$ Fisher--Rao runs fail to converge. The mean changes sign at
+every single iteration, and the amplitude $|m_n|/M$ and relative gap are both
+constant at $1.000000$ over $2000$ iterations --- the orbit is exact, not merely
+slow. The hitting time is $\infty$, not $\Omega(\kappa^2)$.
+
+\begin{table}[t]
+\centering
+\input{assets/tab_two_cycle_basin.tex}
+\caption{Robustness of the orbit: the initial mean is scaled by $1+\varepsilon$.
+Every run still cycles out to $\varepsilon=10^{-2}$, so the counterexample is not a
+measure-zero knife edge. Larger perturbations eventually escape, but only after
+excursions to several times the initial gap.}
+\label{tab:basin}
+\end{table}
+
+\section{Bures--Wasserstein on the same targets}
+\label{sec:bw}
+
+The Bures--Wasserstein mean update in \eqref{eq:BW-map} carries no covariance
+preconditioner, so in place of \eqref{eq:multiplier} its multiplier is
+\begin{equation}\label{eq:bw-multiplier}
+    m^+=\bigl(1-\eta\,\text{secant}\bigr)m,
+    \qquad \text{secant}\in[\alpha,\beta].
+\end{equation}
+With $\eta\le1/\beta$ this lies in $[0,1)$ at \emph{every} admissible state,
+uniformly in $c$. No choice of potential can produce a two-cycle, because producing
+one needs multiplier $-1$, hence $\eta\,\text{secant}=2$, hence
+$\eta\ge2/\beta$. This is exactly the observed boundary.
+
+\begin{table}[t]
+\centering
+\input{assets/tab_two_cycle_bw.tex}
+\caption{Bures--Wasserstein on the two-cycle targets. It converges in all $60$ runs
+inside its certified range $\eta\le1/\beta$ and first fails at $\eta=2/\beta$,
+precisely where \eqref{eq:bw-multiplier} permits multiplier $-1$.}
+\label{tab:bw}
+\end{table}
+
+Two caveats keep this in proportion. First, both certified stepsizes are
+$\Theta(\kappa^{-1})$ in these units ($\eta\le1/\beta=1/\kappa$ and
+$\Delta t\le1/(\beta\lambda_{\max})=1/\kappa$); the Bures--Wasserstein advantage is
+not a larger step but a mean multiplier of $1-\eta\,\text{secant}\ge1-\kappa^{-1}\beta$
+that is bounded away from $1$ by the curvature alone, whereas the Fisher--Rao
+multiplier $1-\Delta t\,c\,\text{secant}$ degrades by the extra factor
+$c\in[\kappa^{-1},1]$. Second, these particular targets are not the
+Bures--Wasserstein worst case: the secant sits close to $\beta$, so it converges in
+two iterations at $\eta=1/\beta$. Its own $\Omega(\kappa)$ regime requires a secant
+close to $\alpha$, which this family does not exercise.
+
+\section{Synthesis: the fixed-step barrier}
+\label{sec:barrier}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\textwidth]{fig_fixed_step_barrier.pdf}
+\caption{Worst case over both counterexamples as a function of the fixed stepsize, at
+$\kappa=256$. Right of $\Delta t=2/\kappa$ the two-cycle target makes both schemes
+never converge; left of it the retuned bump train forces $\Omega(T\kappa/\Delta t)$,
+which grows as $\Delta t$ shrinks. The envelope is minimized at
+$\Delta t\asymp1/\kappa$ with value $\asymp\kappa^2$.}
+\label{fig:barrier}
+\end{figure}
+
+Combining Sections~\ref{sec:bump} and~\ref{sec:cycle}, for a fixed stepsize $\Delta t$:
+\begin{equation}\label{eq:barrier}
+    \sup_{V\ \text{admissible}}\;N(\Delta t;V)
+    \;\geq\;
+    \begin{cases}
+        \Omega\!\left(\dfrac{T\kappa}{\Delta t}\right)
+        \;\geq\;\Omega\!\left(\dfrac{T\kappa^2}2\right),
+        & \Delta t\le\dfrac2\kappa \quad\text{(bump train)},\\[2ex]
+        \infty, & \Delta t>\dfrac2\kappa \quad\text{(two-cycle)} .
+    \end{cases}
+\end{equation}
+Both branches are minimized at the crossover $\Delta t\asymp1/\kappa$, where the
+value is $\asymp\kappa^2$. Hence
+\begin{equation*}
+    \min_{\Delta t>0}\ \sup_{V}\ N(\Delta t;V)\;=\;\Theta(\kappa^2),
+\end{equation*}
+and the optimal fixed stepsize is $\Theta(1/\kappa)$. The $\kappa^2$ is a property of
+fixed-step Fisher--Rao, not of the proof.
+
+\section{Correction to the earlier reading}
+\label{sec:correction}
+
+An earlier version of this report concluded that ``the $\kappa^2$ is the price of
+committing to $\Delta t=\Theta(\kappa^{-1})$, not an intrinsic property of the
+Fisher--Rao schemes.'' That conclusion was drawn from the bump train alone. What the
+bump-train experiment establishes is only that \emph{that} obstruction does not
+survive an order-one step: its mechanism pins $c_nA_n=1$ with the mean crawling
+between flat tops, and an order-one step jumps the mean clear of the train. The
+experiment could not see whether some \emph{other} admissible target obstructs the
+larger step, and Section~\ref{sec:cycle} shows one does, far more severely. The right reading
+of the bump-train panels is therefore narrower than stated before: they show the
+$\Delta t\le2/\kappa$ branch of \eqref{eq:barrier}, not a licence to raise the step.
+
+\section{What is and is not shown}
+\label{sec:scope}
+
+\paragraph{Shown.} For every fixed $\Delta t>2/\kappa$ there is an admissible target
+--- even, $C^\infty$, curvature range exactly $[1,\kappa]$ with both bounds attained,
+$\|V'''\|_\infty\le L_H$ dimension-free --- on which both \eqref{eq:R-map} and
+\eqref{eq:KL-map} admit an exact nonoptimal period-two orbit, robust to a $1\%$
+perturbation of the initialization. Combined with the retuned bump train on
+$\Delta t\le2/\kappa$, the worst-case fixed-step complexity is $\Theta(\kappa^2)$ and
+is attained at $\Delta t=\Theta(1/\kappa)$. The Bures--Wasserstein step is immune on
+the same family for structural reasons, and its empirical boundary $\eta=2/\beta$
+matches \eqref{eq:bw-multiplier} exactly.
+
+\paragraph{Not shown.} The counterexample is a minimax statement: the target is chosen
+after the stepsize. It does \emph{not} exhibit one target defeating every
+$\Delta t$ in a range simultaneously, and it says nothing about adaptive stepsizes, line
+search, or implicit and Rosenbrock-stabilized mean updates --- a relative-curvature test
+evaluated at the orbit sees $c_nA_n=1$ and would accept the step, so it does not by
+itself repair the failure, but a test based on the secant would. Nor is the
+$\Theta(\kappa^2)$ shown to be an \emph{upper} bound: \eqref{eq:barrier} is a family of
+lower bounds, and the matching upper bound is the manuscript's hitting-time theorem.
+Finally, the numerics verify the constructions and their arithmetic, not the
+realization lemma in general; what is checked here is that the specific potentials
+built satisfy every stated hypothesis, which the tests assert directly.
+
+\section{Reproduction}
+\label{sec:repro}
+
+\begin{verbatim}
+python scripts/natural_gradient_fixed_step_barrier/run_sharp_bump.py --overwrite
+python scripts/natural_gradient_fixed_step_barrier/run_two_cycle.py  --overwrite
+cd reports && python make_report_assets.py --only sharp_bump
+\end{verbatim}
+
+Deterministic, one-dimensional and CPU-only. The implementation is checked against
+the constructions by \texttt{tests/natural\_gradient\_sharp\_bump/}: for the bump
+train, the regularity bounds, the center geometry, the averaged identities
+$A(x_j,c_\kappa)=\kappa$ and $b(x_j,c_\kappa)=x_j+H_\kappa(N_\kappa-j+\tfrac12)$, and
+the blocked-progress statement; for the two-cycle, that both curvature bounds are
+attained, that $\|V'''\|_\infty\le L_H$, that $A(M,c)=p$ and $b(M,c)=rM$, that $V$ is
+even with optimizer $(0,1/\kappa)$, that one step maps $(M,c)\mapsto(-M,c)$ and the
+next maps back for both schemes, and that Bures--Wasserstein converges on the same
+target at $\eta\le1/\beta$.
+
+\end{document}

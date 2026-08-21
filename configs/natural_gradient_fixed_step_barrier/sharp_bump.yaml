@@ -1,0 +1,67 @@
+# Configuration for the sharp bump-train experiment.
+#
+# Runs the counterexample of thm:sharp-disc / Appendix C at a grid of condition
+# numbers and fits the iteration count to a constant-factor gap reduction against
+# kappa. Slope 2 reproduces the theorem's Omega(kappa^2); slope 1 is the
+# Bures-Wasserstein scaling. Deterministic, 1-D, CPU-only.
+
+# Condition numbers. The construction is asymptotic in kappa; the geometry of
+# lem:bump-centers is asserted at every kappa in the grid (BumpTrain raises if it
+# fails), and the shadowing diagnostics in the summary report how tightly the
+# iterates track the ideal centers at each one.
+kappas: [8, 16, 32, 64, 128, 256, 512, 1024]
+
+schemes: [riemannian, kl]
+
+# Both arms are FIXED stepsizes, held constant over the whole run:
+#   theory -- dt = gamma/kappa, the globally certified fixed step
+#   const  -- dt = gamma,       kappa-independent, outside the certified range
+# The adaptive relative-curvature rule is implemented (runner.ARMS has "relcurv")
+# but deliberately not in this grid: it collapses onto "const" exactly, because
+# the construction holds c_n A_n = 1 along the shadowed trajectory, so it would
+# add no information and would muddy the fixed-stepsize claim.
+arms: [theory, const]
+
+# Which train each arm is run against:
+#   manuscript -- the Appendix C train, built for dt = gamma/kappa (s = gamma/kappa^2)
+#   retuned    -- the same construction rebuilt for the arm's own step (s = dt/kappa),
+#                 i.e. the adversary sees the stepsize rule before choosing V.
+families: [manuscript, retuned]
+
+# Certified-step constant of eq. (bump-step); gamma <= 1/2 keeps dt = gamma/kappa
+# inside the certified range of thm:glob-Riem and thm:glob-KL.
+gamma: 0.5
+
+# Geometry constants of eq. (bump-count-x0). T small / Y large enough for
+# lem:bump-centers; the values below give x_N/x_0 ~ 0.87 >= 3/4 at every kappa.
+train:
+  T: 0.125
+  Y: 4.0
+  LH: 1.0
+  gh_nodes: 32
+
+# Robustness of the fixed order-one step in its own constant: for each gamma the
+# train is retuned to dt = gamma and only the (fixed) const arm is run, so the
+# sweep is cheap. It answers "is the Theta(kappa) reading an artifact of gamma=0.5,
+# and how large may a FIXED step be before it stops working?".
+gamma_sweep: [0.125, 0.25, 0.5, 1.0, 2.0, 4.0]
+
+# Stop a run at this relative gap; n_half (relative gap 1/2) is the quantity the
+# theorem bounds and the one the slopes are fitted on.
+tol_rel: 1.0e-6
+
+# Iteration cap: max(max_steps_floor, max_steps_factor * N_train).
+max_steps_factor: 8
+max_steps_floor: 20000
+
+max_saved_rows: 400
+
+output_dir: outputs/natural_gradient_fixed_step_barrier
+
+# Fast subset used with --smoke.
+smoke:
+  kappas: [8, 16, 32]
+  gamma_sweep: [0.5, 2.0]
+  max_steps_factor: 4
+  max_steps_floor: 5000
+  output_dir: outputs/natural_gradient_fixed_step_barrier_smoke

@@ -1,0 +1,697 @@
+\section{The convex-ridge local counterexample}
+\label{app:ridge}
+
+We construct the family of \Cref{thm:loc-sharp} and proves its assertions. The
+construction is a convex ridge: a one-dimensional convex tent profile evaluated along a radial
+coordinate of a large block of variables, tilted by a small amount $s$ into one distinguished
+direction. The radial coordinate concentrates at scale $O(1)$ around a large value, which is
+what makes the averaged Hessian isotropic after a single scalar tuning, and the tilt is what
+transfers the collective radial mode into the distinguished direction and produces a large
+first-Hermite coupling.
+
+Throughout, $Z\sim\N(0,\Id_{N_\theta})$, $B(z):=\nabla^2V(z)$, and we work under the whitening
+conditions of \Cref{def:whitened},
+\begin{equation}
+\label{eq:ridge-whitening}
+    \alphastar\Id\preceq\nabla^2V(z)\preceq\betastar\Id,
+    \qquad
+    \E[\nabla V(Z)]=0,
+    \qquad
+    \E[\nabla^2V(Z)]=\Id,
+\end{equation}
+so that $\alphastar\leq1\leq\betastar$ and $\kappastar=\betastar/\alphastar$. We write
+$\mathcal T,\mathcal T^*,\mathcal H$ for the score operators of \Cref{def:score-ops} and
+\[
+    \tau_H:=\sup_{\norm w=1}\norm{\E[(w^\top Z)B(Z)]}_{\Frob}
+    =\norm{\mathcal T^*}_{\R^{N_\theta}\to\Sym(N_\theta)}
+    =\norm{\mathcal T}_{\Sym(N_\theta)\to\R^{N_\theta}} .
+\]
+It is convenient here to use the packed form of the linearized generator
+\eqref{eq:Lstar-formula}: substituting $X\mapsto\sqrt2X$ identifies $\norm\cdot_\star$ with the
+packed norm $\norm{(v,X)}_{\mathrm{pack}}^2:=\norm v^2+\norm X_{\Frob}^2$ and turns
+$\mathcal L_\star$ into
+\begin{equation}
+\label{eq:ridge-Lstar}
+    \mathcal L_\star
+    =\begin{pmatrix}
+        \Id_{N_\theta} & \mathcal T/\sqrt2\\[1mm]
+        \mathcal T^*/\sqrt2 & \Id+\mathcal H/2
+    \end{pmatrix}
+    \quad\text{on}\quad\R^{N_\theta}\oplus\Sym(N_\theta),
+\end{equation}
+a unitary change of variables that leaves the spectrum, and hence $\gstar$ and $\Lstar$,
+unchanged.
+
+\subsection{The tent profile and the ridge potential}
+
+Let $m\in\mathbb N$ be large and set
+\begin{equation}
+\label{eq:ridge-K-m}
+    K:=(8m)^{1/4},
+    \qquad
+    N_\theta:=m+1,
+    \qquad\text{so that}\qquad
+    m=\frac{K^4}8 .
+\end{equation}
+Write $z=(z_1,y)\in\R\times\R^m$ and set
+\begin{equation}
+\label{eq:ridge-sigma}
+    r:=\norm y,
+    \qquad
+    \sigma(y):=\sqrt{m+r^2},
+    \qquad
+    \sigma_0:=\sqrt{2m}=\frac{K^2}2,
+    \qquad
+    b:=\sigma_0+\frac12 .
+\end{equation}
+
+Define a convex $C^2$ function $F:\R\to\R$ by
+\begin{equation}
+\label{eq:ridge-F}
+    F''(p):=\bigl(K-\abs{p-b}\bigr)_+,
+    \qquad F'(-\infty)=0,
+\end{equation}
+an additive constant being irrelevant. Since $F''$ is supported in $[b-K,b+K]$ with
+$\int_\R F''=K^2$, and since $F'''(p)=-\operatorname{sgn}(p-b)$ on $0<\abs{p-b}<K$ and
+$F'''=0$ elsewhere,
+\begin{equation}
+\label{eq:ridge-F-basic}
+    0\leq F''\leq K,
+    \qquad
+    0\leq F'\leq K^2,
+    \qquad
+    \Lip(F'')\leq1 .
+\end{equation}
+For $s\geq0$ define the tilted ridge
+\begin{equation}
+\label{eq:ridge-Us}
+    \mathcal U_s(z_1,y):=F\bigl(\sigma(y)+sz_1\bigr),
+    \qquad
+    p:=\sigma(y)+sz_1,
+    \qquad
+    \mathfrak g:=\nabla p=\Bigl(s,\frac y\sigma\Bigr).
+\end{equation}
+Since $D^2\sigma(y)=\sigma^{-1}\Id_m-\sigma^{-3}yy^\top$, the Hessian of $\mathcal U_s$ is
+\begin{equation}
+\label{eq:ridge-As}
+    \mathcal A_s:=D^2\mathcal U_s
+    =F''(p)\,\mathfrak g\mathfrak g^\top
+    +F'(p)\begin{pmatrix}0&0\\0&D^2\sigma(y)\end{pmatrix}.
+\end{equation}
+Both summands are positive semidefinite: $F''\geq0$, $F'\geq0$, and $D^2\sigma\succeq0$, having
+eigenvalue $1/\sigma>0$ on $y^\perp$ and $m/\sigma^3\geq0$ along $y$.
+
+\subsection{Radial concentration}
+
+Let $Z=(Z_1,Y)\sim\N(0,\Id_1)\otimes\N(0,\Id_m)$, continue to write $r=\norm Y$ and
+$\sigma=\sqrt{m+r^2}$, and set $\xi:=\sigma-\sigma_0$.
+
+\begin{lemma}[Dimension-free radial fluctuations]
+\label{lem:ridge-xi}
+For every fixed $j<\infty$ there is a numerical constant $C_j$ with
+$\norm\xi_{L^j}\leq C_j$. Moreover
+\begin{equation}
+\label{eq:ridge-xi-mean}
+    \E\xi=-\frac{\E\xi^2}{2\sigma_0}=O(K^{-2}).
+\end{equation}
+Uniformly for $0\leq s\leq2K^{-1/2}$, the variable $d:=\xi+sZ_1-\tfrac12$ has dimension-free
+sub-Gaussian tails; in particular, for every fixed $k<\infty$ there are numerical constants
+$c_k,C_k>0$ with
+\begin{equation}
+\label{eq:ridge-d-tail}
+    \sup_{0\leq s\leq2K^{-1/2}}
+    \E\bigl[(1+\abs d)^k\mathbf 1_{\{\abs d>K\}}\bigr]\leq C_ke^{-c_kK^2}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The identity $\xi=(r^2-m)/(\sigma+\sigma_0)$ and the lower bound
+$\sigma+\sigma_0\geq\sigma_0\asymp\sqrt m$ give
+$\norm\xi_{L^j}\leq\norm{r^2-m}_{L^j}/\sigma_0$, and the centered moments of a $\chi_m^2$
+variable satisfy $\norm{r^2-m}_{L^j}\leq C_j\sqrt m$, for instance by writing
+$r^2-m=\sum_{i=1}^m(Y_i^2-1)$ and applying Rosenthal's inequality. Since
+$\sigma^2-\sigma_0^2=2\sigma_0\xi+\xi^2$ and $\E(\sigma^2-\sigma_0^2)=\E(r^2-m)=0$, taking
+expectations gives $2\sigma_0\E\xi+\E\xi^2=0$, which is \eqref{eq:ridge-xi-mean} after using
+$\E\xi^2\leq C$ and $\sigma_0=K^2/2$. Finally $y\mapsto\sqrt{m+\norm y^2}$ is $1$-Lipschitz, so
+by Gaussian concentration $\sigma-\E\sigma$ is sub-Gaussian with an absolute variance proxy;
+combined with $\abs{\E\sigma-\sigma_0}=\abs{\E\xi}=O(K^{-2})$, the variable $\xi$ is uniformly
+sub-Gaussian, and $sZ_1$ is sub-Gaussian with variance proxy $s^2\leq4/K$. Hence $d$ is
+uniformly sub-Gaussian with an absolute proxy, so $\Prob(\abs d>K)\leq2e^{-cK^2}$, and
+\eqref{eq:ridge-d-tail} follows by Cauchy--Schwarz against the polynomial weight, whose $L^2$
+norm grows at most polynomially in $K$.
+\end{proof}
+
+\subsection{The averaged Hessian and the exact tuning equation}
+
+\begin{lemma}[Diagonal average]
+\label{lem:ridge-mean-As}
+For every $s\geq0$,
+\begin{equation}
+\label{eq:ridge-mean-As}
+    \E\mathcal A_s=\diag\bigl(s^2\overline K(s),\;\mathcal G(s)\Id_m\bigr),
+\end{equation}
+where
+\[
+    \overline K(s):=\E F''(\sigma+sZ_1),
+    \qquad
+    \mathcal G(s):=\frac1m\E\Bigl[F''(\sigma+sZ_1)\frac{r^2}{\sigma^2}
+    +F'(\sigma+sZ_1)\Bigl(\frac m\sigma-\frac{r^2}{\sigma^3}\Bigr)\Bigr].
+\]
+\end{lemma}
+
+\begin{proof}
+Write $\E\mathcal A_s=\E[F''\mathfrak g\mathfrak g^\top]+\E[F'\diag(0,D^2\sigma)]$ using
+\eqref{eq:ridge-As}, with $\mathfrak g=(s,y/\sigma)$. The $(z_1,z_1)$ entry is
+$\E[F''s^2]=s^2\overline K(s)$. The $(z_1,y_i)$ entry is $\E[F''sy_i/\sigma]$; since $F''$ and
+$\sigma$ depend on $y$ only through $r$, the integrand is odd under $y_i\mapsto-y_i$, which
+preserves the Gaussian law, so the entry vanishes. For $i\neq j$ the $(y_i,y_j)$ entry is
+$\E[F''y_iy_j/\sigma^2-F'y_iy_j/\sigma^3]=0$ by the same reflection. The diagonal entries
+$(y_i,y_i)$ are equal by exchangeability, so their common value is their average over
+$i=1,\dots,m$, which by \eqref{eq:ridge-As} and $\sum_iy_i^2=r^2$ is exactly $\mathcal G(s)$.
+\end{proof}
+
+\begin{lemma}[Uniform averaged-profile estimates]
+\label{lem:ridge-profile}
+Uniformly for $0\leq s\leq2K^{-1/2}$,
+\begin{equation}
+\label{eq:ridge-profile-est}
+    \overline K(s)=K+O(1),
+    \qquad
+    \E F'(\sigma+sZ_1)=\sigma_0-\frac K2+O(1),
+    \qquad
+    \mathcal G(s)=1-\frac1K+O(K^{-2}).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+With $d=\xi+sZ_1-\tfrac12$ we have $\sigma+sZ_1=b+d$, and on $\{\abs d\leq K\}$ the definition
+of $F$ gives the exact formulas
+\begin{equation}
+\label{eq:ridge-local-F}
+    F''(b+d)=K-\abs d,
+    \qquad
+    F'(b+d)=\frac{K^2}2+Kd-\frac12d\abs d,
+\end{equation}
+the second by integrating the first from $b$ and using $F'(b)=K^2/2$, which holds because
+$F''$ is symmetric about $b$ with total mass $K^2$. By \Cref{lem:ridge-xi},
+$\E\abs d=O(1)$ and $\E[d\abs d]=O(1)$ uniformly in $s$, and the contribution of
+$\{\abs d>K\}$ is exponentially small by \eqref{eq:ridge-d-tail}, even after multiplication by
+any fixed polynomial in $K$ and $d$. Therefore
+$\overline K(s)=\E[(K-\abs d)\mathbf 1_{\{\abs d\leq K\}}]=K-\E\abs d+O(e^{-cK^2})=K+O(1)$. Also
+$\E d=\E\xi-\tfrac12=-\tfrac12+O(K^{-2})$ by \eqref{eq:ridge-xi-mean}, so
+\eqref{eq:ridge-local-F}, together with the exponentially small tail contribution, where
+$F'\leq K^2$ and $\E[K^2\mathbf 1_{\{\abs d>K\}}]=O(1)$, gives
+\[
+    \E F'(\sigma+sZ_1)
+    =\frac{K^2}2+K\,\E d-\frac12\E[d\abs d]+O(1)
+    =\frac{K^2}2+K\Bigl(-\frac12+O(K^{-2})\Bigr)+O(1)
+    =\sigma_0-\frac K2+O(1),
+\]
+using $\abs{\E[d\abs d]}\leq\E d^2=O(1)$.
+
+For $\mathcal G(s)$, decompose it as $(\mathrm I)+(\mathrm{II})-(\mathrm{III})$ with
+$(\mathrm I)=\tfrac1m\E[F''r^2/\sigma^2]$, $(\mathrm{II})=\E[F'/\sigma]$ and
+$(\mathrm{III})=\tfrac1m\E[F'r^2/\sigma^3]$. Since $F''\leq K$ and $r^2/\sigma^2\leq1$, we have
+$0\leq(\mathrm I)\leq K/m=O(K^{-3})$. For the second term,
+\[
+    \Bigl\|\frac1\sigma-\frac1{\sigma_0}\Bigr\|_{L^2}
+    =\Bigl\|\frac\xi{\sigma\sigma_0}\Bigr\|_{L^2}
+    \leq\frac{\norm\xi_{L^2}}{\sqrt2\,m}=O(K^{-4})
+\]
+because $\sigma\geq\sqrt m$, $\sigma_0=\sqrt{2m}$ and $\norm\xi_{L^2}=O(1)$, so with
+$F'\leq K^2$,
+$(\mathrm{II})=\E[F'/\sigma_0]+K^2\cdot O(K^{-4})=\E F'/\sigma_0+O(K^{-2})$. Finally
+$r\mapsto r^2(m+r^2)^{-3/2}$ is maximized at $r^2=2m$ with value
+$2\cdot3^{-3/2}m^{-1/2}\leq m^{-1/2}$, so $0\leq(\mathrm{III})\leq K^2m^{-3/2}=O(K^{-4})$.
+Combining with the second estimate of \eqref{eq:ridge-profile-est} and $\sigma_0=K^2/2$,
+\[
+    \mathcal G(s)=\frac{\E F'(\sigma+sZ_1)}{\sigma_0}+O(K^{-2})
+    =1-\frac{K/2}{\sigma_0}+O(\sigma_0^{-1})+O(K^{-2})
+    =1-\frac1K+O(K^{-2}).\qedhere
+\]
+\end{proof}
+
+\begin{lemma}[Exact isotropic tuning]
+\label{lem:ridge-tuning}
+For all sufficiently large $K$ there exists $s=s_K\in(0,2K^{-1/2})$ with
+\begin{equation}
+\label{eq:ridge-tuning}
+    s^2\overline K(s)=\mathcal G(s).
+\end{equation}
+Writing $\mathfrak a:=s^2\overline K(s)=\mathcal G(s)$ and $\alphastar:=1-\mathfrak a$,
+\begin{equation}
+\label{eq:ridge-tuning-est}
+    s^2=K^{-1}+O(K^{-2}),
+    \qquad
+    \mathfrak a=1-K^{-1}+O(K^{-2}),
+    \qquad
+    \alphastar=K^{-1}+O(K^{-2}),
+\end{equation}
+and $\E\mathcal A_s=\mathfrak a\Id_{N_\theta}$.
+\end{lemma}
+
+\begin{proof}
+The function $\Theta_K(s):=s^2\overline K(s)-\mathcal G(s)$ is continuous on
+$[0,2K^{-1/2}]$: the integrands are pointwise continuous in $s$, the integrand defining
+$\overline K$ is bounded by $K$, and the absolute value of the integrand defining
+$\mathcal G$ is bounded by $\tfrac Km+K^2(\tfrac1\sigma+\tfrac{r^2}{m\sigma^3})\leq\tfrac Km+\tfrac{2K^2}{\sqrt m}$,
+so dominated convergence applies. Now $\Theta_K(0)=-\mathcal G(0)<0$ for large $K$ by
+\eqref{eq:ridge-profile-est}, while at $s=2K^{-1/2}$,
+\[
+    s^2\overline K(s)=\frac4K\bigl(K+O(1)\bigr)=4+O(K^{-1}),
+    \qquad
+    \mathcal G(s)=1+O(K^{-1}),
+\]
+so $\Theta_K(2K^{-1/2})=3+O(K^{-1})>0$, and the intermediate value theorem yields a zero
+$s_K\in(0,2K^{-1/2})$. At this zero \eqref{eq:ridge-profile-est} gives
+$\mathfrak a=\mathcal G(s_K)=1-K^{-1}+O(K^{-2})$, hence the last two estimates in
+\eqref{eq:ridge-tuning-est}, and in particular $0<\alphastar<1$ for large $K$; dividing
+$s_K^2\overline K(s_K)=\mathfrak a$ by $\overline K(s_K)=K+O(1)$ gives
+$s_K^2=(1+O(K^{-1}))/K$. Finally \eqref{eq:ridge-mean-As} together with
+$s_K^2\overline K(s_K)=\mathcal G(s_K)=\mathfrak a$ gives $\E\mathcal A_s=\mathfrak a\Id$.
+\end{proof}
+
+\subsection{The potential and exact whitening}
+
+Fix the tuned value $s=s_K$. Since $\abs{\nabla\mathcal U_s}=F'(p)\norm{\mathfrak g}\leq\sqrt2K^2$
+is bounded, the vector $\mathfrak m:=\E[\nabla\mathcal U_s(Z)]$ is well defined, and we set
+\begin{equation}
+\label{eq:ridge-V}
+    V(z):=\frac{\alphastar}2\norm z^2+\mathcal U_s(z)-\mathfrak m^\top z .
+\end{equation}
+
+\begin{lemma}[Exact whitened equilibrium]
+\label{lem:ridge-whitening}
+The potential \eqref{eq:ridge-V} satisfies $\E[\nabla V(Z)]=0$ and $\E[\nabla^2V(Z)]=\Id_{N_\theta}$.
+\end{lemma}
+
+\begin{proof}
+Since $\E Z=0$, $\E[\nabla V(Z)]=\alphastar\E Z+\E[\nabla\mathcal U_s(Z)]-\mathfrak m=0$, and by
+\Cref{lem:ridge-tuning},
+$\E[\nabla^2V(Z)]=\alphastar\Id+\E\mathcal A_s=(\alphastar+\mathfrak a)\Id=\Id$.
+\end{proof}
+
+\subsection{Ellipticity and a dimension-free Lipschitz Hessian}
+
+\begin{lemma}[Uniform ellipticity and condition number]
+\label{lem:ridge-ellipticity}
+Let $L_K:=\sup_{z}\norm{\mathcal A_s(z)}_{\op}$ and $\betastar:=\alphastar+L_K$. For all
+sufficiently large $K$,
+\begin{equation}
+\label{eq:ridge-LK}
+    \frac K2\leq L_K\leq3K,
+\end{equation}
+so that $\alphastar\Id\preceq\nabla^2V(z)\preceq\betastar\Id$ for every $z$, and
+\begin{equation}
+\label{eq:ridge-kappa}
+    \kappastar=\frac{\betastar}{\alphastar}=\Theta(K^2).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since $\sigma\geq\sqrt m=K^2/\sqrt8$ and $s^2\leq4/K$, for large $K$ we have
+$\norm{\mathfrak g}^2=s^2+r^2/\sigma^2\leq1+s^2\leq2$ and
+$\norm{D^2\sigma}_{\op}\leq1/\sigma\leq\sqrt8/K^2$. Using \eqref{eq:ridge-F-basic} in
+\eqref{eq:ridge-As},
+\[
+    0\preceq\mathcal A_s
+    \preceq\bigl(F''\norm{\mathfrak g}^2+F'\norm{D^2\sigma}_{\op}\bigr)\Id
+    \preceq\bigl(2K+\sqrt8\bigr)\Id\preceq3K\,\Id
+\]
+for large $K$, which is the upper bound. For the lower bound, choose $y$ with $r^2=m$, so
+$\sigma=\sigma_0$, and $z_1=(b-\sigma_0)/s=1/(2s)$, so that $p=b$. Then $F''(p)=K$ and
+$\norm{\mathfrak g}^2=s^2+r^2/\sigma_0^2=s^2+\tfrac12\geq\tfrac12$, so the rank-one matrix
+$K\mathfrak g\mathfrak g^\top$ has an eigenvalue $K\norm{\mathfrak g}^2\geq K/2$; the second
+summand of \eqref{eq:ridge-As} being positive semidefinite, $L_K\geq K/2$. Since
+$\mathcal A_s\succeq0$ the lower Hessian bound is $\alphastar\Id$, and it is attained: for any
+fixed $y$, taking $z_1$ sufficiently negative makes $\sigma(y)+sz_1\leq b-K$, where
+$F'=F''=0$ and $\mathcal A_s=0$, so no larger $\alphastar$ is admissible. Finally
+\eqref{eq:ridge-tuning-est} and \eqref{eq:ridge-LK} give
+$\kappastar=(\alphastar+L_K)/\alphastar=\Theta(K^2)$.
+\end{proof}
+
+For a trilinear form $B$ we write
+$\norm B_{\mathrm{inj}}:=\sup_{\norm u=\norm v=\norm w=1}\abs{B[u,v,w]}$.
+
+\begin{lemma}[Dimension-free Hessian-Lipschitz bound]
+\label{lem:ridge-hesslip}
+The potential \eqref{eq:ridge-V} belongs to $C^{2,1}(\R^{N_\theta})$ and satisfies
+\Cref{assump:hess-lip} with the admissible constant $\LH=64$:
+\begin{equation}
+\label{eq:ridge-64}
+    \norm{\nabla^2V(z)-\nabla^2V(z')}_{\op}\leq64\norm{z-z'},
+    \qquad z,z'\in\R^{N_\theta}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The function $F''$ is globally Lipschitz and differentiable almost everywhere with
+$\abs{F'''}\leq1$. At every point of differentiability and for unit vectors $u,v,w$,
+\begin{equation}
+\label{eq:ridge-D3U}
+\begin{aligned}
+    D^3\mathcal U_s[u,v,w]
+    ={}&F'''(p)\,\mathfrak g[u]\mathfrak g[v]\mathfrak g[w]\\
+    &+F''(p)\bigl(\mathfrak g[u]D^2\sigma[v,w]+\mathfrak g[v]D^2\sigma[u,w]+\mathfrak g[w]D^2\sigma[u,v]\bigr)\\
+    &+F'(p)\,D^3\sigma[u,v,w],
+\end{aligned}
+\end{equation}
+where $\sigma$ is viewed as a function of $(z_1,y)$ independent of $z_1$ and the middle line
+collects the three product-rule terms in which exactly one differentiation falls on
+$\mathfrak g\mathfrak g^\top$. A direct differentiation gives, for $u,v,w\in\R^m$,
+\[
+    D^3\sigma[u,v,w]
+    =-\frac{(u^\top v)(y^\top w)+(u^\top w)(y^\top v)+(v^\top w)(y^\top u)}{\sigma^3}
+    +\frac{3(y^\top u)(y^\top v)(y^\top w)}{\sigma^5},
+\]
+whence
+$\norm{D^3\sigma}_{\mathrm{inj}}\leq\tfrac{3r}{\sigma^3}+\tfrac{3r^3}{\sigma^5}\leq\tfrac6{\sigma^2}\leq\tfrac6m=\tfrac{48}{K^4}$.
+Using $\norm{\mathfrak g}\leq\sqrt2$, $\norm{D^2\sigma}_{\op}\leq\sqrt8/K^2$ and
+\eqref{eq:ridge-F-basic}, \eqref{eq:ridge-D3U} gives, almost everywhere,
+\[
+    \norm{D^3\mathcal U_s}_{\mathrm{inj}}
+    \leq\abs{F'''}\norm{\mathfrak g}^3+3F''\norm{\mathfrak g}\norm{D^2\sigma}_{\op}+F'\norm{D^3\sigma}_{\mathrm{inj}}
+    \leq2\sqrt2+\frac{12}K+\frac{48}{K^2}\leq64
+\]
+for all sufficiently large $K$.
+
+To integrate this almost-everywhere bound into a global one, fix unit vectors $u,v$ and set
+$f_{u,v}(z):=u^\top\mathcal A_s(z)v$. Each entry of $\mathcal A_s$ is locally Lipschitz, since
+$F''$ is Lipschitz, $F'$ is $C^{1,1}$, and $\sigma,\mathfrak g,D^2\sigma$ are smooth on
+$\{\sigma\geq\sqrt m\}$, so $f_{u,v}$ is locally Lipschitz and differentiable almost everywhere
+with $\abs{\nabla f_{u,v}(z)}=\abs{D^3\mathcal U_s(z)[u,v,\cdot]}\leq64$ wherever the gradient
+exists. For a locally Lipschitz function the global Lipschitz constant equals the essential
+supremum of $\abs{\nabla f}$: mollifying, $f_{u,v}*\eta_\varepsilon$ is smooth with
+$\abs{\nabla(f_{u,v}*\eta_\varepsilon)}\leq64$ everywhere, hence $64$-Lipschitz, and letting
+$\varepsilon\downarrow0$ preserves the inequality. Taking the supremum over unit $u,v$ gives
+$\norm{\mathcal A_s(z)-\mathcal A_s(z')}_{\op}\leq64\norm{z-z'}$; the quadratic and linear terms
+of \eqref{eq:ridge-V} contribute the constant Hessian $\alphastar\Id$, which does not affect
+the Hessian-Lipschitz seminorm.
+\end{proof}
+
+\subsection{A large first-Hermite coupling}
+
+Define the normalized test direction
+\begin{equation}
+\label{eq:ridge-X}
+    X:=\diag\Bigl(0,\frac{\Id_m}{\sqrt m}\Bigr)\in\Sym(N_\theta),
+    \qquad\norm X_{\Frob}=1 .
+\end{equation}
+
+\begin{lemma}[Codazzi conversion of the collective radial mode]
+\label{lem:ridge-codazzi}
+The vector $\mathcal T[X]$ points in the distinguished direction $e_1$ and
+\begin{equation}
+\label{eq:ridge-TX-exact}
+    \norm{\mathcal T[X]}=\frac s{\sqrt m}\,\E\Bigl[F''(\sigma+sZ_1)\frac{r^2}\sigma\Bigr].
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The constant matrix $\alphastar\Id$ has zero first-Hermite coefficient, since
+$\E[\Tr(X\cdot\alphastar\Id)Z]=\alphastar\sqrt m\,\E Z=0$ using $\Tr X=\sqrt m$, so only
+$\mathcal A_s$ contributes and $\mathcal T[X]=\E[\Tr(X\mathcal A_s)Z]$. Now
+\[
+    \Tr(X\mathcal A_s)
+    =\frac1{\sqrt m}\sum_{i=1}^m\partial_{ii}\mathcal U_s
+    =\frac1{\sqrt m}\Bigl(F''\frac{r^2}{\sigma^2}+F'\Bigl(\frac m\sigma-\frac{r^2}{\sigma^3}\Bigr)\Bigr)
+\]
+is a function of $(Z_1,r)$ alone; for each $i$ the reflection $y_i\mapsto-y_i$ preserves the law
+of $Z$ and the value of $\Tr(X\mathcal A_s)$ while flipping $Y_i$, so
+$\E[\Tr(X\mathcal A_s)Y_i]=0$, every $y$-component of $\mathcal T[X]$ vanishes, and
+$\mathcal T[X]=\E[\Tr(X\mathcal A_s)Z_1]e_1$.
+
+Let $\varphi_{N_\theta}$ denote the standard Gaussian density. Since $\mathcal A_s$ is bounded,
+its entries define tempered distributions, and commutation of distributional derivatives gives
+$\partial_1(\mathcal A_s)_{ii}=\partial_i(\mathcal A_s)_{1i}$. Consequently
+\[
+    \E[Z_1(\mathcal A_s)_{ii}]
+    =-\int(\mathcal A_s)_{ii}\,\partial_1\varphi_{N_\theta}
+    =\inner{\partial_1(\mathcal A_s)_{ii}}{\varphi_{N_\theta}}
+    =\inner{\partial_i(\mathcal A_s)_{1i}}{\varphi_{N_\theta}}
+    =-\int(\mathcal A_s)_{1i}\,\partial_i\varphi_{N_\theta}
+    =\E[Y_i(\mathcal A_s)_{1i}],
+\]
+these pairings being justified by inserting compactly supported cutoffs of
+$\varphi_{N_\theta}$ and letting the cutoff radius tend to infinity. From
+\eqref{eq:ridge-As}, $(\mathcal A_s)_{1i}=sF''(\sigma+sZ_1)Y_i/\sigma$, so summing over
+$i=1,\dots,m$ and dividing by $\sqrt m$ gives \eqref{eq:ridge-TX-exact}, whose right-hand side
+is nonnegative.
+\end{proof}
+
+\begin{lemma}[Size of the coupling]
+\label{lem:ridge-TX-size}
+There is a numerical constant $C$ such that
+\begin{equation}
+\label{eq:ridge-tau-lower}
+    \norm{\mathcal T[X]}^2=\frac K2+O(1),
+    \qquad
+    \tau_H^2\geq\frac K2-C .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since $r^2=\sigma^2-m$, define $q(\sigma):=r^2/\sigma=\sigma-m/\sigma$. On $[\sqrt m,\infty)$,
+$q'(\sigma)=1+m/\sigma^2\leq2$, so $q$ is $2$-Lipschitz there, and
+$q(\sigma_0)=\sigma_0-m/\sigma_0=\sigma_0/2=K^2/4$. Using $0\leq F''\leq K$,
+$\abs{q(\sigma)-q(\sigma_0)}\leq2\abs\xi$ and \Cref{lem:ridge-xi},
+\[
+    \E[F''q(\sigma)]
+    =q(\sigma_0)\,\E F''+O\bigl(K\,\E\abs{\sigma-\sigma_0}\bigr)
+    =\overline K(s)\frac{K^2}4+O(K).
+\]
+Because $\sqrt m=K^2/(2\sqrt2)$, so that $\tfrac1m\cdot\tfrac{K^4}{16}=\tfrac12$, substitution
+into \eqref{eq:ridge-TX-exact} yields
+\[
+\begin{aligned}
+    \norm{\mathcal T[X]}^2
+    &=\frac{s^2}m\Bigl(\overline K(s)\frac{K^2}4+O(K)\Bigr)^2
+    =\frac{s^2\overline K(s)^2K^4}{16m}
+    +O\Bigl(\frac{s^2\overline K(s)K^3}m\Bigr)+O\Bigl(\frac{s^2K^2}m\Bigr)\\
+    &=\frac{s^2\overline K(s)^2}2+O(K^{-1})
+    =\frac{\mathfrak a\,\overline K(s)}2+O(K^{-1})
+    =\frac K2+O(1),
+\end{aligned}
+\]
+using $s^2\overline K(s)=\mathfrak a$ from \Cref{lem:ridge-tuning},
+$\overline K(s)=K+O(1)$, $\mathfrak a=1+O(K^{-1})$ and $s^2=O(K^{-1})$. Finally
+$\norm X_{\Frob}=1$ and $\tau_H=\norm{\mathcal T}$, so
+$\tau_H^2\geq\norm{\mathcal T[X]}^2\geq K/2-C$.
+\end{proof}
+
+\begin{remark}[Direct cross-check]
+\label{rem:ridge-crosscheck}
+The identity \eqref{eq:ridge-TX-exact} can also be checked without commuting mixed weak
+derivatives. Gaussian integration by parts in $Z_1$ gives
+$e_1^\top\mathcal T[X]=\tfrac s{\sqrt m}\E[F'''\tfrac{r^2}{\sigma^2}+F''(\tfrac m\sigma-\tfrac{r^2}{\sigma^3})]$
+with $F'''$ the almost-everywhere derivative of the Lipschitz function $F''$; for fixed $Z_1$,
+Gaussian integration by parts in $Y$ applied to
+$\Psi_{Z_1}(y):=F''(\sigma(y)+sZ_1)y/\sigma(y)$, for which
+$Y^\top\Psi_{Z_1}(Y)=F''r^2/\sigma$ and
+$\operatorname{div}\Psi_{Z_1}=F'''\tfrac{r^2}{\sigma^2}+F''(\tfrac m\sigma-\tfrac{r^2}{\sigma^3})$,
+recovers \eqref{eq:ridge-TX-exact} through
+$\E[Y^\top\Psi_{Z_1}(Y)]=\E[\operatorname{div}\Psi_{Z_1}(Y)]$. The direct calculation verifies
+the identity but does not distinguish Hessian fields from general symmetric matrix fields;
+$\mathcal T[X]$ depends only on $\Tr(XB)$, so for the present $X$ any matrix field with the
+same $yy$ block has the same value. What the Codazzi route additionally supplies is the
+polarized second-Hermite identity of \Cref{lem:adjoint-app}, which makes $\mathcal H$ and hence
+$\mathcal L_\star$ self-adjoint.
+\end{remark}
+
+\subsection{A nearly-null direction for the linearized generator}
+
+Set $\tau_X^2:=\norm{\mathcal T[X]}^2$ and $h_X:=\inner X{\mathcal H[X]}_{\Frob}$.
+
+\begin{lemma}[Second-Hermite asymptotics]
+\label{lem:ridge-hX}
+For the matrix $X$ of \eqref{eq:ridge-X},
+\begin{equation}
+\label{eq:ridge-hX}
+    h_X=\frac K2+O(1),
+    \qquad
+    h_X-\tau_X^2=O(1).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since $XZ=(0,Y/\sqrt m)$ and $B-\Id=\alphastar\Id+\mathcal A_s-\Id=\mathcal A_s-\mathfrak a\Id$,
+the polarized identity $\inner X{\mathcal H[X]}_{\Frob}=\E[(XZ)^\top(B(Z)-\Id)(XZ)]$ of
+\Cref{lem:adjoint-app} gives $h_X=\tfrac1m\E[Y^\top(\mathcal A_s)_{yy}Y]-\mathfrak a$, where by
+\eqref{eq:ridge-As}
+\[
+    (\mathcal A_s)_{yy}=F''\frac{yy^\top}{\sigma^2}+F'\Bigl(\frac{\Id_m}\sigma-\frac{yy^\top}{\sigma^3}\Bigr).
+\]
+Using $Y^\top yy^\top Y=r^4$ with $y=Y$, $Y^\top Y=r^2$ and $\sigma^2-r^2=m$, we get
+$Y^\top(\mathcal A_s)_{yy}Y=F''\tfrac{r^4}{\sigma^2}+F'\tfrac{m\,r^2}{\sigma^3}$, so
+\begin{equation}
+\label{eq:ridge-hX-exact}
+    h_X=\frac1m\E\Bigl[F''\frac{r^4}{\sigma^2}\Bigr]+\E\Bigl[F'\frac{r^2}{\sigma^3}\Bigr]-\mathfrak a .
+\end{equation}
+Let $\omega:=r^2/m$, so that $\tfrac{r^4}{m\sigma^2}=\tfrac{\omega^2}{1+\omega}=:\Psi(\omega)$.
+Since $0\leq\Psi'(\omega)=1-(1+\omega)^{-2}<1$, the function $\Psi$ is $1$-Lipschitz with
+$\Psi(1)=1/2$, and
+$\norm{\omega-1}_{L^2}=\norm{r^2-m}_{L^2}/m=\sqrt{2m}/m=O(K^{-2})$. Therefore
+\[
+    \frac1m\E\Bigl[F''\frac{r^4}{\sigma^2}\Bigr]
+    =\E[F''\Psi(\omega)]
+    =\frac12\E F''+O\bigl(K\,\E\abs{\omega-1}\bigr)
+    =\frac{\overline K(s)}2+O(K^{-1})=\frac K2+O(1).
+\]
+For the second term of \eqref{eq:ridge-hX-exact}, $\sup_{r\geq0}r^2(m+r^2)^{-3/2}\leq m^{-1/2}$
+and $F'\leq K^2$ give $0\leq\E[F'r^2/\sigma^3]\leq K^2/\sqrt m=2\sqrt2=O(1)$. Since
+$\mathfrak a=O(1)$, this proves $h_X=K/2+O(1)$. Finally, by \Cref{lem:ridge-TX-size} and
+$s^2\overline K=\mathfrak a$,
+$\tau_X^2=\tfrac{s^2\overline K^2}2+O(K^{-1})=\tfrac{\mathfrak a\overline K}2+O(K^{-1})=\tfrac{\mathfrak aK}2+O(1)$,
+so
+\[
+    h_X-\tau_X^2=\frac{(1-\mathfrak a)\overline K}2+O(1)=\frac{\alphastar K}2+O(1)=O(1)
+\]
+by \eqref{eq:ridge-tuning-est}.
+\end{proof}
+
+\begin{lemma}[Explicit Rayleigh direction]
+\label{lem:ridge-Rayleigh}
+Set $\Xi:=X/\sqrt2$ and $v:=-\mathcal T[X]/2$. Then, for $\mathcal L_\star$ in the packed form
+\eqref{eq:ridge-Lstar},
+\begin{equation}
+\label{eq:ridge-Rayleigh}
+    \frac{\inner{(v,\Xi)}{\mathcal L_\star(v,\Xi)}_{\mathrm{pack}}}{\norm v^2+\norm\Xi_{\Frob}^2}
+    =\frac{2+h_X-\tau_X^2}{2+\tau_X^2}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since $\norm X_{\Frob}=1$ we have $\norm v^2=\tau_X^2/4$ and $\norm\Xi_{\Frob}^2=1/2$. By
+\eqref{eq:ridge-Lstar} the packed quadratic form is
+$\norm v^2+2\inner v{(\mathcal T/\sqrt2)\Xi}+\norm\Xi_{\Frob}^2+\tfrac12\inner\Xi{\mathcal H[\Xi]}_{\Frob}$,
+the two off-diagonal contributions combining by self-adjointness. Now
+$(\mathcal T/\sqrt2)\Xi=\mathcal T[X]/2$ and
+$\inner\Xi{\mathcal H[\Xi]}_{\Frob}=\tfrac12\inner X{\mathcal H[X]}_{\Frob}=h_X/2$, so the
+numerator is
+\[
+    \frac{\tau_X^2}4+2\Bigl(-\frac{\mathcal T[X]}2\Bigr)^{\!\top}\frac{\mathcal T[X]}2+\frac12+\frac{h_X}4
+    =\frac{\tau_X^2}4-\frac{\tau_X^2}2+\frac12+\frac{h_X}4
+    =\frac{2+h_X-\tau_X^2}4,
+\]
+while the denominator is $\tau_X^2/4+1/2=(2+\tau_X^2)/4$.
+\end{proof}
+
+\subsection{Smooth realization and proof of the theorem}
+
+\begin{lemma}[Smooth realization]
+\label{lem:ridge-smooth}
+After increasing the numerical threshold $K_0$ if necessary, the potentials \eqref{eq:ridge-V}
+may be chosen in $C^\infty(\R^{N_\theta})$ while retaining every conclusion above, including the
+common Hessian-Lipschitz constant $\LH=64$.
+\end{lemma}
+
+\begin{proof}
+Let $f_K(p):=(K-\abs{p-b})_+$ and fix an even nonnegative $\eta\in C_c^\infty((-1,1))$ with
+$\int\eta=1$. For $\varepsilon\in(0,1]$ set $\eta_\varepsilon(w):=\varepsilon^{-1}\eta(w/\varepsilon)$
+and $f_{K,\varepsilon}:=f_K*\eta_\varepsilon$, and define $F'_{K,\varepsilon}(-\infty)=0$ with
+$F''_{K,\varepsilon}=f_{K,\varepsilon}$. Then $0\leq f_{K,\varepsilon}\leq K$,
+$\Lip(f_{K,\varepsilon})\leq1$, $\int_\R f_{K,\varepsilon}=K^2$ and
+$\norm{f_{K,\varepsilon}-f_K}_{L^\infty}\leq\varepsilon$. Moreover
+$F'_{K,\varepsilon}=F'_K*\eta_\varepsilon$, and since $F'_K$ has a $1$-Lipschitz derivative
+while $\eta_\varepsilon$ has zero first moment, Taylor's formula with Lipschitz remainder gives
+$\norm{F'_{K,\varepsilon}-F'_K}_{L^\infty}\leq\varepsilon^2/2$. Consequently, uniformly for
+$0\leq s\leq2K^{-1/2}$,
+\[
+    \abs{\overline K_\varepsilon(s)-\overline K(s)}\leq\varepsilon,
+    \qquad
+    \abs{\E F'_{K,\varepsilon}(\sigma+sZ_1)-\E F'_K(\sigma+sZ_1)}\leq\frac{\varepsilon^2}2,
+\]
+and
+$\abs{\mathcal G_\varepsilon(s)-\mathcal G(s)}\leq\tfrac\varepsilon m+\tfrac{\varepsilon^2}2(m^{-1/2}+m^{-3/2})$,
+so all estimates of \Cref{lem:ridge-profile} are unchanged. The same intermediate-value
+argument retunes $s=s_{K,\varepsilon}$ and restores exact whitening. Also
+$f_{K,\varepsilon}(b)\geq K-\varepsilon$, so the ellipticity lower bound remains of order $K$,
+and $\norm{f'_{K,\varepsilon}}_{L^\infty}\leq1$, so the proof of \Cref{lem:ridge-hesslip} gives
+the same admissible constant $\LH=64$. Repeating the coupling and Rayleigh calculations proves
+all the asserted asymptotics.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:loc-sharp}]
+Fix $m$ with $K=(8m)^{1/4}$ large and let $V$ be the potential \eqref{eq:ridge-V}, made smooth
+by \Cref{lem:ridge-smooth}. \Cref{lem:ridge-whitening} gives the whitening conditions
+\eqref{eq:ridge-whitening}, \Cref{lem:ridge-ellipticity} gives \Cref{assump:logconcave-smooth}
+together with $\kappastar=\Theta(K^2)$, that is $c_\kappa K^2\leq\kappastar\leq C_\kappa K^2$, and
+\Cref{lem:ridge-hesslip} gives \Cref{assump:hess-lip} with $\LH=64$.
+\Cref{lem:ridge-TX-size} gives $\tau_H^2\geq K/2-C_1$.
+
+For the gap upper bound, $\mathcal L_\star$ is self-adjoint, so the Rayleigh--Ritz variational
+principle and \Cref{lem:ridge-Rayleigh} give
+$\gstar=\lambda_{\min}(\mathcal L_\star)\leq(2+h_X-\tau_X^2)/(2+\tau_X^2)$. By
+\Cref{lem:ridge-hX} the numerator is at most a numerical constant $2+C_1$, and by
+\Cref{lem:ridge-TX-size} the denominator is at least a positive multiple of $K$ for large $K$,
+so $\gstar\leq C_1/K$, and $\kappastar=\Theta(K^2)$ turns this into
+$\gstar\leq C_1'/\sqrt{\kappastar}$.
+
+For the two-sided statements, $\betastar-1=\Theta(K)$ by \eqref{eq:ridge-LK} and
+\eqref{eq:ridge-tuning-est}, while the dimension-dependent branch of $\Gamma$ in
+\eqref{eq:Gamma} is of order $\sqrt{N_\theta}\log\betastar=\Theta(K^2\log K)$, so
+$\Gamma=\betastar-1=\Theta(K)$: the family saturates the $\betastar-1$ branch. The Schur bound
+\eqref{eq:T-Schur} then gives $\tau_H^2\leq1+\Gamma$, which together with
+\Cref{lem:ridge-TX-size} yields
+$\tau_H^2=\Theta(K)=\Theta(\kappastar^{1/2})$. Likewise the lower bound
+$\gstar\geq\max\{\alphastar,1/(4+\Gamma)\}$ of \Cref{prop:spectral-sandwich}, with
+$\alphastar=\Theta(K^{-1})$ by \eqref{eq:ridge-tuning-est} and $1/(4+\Gamma)=\Theta(K^{-1})$,
+matches the Rayleigh upper bound and gives
+$\gstar=\Theta(K^{-1})=\Theta(\kappastar^{-1/2})$.
+
+Finally, suppose a positive function $c(\LH)$ satisfied
+$\gstar\geq c(\LH)/(1+\log\kappastar)$ in every dimension under
+\Cref{assump:logconcave-smooth} and \Cref{assump:hess-lip}. Applying it with $\LH=64$ along the
+family would give $c(64)/(1+\log\kappastar)\leq C_1/K$; but $\log\kappastar=\Theta(\log K)$ and
+$K^{-1}=o((\log K)^{-1})$, a contradiction for large $K$.
+\end{proof}
+
+\begin{remark}[Minimum regularity and non-circularity]
+\label{rem:ridge-regularity}
+The first- and second-Hermite identities use only commutation of distributional derivatives, so
+$V\in C^2$ with a bounded Hessian suffices; no classical third derivative is required. The tent
+potential \eqref{eq:ridge-V} is $C^{2,1}$ with a globally Lipschitz Hessian, and
+\Cref{lem:ridge-smooth} provides the $C^\infty$ realization. The gap upper bound uses only the
+explicit Rayleigh direction of \Cref{lem:ridge-Rayleigh}, the independently established
+asymptotics of $h_X$ and $\tau_X$, and Rayleigh--Ritz; it invokes no spectral lower bound, no
+third-derivative moment bound and no logarithmic coupling inequality, so the lower bound
+\eqref{eq:linear-gap-bounds} may be applied afterwards to read off order-sharpness without
+entering the argument.
+\end{remark}
+
+% SOURCES: all statements below are translations of local-log-kappa-counterexample.tex, with
+% n -> N_\theta, z=(t,y) -> z=(z_1,y), \rho -> \sigma, c -> b, x -> p, U_s -> \mathcal U_s,
+% A_s -> \mathcal A_s, g -> \mathfrak g, a -> \mathfrak a, \ell -> \mathfrak m,
+% G -> \mathcal G, \Phi_K -> \Theta_K, \phi -> \Psi, u -> \omega, T -> \mathcal T,
+% H -> \mathcal H, L_\star -> \mathcal L_\star, \gamma_{loc} -> \gstar,
+% Rayleigh matrix Y -> \Xi. K and m keep their meaning as internal parameters of the family and
+% are distinct from N_\theta = m+1.
+%
+% local-log-kappa-counterexample.tex l.85-204 (setting, tau_H, packed L_star) -> eq:ridge-Lstar
+% local-log-kappa-counterexample.tex l.272-347 (tent profile, ridge, Hessian A_s)
+%   -> eq:ridge-K-m .. eq:ridge-As
+% local-log-kappa-counterexample.tex l.349-425 (lem:xi) -> lem:ridge-xi
+% local-log-kappa-counterexample.tex l.429-471 (lem:mean-As) -> lem:ridge-mean-As
+% local-log-kappa-counterexample.tex l.473-596 (lem:profile-est) -> lem:ridge-profile
+% local-log-kappa-counterexample.tex l.598-671 (lem:tuning) -> lem:ridge-tuning
+% local-log-kappa-counterexample.tex l.673-716 (V definition, lem:whitening) -> eq:ridge-V,
+%   lem:ridge-whitening
+% local-log-kappa-counterexample.tex l.722-806 (lem:ellipticity, L_K in [K/2,3K],
+%   kappa = Theta(K^2)) -> lem:ridge-ellipticity
+% local-log-kappa-counterexample.tex l.808-917 (lem:H3, the constant 64) -> lem:ridge-hesslip
+% local-log-kappa-counterexample.tex l.923-1007 (X definition, lem:codazzi)
+%   -> eq:ridge-X, lem:ridge-codazzi
+% local-log-kappa-counterexample.tex l.1009-1097 (lem:TX-size) -> lem:ridge-TX-size
+% local-log-kappa-counterexample.tex l.1119-1163 (rem:crosscheck) -> rem:ridge-crosscheck
+% local-log-kappa-counterexample.tex l.1173-1269 (lem:second-Hermite) -> cited as
+%   lem:adjoint-app in app:identities, used in lem:ridge-hX
+% local-log-kappa-counterexample.tex l.1279-1409 (lem:hX) -> lem:ridge-hX
+% local-log-kappa-counterexample.tex l.1411-1487 (lem:Rayleigh) -> lem:ridge-Rayleigh
+% local-log-kappa-counterexample.tex l.1489-1538 (gap upper bound, proof of thm:main)
+%   -> proof of thm:loc-sharp
+% local-log-kappa-counterexample.tex l.1544-1605 (cor:smooth-ridge) -> lem:ridge-smooth
+% local-log-kappa-counterexample.tex l.1643-1659 (rem on minimum regularity, rem on no
+%   circularity) -> rem:ridge-regularity
+% local-log-kappa-counterexample.tex l.1661-1670 (commented-out integration-ready corollary:
+%   Gamma = beta_*-1 = Theta(K), tau_H^2 = Theta(kappa_*^{1/2}), gamma_* = Theta(kappa_*^{-1/2}))
+%   -> the two-sided paragraph of the proof of thm:loc-sharp

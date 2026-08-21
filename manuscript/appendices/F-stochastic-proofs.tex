@@ -1,0 +1,761 @@
+\section{Proofs for the stochastic theory}\label{app:stoch-proofs}
+
+We prove the statements of \Cref{sec:stochastic} deferred there. Throughout
+we use the notation of that section: $g(a)=-\E_{\rho_a}[\nabla V]$, $A(a)=\E_{\rho_a}[\nabla^2V]$,
+$R(a)=C^{-1}-A(a)$, the intrinsic fluctuation $\Psi$ of \Cref{def:Psi}, and the minibatch estimators
+\eqref{eq:STL-score}.
+
+\subsection{The rescued initializer}
+
+\begin{lemma}[Rescue energy for nonquadratic targets]
+\label{lem:rescue-energy}
+Under \Cref{assump:logconcave-smooth}, the quadratic rescue of \Cref{def:rescue} gives $\Delta(a_0)$ deterministic and finite.
+Under the additional \Cref{assump:hess-lip}, writing $r_{\mathrm{in}}:=\norm{m_{\mathrm{in}}-m_\star}$,
+\[
+    \norm{m_0-m_\star}\leq\frac{\LH}{2\alpha}\Bigl(r_{\mathrm{in}}^2+\frac{N_\theta}\alpha\Bigr),
+    \qquad
+    \norm{C_0-C_\star}_{\Frob}\leq\frac{\sqrt{N_\theta}\,\LH}{\alpha^2}\Bigl(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha}\Bigr),
+\]
+and hence
+\[
+    \Delta(a_0)
+    \leq
+    \frac{\beta\LH^2}{8\alpha^2}\Bigl(r_{\mathrm{in}}^2+\frac{N_\theta}\alpha\Bigr)^2
+    +\frac{\beta^2N_\theta\LH^2}{4\alpha^4}\Bigl(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha}\Bigr)^2,
+\]
+which is quadratic in $\LH$ and vanishes when $\LH=0$.
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:rescue-energy}]
+Write $d:=m_{\mathrm{in}}-m_\star$ and $\bar H:=\int_0^1\nabla^2V(m_\star+td)\dd t$, so that
+$\nabla V(m_{\mathrm{in}})=\nabla V(m_\star)+\bar Hd$ by the integral Taylor form. Note that $m_\star$
+is the optimal variational mean, not the mode of the target: the stationarity condition is
+$\E_{\rho_{a_\star}}[\nabla V]=0$, which does not force $\nabla V(m_\star)=0$.
+We first bound $\nabla V(m_\star)$. With $X=m_\star+C_\star^{1/2}Z$ and Taylor expansion,
+$\nabla V(X)=\nabla V(m_\star)+\nabla^2V(m_\star)C_\star^{1/2}Z+r(X)$ with
+$\norm{r(X)}\leq\tfrac{\LH}2\norm{C_\star^{1/2}Z}^2$. Taking $\E_{\rho_{a_\star}}$, the linear term
+vanishes and $\E_{\rho_{a_\star}}[\nabla V]=0$, so
+\begin{equation}
+\label{eq:gradV-mstar}
+    \norm{\nabla V(m_\star)}\leq\tfrac{\LH}2\E\norm{C_\star^{1/2}Z}^2=\tfrac{\LH}2\Tr C_\star\leq\frac{\LH N_\theta}{2\alpha}.
+\end{equation}
+For the mean, since $C_0^{-1}=H_{\mathrm{in}}$,
+\[
+    m_0-m_\star=d-H_{\mathrm{in}}^{-1}\bigl(\nabla V(m_\star)+\bar Hd\bigr)
+    =H_{\mathrm{in}}^{-1}(H_{\mathrm{in}}-\bar H)d-H_{\mathrm{in}}^{-1}\nabla V(m_\star).
+\]
+Hessian-Lipschitzness gives $\norm{H_{\mathrm{in}}-\bar H}\leq\int_0^1\LH(1-t)r_{\mathrm{in}}\dd t=\tfrac{\LH}2r_{\mathrm{in}}$,
+and $\norm{H_{\mathrm{in}}^{-1}}\leq1/\alpha$, so with \eqref{eq:gradV-mstar},
+$\norm{m_0-m_\star}\leq\tfrac1\alpha\cdot\tfrac{\LH}2r_{\mathrm{in}}^2+\tfrac1\alpha\cdot\tfrac{\LH N_\theta}{2\alpha}
+=\tfrac{\LH}{2\alpha}(r_{\mathrm{in}}^2+\tfrac{N_\theta}\alpha)$.
+For the covariance, with $C_\star^{-1}=A(a_\star)=\E_{\rho_{a_\star}}[\nabla^2V]$,
+\[
+    \norm{H_{\mathrm{in}}-C_\star^{-1}}\leq\E_{\rho_{a_\star}}\norm{\nabla^2V(m_{\mathrm{in}})-\nabla^2V(X)}
+    \leq\LH\,\E_{\rho_{a_\star}}\norm{m_{\mathrm{in}}-X}\leq\LH\bigl(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha}\bigr),
+\]
+using $\E_{\rho_{a_\star}}\norm{m_{\mathrm{in}}-X}\leq r_{\mathrm{in}}+\sqrt{\Tr C_\star}$ and
+$\Tr C_\star\leq N_\theta/\alpha$. From
+$C_0-C_\star=H_{\mathrm{in}}^{-1}(C_\star^{-1}-H_{\mathrm{in}})C_\star$ and
+$\norm X_{\Frob}\leq\sqrt{N_\theta}\norm X_\op$,
+$\norm{C_0-C_\star}_{\Frob}\leq\tfrac{\sqrt{N_\theta}\LH}{\alpha^2}(r_{\mathrm{in}}+\sqrt{N_\theta/\alpha})$.
+It remains to bound the energy gap. Since $a_\star$ is stationary, the gap is second order in the
+parameter error.
+Parameterize $f(m,B):=\E_Z[V(m+BZ)]-\log\det B$, so $f(m,B)=\calE(m,BB^\top)+\text{const}$ and
+$\Delta(a_0)=f(m_0,B_0)-f(m_\star,B_\star)$ with $B_0:=C_0^{1/2}$, $B_\star:=C_\star^{1/2}$. Along the
+affine path $m_s=m_\star+s\,\delta m$, $B_s=B_\star+s\,\delta B$ with $\delta m=m_0-m_\star$ and
+$\delta B=B_0-B_\star$ symmetric, the first derivative vanishes at $s=0$: $\partial_mf=\E[\nabla V]=0$
+at $a_\star$, and by Stein's identity
+$\tfrac{\dd}{\dd s}\E[V(m_\star+B_sZ)]\big|_0=\Tr(\delta B\,\E[\nabla^2V(X)]B_\star)=\Tr(\delta B\,B_\star^{-1})
+=\tfrac{\dd}{\dd s}\log\det B_s\big|_0$. For the second derivatives,
+\[
+    \frac{\dd^2}{\dd s^2}\E[V(m_s+B_sZ)]
+    =\E\bigl[(\delta m+\delta BZ)^\top\nabla^2V(X_s)(\delta m+\delta BZ)\bigr]
+    \leq\beta\bigl(\norm{\delta m}^2+\norm{\delta B}_{\Frob}^2\bigr),
+\]
+the cross term vanishing by $\E Z=0$, and with $M_s:=B_s^{-1}\delta B$,
+$\tfrac{\dd^2}{\dd s^2}[-\log\det B_s]=\Tr(M_s^2)\leq\norm{M_s}_{\Frob}^2\leq\beta\norm{\delta B}_{\Frob}^2$,
+using $\Tr(M^2)\leq\norm M_{\Frob}^2$ and $\norm{B_s^{-1}}_\op\leq\sqrt\beta$, both $C_0$ and $C_\star$
+lying on the band $\succeq\tfrac1\beta\Id$. Taylor with vanishing first derivative gives
+$\Delta(a_0)\leq\tfrac\beta2\norm{m_0-m_\star}^2+\beta\norm{C_0^{1/2}-C_\star^{1/2}}_{\Frob}^2$, and the
+square root is Frobenius-Lipschitz on the band, eigenvalue divided differences of $\sqrt\cdot$ on
+$[\tfrac1\beta,\infty)$ being at most $\tfrac{\sqrt\beta}2$, so
+$\norm{C_0^{1/2}-C_\star^{1/2}}_{\Frob}\leq\tfrac{\sqrt\beta}2\norm{C_0-C_\star}_{\Frob}$. Substituting
+the two parameter bounds gives the stated estimate; every term carries $\LH^2$, so $\Delta(a_0)=0$ when
+$\LH=0$.
+\end{proof}
+
+\subsection{The global one-step estimates}
+
+\begin{lemma}[Self-bounding estimate for the intrinsic fluctuation]
+\label{lem:Psi-selfbound}
+Under \Cref{assump:logconcave-smooth}, if $C\preceq\Lambda\Id$ then
+\begin{equation}
+\label{eq:Psi-selfbound}
+    \Psi(a)\leq2\beta\Lambda N_\theta+\beta\Lambda\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2
+    \leq2\beta\Lambda N_\theta+2\beta\Lambda\,\Gradnorm(a)^2 .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write $B_X:=C^{1/2}\nabla^2V(X)C^{1/2}$ and $S_A:=C^{1/2}A(a)C^{1/2}=\E[B_X]$. First,
+$\Psi(a)=\E\Tr(B_X^2)-\Tr(S_A^2)\leq\E\Tr(B_X^2)$. Second, $0\preceq B_X\preceq\beta C\preceq\beta\Lambda\Id$
+almost surely, and $0\preceq M\preceq L\Id$ implies $M^2\preceq LM$, so $B_X^2\preceq\beta\Lambda B_X$
+and $\E\Tr(B_X^2)\leq\beta\Lambda\Tr(S_A)$. Third, $s\leq2+(s-1)^2$ for every real $s$, so
+$\Tr(S_A)\leq2N_\theta+\norm{S_A-\Id}_{\Frob}^2$; since $S_A-\Id=-C^{1/2}R(a)C^{1/2}$, this gives the
+first inequality, and $\norm{C^{1/2}R(a)C^{1/2}}_{\Frob}^2\leq2\Gradnorm(a)^2$ gives the second.
+\end{proof}
+
+\begin{lemma}[Hessian-Lipschitz control of the intrinsic fluctuation]
+\label{lem:Psi-hesslip}
+Under \Cref{assump:hess-lip}, the anisotropic bound
+$\Psi(a)\leq\LH^2\,\Tr(C^2)\,\Tr C\leq\LH^2\norm C_\op(\Tr C)^2$ holds. On the band
+$C\preceq\tfrac1\alpha\Id$,
+\begin{equation}
+\label{eq:Psi-hesslip}
+    \Psi(a)\leq\Psi_H:=\frac{N_\theta^2\LH^2}{\alpha^3}=N_\theta^2\barLH^2 .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write $X=m+C^{1/2}Z$ and $F(Z):=C^{1/2}\nabla^2V(m+C^{1/2}Z)C^{1/2}$. Gaussian Poincar\'e applied
+componentwise gives $\Psi(a)=\E\norm{F(Z)-\E F(Z)}_{\Frob}^2\leq\E\norm{D_ZF(Z)}_{\mathrm{HS}}^2$. For
+a unit vector $u$, $D_ZF(Z)[u]=C^{1/2}M_uC^{1/2}$ with $M_u:=D(\nabla^2V)(X)[C^{1/2}u]$ symmetric and
+$\norm{M_u}_\op\leq\LH(u^\top Cu)^{1/2}$. In the eigenbasis of $C$ with eigenvalues $c_i$,
+Cauchy--Schwarz on the weights gives
+$\norm{C^{1/2}M_uC^{1/2}}_{\Frob}^2=\sum_{ij}c_ic_j(M_u)_{ij}^2\leq\Tr(C^2M_u^2)\leq\norm{M_u}_\op^2\Tr(C^2)$,
+so $\norm{D_ZF(Z)[u]}_{\Frob}^2\leq\LH^2(u^\top Cu)\Tr(C^2)$; summing over an orthonormal basis gives
+$\norm{D_ZF(Z)}_{\mathrm{HS}}^2\leq\LH^2\,\Tr C\,\Tr(C^2)$, and $\Tr(C^2)\leq\norm C_\op\Tr C$ gives the
+coarser form. On $C\preceq\tfrac1\alpha\Id$ one has $\Tr(C^2)\leq N_\theta/\alpha^2$ and
+$\Tr C\leq N_\theta/\alpha$.
+\end{proof}
+
+\begin{lemma}[The KL resolvent update is an exponential retraction]
+\label{lem:KL-retraction}
+Fix $a=(m,C)$ with $\tfrac1\beta\Id\preceq C\preceq\tfrac1\alpha\Id$ and
+$\alpha\Id\preceq\overline H\preceq\beta\Id$, and set $P:=C^{1/2}\overline HC^{1/2}$, so that
+$\tfrac1\kappa\Id\preceq P\preceq\kappa\Id$. Write $\overline S:=\Id-P$ and define the logarithmic
+tangent
+\begin{equation}
+\label{eq:Wlog}
+    W(P):=\log(1+\Delta t)\,\Id-\log(\Id+\Delta t\,P).
+\end{equation}
+Then the KL covariance update $C^+=(1+\Delta t)(C^{-1}+\Delta t\,\overline H)^{-1}$ satisfies
+\begin{equation}
+\label{eq:KL-retr}
+    C^+=C^{1/2}e^{W(P)}C^{1/2},
+    \qquad\text{equivalently}\qquad
+    a^+=\Retr_a\bigl(\Delta t\,C\overline b,\;C^{1/2}W(P)C^{1/2}\bigr).
+\end{equation}
+Moreover, with $\mathcal R(P):=W(P)-\Delta t\,\overline S$,
+\begin{equation}
+\label{eq:Wlog-bounds}
+    \norm{W(P)}_\op\leq\Delta t\,\kappa,
+    \qquad
+    \norm{W(P)}_{\Frob}\leq\Delta t\,\norm{\overline S}_{\Frob},
+    \qquad
+    \norm{\mathcal R(P)}_{\Frob}\leq\kappa\,\Delta t^2\,\norm{\overline S}_{\Frob},
+\end{equation}
+so for $\Delta t\leq1/(8\kappa)$ the tangent $\zeta:=(\Delta t\,C\overline b,\,C^{1/2}W(P)C^{1/2})$
+satisfies $\norm{W(P)}_\op\leq\tfrac18<1$ and hence the scope condition of
+\eqref{eq:retr-smooth-restated}.
+\end{lemma}
+
+\begin{proof}
+Since $C^{-1}+\Delta t\,\overline H=C^{-1/2}(\Id+\Delta t\,P)C^{-1/2}$, we have
+$C^+=C^{1/2}\bigl[(1+\Delta t)(\Id+\Delta t\,P)^{-1}\bigr]C^{1/2}$, and, $\log(1+\Delta t)\Id$ and
+$\log(\Id+\Delta t\,P)$ being commuting functions of $P$,
+$e^{W(P)}=(1+\Delta t)(\Id+\Delta t\,P)^{-1}$; the retraction form follows from
+$\Retr_a(u,U)=(m+u,\,C^{1/2}\exp(C^{-1/2}UC^{-1/2})C^{1/2})$ with $U=C^{1/2}W(P)C^{1/2}$. The band
+$\tfrac1\kappa\Id\preceq P\preceq\kappa\Id$ is $\alpha C\preceq P\preceq\beta C$ combined with
+$\tfrac1\beta\Id\preceq C\preceq\tfrac1\alpha\Id$. Each eigenvalue $p\in[\tfrac1\kappa,\kappa]$ of $P$
+contributes $w(p)=\log(1+\Delta t)-\log(1+\Delta t\,p)=\int_p^1\tfrac{\Delta t}{1+\Delta t\,r}\dd r$, and
+$0\leq\tfrac{\Delta t}{1+\Delta t\,r}\leq\Delta t$ for $r\geq0$ gives $|w(p)|\leq\Delta t|1-p|$, whence
+the first two bounds of \eqref{eq:Wlog-bounds}. For the remainder,
+$w(p)-\Delta t(1-p)=-\Delta t^2\int_p^1\tfrac r{1+\Delta t\,r}\dd r$ and $0\leq\tfrac r{1+\Delta t\,r}\leq r\leq\kappa$
+give $|w(p)-\Delta t(1-p)|\leq\kappa\Delta t^2|1-p|$; summing over eigenvalues gives the third.
+\end{proof}
+
+\begin{lemma}[Riemannian stochastic one-step descent]
+\label{lem:onestep-stoch-Riem}
+Assume \Cref{assump:logconcave-smooth} and $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$. For
+one step of \eqref{upd:Riem-stoch} with $0<\Delta t\leq1/\kappa$,
+\begin{equation}
+\label{eq:Riem-onestep-Psi}
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq\Delta_n-\Delta t\Bigl(1-\kappa\Delta t\bigl(1+\tfrac2B\bigr)\Bigr)\Gradnorm(a_n)^2
+    +\frac{3\kappa\Delta t^2}{2B}\Psi(a_n).
+\end{equation}
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:onestep-stoch-Riem}]
+By \Cref{lem:stoch-band}(1) the band $C_n\preceq\tfrac1\alpha\Id$ holds pathwise, so the scope
+condition $\norm{C_n^{-1/2}UC_n^{-1/2}}_\op\leq1$ of the retraction-smoothness estimate
+\eqref{eq:retr-smooth-restated} holds pathwise for the tangent
+$\zeta_n=-\Delta t\,\widehat\grad\calE(a_n)$ because $\Delta t\kappa\leq1$, and
+\eqref{eq:retr-smooth-restated} with $\Lambda=\tfrac1\alpha$, hence $L=2\beta\Lambda=2\kappa$, gives
+pathwise
+\[
+    \calE(a_{n+1})\leq\calE(a_n)+\inner{\grad\calE(a_n)}{\zeta_n}_{a_n}+\kappa\Delta t^2\norm{\widehat\grad\calE(a_n)}_{a_n}^2 .
+\]
+Taking $\E[\cdot\mid\Fil_n]$, conditional unbiasedness \eqref{eq:STL-unbiased} gives
+$\E[\inner{\grad\calE(a_n)}{\widehat\grad\calE(a_n)}_{a_n}\mid\Fil_n]=\Gradnorm(a_n)^2$, and the
+intrinsic variance bound \eqref{eq:intrinsic-STL} gives
+$\E[\norm{\widehat\grad\calE(a_n)}_{a_n}^2\mid\Fil_n]\leq(1+\tfrac2B)\Gradnorm(a_n)^2+\tfrac3{2B}\Psi(a_n)$.
+Collecting terms gives \eqref{eq:Riem-onestep-Psi}.
+\end{proof}
+
+\begin{lemma}[KL stochastic one-step descent]
+\label{lem:onestep-stoch-KL}
+Assume \Cref{assump:logconcave-smooth} and $\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$. For
+one step of \eqref{upd:KL-stoch} with $0<\Delta t\leq1/(8\kappa)$,
+\begin{equation}
+\label{eq:KL-onestep-Psi}
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq\Delta_n-\frac{\Delta t}2\,\Gradnorm(a_n)^2
+    +\frac{7\kappa\,\Delta t^2}{4B}\,\Psi(a_n).
+\end{equation}
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:onestep-stoch-KL}]
+Suppress the index $n$ and condition on $\Fil_n$. Write $A:=A(a)$, $R:=C^{-1}-A$, $S:=C^{1/2}RC^{1/2}$,
+$P_0:=C^{1/2}AC^{1/2}=\Id-S$, and $D:=P-P_0$, so that $\overline S=S-D$ with $\E[D\mid\Fil]=0$ and
+$\E[\norm D_{\Frob}^2\mid\Fil]=\Psi(a)/B$ by \Cref{def:Psi} and minibatch independence. Set
+\[
+    M:=g(a)^\top C\,g(a),\qquad V:=\norm S_{\Frob}^2,\qquad\sigma^2:=\frac{\Psi(a)}B,
+    \qquad\text{so that}\qquad\Gradnorm(a)^2=M+\tfrac12V .
+\]
+On the band $C\preceq\tfrac1\alpha\Id$ the retraction-smoothness estimate
+\eqref{eq:retr-smooth-restated} applies with $\Lambda=\tfrac1\alpha$ and $L=2\kappa$, and by
+\Cref{lem:KL-retraction} the tangent $\zeta=(\Delta t\,C\overline b,\,C^{1/2}W(P)C^{1/2})$ meets its
+scope condition, so pathwise
+$\calE(a^+)\leq\calE(a)+\inner{\grad\calE(a)}\zeta_a+\kappa\norm\zeta_a^2$. The first-order term
+evaluates to $\inner{\grad\calE(a)}\zeta_a=-\Delta t\,g^\top C\overline b-\tfrac12\Tr(S\,W(P))$: the
+mean block uses $\grad_m\calE=-Cg$ in the metric $v^\top C^{-1}v$, and the covariance block uses
+$\grad_C\calE=-CRC$ in the metric $\tfrac12\Tr(C^{-1}\cdot C^{-1}\cdot)$, giving
+$\tfrac12\Tr(C^{-1}(-CRC)C^{-1}C^{1/2}W(P)C^{1/2})=-\tfrac12\Tr(S\,W(P))$. Likewise
+$\norm\zeta_a^2=\Delta t^2\,\overline b^\top C\overline b+\tfrac12\norm{W(P)}_{\Frob}^2$. Hence,
+pathwise,
+\[
+    \calE(a^+)-\calE(a)
+    \leq-\Delta t\,g^\top C\overline b-\tfrac12\Tr(S\,W(P))
+    +\kappa\,\Delta t^2\,\overline b^\top C\overline b+\tfrac\kappa2\norm{W(P)}_{\Frob}^2 .
+\]
+Write $\overline b=g+\varepsilon_b$ with $\E[\varepsilon_b\mid\Fil]=0$. By
+\eqref{eq:intrinsic-STL} and independence,
+$\E[\varepsilon_b^\top C\varepsilon_b\mid\Fil]\leq(V+\Psi(a))/B=\tfrac VB+\sigma^2$, so
+$\E[\overline b^\top C\overline b\mid\Fil]\leq M+\tfrac VB+\sigma^2$ and
+\begin{equation}
+\label{eq:KL-mean}
+    \E\bigl[-\Delta t\,g^\top C\overline b+\kappa\,\Delta t^2\,\overline b^\top C\overline b\mid\Fil\bigr]
+    \leq-\Delta t(1-\kappa\Delta t)M+\frac{\kappa\,\Delta t^2}BV+\kappa\,\Delta t^2\sigma^2 .
+\end{equation}
+For the covariance drift, with $W(P)=\Delta t\,\overline S+\mathcal R(P)$ we have
+$-\tfrac12\Tr(S\,W(P))=-\tfrac{\Delta t}2\Tr(S\overline S)-\tfrac12\Tr(S\,\mathcal R(P))$, and
+$\E[\overline S\mid\Fil]=S$ gives $\E[\Tr(S\overline S)\mid\Fil]=V$. For the remainder,
+Cauchy--Schwarz, \eqref{eq:Wlog-bounds}, $\E[\norm{\overline S}_{\Frob}^2\mid\Fil]=V+\sigma^2$,
+Jensen, and $x\sqrt{x^2+y^2}\leq x^2+\tfrac12y^2$ with $x=\sqrt V$, $y=\sigma$ give
+$|\E[\Tr(S\,\mathcal R(P))\mid\Fil]|\leq\kappa\Delta t^2(V+\tfrac12\sigma^2)$, so
+\begin{equation}
+\label{eq:KL-covdrift}
+    \E\bigl[-\tfrac12\Tr(S\,W(P))\mid\Fil\bigr]
+    \leq-\frac{\Delta t}2V+\frac{\kappa\,\Delta t^2}2V+\frac{\kappa\,\Delta t^2}4\sigma^2 .
+\end{equation}
+Likewise, from $\norm{W(P)}_{\Frob}\leq\Delta t\norm{\overline S}_{\Frob}$ we get
+$\E[\norm{W(P)}_{\Frob}^2\mid\Fil]\leq\Delta t^2(V+\sigma^2)$, so
+\begin{equation}
+\label{eq:KL-covquad}
+    \frac\kappa2\E[\norm{W(P)}_{\Frob}^2\mid\Fil]\leq\frac{\kappa\,\Delta t^2}2V+\frac{\kappa\,\Delta t^2}2\sigma^2 .
+\end{equation}
+Adding \eqref{eq:KL-mean}, \eqref{eq:KL-covdrift} and \eqref{eq:KL-covquad} to
+$\Delta_n$,
+\[
+    \E[\Delta_{n+1}\mid\Fil]
+    \leq\Delta_n-\Delta t(1-\kappa\Delta t)M
+    -\Delta t\Bigl[\tfrac12-\kappa\Delta t\bigl(1+\tfrac1B\bigr)\Bigr]V
+    +\tfrac74\,\kappa\,\Delta t^2\sigma^2 .
+\]
+For $\Delta t\leq1/(8\kappa)$ one has $1-\kappa\Delta t\geq\tfrac78\geq\tfrac12$ and, since $B\geq1$,
+$\tfrac12-\kappa\Delta t(1+\tfrac1B)\geq\tfrac12-\tfrac14=\tfrac14$. Thus
+$\E[\Delta_{n+1}\mid\Fil]\leq\Delta_n-\tfrac{\Delta t}2M-\tfrac{\Delta t}4V+\tfrac{7\kappa\Delta t^2}{4B}\Psi(a)$,
+which is \eqref{eq:KL-onestep-Psi} since $\Gradnorm(a)^2=M+\tfrac12V$.
+\end{proof}
+
+\subsection{The global theorems}
+
+\begin{proof}[Proof of \Cref{thm:stoch-glob-Riem}]
+\Cref{lem:stoch-band}(1) gives the band $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$
+pathwise, so the one-step estimate \eqref{eq:Riem-onestep-Psi} and the gradient domination
+$\Gradnorm(a_n)^2\geq\tfrac1{2\kappa}\Delta_n$ of \eqref{eq:PL-bands} are available at every step.
+For (1), at $\Delta t=\tfrac1{2\kappa(1+2/B)}$ the bracket in \eqref{eq:Riem-onestep-Psi} equals
+$\tfrac12$, so with $\Psi\leq\Psi_H=N_\theta^2\barLH^2$ from \Cref{lem:Psi-hesslip},
+$\E[\Delta_{n+1}\mid\Fil_n]\leq(1-\tfrac{\Delta t}{4\kappa})\Delta_n+\tfrac{3\kappa\Delta t^2}{2B}\Psi_H$.
+Unrolling, the floor is
+$\tfrac{3\kappa\Delta t^2\Psi_H/(2B)}{\Delta t/(4\kappa)}=\tfrac{6\kappa^2\Delta t}B\Psi_H=\tfrac{3\kappa}{B+2}\Psi_H$
+and the contraction is $1-\tfrac{\Delta t}{4\kappa}=1-\tfrac1{8\kappa^2(1+2/B)}$.
+For (2), on the band $C_n\preceq\tfrac1\alpha\Id$ we have $\beta\Lambda=\kappa$, so
+\Cref{lem:Psi-selfbound} gives $\tfrac32\Psi(a_n)\leq3\kappa N_\theta+3\kappa\Gradnorm(a_n)^2$.
+Substituting into \eqref{eq:Riem-onestep-Psi} and collecting the $\Gradnorm^2$ terms,
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq\Delta_n-\Delta t\bigl(1-\kappa\Delta t\rho_B\bigr)\Gradnorm(a_n)^2+\frac{3\kappa^2\Delta t^2N_\theta}B,
+\]
+since $\kappa\Delta t^2(1+\tfrac2B)+\tfrac{3\kappa\Delta t^2}{2B}\cdot2\kappa=\kappa\Delta t^2\rho_B$
+with $\rho_B=1+\tfrac{2+3\kappa}B$. At $\Delta t=\tfrac1{2\kappa\rho_B}$ the bracket is $\tfrac12$, so
+$\E[\Delta_{n+1}\mid\Fil_n]\leq(1-\tfrac{\Delta t}{4\kappa})\Delta_n+\tfrac{3\kappa^2\Delta t^2N_\theta}B$.
+Unrolling, the floor is
+$\tfrac{3\kappa^2\Delta t^2N_\theta/B}{\Delta t/(4\kappa)}=\tfrac{12\kappa^3\Delta tN_\theta}B=\tfrac{6\kappa^2N_\theta}{B\rho_B}=\tfrac{6\kappa^2N_\theta}{B+2+3\kappa}$
+and the contraction is $1-\tfrac1{8\kappa^2\rho_B}$. Since $B+2+3\kappa\geq3\kappa$, the floor is at
+most $2\kappa N_\theta$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:stoch-glob-KL}]
+\Cref{lem:stoch-band}(2) gives the band $\tfrac1\beta\Id\preceq C_n\preceq\tfrac1\alpha\Id$ pathwise
+for every $\Delta t>0$, and \eqref{eq:PL-bands} gives $\Gradnorm(a_n)^2\geq\tfrac1\kappa\Delta_n$.
+For (1), by \Cref{lem:Psi-hesslip}, $\Psi\leq\Psi_H=N_\theta^2\barLH^2$; substituting into
+\eqref{eq:KL-onestep-Psi} gives
+$\E[\Delta_{n+1}\mid\Fil_n]\leq(1-\tfrac{\Delta t}{2\kappa})\Delta_n+\tfrac{7\kappa\Delta t^2}{4B}\Psi_H$.
+At $\Delta t=\tfrac1{8\kappa}$ the contraction is $1-\tfrac1{16\kappa^2}$ and the floor is
+$\tfrac{7\kappa\Delta t^2\Psi_H/(4B)}{\Delta t/(2\kappa)}=\tfrac{7\kappa}{16B}\Psi_H$.
+For (2), we have $\beta\Lambda=\kappa$ on the band, so \Cref{lem:Psi-selfbound} gives
+$\Psi(a_n)\leq2\kappa N_\theta+2\kappa\Gradnorm(a_n)^2$, and \eqref{eq:KL-onestep-Psi} becomes
+\[
+    \E[\Delta_{n+1}\mid\Fil_n]
+    \leq\Delta_n-\frac{\Delta t}2\Bigl(1-\frac{7\kappa^2\Delta t}B\Bigr)\Gradnorm(a_n)^2+\frac{7\kappa^2\Delta t^2}{2B}N_\theta .
+\]
+The choice $\Delta t\leq\tfrac B{14\kappa^2}$ makes $7\kappa^2\Delta t/B\leq\tfrac12$, so the bracket is
+at least $\tfrac12$, and gradient domination gives
+$\E[\Delta_{n+1}\mid\Fil_n]\leq(1-\tfrac{\Delta t}{4\kappa})\Delta_n+\tfrac{7\kappa^2\Delta t^2}{2B}N_\theta$.
+Unrolling, the floor is
+$\tfrac{7\kappa^2\Delta t^2N_\theta/(2B)}{\Delta t/(4\kappa)}=\tfrac{14\kappa^3\Delta tN_\theta}B$,
+which equals $\kappa N_\theta$ when $\Delta t=\tfrac B{14\kappa^2}$, and the contraction is then
+$1-\tfrac B{56\kappa^3}$.
+\end{proof}
+
+\subsection{Local variance and the matrix-exponential perturbation}
+
+\begin{lemma}[Local variance decomposition]
+\label{lem:loc-variance}
+Assume \Cref{assump:logconcave-smooth,assump:hess-lip}, work in whitened coordinates, and let
+$a=(m,C)$ with $\tfrac12\Id\preceq C\preceq\tfrac32\Id$. Then for a single sample $X\sim\rho_a$,
+\begin{equation}
+\label{eq:local-var}
+    \E\Bigl[\norm{\varepsilon_b}^2+\tfrac12\norm{\varepsilon_H}_{\Frob}^2\Bigr]
+    \leq V_0+V_1\,\norm{a-a_\star}_\star^2,
+    \qquad
+    V_0:=3N_\theta^2\LHs^2,\quad V_1:=24+6N_\theta\LHs^2 ,
+\end{equation}
+and by conditional independence the minibatch noise obeys
+$\E[\norm{\overline\varepsilon_b}^2+\tfrac12\norm{\overline\varepsilon_H}_{\Frob}^2\mid\Fil]\leq B^{-1}(V_0+V_1\norm{a-a_\star}_\star^2)$.
+At the optimizer,
+$\E[\norm{\varepsilon_b(a_\star)}^2+\tfrac12\norm{\varepsilon_H(a_\star)}_{\Frob}^2]\leq\sigma_\star^2:=\tfrac32N_\theta^2\LHs^2$,
+which is $0$ for Gaussian targets.
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:loc-variance}]
+Write $H(x):=\nabla^2\widehat V(x)$, so $\varepsilon_H=H(X)-A(a)$ and $A(a)=\E_{\rho_a}[H(X)]$.
+Gaussian Poincar\'e applied componentwise to $X\mapsto H_{ij}(X)$ with $X\sim\N(m,C)$
+gives $\Var(H_{ij}(X))\leq\norm C_\op\E\norm{\nabla H_{ij}(X)}^2$, so
+$\E\norm{\varepsilon_H}_{\Frob}^2\leq\norm C_\op\E\sum_{i,j,k}(\partial_kH_{ij}(X))^2$. For each $k$,
+$\sum_{i,j}(\partial_kH_{ij}(x))^2=\norm{DH(x)[e_k]}_{\Frob}^2\leq N_\theta\norm{DH(x)[e_k]}_\op^2\leq N_\theta\LHs^2$
+by \eqref{eq:LHs}; summing over the $N_\theta$ coordinates $k$ and using $\norm C_\op\leq\tfrac32$,
+\begin{equation}
+\label{eq:covnoise}
+    \E\norm{\varepsilon_H}_{\Frob}^2\leq\tfrac32N_\theta^2\LHs^2 .
+\end{equation}
+Let $F(x):=-\nabla\widehat V(x)+C^{-1}(x-m)$, so $\varepsilon_b=F(X)-\E F(X)$ and
+$DF(x)=C^{-1}-H(x)$ is symmetric. Gaussian Poincar\'e componentwise and summed gives
+$\E\norm{\varepsilon_b}^2\leq\norm C_\op\E\norm{C^{-1}-H(X)}_{\Frob}^2$, and since $\E H(X)=A(a)$ the
+orthogonal decomposition $C^{-1}-H(X)=(C^{-1}-A(a))-\varepsilon_H$ has vanishing cross expectation, so
+\begin{equation}
+\label{eq:meannoise}
+    \E\norm{\varepsilon_b}^2\leq\tfrac32\Bigl(\norm{C^{-1}-A(a)}_{\Frob}^2+\E\norm{\varepsilon_H}_{\Frob}^2\Bigr).
+\end{equation}
+Adding $\tfrac12\E\norm{\varepsilon_H}_{\Frob}^2$ to \eqref{eq:meannoise},
+\[
+    \E\Bigl[\norm{\varepsilon_b}^2+\tfrac12\norm{\varepsilon_H}_{\Frob}^2\Bigr]
+    \leq2\,\E\norm{\varepsilon_H}_{\Frob}^2+\tfrac32\norm{C^{-1}-A(a)}_{\Frob}^2 ,
+\]
+and by \eqref{eq:covnoise} the first term is at most $3N_\theta^2\LHs^2=V_0$. For the second,
+$\norm{C^{-1}-A(a)}_{\Frob}^2\leq2\norm{C^{-1}-\Id}_{\Frob}^2+2\norm{A(a)-\Id}_{\Frob}^2$; since
+$C^{-1}-\Id=-C^{-1}(C-\Id)$ and $\norm{C^{-1}}_\op\leq2$, the first piece is at most
+$8\norm{C-\Id}_{\Frob}^2$. For the second piece, $A(a)-\Id=\E_Z[H(m+C^{1/2}Z)-H(Z)]$ because
+$A(a_\star)=\E_ZH(Z)=\Id$, so by Jensen and \eqref{eq:LHs},
+\[
+    \norm{A(a)-\Id}_{\Frob}^2\leq N_\theta\LHs^2\,\E\norm{m+(C^{1/2}-\Id)Z}^2
+    =N_\theta\LHs^2\bigl(\norm m^2+\norm{C^{1/2}-\Id}_{\Frob}^2\bigr),
+\]
+the cross term vanishing by $\E Z=0$, and $\norm{C^{1/2}-\Id}_{\Frob}^2\leq\norm{C-\Id}_{\Frob}^2$
+eigenvalue-wise. Hence
+$\tfrac32\norm{C^{-1}-A(a)}_{\Frob}^2\leq12\norm{C-\Id}_{\Frob}^2+3N_\theta\LHs^2(\norm m^2+\norm{C-\Id}_{\Frob}^2)$.
+Converting through $\norm{a-a_\star}_\star^2=\norm m^2+\tfrac12\norm{C-\Id}_{\Frob}^2$ gives
+$\norm{C-\Id}_{\Frob}^2\leq2\norm{a-a_\star}_\star^2$ and
+$\norm m^2+\norm{C-\Id}_{\Frob}^2\leq2\norm{a-a_\star}_\star^2$, so the state-dependent part is at most
+$(24+6N_\theta\LHs^2)\norm{a-a_\star}_\star^2=V_1\norm{a-a_\star}_\star^2$. The minibatch bound is
+$\E\norm{\overline\varepsilon}^2=B^{-1}\E\norm\varepsilon^2$ for centered independent averages. At
+$a_\star$ we have $C=\Id$ and $C^{-1}-A(a_\star)=0$, so \eqref{eq:covnoise} tightens to
+$\E\norm{\varepsilon_H}_{\Frob}^2\leq N_\theta^2\LHs^2$ and \eqref{eq:meannoise} to
+$\E\norm{\varepsilon_b}^2\leq N_\theta^2\LHs^2$, giving $\sigma_\star^2\leq\tfrac32N_\theta^2\LHs^2$.
+\end{proof}
+
+The only nonlinear ingredient of the local perturbation analysis is the following pair of elementary
+bounds on the matrix exponential.
+
+\begin{lemma}[Exponential perturbation bounds]
+\label{lem:exp-perturb}
+Let $S,\widehat S\in\Sym(N_\theta)$ with $S\preceq\Id$ and $\widehat S\preceq\Id$, put
+$\Xi:=\widehat S-S$, and let $0<\Delta t\leq1$. Then
+\begin{align*}
+\textup{(i)}\quad & \norm{e^{\Delta t\widehat S}-e^{\Delta tS}}_{\Frob}\leq e\,\Delta t\,\norm{\Xi}_{\Frob},\\
+\textup{(ii)}\quad & \norm{e^{\Delta t\widehat S}-e^{\Delta tS}-D\exp(\Delta tS)[\Delta t\,\Xi]}_{\Frob}
+\leq\tfrac e2\,\Delta t^2\,\norm\Xi_\op\norm\Xi_{\Frob}.
+\end{align*}
+\end{lemma}
+
+\begin{proof}
+For symmetric $M=Q\diag(\lambda_i)Q^\top$ the Fr\'echet derivative acts in the eigenbasis by the
+Loewner divided-difference matrix,
+$(Q^\top D\exp(M)[E]Q)_{ij}=\Phi_{ij}(Q^\top EQ)_{ij}$ with
+$\Phi_{ij}=(e^{\lambda_i}-e^{\lambda_j})/(\lambda_i-\lambda_j)$, equal to $e^{\lambda_i}$ when
+$\lambda_i=\lambda_j$; since $\Phi_{ij}\leq e^{\lambda_{\max}(M)}$, one has
+$\norm{D\exp(M)[E]}_{\Frob}\leq e^{\lambda_{\max}(M)}\norm E_{\Frob}$. The Duhamel identity
+$e^Y-e^X=\int_0^1\!\!\int_0^1e^{uM_s}(Y-X)e^{(1-u)M_s}\dd u\dd s$ with $M_s=X+s(Y-X)$, taken at
+$X=\Delta tS$ and $Y=\Delta t\widehat S$ so that $M_s\preceq\Delta t\Id$ by convexity, together with
+$\norm{e^{uM_s}}_\op\leq e^{u\Delta t}$, gives
+$\norm{e^{\Delta t\widehat S}-e^{\Delta tS}}_{\Frob}\leq e^{\Delta t}\Delta t\norm\Xi_{\Frob}\leq e\Delta t\norm\Xi_{\Frob}$,
+which is (i).
+
+For (ii), Taylor's theorem with integral remainder gives
+$e^{\Delta t\widehat S}-e^{\Delta tS}-D\exp(\Delta tS)[\Delta t\,\Xi]=\int_0^1(1-s)\Phi''(s)\dd s$ with
+$\Phi(s):=\exp(\Delta tS+s\Delta t\,\Xi)$ and
+$\Phi''(s)=D^2\exp(M_s)[\Delta t\,\Xi,\Delta t\,\Xi]$, $M_s\preceq\Delta t\Id$. The second Fr\'echet
+derivative admits the simplex representation
+$D^2\exp(M)[E,E]=2\int_{u_0+u_1+u_2=1,\,u_i\geq0}e^{u_0M}Ee^{u_1M}Ee^{u_2M}$, whose Frobenius norm is
+bounded, using $\norm{e^{u_iM}}_\op\leq e^{u_i\lambda_{\max}(M)}$ and
+$\norm{ABC}_{\Frob}\leq\norm A_\op\norm B_\op\norm C_{\Frob}$, by
+$2\cdot\tfrac12\cdot e^{\lambda_{\max}(M)}\norm E_\op\norm E_{\Frob}$, the factor $\tfrac12$ being the
+volume of the simplex. Hence
+$\norm{\Phi''(s)}_{\Frob}\leq e^{\Delta t}\Delta t^2\norm\Xi_\op\norm\Xi_{\Frob}$, and
+$\int_0^1(1-s)\dd s=\tfrac12$ with $e^{\Delta t}\leq e$ gives (ii).
+\end{proof}
+
+\begin{lemma}[One-step stochastic perturbation, Riemannian]
+\label{lem:perturb-Riem}
+Assume \Cref{assump:logconcave-smooth,assump:hess-lip}, work in whitened coordinates, and let
+$a=(m,C)$ with $\tfrac12\Id\preceq C\preceq\tfrac32\Id$ and $\norm{T_{\Riem}(a)-a_\star}_\star\leq1$,
+where $T_{\Riem}$ is the deterministic map of \eqref{upd:Riem} and $\widehat a^+$ one stochastic step
+of \eqref{upd:Riem-stoch} with batch $B$ and $0<\Delta t\leq1$. Then
+\[
+    \E\bigl[\norm{\widehat a^+-a_\star}_\star^2\mid\Fil\bigr]
+    \leq\norm{T_{\Riem}(a)-a_\star}_\star^2+\frac{64\,\Delta t^2}{B}\bigl(V_0+V_1\norm{a-a_\star}_\star^2\bigr).
+\]
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:perturb-Riem}]
+Let $a^+:=T_{\Riem}(a)$ and $\widehat a^+-a^+=(\delta_m,\delta_C)$. Expanding the whitened square,
+\begin{equation}
+\label{eq:perturb-expand}
+    \E\bigl[\norm{\widehat a^+-a_\star}_\star^2\mid\Fil\bigr]
+    =\norm{a^+-a_\star}_\star^2
+    +2\inner{a^+-a_\star}{\E[\widehat a^+-a^+\mid\Fil]}_\star
+    +\E\bigl[\norm{\widehat a^+-a^+}_\star^2\mid\Fil\bigr],
+\end{equation}
+and abbreviate $Q:=\E[\norm{\overline\varepsilon_b}^2+\tfrac12\norm{\overline\varepsilon_H}_{\Frob}^2\mid\Fil]$.
+For the second moment, the mean components differ by $\delta_m=\Delta t\,C\,\overline\varepsilon_b$, so
+$\E\norm{\delta_m}^2\leq\tfrac94\Delta t^2\E\norm{\overline\varepsilon_b}^2$. The covariance blocks are
+$C^{1/2}e^{\Delta tS}C^{1/2}$ and $C^{1/2}e^{\Delta t\widehat S}C^{1/2}$ with
+$S=\Id-C^{1/2}A(a)C^{1/2}\preceq\Id$, $\widehat S=\Id-C^{1/2}\overline HC^{1/2}\preceq\Id$, and
+$\widehat S-S=-C^{1/2}\overline\varepsilon_HC^{1/2}=:\Xi_S$. By \Cref{lem:exp-perturb}(i) and
+$\norm{\Xi_S}_{\Frob}\leq\tfrac32\norm{\overline\varepsilon_H}_{\Frob}$,
+\[
+    \norm{\delta_C}_{\Frob}\leq\norm C_\op\norm{e^{\Delta t\widehat S}-e^{\Delta tS}}_{\Frob}
+    \leq\tfrac32\cdot e\Delta t\cdot\tfrac32\norm{\overline\varepsilon_H}_{\Frob}
+    =\tfrac{9e}4\Delta t\norm{\overline\varepsilon_H}_{\Frob}.
+\]
+Therefore
+$\E\norm{\widehat a^+-a^+}_\star^2\leq\tfrac94\Delta t^2\E\norm{\overline\varepsilon_b}^2+\tfrac{81e^2}{32}\Delta t^2\E\norm{\overline\varepsilon_H}_{\Frob}^2\leq\tfrac{81e^2}{16}\Delta t^2Q$,
+using $\tfrac94\leq\tfrac{81e^2}{16}$.
+The mean bias vanishes, $\E[\delta_m\mid\Fil]=0$. For the covariance,
+$e^{\Delta t\widehat S}-e^{\Delta tS}=D\exp(\Delta tS)[\Delta t\,\Xi_S]+\mathcal R$ with the first term
+centered, so $\E[\delta_C\mid\Fil]=C^{1/2}\E[\mathcal R\mid\Fil]C^{1/2}$ and, by
+\Cref{lem:exp-perturb}(ii) with $\norm{\Xi_S}_\op\norm{\Xi_S}_{\Frob}\leq\tfrac94\norm{\overline\varepsilon_H}_{\Frob}^2$,
+\[
+    \norm{\E[\delta_C\mid\Fil]}_{\Frob}\leq\tfrac32\cdot\tfrac e2\Delta t^2\cdot\tfrac94\E\norm{\overline\varepsilon_H}_{\Frob}^2
+    =\tfrac{27e}{16}\Delta t^2\E\norm{\overline\varepsilon_H}_{\Frob}^2 .
+\]
+Since the mean bias is zero, $\norm{\E[\widehat a^+-a^+\mid\Fil]}_\star=\tfrac1{\sqrt2}\norm{\E[\delta_C\mid\Fil]}_{\Frob}$,
+so with $\norm{a^+-a_\star}_\star\leq1$, Cauchy--Schwarz, and
+$\E\norm{\overline\varepsilon_H}_{\Frob}^2\leq2Q$, the cross term of \eqref{eq:perturb-expand} is at
+most $\tfrac{27e}{4\sqrt2}\Delta t^2Q$.
+Adding the two contributions, the coefficient of $\Delta t^2Q$ is
+$\tfrac{81e^2}{16}+\tfrac{27e}{4\sqrt2}<64$, numerically about $50.4$. Bounding
+$Q\leq B^{-1}(V_0+V_1\norm{a-a_\star}_\star^2)$ by \Cref{lem:loc-variance} gives the claim.
+\end{proof}
+
+\begin{lemma}[One-step stochastic perturbation, KL]
+\label{lem:perturb-KL}
+Under the hypotheses of \Cref{lem:perturb-Riem} but for the KL maps \eqref{upd:KL} and
+\eqref{upd:KL-stoch} and the weighted norm $\norm\cdot_{\star,\Delta t}$, with
+$\norm{T_{\KL}(a)-a_\star}_{\star,\Delta t}\leq1$,
+\[
+    \E\bigl[\norm{\widehat a^+-a_\star}_{\star,\Delta t}^2\mid\Fil\bigr]
+    \leq\norm{T_{\KL}(a)-a_\star}_{\star,\Delta t}^2+\frac{68\,\Delta t^2}{B}\bigl(V_0+V_1\norm{a-a_\star}_\star^2\bigr).
+\]
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:perturb-KL}]
+Let $a^+:=T_{\KL}(a)$, $P:=C^{-1}+\Delta t\,A(a)$ and
+$\widehat P:=C^{-1}+\Delta t\,\overline H=P+\Delta t\,\overline\varepsilon_H$, so that
+$C^+=(1+\Delta t)P^{-1}$, $\widehat C^+=(1+\Delta t)\widehat P^{-1}$ and
+$\delta_C=(1+\Delta t)(\widehat P^{-1}-P^{-1})$. Since $A(a),\overline H\succeq0$ we have
+$P\succeq C^{-1}$ and $\widehat P\succeq C^{-1}$, so
+$\norm{P^{-1}}_\op,\norm{\widehat P^{-1}}_\op\leq\norm C_\op\leq\tfrac32$ almost surely. The expansion
+\eqref{eq:perturb-expand} holds with $\norm\cdot_\star$ replaced by $\norm\cdot_{\star,\Delta t}$,
+whose covariance weight is $\tfrac{1+\Delta t}2$.
+For the second moment, as before $\E\norm{\delta_m}^2\leq\tfrac94\Delta t^2\E\norm{\overline\varepsilon_b}^2$.
+The first-order resolvent identity
+$\widehat P^{-1}-P^{-1}=-P^{-1}(\Delta t\,\overline\varepsilon_H)\widehat P^{-1}$ gives
+$\norm{\widehat P^{-1}-P^{-1}}_{\Frob}\leq\tfrac94\Delta t\norm{\overline\varepsilon_H}_{\Frob}$, hence
+$\norm{\delta_C}_{\Frob}\leq\tfrac92\Delta t\norm{\overline\varepsilon_H}_{\Frob}$. As
+$\tfrac{1+\Delta t}2\leq1$, we get
+$\E\norm{\widehat a^+-a^+}_{\star,\Delta t}^2\leq\tfrac94\Delta t^2\E\norm{\overline\varepsilon_b}^2+\tfrac{81}4\Delta t^2\E\norm{\overline\varepsilon_H}_{\Frob}^2\leq\tfrac{81}2\Delta t^2Q$.
+For the bias, the second-order resolvent identity
+\[
+    \widehat P^{-1}-P^{-1}=-P^{-1}(\Delta t\,\overline\varepsilon_H)P^{-1}+P^{-1}(\Delta t\,\overline\varepsilon_H)P^{-1}(\Delta t\,\overline\varepsilon_H)\widehat P^{-1}
+\]
+has centered first term, so the conditional bias is the second term, and
+$\norm{\E[\widehat P^{-1}-P^{-1}\mid\Fil]}_{\Frob}\leq(\tfrac32)^3\Delta t^2\E\norm{\overline\varepsilon_H}_{\Frob}^2=\tfrac{27}8\Delta t^2\E\norm{\overline\varepsilon_H}_{\Frob}^2$.
+Thus $\norm{\E[\delta_C\mid\Fil]}_{\Frob}\leq\tfrac{27}4\Delta t^2\E\norm{\overline\varepsilon_H}_{\Frob}^2$
+and, the mean bias being zero,
+$\norm{\E[\widehat a^+-a^+\mid\Fil]}_{\star,\Delta t}\leq\tfrac{27}4\Delta t^2\E\norm{\overline\varepsilon_H}_{\Frob}^2$;
+with $\norm{a^+-a_\star}_{\star,\Delta t}\leq1$ the cross term is at most $27\Delta t^2Q$.
+Adding the two contributions, the coefficient of $\Delta t^2Q$ is $\tfrac{81}2+27=67.5<68$. Finally
+$\norm{a-a_\star}_\star^2\leq\norm{a-a_\star}_{\star,\Delta t}^2$, so
+$Q\leq B^{-1}(V_0+V_1\norm{a-a_\star}_\star^2)$ from \Cref{lem:loc-variance} gives the stated bound.
+\end{proof}
+
+\subsection{Killed-process contraction and finite-horizon containment}
+
+\begin{proof}[Proof of \Cref{thm:stoch-loc-Riem}]
+Write $r_n:=\norm{a_n-a_\star}_\star$. On $\{n<\tau_{\Riem}\}$ we have $a_n\in\Ureg_{\delta_{\Riem}}$,
+so $\tfrac12\Id\preceq C_n\preceq\tfrac32\Id$ and
+$r_n\leq\mathfrak b_{\star,\Riem}(\delta_{\Riem})\sqrt{\delta_{\Riem}}\leq1$ by
+\Cref{def:stoch-admissible}. The pointwise one-step contraction of \Cref{lem:loc-contraction}, which
+needs only $\Delta t\leq\tfrac2{4+\Gamma}$ and no energy-descent bound, gives
+$\norm{T_{\Riem}(a_n)-a_\star}_\star\leq(1-\mu_{\Riem}\Delta t)r_n\leq r_n\leq1$, since
+$\tfrac12\gamma_{\Riem}=\mu_{\Riem}$. Hence \Cref{lem:perturb-Riem} applies and
+\[
+    \E[r_{n+1}^2\mid\Fil_n]\leq(1-\mu_{\Riem}\Delta t)^2r_n^2+\tfrac{64\Delta t^2}B\bigl(V_0+V_1r_n^2\bigr).
+\]
+Because $\Delta t\leq\tfrac2{4+\Gamma}$ we have
+$\mu_{\Riem}\Delta t=\tfrac{\Delta t}{2(4+\Gamma)}\leq\tfrac1{(4+\Gamma)^2}\leq\tfrac1{16}\leq\tfrac12$,
+so $(1-\mu_{\Riem}\Delta t)^2\leq1-\tfrac32\mu_{\Riem}\Delta t$ from $x^2\leq\tfrac12x$ for
+$x\leq\tfrac12$. The stepsize bound $\Delta t\leq\tfrac B{256A_{\Riem}V_1}$ gives
+$\tfrac{64\Delta t^2}BV_1\leq\tfrac12\mu_{\Riem}\Delta t$, hence
+\[
+    \E[r_{n+1}^2\mid\Fil_n]\leq(1-\mu_{\Riem}\Delta t)r_n^2+\eta_{\Riem},
+    \qquad \eta_{\Riem}:=\tfrac{64\Delta t^2}BV_0=\tfrac{192\Delta t^2N_\theta^2\LHs^2}B .
+\]
+Set $M_n:=\E[r_n^2\mathbf1_{\{\tau_{\Riem}>n\}}]$. Since
+$\{\tau_{\Riem}>n+1\}\subseteq\{\tau_{\Riem}>n\}\in\Fil_n$,
+\[
+    M_{n+1}\leq\E\bigl[\mathbf1_{\{\tau_{\Riem}>n\}}\E[r_{n+1}^2\mid\Fil_n]\bigr]
+    \leq(1-\mu_{\Riem}\Delta t)M_n+\eta_{\Riem},
+\]
+and iterating from $M_0=r_0^2$ with $\sum_{j\geq0}(1-\mu_{\Riem}\Delta t)^j=(\mu_{\Riem}\Delta t)^{-1}$
+gives
+$M_N\leq(1-\mu_{\Riem}\Delta t)^Nr_0^2+\eta_{\Riem}/(\mu_{\Riem}\Delta t)$, which is the stated bound
+since $\eta_{\Riem}/(\mu_{\Riem}\Delta t)=384\Delta t(4+\Gamma)N_\theta^2\LHs^2/B$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:stoch-loc-KL}]
+Identical to the previous proof, replacing $\norm\cdot_\star$ by $\norm\cdot_{\star,\Delta t}$,
+$\gamma_{\Riem}$ by $\gamma_{\KL}$ so that $\mu_{\Riem}$ becomes $\mu_{\KL}$,
+\Cref{lem:perturb-Riem} by \Cref{lem:perturb-KL} with the coefficient $64$ replaced by $68$, and
+$\eta_{\Riem}$ by $\eta_{\KL}=\tfrac{68\Delta t^2}BV_0=\tfrac{204\Delta t^2N_\theta^2\LHs^2}B$. The
+step condition $\Delta t\leq\tfrac B{272A_{\KL}V_1}$ gives
+$\tfrac{68\Delta t^2}BV_1\leq\tfrac12\mu_{\KL}\Delta t$, and $\mu_{\KL}\Delta t\leq\tfrac12$ holds as
+before, so $\E[r_{n+1}^2\mid\Fil_n]\leq(1-\mu_{\KL}\Delta t)r_n^2+\eta_{\KL}$ with
+$r_n=\norm{a_n-a_\star}_{\star,\Delta t}$; the non-exit recursion gives
+$M_N\leq(1-\mu_{\KL}\Delta t)^Nr_0^2+\eta_{\KL}/(\mu_{\KL}\Delta t)$, which is the stated bound.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{prop:exit-prob}]
+Since $\{a:\norm{a-a_\star}_{\star,\bullet}\leq r_\bullet\}\subseteq\Ureg_{\delta_\bullet}$, on
+$\{n<\tau_{r_\bullet}\}$ the one-step recursion
+$\E[r_{n+1}^2\mid\Fil_n]\leq q_\bullet r_n^2+\eta_\bullet$ established in the two preceding proofs
+holds, with $q_\bullet:=1-\mu_\bullet\Delta t$ and $r_n:=\norm{a_n-a_\star}_{\star,\bullet}$. Define the
+process frozen at exit, $R_n:=r_{n\wedge\tau_{r_\bullet}}$. On $\{\tau_{r_\bullet}>n\}$ one has
+$R_{n+1}=r_{n+1}$ and, since $q_\bullet\leq1$,
+$\E[R_{n+1}^2\mid\Fil_n]\leq q_\bullet r_n^2+\eta_\bullet\leq R_n^2+\eta_\bullet$; on
+$\{\tau_{r_\bullet}\leq n\}$ one has $R_{n+1}=R_n$. In either case
+$\E[R_{n+1}^2\mid\Fil_n]\leq R_n^2+\eta_\bullet$, so iterating gives $\E R_N^2\leq r_0^2+N\eta_\bullet$.
+On $\{\tau_{r_\bullet}\leq N\}$ the frozen value satisfies $R_N=r_{\tau_{r_\bullet}}>r_\bullet$, so
+Markov's inequality gives
+$r_\bullet^2\Prob(\tau_{r_\bullet}\leq N)\leq\E R_N^2\leq r_0^2+N\eta_\bullet$, which is the claim.
+Splitting the failure budget equally between the two terms gives the displayed sufficient conditions.
+\end{proof}
+
+Freezing the process at the exit time removes the factor $(\mu_\bullet\Delta t)^{-1}$ that a
+per-exit-time union bound would incur; that denominator remains genuine in the stationary killed-moment
+floor $\eta_\bullet/(\mu_\bullet\Delta t)$ of \Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL}, which sums
+repeated noise within the surviving process, but not in the exit probability. At the certified stepsize
+$\Delta t=\Theta((4+\Gamma)^{-1})$, where also $\mu_\bullet=\Theta((4+\Gamma)^{-1})$, the resulting
+batch requirement is smaller by a factor of order $(4+\Gamma)^2$ than the condition
+$B\gtrsim N\Delta t\,N_\theta^2\LHs^2/(\epsilon'\mu_\bullet r_\bullet^2)$ that the union-bound argument
+would demand.
+
+\begin{proof}[Proof of \Cref{cor:stoch-three-stage}]
+By Markov's inequality applied to $\Delta_{N_1}\geq0$ and $\Ureg_{\delta_{\mathrm{in}}}=\{\Delta\leq\delta_{\mathrm{in}}\}$,
+\[
+    \Prob\bigl(a_{N_1}\notin\Ureg_{\delta_{\mathrm{in}}}\bigr)=\Prob(\Delta_{N_1}>\delta_{\mathrm{in}})
+    \leq\frac{\E\Delta_{N_1}}{\delta_{\mathrm{in}}}\leq\epsilon_{\mathrm{ent}} .
+\]
+On $E_{\mathrm{in}}$ the norm conversion \eqref{eq:band-conversion} gives
+$\norm{a_{N_1}-a_\star}_{\star,\bullet}\leq\mathfrak b_{\star,\bullet}(\delta_{\mathrm{in}})\sqrt{\delta_{\mathrm{in}}}=:r_0$,
+and the deep-entry choice makes $r_0^2\leq\tfrac{\epsilon'}2r_\bullet^2\leq r_\bullet^2$, so $a_{N_1}$
+lies in the outer ball. Since $E_{\mathrm{in}}\in\Fil_{N_1}$, applying \Cref{prop:exit-prob} to the
+process $(a_{N_1+n})_{n\geq0}$ on $E_{\mathrm{in}}$, the deep-entry condition controls the
+initial-condition term by $\epsilon'/2$ and the batch condition controls the $N_2\eta_\bullet$ term by
+$\epsilon'/2$, giving $\Prob(\{\tau^{(N_1)}\leq N_2\}\cap E_{\mathrm{in}})\leq\epsilon'$. Hence
+$\Prob(E_{\mathrm{in}}\cap\{\tau^{(N_1)}>N_2\})\geq(1-\epsilon_{\mathrm{ent}})-\epsilon'$.
+
+For the second moment write $\rho_n:=\norm{a_{N_1+n}-a_\star}_{\star,\bullet}$. On
+$\{n<\tau^{(N_1)}\}\cap E_{\mathrm{in}}$ the outer ball contains $a_{N_1+n}$, so the one-step recursion
+$\E[\rho_{n+1}^2\mid\Fil_{N_1+n}]\leq q_\bullet\rho_n^2+\eta_\bullet$ holds there; setting
+$M_n:=\E[\rho_n^2\mathbf1_{E_{\mathrm{in}}}\mathbf1_{\{\tau^{(N_1)}>n\}}]$ and using
+$\{\tau^{(N_1)}>n\}\cap E_{\mathrm{in}}\in\Fil_{N_1+n}$ gives $M_{n+1}\leq q_\bullet M_n+\eta_\bullet$,
+so $M_{N_2}\leq q_\bullet^{N_2}r_0^2+\eta_\bullet/(\mu_\bullet\Delta t)$, and
+$\eta_\bullet/(\mu_\bullet\Delta t)$ equals the displayed $F_{\Riem}$ resp.\ $F_{\KL}$.
+\end{proof}
+
+\subsection{The decreasing schedule}
+
+\begin{proof}[Proof of \Cref{thm:decreasing}]
+Since $n+n_0\geq n_0\geq64\kappa^2$, we have $\Delta t_n=8\kappa/(n+n_0)\leq1/(8\kappa)$, and the
+covariance bands persist along the varying schedule. For the KL scheme this follows at each step from
+the induction of \Cref{lem:stoch-band}(2), which allows every positive stepsize. For the Riemannian
+scheme, suppose $\tfrac1{2\beta}\Id\preceq C_n\preceq\tfrac1\alpha\Id$; since $\Delta t_n\kappa\leq1$
+and $\Delta t_n\leq1$, the upper-band argument gives
+$C_{n+1}^{-1}\succeq(1-\Delta t_n)C_n^{-1}+\Delta t_n\overline H_n\succeq\alpha\Id$, and the lower
+envelope gives
+\[
+    C_{n+1}^{-1}\preceq e^{-\Delta t_n}\bigl[C_n^{-1}+(e-1)\Delta t_n\overline H_n\bigr]
+    \preceq\beta e^{-\Delta t_n}\bigl[2+(e-1)\Delta t_n\bigr]\Id\preceq2\beta\Id,
+\]
+because $e^{-h}[2+(e-1)h]\leq2$ for $0\leq h\leq1$. The rescued initializer lies in both bands, so
+induction proves their persistence and the constant-stepsize one-step estimates apply at each $n$.
+
+For the Riemannian scheme, \Cref{lem:onestep-stoch-Riem} with $\Delta t_n\leq1/(8\kappa)$ has bracket
+$1-\kappa\Delta t_n(1+2/B)\geq1-\tfrac38\geq\tfrac12$, so the drift is at least
+$\tfrac{\Delta t_n}2\Gradnorm^2$, and the Riemannian gradient domination
+$\Gradnorm^2\geq\tfrac1{2\kappa}\Delta$ of \eqref{eq:PL-bands} makes it at least
+$\tfrac{\Delta t_n}{4\kappa}\Delta_n$, with floor coefficient $\tfrac32\leq c_{\mathsf S}$. For the KL
+scheme, \Cref{lem:onestep-stoch-KL} gives drift
+$\tfrac{\Delta t_n}2\Gradnorm^2\geq\tfrac{\Delta t_n}{2\kappa}\Delta_n\geq\tfrac{\Delta t_n}{4\kappa}\Delta_n$
+and floor coefficient $\tfrac74=c_{\mathsf S}$. In both cases, with $\Psi\leq\Psi_H$ from
+\Cref{lem:Psi-hesslip},
+\begin{equation}
+\label{eq:decreasing-recursion}
+    \E\Delta_{n+1}\leq\Bigl(1-\frac{\Delta t_n}{4\kappa}\Bigr)\E\Delta_n+\frac{c_{\mathsf S}\kappa\Delta t_n^2}B\Psi_H .
+\end{equation}
+Write $t:=n+n_0$, so that $\tfrac{\Delta t_n}{4\kappa}=\tfrac2t$ and
+$\tfrac{c_{\mathsf S}\kappa\Delta t_n^2}B\Psi_H=\tfrac S{t^2}$ with
+$S:=64c_{\mathsf S}\kappa^3\Psi_H/B$, and \eqref{eq:decreasing-recursion} becomes
+$\E\Delta_{n+1}\leq(1-\tfrac2t)\E\Delta_n+\tfrac S{t^2}$. We show $\E\Delta_n\leq K/t$ by induction
+with $K=\max\{S,n_0\Delta(a_0)\}$. For $n=0$, $\E\Delta_0=\Delta(a_0)\leq K/n_0$. Assuming
+$\E\Delta_n\leq K/t$,
+\[
+    \E\Delta_{n+1}\leq\Bigl(1-\frac2t\Bigr)\frac Kt+\frac S{t^2}
+    =\frac Kt-\frac{2K-S}{t^2}
+    \leq\frac Kt-\frac K{t^2}
+    =\frac{K(t-1)}{t^2}
+    \leq\frac K{t+1},
+\]
+using $2K-S\geq K$ and $(t-1)(t+1)\leq t^2$. Since $t+1=(n+1)+n_0$, the induction closes.
+\end{proof}
+
+\subsection{Gaussian targets in the local phase}
+
+\begin{corollary}[Gaussian targets in the local phase]
+\label{cor:stoch-loc-Gauss}
+Let $V$ be as in \Cref{prop:Gauss-nofloor}, so that $\LHs=0$ and $V_0=\sigma_\star^2=\eta_\bullet=0$,
+and adopt the stepsize hypotheses of \Cref{thm:stoch-loc-Riem} resp.\ \Cref{thm:stoch-loc-KL}. For a
+Gaussian target $\Gamma=0$, so the first branch reads $\Delta t\leq\tfrac12$, while the second
+branch persists: $\LHs=0$ leaves $V_1=24$, so the hypotheses are
+$0<\Delta t\leq\min\{\tfrac12,\,B/(256\,A_{\Riem}V_1)\}$ with $A_{\Riem}=4$, and
+$0<\Delta t\leq\min\{\tfrac12,\,B/(272\,A_{\KL}V_1)\}$ respectively. Only the additive floors, not
+the state-dependent stepsize restriction, are removed by Gaussianity. Three cases are
+distinguished by the whitened covariance initialization.
+\begin{enumerate}
+\item[(a)] For generic $C_0\neq\Id$, the additive floors of
+\Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL} vanish and the exit bound of \Cref{prop:exit-prob} loses
+its horizon-growing term,
+\[
+    \E\bigl[\norm{a_N-a_\star}_{\star,\bullet}^2;\tau_\bullet>N\bigr]\leq(1-\mu_\bullet\Delta t)^N\norm{a_0-a_\star}_{\star,\bullet}^2,
+    \qquad
+    \Prob(\tau_{r_\bullet}\leq N)\leq\frac{\norm{a_0-a_\star}_{\star,\bullet}^2}{r_\bullet^2},
+\]
+both uniformly in $N$. These remain mean-square and in-probability statements: the mean-score noise
+$\varepsilon_b=(C^{-1/2}-C^{1/2})Z$ is nonzero whenever $C\neq\Id$, the state-dependent constant
+$V_1=24$ survives because $V_1$ does not contain $\LHs$, and the exit probability is not zero.
+\item[(b)] For matched covariance $C_0=\Id$, that is $C_0=C_\star$, with $m_0\neq0$, one has
+$\varepsilon_b=0$ and $\varepsilon_H=0$ pathwise, both covariance updates fix $C_n\equiv\Id$, and the
+mean update is deterministic, $m_{n+1}=(1-\Delta t)m_n$ for both schemes. The iterate is pathwise
+deterministic and contracts to $a_\star$ with no noise, so no exit control is needed. Zero-noise
+pathwise evolution therefore requires only $C_0=C_\star$, not $a_0=a_\star$.
+\item[(c)] Under quadratic rescue the initializer is $a_0=a_\star$ by \Cref{thm:rescue-Gauss}, the
+special case of (b) with $m_0=0$; then $a_n\equiv a_\star$ and no local phase is needed.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+For a quadratic potential $\nabla^2\widehat V\equiv C_\star^{1/2}HC_\star^{1/2}$ is constant, so
+$\LHs=0$, and \Cref{lem:loc-variance} gives $V_0=3N_\theta^2\LHs^2=0$ and
+$\sigma_\star^2=\tfrac32N_\theta^2\LHs^2=0$, whence $\eta_\bullet=0$. Setting $\eta_\bullet=0$ in
+\Cref{thm:stoch-loc-Riem,thm:stoch-loc-KL,prop:exit-prob} gives the two displays of (a). For
+$\widehat V(z)=\tfrac12\norm z^2$ and $X=m+C^{1/2}Z$ the whitened single-sample mean noise is
+$\varepsilon_b=-C^{1/2}Z+C^{-1/2}Z=(C^{-1/2}-C^{1/2})Z$, nonzero for $C\neq\Id$, so no pathwise or
+zero-exit conclusion follows. For (b), $C_0=\Id$ gives $\varepsilon_b=0$ and, since
+$\nabla^2\widehat V\equiv\Id$, $\overline H_n=\Id=A(a)$ and $\varepsilon_H=0$ pathwise; the Riemannian
+update returns $C_1=\exp(\Delta t\cdot0)=\Id$ and the KL update
+$C_1=(1+\Delta t)(\Id+\Delta t\Id)^{-1}=\Id$, so $C_n\equiv\Id$, and then
+$\overline b_n=g(a_n)=-m_n$ gives $m_{n+1}=(1-\Delta t)m_n$. For (c), \Cref{thm:rescue-Gauss} gives
+$a_0=a_\star=(0,\Id)$, the $m_0=0$ instance of (b).
+\end{proof}
+
+\begin{remark}[Conservative constants]
+\label{rem:stoch-constants}
+The explicit constants entering the local floors, namely $V_0=3N_\theta^2\LHs^2$ and
+$V_1=24+6N_\theta\LHs^2$ of \Cref{lem:loc-variance}, the aggregate coefficients $64$ and $68$ of
+\Cref{lem:perturb-Riem,lem:perturb-KL}, the exponential remainder constant $e/2$ of
+\Cref{lem:exp-perturb}, the stepsize denominators $256$ and $272$, and the floor coefficients $192$,
+$204$, $384$, $408$, are conservative and not optimized. Only their orders in
+$(\Delta t,N_\theta,\LHs,B,A_\bullet)$ enter the conclusions of \Cref{sec:stochastic}. The same applies
+to the global constants: the retraction-smoothness constant $L=2\beta\Lambda$ may be replaced by
+$2(e-2)\beta\Lambda\approx1.437\beta\Lambda$, which rescales the stepsizes and floors of
+\Cref{thm:stoch-glob-Riem,thm:stoch-glob-KL} by the factor $e-2$ without affecting any order, and the
+dimension coefficient $2\beta\Lambda$ of \Cref{lem:Psi-selfbound} may be reduced to at most
+$\tfrac54\beta\Lambda$ by retaining the centering term discarded in its first step.
+\end{remark}
+
+% SOURCES:
+% improved-global-local-stoch.tex l.2258-2323 (proof of lem:rescue-energy) -> proof of lem:rescue-energy
+% improved-global-local-stoch.tex l.2546-2558 (proof of lem:Riem-onestep-stoch) -> proof of lem:onestep-stoch-Riem
+% improved-global-local-stoch.tex l.2690-2767 (proof of lem:KL-onestep-stoch) -> proof of lem:onestep-stoch-KL
+% improved-global-local-stoch.tex l.2575-2582 (proof of thm:Riem-Hlip) -> proof of thm:stoch-glob-Riem(1)
+% improved-global-local-stoch.tex l.2601-2617 (proof of thm:Riem-selfbound) -> proof of thm:stoch-glob-Riem(2)
+% improved-global-local-stoch.tex l.2783-2791 (proof of thm:KL-Hlip) -> proof of thm:stoch-glob-KL(1)
+% improved-global-local-stoch.tex l.2827-2842 (proof of thm:KL-selfbound) -> proof of thm:stoch-glob-KL(2)
+% improved-global-local-stoch.tex l.2994-3058 (proof of lem:local-variance) -> proof of lem:loc-variance
+% improved-global-local-stoch.tex l.3066-3104 (lem:exp-perturb and proof) -> lem:exp-perturb
+%   (source symbol \Delta for the increment renamed to \Xi to avoid collision with the energy gap)
+% improved-global-local-stoch.tex l.3118-3171 (proof of lem:local-perturb-Riem) -> proof of lem:perturb-Riem
+% improved-global-local-stoch.tex l.3184-3221 (proof of lem:local-perturb-KL) -> proof of lem:perturb-KL
+% improved-global-local-stoch.tex l.3250-3281 (proof of thm:stoch-local-Riem) -> proof of thm:stoch-loc-Riem
+% improved-global-local-stoch.tex l.3303-3313 (proof of thm:stoch-local-KL) -> proof of thm:stoch-loc-KL
+% improved-global-local-stoch.tex l.3337-3366, l.3368-3386 (prop:finite-horizon and proof) -> proof of prop:exit-prob
+%   and the following paragraph on the frozen-process gain
+% improved-global-local-stoch.tex l.3579-3608 (proof of cor:stoch-three-stage) -> proof of cor:stoch-three-stage
+% improved-global-local-stoch.tex l.3675-3721 (proof of thm:decreasing) -> proof of thm:decreasing
+% improved-global-local-stoch.tex l.3628-3631, l.3916-3918 (conservative-constant notes),
+%   l.1003-1005 (rem:retr-sharp), l.2455-2466 (rem:selfbound-sharp) -> rem:stoch-constants

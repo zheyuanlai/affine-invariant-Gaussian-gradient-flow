@@ -1,0 +1,193 @@
+\section{General affine invariant Gaussian flows}\label{sec:geometry}
+
+The Fisher--Rao metric restricted to the Gaussian family is affine invariant, and every rate obtained in \Cref{sec:global,sec:local,sec:stochastic} is expressed in affine invariant quantities. We aim to classify all affine invariant Riemannian metrics on the Gaussian manifold, study the gradient flows they induce for the KL divergence, and locate Fisher--Rao inside that family.
+
+\subsection{Classification of affine invariant metrics}
+
+Let $\varphi(\theta) = A\theta + b$ be an invertible affine transformation, and denote the map it induces on parameters by $\Phi_{(A,b)} : \Aspace \to \Aspace$, $\Phi_{(A,b)} (m, C) = (Am + b, ACA^\top)$. Its differential at $a = (m,C)$ is
+\begin{equation}\label{eq:aff-action}
+    D\Phi_{(A,b)} (m, C) [(u, X)] = \lim_{\epsilon \to 0} \frac{\Phi_{(A,b)}(m + \epsilon u, C + \epsilon X) - \Phi_{(A,b)}(m, C)}{\epsilon} = (Au, AXA^\top),
+\end{equation}
+where we identify $T_a \Aspace$ with $\R^{N_\theta} \times \Sym(N_\theta)$. A Riemannian metric $g$ on $\Aspace$ is affine invariant when every $\Phi_{(A,b)}$ is an isometry, that is, when
+\begin{equation}\label{eq:aff-isometry}
+    g_{(m, C)} ((u, X), (v, Y)) = g_{\Phi_{(A,b)}(m, C)} ((Au, AXA^\top), (Av, AYA^\top))
+\end{equation}
+for all $(u,X), (v,Y) \in T_a\Aspace$.
+
+\begin{theorem}[Classification of affine invariant metrics on the Gaussian manifold]\label{thm:aff-class}
+    Let $N_\theta \geq 2$. A Riemannian metric $g$ on the Gaussian manifold $\Aspace = \R^{N_\theta} \times \SPD(N_\theta)$ is affine invariant if and only if
+    \begin{equation}\label{eq:aff-metric}
+        g_a ((u, X), (v, Y)) = \eta \, u^\top C^{-1} v + \omega \Tr(C^{-1} X C^{-1} Y) + \tau \Tr(C^{-1} X ) \Tr(C^{-1} Y)
+    \end{equation}
+    for a triple of real parameters satisfying
+    \begin{equation}\label{eq:aff-positivity}
+        \eta > 0, \qquad \omega > 0, \qquad \tau > - \frac{\omega}{N_\theta},
+    \end{equation}
+    and the triple $(\eta, \omega, \tau)$ is uniquely determined by $g$. Replacing $(\eta, \omega, \tau)$ by $c\,(\eta, \omega, \tau)$ with $c > 0$ multiplies $g$ by $c$, so the affine invariant metrics form a two-parameter family up to an overall positive multiple, normalized below by $\eta = 1$.
+\end{theorem}
+
+\begin{proof}
+    Since $\Phi_{(C^{1/2}, m)} (0, I) = (m, C)$, the affine group acts transitively on $\Aspace$, and by \eqref{eq:aff-isometry} the metric is determined by its value at $(0, I)$ together with the requirement of invariance under the isotropy group of $(0,I)$, which is the orthogonal group $O(N_\theta)$ acting by $(u, X) \mapsto (Qu, QXQ^\top)$.
+
+    We first state the established classification of affine invariant Riemannian metrics on $\SPD(N_\theta)$ \cite{thanwerdas2019affine, thanwerdas2023n}. For $C \in \SPD(N_\theta)$ and $X, Y \in \Sym(N_\theta)$, every such metric is of the form
+    \begin{equation}\label{eq:aff-spd}
+        g_C (X, Y) = \omega \Tr (C^{-1} X C^{-1} Y) + \tau \Tr (C^{-1} X) \Tr (C^{-1} Y), \qquad \omega > 0, \quad \tau > -\frac{\omega}{N_\theta},
+    \end{equation}
+    where $\omega > 0$ is positivity on the traceless directions and, taking $X = Y = sC$, positivity on the trace direction reads $N_\theta (\omega + N_\theta \tau) s^2 > 0$.
+
+    We then show that there are no cross terms between $u$ and $Y$. We define $L(u, Y) := g_{(0,I)}((u, 0), (0, Y))$; for any orthogonal $Q \in O(N_\theta)$, affine invariance requires $L(u, Y) = L(Qu, QYQ^\top)$. Taking the sign element $Q = -I$, which fixes every $Y$ and reverses every $u$, gives $L(u, Y) = L(-u, Y) = -L(u, Y)$ by linearity in the first argument, so $L(u, Y) = 0$ for all $u \in \R^{N_\theta}$ and all $Y \in \Sym(N_\theta)$, and affine invariant metrics on the Gaussian manifold carry no mean--covariance coupling.
+
+    We proceed to the mean part, and first consider the point $(0, I)$. Affine invariance requires $g_{(0, I)} ((Qu, 0), (Qv, 0)) = g_{(0, I)} ((u, 0), (v, 0))$ for every $Q \in O(N_\theta)$, hence $g_{(0, I)} ((u, 0), (v, 0)) = \eta \, u^\top v$ for a scalar $\eta$, and $\eta > 0$ by positive definiteness. For an arbitrary covariance $C \in \SPD(N_\theta)$ there is $A$ with $C = AA^\top$, and $\Phi_{(A, m)} (0, I) = (m, C)$ gives $g_{(m, C)} ((Au, 0), (Av, 0)) = \eta \, u^\top v$; writing $u' = Au$ and $v' = Av$ yields $g_{(m, C)}((u',0),(v',0)) = \eta \, u'^\top C^{-1} v'$. Transporting \eqref{eq:aff-spd} in the same way gives \eqref{eq:aff-metric} with the positivity conditions \eqref{eq:aff-positivity}.
+
+    Conversely, the right-hand side of \eqref{eq:aff-metric} is invariant under \eqref{eq:aff-action} by direct substitution, and it is positive definite exactly under \eqref{eq:aff-positivity}. Uniqueness of the triple follows by evaluating $g_{(0,I)}$ on $(u,0)$ with $\norm{u} = 1$, on a traceless $X$ with $\Tr(X^2) = 1$, and on $X = I$, which returns $\eta$, $\omega$ and $N_\theta(\omega + N_\theta\tau)$ respectively.
+\end{proof}
+
+The three blocks appearing in this proof, the mean, the traceless covariance and the trace covariance, are pairwise inequivalent irreducible representations of $O(N_\theta)$, and Schur's lemma gives \eqref{eq:aff-metric} with one weight per block; this structural form of \Cref{thm:aff-class} is carried out in \Cref{app:classification}.
+
+\begin{remark}\label{rem:aff-dim-one}
+    For $N_\theta = 1$ there is no traceless block, the two covariance terms in \eqref{eq:aff-metric} coincide, and only the sum $\omega + \tau$ is identifiable. The metric is then $g_a((u,X),(v,Y)) = \eta \, uv/C + (\omega + \tau) XY/C^2$, and positive definiteness requires $\eta > 0$ and $\omega + \tau > 0$. The uniqueness statement of \Cref{thm:aff-class} and the balancing statement of \Cref{thm:aff-balanced} concern the three-mode geometry and therefore require $N_\theta \geq 2$.
+\end{remark}
+
+\subsection{The general flow and its exact modal decomposition}
+
+We take the KL divergence $\calE$ as the energy and the metrics of \Cref{thm:aff-class} as the Riemannian structure, following Section 3 of \cite{chen2023sampling}. We abbreviate the precision residual and its whitened trace--traceless split by
+\begin{equation}\label{eq:aff-residual}
+    \begin{gathered}
+        R(a) := C^{-1} + \E_{\rho_a} [\nabla_\theta \nabla_\theta \log \rho_\post(\theta)], \qquad S(a) := C^{1/2} R(a) C^{1/2}, \\
+        s(a) := \Tr S(a), \qquad S_0(a) := S(a) - \frac{s(a)}{N_\theta} I,
+    \end{gathered}
+\end{equation}
+so that $C R(a) C = C + C \E_{\rho_a}[\nabla_\theta \nabla_\theta \log \rho_\post(\theta)] C$ and $s(a) = \Tr(C R(a))$. The gradient flow of $\calE$ for the metric \eqref{eq:aff-metric} is then characterized by the ODEs
+\begin{equation}\label{ODEs:affine}
+    \begin{aligned}
+        \frac{\dd m_t}{\dd t} &= \frac{1}{\eta} C_t \E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post(\theta)], \\
+        \frac{\dd C_t}{\dd t} &= \frac{1}{2 \omega} \left( C_t + C_t \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log \rho_\post(\theta)] C_t \right) \\
+        &\qquad - \frac{\tau}{2\omega (\omega + N_\theta \tau)} \Tr \left( I + C_t \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log \rho_\post(\theta)] \right) C_t.
+    \end{aligned}
+\end{equation}
+The mean equation involves only $\eta$ and the covariance equation only $(\omega, \tau)$, so under the normalization $\eta = 1$ the mean drift is the same for every affine invariant metric and coincides with the mean drift of \eqref{ODEs:NG}. The covariance equation, on the other hand, splits exactly, and not only to first order, along the whitened trace and traceless directions.
+
+\begin{theorem}[Exact modal decomposition of the general flow]\label{thm:aff-flow}
+    Let $\eta, \omega, \tau$ satisfy \eqref{eq:aff-positivity}. The Riemannian gradient of $\calE$ for the metric \eqref{eq:aff-metric} is
+    \begin{equation}\label{eq:aff-gradient}
+        \grad \calE (a) = \left( -\frac{1}{\eta} C \E_{\rho_a} [\nabla_\theta \log \rho_\post(\theta)], \; -\frac{1}{2\omega} C R(a) C + \frac{\tau}{2\omega(\omega + N_\theta \tau)} \Tr(C R(a)) \, C \right),
+    \end{equation}
+    its negative gradient flow is \eqref{ODEs:affine}, and the covariance equation of \eqref{ODEs:affine} has the exact decomposition
+    \begin{equation}\label{eq:aff-trace-split}
+        C_t^{-1/2} \frac{\dd C_t}{\dd t} C_t^{-1/2} = \frac{1}{2\omega} S_0(a_t) + \frac{s(a_t)}{2 N_\theta (\omega + N_\theta \tau)} I.
+    \end{equation}
+    Along \eqref{ODEs:affine} the energy dissipates in three blocks,
+    \begin{equation}\label{eq:aff-dissipation}
+        \frac{\dd}{\dd t} \calE (a_t) = -\frac{1}{\eta} \E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post(\theta)]^\top C_t \E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post(\theta)] - \frac{1}{4\omega} \norm{S_0(a_t)}_\Frob^2 - \frac{s(a_t)^2}{4 N_\theta (\omega + N_\theta \tau)}.
+    \end{equation}
+\end{theorem}
+
+\begin{proof}
+    The differential of $\calE$ reads $D\calE(a)[(u,X)] = -\E_{\rho_a} [\nabla_\theta \log \rho_\post(\theta)]^\top u - \frac{1}{2} \Tr(R(a) X)$. Matching the mean term against $\eta \, u^\top C^{-1} v$ gives the first component of \eqref{eq:aff-gradient}. For the covariance block we write $W = C^{-1/2} (\grad \calE)_C C^{-1/2}$ and $Z = C^{-1/2} X C^{-1/2}$, so that gradient duality requires
+    \begin{equation*}
+        \omega \Tr (WZ) + \tau \Tr(W) \Tr(Z) = -\frac{1}{2} \Tr (S(a) Z) \qquad \text{for every } Z \in \Sym(N_\theta).
+    \end{equation*}
+    Testing against traceless $Z$ and against $Z = I$ separately gives $W_0 = -S_0(a)/(2\omega)$ and $\Tr W = -s(a)/(2(\omega + N_\theta\tau))$, and recombining $W = W_0 + \frac{\Tr W}{N_\theta} I$ gives the second component of \eqref{eq:aff-gradient} and, after conjugating by $C^{1/2}$, the decomposition \eqref{eq:aff-trace-split}. Since $\frac{\dd}{\dd t} \calE(a_t) = -\norm{\grad \calE(a_t)}_{a_t}^2$ and the metric \eqref{eq:aff-metric} evaluates on $W$ as $\omega \Tr(W^2) + \tau (\Tr W)^2 = \omega \norm{W_0}_\Frob^2 + (\omega + N_\theta \tau) (\Tr W)^2 / N_\theta$, substituting the two components gives \eqref{eq:aff-dissipation}.
+\end{proof}
+
+On a Gaussian target the decomposition \eqref{eq:aff-trace-split} becomes a set of three decoupled scalar rates, which is the sense in which $(\eta, \omega, \tau)$ preconditions the flow.
+
+\begin{theorem}[Exact Gaussian modal rates]\label{thm:aff-modes}
+    Let $\rho_\post = \N(m_\star, C_\star)$, and place the flow in optimizer-whitened coordinates, so that $\rho_\post = \N(0, I)$. Then \eqref{ODEs:affine} reads
+    \begin{equation}\label{eq:aff-gauss-flow}
+        \frac{\dd m_t}{\dd t} = -\frac{1}{\eta} C_t m_t, \qquad \frac{\dd C_t}{\dd t} = \frac{1}{2\omega} (C_t - C_t^2) - \frac{\tau}{2\omega (\omega + N_\theta \tau)} \Tr (I - C_t) C_t,
+    \end{equation}
+    and writing $C_t = I + X_t$ with $X_t = X_{0,t} + \sigma_t I$, $\sigma_t = \Tr(X_t)/N_\theta$ and $\Tr X_{0,t} = 0$,
+    \begin{equation}\label{eq:aff-gauss-modes}
+        \frac{\dd X_{0,t}}{\dd t} = -\frac{1}{2\omega} X_{0,t} + O(\norm{X_t}^2), \qquad \frac{\dd \sigma_t}{\dd t} = -\frac{1}{2(\omega + N_\theta \tau)} \sigma_t + O(\norm{X_t}^2).
+    \end{equation}
+    Consequently the linearization of \eqref{ODEs:affine} at $a_\star = (0, I)$ has exactly the three decay rates
+    \begin{equation}\label{eq:aff-rates}
+        \gamma_{\mathrm{mean}} = \frac{1}{\eta}, \qquad \gamma_{\mathrm{traceless}} = \frac{1}{2\omega}, \qquad \gamma_{\mathrm{trace}} = \frac{1}{2(\omega + N_\theta \tau)}.
+    \end{equation}
+\end{theorem}
+
+\begin{proof}
+    By affine invariance we may assume $\rho_\post = \N(0, I)$, for which $\E_{\rho_a}[\nabla_\theta \log \rho_\post(\theta)] = -m$ and $\E_{\rho_a}[\nabla_\theta \nabla_\theta \log \rho_\post(\theta)] = -I$, so that $R(a) = C^{-1} - I$ and $S(a) = I - C$. Substitution in \eqref{ODEs:affine} gives \eqref{eq:aff-gauss-flow}. With $C = I + X$ we have $S = -X$, $s = -\Tr X$ and $S_0 = -X_0$, so \eqref{eq:aff-trace-split} gives
+    \begin{equation*}
+        \frac{\dd X_t}{\dd t} = -\frac{1}{2\omega} X_{0,t} - \frac{\Tr(X_t)}{2 N_\theta (\omega + N_\theta \tau)} I + O(\norm{X_t}^2),
+    \end{equation*}
+    where the quadratic remainder comes from $C^{1/2} (\cdot) C^{1/2} = (\cdot) + O(\norm{X})$ applied to the right-hand side of \eqref{eq:aff-trace-split}. Projecting onto the traceless symmetric matrices and onto $\R I$ gives \eqref{eq:aff-gauss-modes}, and the mean equation of \eqref{eq:aff-gauss-flow} gives $\dot m_t = -m_t/\eta + O(\norm{(m_t, X_t)}^2)$. The three linear operators act on the mutually orthogonal blocks $\R^{N_\theta}$, $\Sym_0(N_\theta)$ and $\R I$, each as a negative multiple of the identity, which gives \eqref{eq:aff-rates}.
+\end{proof}
+
+\subsection{Fisher--Rao is the unique balanced metric}
+
+We then show that Fisher--Rao is the only member of the family that treats the three modes at equal speed.
+
+\begin{theorem}[Fisher--Rao is the unique balanced affine invariant metric]\label{thm:aff-balanced}
+    Let $N_\theta \geq 2$ and let $\eta, \omega, \tau$ satisfy \eqref{eq:aff-positivity}. The three Gaussian modal rates \eqref{eq:aff-rates} coincide if and only if
+    \begin{equation}\label{eq:aff-balanced-params}
+        (\eta, \omega, \tau) = c \left( 1, \tfrac{1}{2}, 0 \right) \qquad \text{for some } c > 0.
+    \end{equation}
+    Up to an overall metric scale, the Fisher--Rao metric is therefore the unique affine invariant metric on the Gaussian manifold that treats the mean, the traceless covariance and the trace covariance modes at equal speed, and under the normalization $\eta = 1$ its parameters are $\omega = 1/2$ and $\tau = 0$.
+\end{theorem}
+
+\begin{proof}
+    Equality of $\gamma_{\mathrm{traceless}}$ and $\gamma_{\mathrm{trace}}$ gives $\omega = \omega + N_\theta \tau$, hence $\tau = 0$, and equality of $\gamma_{\mathrm{mean}}$ and $\gamma_{\mathrm{traceless}}$ then gives $\eta = 2\omega$. Setting $c = \eta$ gives \eqref{eq:aff-balanced-params}, and conversely \eqref{eq:aff-balanced-params} makes all three rates equal to $1/c$. Substituting $(\eta, \omega, \tau) = (1, 1/2, 0)$ in \eqref{eq:aff-metric} returns the Fisher--Rao metric $g_a^\FR((u,X),(v,Y)) = u^\top C^{-1} v + \frac{1}{2}\Tr(C^{-1}XC^{-1}Y)$ and reduces \eqref{ODEs:affine} to \eqref{ODEs:NG}.
+\end{proof}
+
+\begin{remark}\label{rem:aff-scope}
+    The rates \eqref{eq:aff-rates} are the exact eigenvalues of the linearization of \eqref{ODEs:affine} at a Gaussian optimizer. They are not global rates for the nonlinear covariance equation, and they are not rates for a general target. An unbalanced metric can outperform Fisher--Rao on a task dominated by a single mode. On a volume-dominated problem, where the initial error is carried by the trace $\Tr(X_0)$, fixing $\eta$ and $\omega$ and letting $\tau$ decrease to $-\omega/N_\theta$ makes $\gamma_{\mathrm{trace}}$ arbitrarily large while leaving $\gamma_{\mathrm{mean}}$ and $\gamma_{\mathrm{traceless}}$ unchanged, and such a metric converges faster than Fisher--Rao on that task. The convergence theory of \Cref{sec:global,sec:local,sec:stochastic} is established for $(\eta, \omega, \tau) = (1, 1/2, 0)$ and is not claimed for the remaining members of the family.
+\end{remark}
+
+\subsection{Discretizations of the general flow}
+
+The two schemes of \Cref{sec:global} extend to the whole family. The Riemannian scheme \eqref{upd:Riem} advances the covariance by the exponential map of $\SPD(N_\theta)$ applied to $-\Delta t \grad \calE(a_n)$; carrying out the same construction with the gradient \eqref{eq:aff-gradient} in place of the Fisher--Rao gradient gives
+\begin{equation}\label{upd:affine-Riem}
+    \begin{aligned}
+        m_{n+1} &= m_n + \frac{\Delta t}{\eta} C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+        C_{n+1} &= C_n^{1/2} \exp \left(\frac{\Delta t}{2\omega} \left[ C_n^{1/2} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n^{1/2} \right. \right. \\
+        &\qquad\qquad\qquad \left. \left. + \frac{\omega - \tau \Tr(C_n \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)])}{\omega + N_\theta \tau} I \right] \right) C_n^{1/2}.
+    \end{aligned}
+\end{equation}
+At $(\eta, \omega, \tau) = (1, \frac{1}{2}, 0)$ the bracket collapses to $C_n^{1/2} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n^{1/2} + I$ and the prefactor $\Delta t/(2\omega)$ to $\Delta t$, so \eqref{upd:affine-Riem} recovers
+\begin{equation*}
+    C_{n+1} = e^{\Delta t} C_n^{1/2} \exp \left( \Delta t \, C_n^{1/2} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n^{1/2} \right) C_n^{1/2},
+\end{equation*}
+which is the covariance update of \eqref{upd:Riem}.
+
+The Riemannian scheme requires a matrix exponential at every step. The KL resolvent scheme \eqref{upd:KL} of \Cref{sec:global} avoids it, but its rational form does not extend safely to the whole family: the natural general-metric analogue multiplies the resolvent by a scalar prefactor that is not sign-definite for $\tau < 0$, so the resulting update need not remain in the SPD cone for admissible metrics. We therefore state the general-metric extension only for the retraction scheme \eqref{upd:affine-Riem}, whose covariance update is SPD by construction; at the Fisher--Rao point $(\eta, \omega, \tau) = (1, \frac{1}{2}, 0)$ the resolvent scheme \eqref{upd:KL} of \Cref{sec:global} remains available with its full convergence theory.
+
+% SOURCES:
+% natural-gradient.tex l.2802-2804 (section opening) -> sec:geometry lead-in
+% natural-gradient.tex l.2806-2812 (thm:affine-invariant-metrics statement) -> thm:aff-class
+% natural-gradient.tex l.2814-2838 (isotropy proof: affine action, SPD classification quote,
+%     no mean-covariance cross term, transport of the mean block) -> proof of thm:aff-class
+%     [DEFECT FIXED: l.2826 displayed the SPD classification as
+%      omega Tr(C^{-1}XC^{-1}Y) + tau Tr(C^{-1}XC^{-1}Y); the second term is corrected here
+%      to tau Tr(C^{-1}X) Tr(C^{-1}Y), consistent with l.2835 and with
+%      codex-draft/sections/02-geometry.tex eq:geometry-metric-family]
+% codex-draft/sections/02-geometry.tex l.105-130 (thm:geometry-classification: N_theta>=2
+%     hypothesis, uniqueness of the triple, positivity conditions, converse) -> thm:aff-class
+% codex-draft/sections/02-geometry.tex l.165-172 (rem:geometry-dimension-one) -> rem:aff-dim-one
+% codex-draft/appendices/A-affine-geometry.tex l.10-26 (three O(N_theta) summands, Schur)
+%     -> deferral sentence to app:classification
+% natural-gradient.tex l.2841-2848 (ODEs:affine-invariant) -> ODEs:affine
+%     [mean equation carries the general 1/eta from codex eq:geometry-general-flow l.206-214;
+%      natural-gradient.tex displays it at the normalization eta=1]
+% codex-draft/sections/02-geometry.tex l.191-257 (thm:geometry-general-flow: gradient,
+%     exact trace-traceless decomposition, three-block dissipation, and its proof)
+%     -> thm:aff-flow and its proof
+% codex-draft/sections/02-geometry.tex l.181-189 (eq:geometry-residual-split) -> eq:aff-residual
+% natural-gradient.tex l.2850-2864 (Gaussian-target reduction and the linearized
+%     trace/traceless split) + codex-draft/sections/02-geometry.tex l.267-314
+%     (thm:geometry-gaussian-modes) -> thm:aff-modes
+% codex-draft/sections/02-geometry.tex l.316-336 (thm:geometry-balanced) -> thm:aff-balanced
+% codex-draft/sections/02-geometry.tex l.338-346 (rem:geometry-balance-scope) -> rem:aff-scope
+% natural-gradient.tex l.2866-2873 (upd:affine-invariant-Riem and its (1/2,0) reduction)
+%     -> upd:affine-Riem
+% natural-gradient.tex l.2875-2882 (KL-type scheme, its (1/2,0) reduction, and the
+%     first-order-consistency / not-a-proximal-update caveat) -> NOT CARRIED
+%     [DEFECT: the general (eta,omega,tau) KL resolvent update in the source has a scalar
+%      prefactor 1 + Dt(omega - tau Tr(C_n E[Hess log rho_post]))/(2 omega(omega + N_theta tau))
+%      that is negative for admissible tau < 0 (e.g. N_theta=2, eta=omega=1, tau=-49/100,
+%      C_n=2I, Dt=1/10 gives C_{n+1} = -28/11 I, not SPD). No positivity condition is proved
+%      in any source, so the general KL display is replaced by a scope sentence; only the
+%      SPD-safe retraction scheme upd:affine-Riem is stated for the general family.]
+% natural-gradient.tex l.329-331 (Fisher-Rao metric on the Gaussian family) -> proof of thm:aff-balanced
+% refs: thanwerdas2019affine, thanwerdas2023n (SPD classification), chen2023sampling (KL energy)

@@ -1,0 +1,3104 @@
+\documentclass[11pt]{article}
+
+% ============================================================
+% Packages
+% ============================================================
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{bm}
+\usepackage{bbm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage[nameinlink,capitalize]{cleveref}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{comment}
+\usepackage{tcolorbox}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    citecolor=blue!60!black,
+    urlcolor=blue!60!black
+}
+
+% ============================================================
+% Theorem environments
+% ============================================================
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{example}[theorem]{Example}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ============================================================
+% Common macros
+% ============================================================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\SPD}{\mathbb{S}_{++}}
+\newcommand{\Sym}{\mathbb{S}}
+\newcommand{\Id}{I}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\Frob}{\mathrm{F}}
+\newcommand{\post}{\mathrm{post}}
+\newcommand{\grad}{\operatorname{grad}}
+\newcommand{\Log}{\operatorname{Log}}
+\newcommand{\Exp}{\operatorname{Exp}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\Clip}{\mathrm{Clip}}
+\newcommand{\clip}{\mathrm{clip}}
+\newcommand{\inner}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+
+% Gaussian family and objective
+\newcommand{\PG}{\mathcal{P}_{\mathrm{G}}}
+\newcommand{\Aspace}{\mathcal{A}}
+\newcommand{\rhoapost}{\rho_{a_\star}}
+\newcommand{\rhoa}{\rho_a}
+\newcommand{\Fobj}{\mathcal{F}}
+
+% ============================================================
+% Title information
+% ============================================================
+\title{Gaussian Natural Gradient Flows for Variational Inference}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+We consider the problem of sampling the target posterior distribution with density $\rho_\post (\cdot)$, for the parameter $\theta \in \R^{N_\theta}$, given by 
+\begin{equation*}
+    \rho_\post (\theta) \propto \exp (-V(\theta)), \qquad \theta \in \R^{N_\theta},
+\end{equation*}
+where $V(\theta) : \R^{N_\theta} \to \R$ is the known function while the normalizing constant $Z = \int \exp (-V(\theta))  \dd \theta$ is untractable. Markov chain Monte Carlo (MCMC) methods \cite{brooks2011handbook} aim to sample from target distribution $\rho_\post$ asymptotically, but can be computationally expensive in high-dimensional or ill-conditional settings \cite{JMLR:v23:20-357}. Variational Inference (VI) \cite{blei2017variational}, on the other hand, replaces exact sampling by optimization over a tractable family of probability distributions on its Kullback-Leibler (KL) divergence to the true target posterior, which is often more scalable than MCMC \cite{JMLR:v14:hoffman13a}. 
+
+We focus on the Gaussian variational family
+\begin{equation*}
+    \PG := \left\{ \rho_a = \N(m,C) : a=(m,C)\in \Aspace := \R^{N_\theta} \times \SPD(N_\theta) \right\},
+\end{equation*}
+which is the simplest nontrivial VI family, where the Gaussian variational inference problem is 
+\begin{equation*}
+    a_\star = (m_\star,C_\star) \in \operatorname*{argmin}_{a\in\Aspace} \mathcal{E}(a), \qquad \mathcal{E}(a) := \KL(\rho_a\,\|\,\rho_{\post}).
+\end{equation*}
+
+Recent theoretical work has studied Gaussian variational inference through Wasserstein and Bures--Wasserstein geometry \cite{lambert2022variational, diao2023forward}. This viewpoint connects Gaussian variational inference with optimal transport and constrained Wasserstein gradient flows, which shows excellent convergence theory for both Wasserstein gradient flow and forward-backward algorithms. On the other side, Fisher--Rao gradient flow \cite{carrillo2026fisher} develops a complementary information-geometric viewpoint \cite{amari2016information}. When the Fisher--Rao gradient flow is restricted to the Gaussian family, we obtain the natural gradient flow \cite{amari1998natural} for Gaussian variational inference \cite{chen2023sampling}. In addition, Fisher--Rao gradient flow is affine invariant \cite{chen2023sampling}, which is expected to perform better than non-affine-invariant methods like Wasserstein gradient flow at ill-conditioned initiation. However, while natural gradient flow is useful in practice, the convergence theory for Gaussian variational inference remains underexplored. We aim to develop the convergence theory of Gaussian natural gradient flows of form
+\begin{equation}\label{ODEs:NG}
+    \begin{aligned}
+        \frac{\dd m_t}{\dd t} &= C_t\E_{\rho_{a_t}}[\nabla_\theta \log \rho_{\post}(\theta)], \\
+        \frac{\dd C_t}{\dd t} &= C_t + C_t \E_{\rho_{a_t}}[\nabla_\theta \nabla_\theta \log \rho_{\post}(\theta)] C_t.
+    \end{aligned}
+\end{equation}
+
+\section{Global convergence and discretization}
+
+We study the Gaussian natural gradient flow where the target posterior distribution $\rho_\post$ is logconcave, and then propose practical discretization algorithms.
+
+\begin{assumption}\label{assump:logconcave-smooth}
+    We assume that $\rho_\post$ is $\alpha$-strongly logconcave and $\beta$-smooth, i.e.
+    \begin{equation*}
+        \alpha I \preceq -\nabla_\theta \nabla_\theta \log \rho_\post (\theta) \preceq \beta I,
+    \end{equation*}
+    which is equivalent to 
+    \begin{equation*}
+        \alpha I \preceq \nabla^2 V(\theta) \preceq \beta I.
+    \end{equation*}
+\end{assumption}
+
+We first show the spectral bounds the covariance along \eqref{ODEs:NG} under Assumption \ref{assump:logconcave-smooth}.
+
+\begin{lemma}\label{lem:cov-bound}
+    Under Assumption \ref{assump:logconcave-smooth}, if the initial covariance satisfies $\lambda_{0, \min} I \preceq C_0 \preceq \lambda_{0, \max} I$, then along \eqref{ODEs:NG}, $\lambda_{\min} I \preceq C_t \preceq \lambda_{\max} I$ with 
+    \begin{equation*}
+        \lambda_{\min} = \min \left\{ \lambda_{0, \min}, \frac{1}{\beta} \right\}, \qquad \lambda_{\max} = \max \left\{ \lambda_{0, \max}, \frac{1}{\alpha} \right\}.
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    We parameterize the eigenvalues of $C_t$ as $\lambda_1 (t), \lambda_2 (t), \ldots, \lambda_{N_\theta} (t)$ with corresponding normalized eigenvectors $u_1 (t), u_2 (t), \ldots, u_{N_\theta} (t)$. Hence, we have the ODEs of the eigenvalues:
+    \begin{equation*}
+        \frac{\dd \lambda_i (t)}{\dd t} = u_i (t)^\top \frac{\dd C_t}{\dd t} u_i (t).
+    \end{equation*}
+    %At initialization $t=0$, since $\lambda_{0, \min} I \preceq C_0 \preceq \lambda_{0, \max} I$, then the eigenvalues are bounded by $\lambda_{0, \min} \leq \lambda_1 (0), \lambda_2 (0), \ldots, \lambda_{N_\theta} (0) \leq \lambda_{0, \max}$.
+    For the Gaussian natural flow \eqref{ODEs:NG}, since $\alpha I \preceq -\nabla_\theta \nabla_\theta \log \rho_\post (\theta) \preceq \beta I$, then 
+    \begin{equation*}
+        C_t - \beta C_t^2 \preceq \frac{\dd C_t}{\dd t} = C_t + C_t \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_t \preceq C_t - \alpha C_t^2.
+    \end{equation*}
+    We thus obtain the ODE of eigenvalues
+    \begin{equation*}
+        \lambda_i (t) - \beta \lambda_i (t)^2 \leq \frac{\dd \lambda_i(t)}{\dd t} \leq \lambda_i(t) - \alpha \lambda_i (t)^2, 
+    \end{equation*}
+    with initialization condition
+    $\lambda_{0, \min} \leq \lambda_i(0) \leq \lambda_{0, \max}$. 
+
+    If $\lambda_i (t) \geq 1/\alpha$, then $\frac{\dd \lambda_i(t)}{\dd t} \leq 0$; if $\lambda_i (t) \leq 1/\beta$, then $\frac{\dd \lambda_i(t)}{\dd t} \geq 0$, it follows that $\min \{ \lambda_{0, \min}, 1/\beta\} \leq \lambda_i(t) \leq \max \{\lambda_{0, \max}, 1/\alpha\}$, hence $\lambda_{\min} I \preceq C_t \preceq \lambda_{\max} I$.
+\end{proof}
+
+\begin{tcolorbox}[colback=white, colframe=black, coltext=red]
+\# TODO: revise connection from Fisher--Rao geometry to Wasserstein geometry in both continuous-time dynamics and discretization schemes,
+\begin{align*}
+    \| \grad \mathcal{E} (a_t) \|_{a_t}^2 &=  (\E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post (\theta)])^\top C_t (\E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post (\theta)]) \\
+    &\qquad + \textcolor{blue}{\frac12} \Tr (C_t (C_t^{-1} + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log_\post (\theta)]) C_t (C_t^{-1} + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log_\post (\theta)])) \\
+    &\geq \lambda_{\min} \| \E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post (\theta)] \|^2 \\
+    &\qquad + \textcolor{blue}{\frac{\lambda_{\min}}{2}} \Tr ((C_t^{-1} + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log_\post (\theta)]) C_t (C_t^{-1} + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log_\post (\theta)])) \\
+    &\geq \textcolor{blue}{\frac{\lambda_{\min}}{2}} \| \grad^{W_2} \mathcal{E} (a_t) \|_{W_2}^2 \geq \alpha\lambda_{\min} (\mathcal{E} (a_t) - \mathcal{E} (a_\star)).
+\end{align*}
+\end{tcolorbox}
+
+\begin{theorem}\label{thm:glob-conv}
+    Under Assumption \ref{assump:logconcave-smooth}, if the initial covariance has spectral bounds $\lambda_{0, \min} I \preceq C_0 \preceq \lambda_{0\max} I$, then for the Gaussian natural gradient flow \eqref{ODEs:NG}, we have the following global convergence guarantee
+    \begin{equation*}
+        \mathcal{E}(a_t) - \mathcal{E} (a_\star) \leq e^{-2\alpha \lambda_{\min} t} (\mathcal{E} (a_0) - \mathcal{E} (a_\star)),
+    \end{equation*}
+    where $\lambda_{\min} = \min \{ \lambda_{0, \min}, 1/\beta\}$ as in Lemma \ref{lem:cov-bound}.
+\end{theorem}
+
+\begin{proof}
+    Since $\mathcal{E}$ is $\alpha$-strongly convex on the entire Wasserstein space $(\mathcal{P}_2 (\R^{N_\theta}), W_2)$, then the energy functional is $\alpha$-strongly convex along $W_2$-geodesics \cite{lambert2022variational}, we thus obtain the Polyak--Łojasiewicz (PL) type inequality on Gaussians:
+    \begin{align*}
+        \| \grad^{W_2} \mathcal{E} (a_t) \|_{W_2}^2 &= \| \E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post (\theta)] \|^2 \\
+        &\qquad + \Tr ((C_t^{-1} + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log_\post (\theta)]) C_t (C_t^{-1} + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log_\post (\theta)])) \\
+        &\geq 2\alpha (\mathcal{E}(a_t) - \mathcal{E} (a_\star)).
+    \end{align*}
+
+    For the Gaussian natural gradient flow \eqref{ODEs:NG}, we compute the gradient norm in Fisher--Rao geometry and connect it to the Wasserstein geometry:
+    \begin{align*}
+        \| \grad \mathcal{E}(a_t) \|_{a_t}^2 &= (\E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post (\theta)])^\top C_t (\E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post (\theta)]) \\
+        &\qquad + \Tr (C_t (C_t^{-1} + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log_\post (\theta)]) C_t (C_t^{-1} + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log_\post (\theta)])) \\
+        &\geq \lambda_{\min} \| \grad^{W_2} \mathcal{E} (a_t) \|_{W_2}^2 \geq 2\alpha \lambda_{\min} (\mathcal{E} (a_t) - \mathcal{E}(a_\star)),
+    \end{align*}
+    where we have applied the spectral bound $\lambda_{\min} I \preceq C_t$ from Lemma \ref{lem:cov-bound}. This gives 
+    \begin{equation*}
+        \frac{\dd \mathcal{E} (a_t)}{\dd t} \leq -2\alpha \lambda_{\min} (\mathcal{E} (a_t) - \mathcal{E} (a_\star)),
+    \end{equation*}
+    by Gronwall's inequality, 
+    \begin{equation*}
+        \mathcal{E}(a_t) - \mathcal{E} (a_\star) \leq e^{-2\alpha \lambda_{\min} t} (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{equation*}
+\end{proof}
+
+Furthermore, we have the following stationarity guarantee even without Assumption \ref{assump:logconcave-smooth}.
+
+\begin{corollary}
+    If the target distribution $\rho_\mathrm{post}$ is not log-concave, we have the following stationary guarantee:
+    \begin{equation*}
+        \min_{0 \le t \le T} \| \grad^\mathrm{FR} \mathcal{E} (a_t) \|_{a_t}^2 \le \frac{\mathcal{E} (a_0) - \mathcal{E} (a_\star)}{T}.
+    \end{equation*}
+\end{corollary}
+
+\begin{proof}
+    Since \eqref{ODEs:NG} is a Riemannian gradient flow over the Gaussian manifold, then
+    \begin{equation*}
+        \frac{\dd \mathcal{E} (a_t)}{\dd t} = - \| \grad^\mathrm{FR} \mathcal{E} (a_t) \|_{a_t}^2
+    \end{equation*}
+    and hence
+    \begin{equation*}
+        \int_0^T \| \grad^\mathrm{FR} \mathcal{E} (a_t) \|_{a_t}^2 \dd t = \mathcal{E} (a_0) - \mathcal{E} (a_T) \leq \mathcal{E} (a_0) - \mathcal{E} (a_\star),
+    \end{equation*}
+    this gives
+    \begin{equation*}
+        \min_{0 \le t \le T} \| \grad^\mathrm{FR} \mathcal{E} (a_t) \|_{a_t}^2 \le \frac{\mathcal{E} (a_0) - \mathcal{E} (a_\star)}{T}.
+    \end{equation*}
+\end{proof}
+
+\begin{remark}
+\label{rem:FR-init-cov}
+From Corollary 3 of \cite{lambert2022variational}, the convergence rate of Gaussian approximate Wasserstein gradient flow does not depend on initial covariance, while in Theorem \ref{thm:glob-conv}, the convergence rate of Gaussian approximate natural gradient flow depends on the spectral bound of the initial covariance through Lemma \ref{lem:cov-bound}.
+We show by example that the dependence on the lower spectral bound of the initial covariance is not a proof artifact, instead, it is determined by the properties of Fisher--Rao gradient flow. For the one-dimensional Gaussian target
+\[
+    \rho_{\mathrm{post}} = \mathcal N(0,1),
+    \qquad
+    V(x)=\frac12 x^2,
+\]
+with \(a=(m,c)\), the Gaussian variational objective is
+\[
+    \mathcal E(m,c)-\mathcal E(a_\star)
+    =
+    \frac12\bigl(m^2+c-1-\log c\bigr),
+    \qquad
+    a_\star=(0,1).
+\]
+Since
+\[
+    \nabla \log \rho_{\mathrm{post}}(x)=-x,
+    \qquad
+    \nabla^2 \log \rho_{\mathrm{post}}(x)=-1,
+\]
+the Gaussian natural gradient flow becomes
+\[
+    \dot m_t=-c_t m_t,
+    \qquad
+    \dot c_t=c_t(1-c_t).
+\]
+Let \(c_0=\varepsilon\in(0,1)\). Then the covariance equation is exactly solvable:
+\[
+    c_t=\frac{\varepsilon e^t}{1-\varepsilon+\varepsilon e^t}.
+\]
+Consequently,
+\[
+    m_t
+    =
+    m_0\exp\left(-\int_0^t c_s\,ds\right)
+    =
+    \frac{m_0}{1-\varepsilon+\varepsilon e^t}.
+\]
+Therefore, for every fixed \(t>0\),
+\[
+    \lim_{m_0\to\infty}
+    \frac{\mathcal E(m_t,c_t)-\mathcal E(a_\star)}
+         {\mathcal E(m_0,c_0)-\mathcal E(a_\star)}
+    =
+    \frac{1}{(1-\varepsilon+\varepsilon e^t)^2}.
+\]
+Taking \(\varepsilon\downarrow0\) gives
+\[
+    \lim_{\varepsilon\downarrow0}\lim_{m_0\to\infty}
+    \frac{\mathcal E(m_t,c_t)-\mathcal E(a_\star)}
+         {\mathcal E(m_0,c_0)-\mathcal E(a_\star)}
+    =
+    1.
+\]
+Hence no estimate of the form
+\[
+    \mathcal E(a_t)-\mathcal E(a_\star)
+    \le
+    e^{-rt}\bigl(\mathcal E(a_0)-\mathcal E(a_\star)\bigr),
+    \qquad r>0,
+\]
+with \(r\) depending only on the log-concavity and smoothness constants, can hold uniformly over all initial covariances. In this example \(\alpha=\beta=1\), and the rate in the preceding result depends on
+\[
+    \lambda_{\min}=\min\{\varepsilon,1\}=\varepsilon,
+\]
+which correctly degenerates as \(\varepsilon\downarrow0\).
+
+This should be contrasted with the Gaussian Bures--Wasserstein gradient flow for the same target. In one dimension it satisfies
+\[
+    \dot{\widetilde m}_t=-\widetilde m_t,
+    \qquad
+    \dot{\widetilde c}_t=2(1-\widetilde c_t),
+\]
+and hence
+\[
+    \widetilde m_t=\widetilde m_0e^{-t},
+    \qquad
+    \widetilde c_t=1+(\widetilde c_0-1)e^{-2t}.
+\]
+Thus the mean component contracts immediately at the target curvature rate, independently of the initial covariance. This illustrates the structural difference between the Fisher--Rao and Bures--Wasserstein geometries: in the Fisher--Rao Gaussian flow, small covariance preconditions and slows down the mean dynamics, while the Bures--Wasserstein flow does not contain this covariance prefactor in the mean equation. This motivates the design of Gaussian approximate Wasserstein--Fisher--Rao gradient flow in Section \ref{sec:WFR}.
+\end{remark}
+
+
+\subsection{Discretization with Riemannian distance}
+
+We decompose the objective as
+\[
+    \mathcal E(a)= \KL (\rho_a \| \rho_\post) = \mathcal E_1(a)+\mathcal E_2(a),
+\]
+where
+\[
+    \mathcal E_1(a)
+    =
+    \int \rho_a\log\rho_a
+    =
+    -\frac12\log\det C + \mathrm{const.},
+    \qquad
+    \mathcal E_2(a)
+    =
+    -\int \rho_a\log\rho_{\post}
+    =
+    -\mathbb E_{\rho_a}[\log\rho_{\mathrm{post}}].
+\]
+
+As the Fisher--Rao metric induced on the Gaussian family reads
+\begin{equation*}
+    g_a^\mathrm{FR} ((u, X), (v, Y)) = u^\top C^{-1} v + \frac{1}{2} \Tr (C^{-1} X C^{-1} Y),
+\end{equation*}
+then we define the squared Riemannian distance at local iterate $a_n = (m_n, C_n)$ as 
+\begin{equation*}
+    d (a, a_n)^2 = (m - m_n)^\top C_n^{-1} (m - m_n) + \frac{1}{2} \|Z\|_F^2, \qquad Z = \log (C_n^{-1/2}CC_n^{-1/2}).
+\end{equation*}
+
+As the entropy term $\mathcal{E}_1$ is often non-smooth, we apply proximal algorithm \cite{parikh2014proximal} for optimization. In the forward step,
+\begin{align*}
+    a_{n+1/2} = \operatorname*{argmin}_{a \in \Aspace} \left\{ \mathcal{E}_2 (a_n) + \langle \grad \mathcal{E}_2 (a_n), \Log_{a_n} (a) \rangle + \frac{1}{2\Delta t} d(a, a_n)^2 \right\},
+\end{align*}
+which gives
+\begin{align*}
+    m_{n+1/2} &= m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+    C_{n+1/2} &= C_n^{1/2} \exp (\Delta t C_n^{1/2} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n^{1/2}) C_n^{1/2}.
+\end{align*}
+The backward step reads
+\begin{equation*}
+    a_{n+1} = \operatorname*{argmin}_{a\in \Aspace} \left\{ \mathcal{E}_1 (a) + \frac{1}{2\Delta t} d(a, a_{n+1/2})^2 \right\},
+\end{equation*}
+which gives
+\begin{equation*}
+    m_{n+1} = m_{n+1/2}, \qquad C_{n+1} = e^{\Delta t} C_{n+1/2}.
+\end{equation*}
+
+These collectively give the update through Riemannian geometry:
+\begin{equation}\label{upd:Riem}
+    \begin{aligned}
+        m_{n+1} &= m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta\log\rho_{\post}(\theta)], \\
+        C_{n+1} &= e^{\Delta t} C_n^{1/2} \exp (\Delta t C_n^{1/2} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n^{1/2}) C_n^{1/2}.
+    \end{aligned}
+\end{equation}
+
+We proceed to show the convergence theory of \eqref{upd:Riem} under Assumption \ref{assump:logconcave-smooth}. We first show that the update for each step is exactly the geodesic gradient descent on the Gaussian manifold.
+
+\begin{proposition}\label{prop:upd-map-Riem}
+    The discrete algorithm with Riemannian distance \eqref{upd:Riem} gives the following one-step update:
+    \begin{equation*}
+        a_{n+1} = \Exp_{a_n} (-\Delta t \grad \mathcal{E} (a_n)).
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    The Riemannian gradient of $\mathcal{E} (a_n)$ reads
+    \begin{equation*}
+        \grad \mathcal{E} (a_n) = (- C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], -C_n - C_n \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n).
+    \end{equation*}
+
+    For $a = (m, C) \in \Aspace$ and $(u, U) \in T_a \Aspace$, the exponential map on the Gaussian manifold reads
+    \begin{equation*}
+        \Exp_{(m, C)} (u, U) = \left( m + u, C^{1/2} \exp (C^{-1/2} U C^{-1/2}) C^{1/2} \right).
+    \end{equation*}
+    In the mean direction, we have
+    \begin{equation*}
+        m_{n+1} = m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta\log\rho_{\post}(\theta)] = m_n - \Delta t \grad_m \mathcal{E} (a_n).
+    \end{equation*}
+    In the covariance direction, 
+    \begin{equation*}
+        C_{n+1} = C_n^{1/2} \exp (\Delta t I + \Delta t C_n^{1/2} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n^{1/2}) C_n^{1/2},
+    \end{equation*}
+    which is exactly the covariance component of $\Exp_{a_n} (-\Delta t \grad \mathcal{E} (a_n))$ because
+    \begin{align*}
+        -\Delta t \grad_C \mathcal{E}(a_n) &= \Delta t C_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n \\
+        &= C_n^{1/2} (\Delta t I + \Delta t C_n^{1/2} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n^{1/2}) C_n^{1/2},
+    \end{align*}
+    which completes the proof.
+\end{proof}
+
+We then prove the spectral bounds of covariance along \eqref{upd:Riem}.
+
+\begin{lemma}\label{lem:cov-bound-Riem}
+    Under Assumption \ref{assump:logconcave-smooth} and assume that the initial covariance has spectral bounds $\lambda_{0, \min} I \preceq C_0 \preceq \lambda_{0, \max} I$, then along the discrete algorithm with Riemannian distance \eqref{upd:Riem}, if the stepsize is chosen to be $0 < \Delta t \leq \frac{1}{\beta \lambda_{\max}}$, one has
+    \begin{equation*}
+        \lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I,
+    \end{equation*}
+    where we denote $\lambda_{\min} := \min \left\{ \lambda_{0, \min}, \frac{1}{\beta} \right\}$ and $\lambda_{\max} := \max \left\{ \lambda_{0, \max}, \frac{1}{\alpha} \right\}$.
+\end{lemma}
+
+\begin{proof}
+    We proceed with induction, it is known that $\lambda_{\min} I \preceq C_0 \preceq \lambda_{\max} I$. We then assume that $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$.
+    Since $\alpha I \preceq -\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta) \preceq \beta I$, then
+    \begin{equation*}
+        \exp \left( -\Delta t \beta C_n \right) \preceq \exp \left( \Delta t C_n^{1/2} \mathbb{E}_{\theta\sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\mathrm{post}(\theta)] C_n^{1/2}\right) \preceq \exp \left( -\Delta t \alpha C_n \right),
+    \end{equation*}
+    and hence
+    \begin{equation*}
+        C_n \exp \left( \Delta t (I - \beta C_n ) \right) \preceq C_{n+1} \preceq  C_n \exp \left( \Delta t ( I - \alpha C_n) \right).
+    \end{equation*}
+    For the upper bound, we consider $f(x) = x \exp (\Delta t (1 - \alpha x))$, when $\Delta t \leq \frac{1}{\beta \lambda_{\max}}$, $f'(x) > 0$ on $x \in [\lambda_{\min}, \lambda_{\max}]$, hence
+    \begin{equation*}
+        C_{n+1} \preceq f(\lambda_{\max}) I = \lambda_{\max} \exp \left(\Delta t (1 - \alpha \lambda_{\max})\right) I \preceq \lambda_{\max} I.
+    \end{equation*}
+    For the lower bound, we consider $g(x) = x \exp (\Delta t (1 - \beta x))$. Since $\Delta t \leq \frac{1}{\beta \lambda_{\max}}$, then $g'(x) > 0$ on $x \in [\lambda_{\min}, \lambda_{\max}]$, hence
+    \begin{equation*}
+        C_{n+1} \succeq g(\lambda_{\min}) I = \lambda_{\min} \exp \left( \Delta t (1 - \beta \lambda_{\min}) \right) \succeq \lambda_{\min} I.
+    \end{equation*}
+    Hence $\lambda_{\min} I \preceq C_{n+1} \preceq \lambda_{\max} I$, which completes the proof.
+\end{proof}
+
+We proceed to prove the global convergence rate of \eqref{upd:Riem}.
+
+\begin{theorem}\label{thm:conv-Riem}
+    Under Assumption \ref{assump:logconcave-smooth} with the covariance along \eqref{upd:Riem} bounded by $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$ (Lemma \ref{lem:cov-bound-Riem}), then if the stepsize satisfies $0 < \Delta t \leq \frac{1}{\beta \lambda_{\max}}$, \eqref{upd:Riem} gives the following global convergence rate:
+    \begin{equation*}
+        \mathcal{E}(a_{N}) - \mathcal{E} (a_\star) \leq (1 - \alpha \lambda_{\min} \Delta t (2 - \beta \lambda_{\max} \Delta t))^N (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We first prove the smoothness of $\mathcal{E}$ in the Riemannian geometry. 
+    For a fixed $a = (m, C) \in \mathcal{A}$, we write $C = BB^\top$. Let $\zeta = (u, U) \in T_a \mathcal{A}$, we denote $U = BSB$, where $S = S^\top$, the corresponding exponential curve can be parameterized by
+    \begin{equation*}
+        m_t = m + tu, \qquad C_t = B e^{tS} B.
+    \end{equation*}
+    We also write $B_t = B e^{tS/2}$, $X_t = m_t + B_t \xi$, where $\xi \sim \mathcal{N} (0, I)$ so that $X_t \sim \rho_{a_t}$.
+    Define \begin{equation*}
+        \psi(t) := \mathcal{E}_2 (a_t) = \mathbb{E}[V (X_t)], \qquad V(\theta) := -\log \rho_\mathrm{post} (\theta).
+    \end{equation*}
+    We compute
+    \begin{equation*}
+        \frac{\dd X_t}{\dd t} = u + \frac{1}{2} B_t S \xi, \qquad \frac{\dd^2 X_t}{\dd t^2} = \frac{1}{4} B_t S^2 \xi,
+    \end{equation*}
+    and $\alpha I \preceq \nabla^2 V \preceq \beta I$, then
+    \begin{align*}
+        \psi''(t) &= \mathbb{E} \left[ \left( \frac{\dd X_t}{\dd t} \right)^\top \nabla^2 V(X_t) \left( \frac{\dd X_t}{\dd t} \right) \right] + \mathbb{E} \left[ \nabla V(X_t)^\top \left( \frac{\dd^2 X_t}{\dd t^2} \right) \right] \\
+        &\leq \beta \mathbb{E} \left\| \frac{\dd X_t}{\dd t} \right\|^2 + \frac{1}{4} \mathbb{E} \left[ \Tr \left( S^2 B_t^\top \nabla^2 V (X_t) B_t \right) \right] \qquad \text{(by Stein's Lemma)} \\
+        &\leq \beta \left( \|u\|^2 + \frac{1}{4} \|B_t S\|_F^2 \right) + \frac{\beta}{4} \|B_t S\|_F^2 = \beta \|u\|^2 + \frac{\beta}{2} \|B_t S\|_F^2 \\
+        &\leq \beta \lambda_{\max} u^\top C^{-1} u + \frac{\beta}{2} \lambda_{\max} \|S\|_F^2.
+    \end{align*}
+    Since the tangent norm is $\| \zeta \|_a^2 = u^\top C^{-1} u + \frac{1}{2} \|S \|_F^2$, then 
+    \begin{equation*}
+        \psi'' (t) \leq L \| \zeta \|_a^2, \qquad L = \beta \lambda_{\max}.
+    \end{equation*}
+    We apply Taylor's expansion along the exponential curve to obtain the $L$-smoothness of $\mathcal{E}_2$:
+    \begin{equation*}
+        \mathcal{E}_2 (\mathrm{Exp}_a (\zeta)) \leq \mathcal{E}_2 (a) + \langle \mathrm{grad} \mathcal{E}_2 (a), \zeta \rangle_a + \frac{L}{2} \| \zeta \|_a^2.
+    \end{equation*}
+    We also note that
+    \begin{equation*}
+        \log \det C_t = \log \det C + t \Tr(S),
+    \end{equation*}
+    hence $\mathcal{E}_1$ is geodesically affine, these collectively give the $L$-smoothness of the energy functional $\mathcal{E}$:
+    \begin{equation}\label{eq:E-L-smooth-Riem}
+        \mathcal{E} (\mathrm{Exp}_a (\zeta)) \leq \mathcal{E} (a) + \langle \mathrm{grad} \mathcal{E} (a), \zeta \rangle_a + \frac{L}{2} \| \zeta \|_a^2.
+    \end{equation}
+    
+    Since by Proposition \ref{prop:upd-map-Riem} we have
+    \begin{equation*}
+        a_{n+1} = \mathrm{Exp}_{a_n} \left( -\Delta t \grad \mathcal{E} (a_n) \right),
+    \end{equation*}
+    then we choose $a = a_n$ and $\zeta = -\Delta t \grad \mathcal{E} (a_n)$ in \eqref{eq:E-L-smooth-Riem} to obtain
+    \begin{align*}
+        \mathcal{E}(a_{n+1}) &\leq \mathcal{E} (a_n) + \left \langle \mathrm{grad} \mathcal{E} (a_n), -\Delta t \grad \mathcal{E} (a_n) \right \rangle_{a_n} +  \frac{L}{2} \left\|  -\Delta t \grad \mathcal{E} (a_n) \right\|_{a_n}^2 \\
+        &= \mathcal{E} (a_n) - \Delta t \left( 1 - \frac{L\Delta t}{2} \right) \left\| \mathrm{grad} \mathcal{E} (a_n) \right\|_{a_n}^2.
+    \end{align*}
+
+    We connect the affine invariant geometry to Wasserstein geometry as in the proof of Theorem~\ref{thm:glob-conv}, which gives
+    \begin{equation*}
+        \left\| \mathrm{grad} \mathcal{E} (a_n) \right\|_{a_n}^2 \geq \lambda_{\min} \left\| \mathrm{grad}^{W_2} \mathcal{E} (a_n) \right\|_{W_2}^2 \geq 2 \alpha\lambda_{\min} (\mathcal{E} (a_n) - \mathcal{E} (a_\star)).
+    \end{equation*}
+    We therefore get
+    \begin{align*}
+        \mathcal{E}(a_{n+1}) - \mathcal{E} (a_\star) &\leq \mathcal{E} (a_n) - \mathcal{E} (a_\star) - \Delta t \left( 1 - \frac{L\Delta t}{2} \right) \left\| \mathrm{grad} \mathcal{E} (a_n) \right\|_{a_n}^2 \\
+        &\leq (1 - \alpha \lambda_{\min} \Delta t (2 - L \Delta t)) (\mathcal{E} (a_n) - \mathcal{E} (a_\star)),
+    \end{align*}
+    as $\Delta t \leq \frac{1}{L} < \frac{2}{L}$, we have the following convergence guarantee:
+    \begin{equation*}
+        \mathcal{E}(a_{N}) - \mathcal{E} (a_\star) \leq (1 - \alpha \lambda_{\min} \Delta t (2 - L \Delta t))^N (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{equation*}
+\end{proof}
+
+
+
+\subsection{Discretization with KL divergence}
+
+The discrete algorithm with Riemannian distance \eqref{upd:Riem} is geometrically natural but computationally expensive, which requires to compute matrix exponential at every step, for the ease in computation, we develop the following discretization scheme with KL divergence.
+
+At the forward step, we compute
+\begin{equation*}
+    a_{n+1/2} = \operatorname*{argmin}_{a\in \Aspace} \left\{ \mathcal{E}_2 (a_n) + \langle \nabla \mathcal{E}_2 (a_n), a - a_n \rangle + \frac{1}{\Delta t} \KL (\rho_a \| \rho_{a_n}) \right\},
+\end{equation*}
+which gives
+\begin{align*}
+    m_{n+1/2} &= m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+    C_{n+1/2} &= (C_n^{-1} - \Delta t \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)])^{-1}.
+\end{align*}
+For the backward step, the update reads
+\begin{equation*}
+    a_{n+1} = \operatorname*{argmin}_{a \in \Aspace} \left\{ \mathcal{E}_1 (a) + \frac{1}{\Delta t} \KL (\rho_a \| \rho_{a_{n+1/2}}) \right\},
+\end{equation*}
+which gives
+\begin{equation*}
+    m_{n+1} = m_{n+1/2}, \qquad C_{n+1} = (1 + \Delta t) C_{n+1/2}.
+\end{equation*}
+
+Hence, the discrete algorithm with KL divergence reads
+\begin{equation}\label{upd:KL}
+    \begin{aligned}
+        m_{n+1} &= m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+        C_{n+1} &= (1 + \Delta t) (C_n^{-1} - \Delta t \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)])^{-1}.
+    \end{aligned}
+\end{equation}
+
+We denote $D (a, a_n) = \KL (\rho_{a} \| \rho_{a_n})$ and take note that $D(a, a_n)$ is a Bregman divergence because 
+\begin{equation*}
+    D_\psi (\xi, \xi_n) = \psi (\xi) - \psi (\xi_n) - \langle \nabla \psi (\xi_n), \xi - \xi_n \rangle = \KL (\rho_a \| \rho_{a_n}),
+\end{equation*}
+where we define
+\begin{equation*}
+    \psi (\xi) = -\frac{1}{2} \log\det (\xi_2 - \xi_1 \xi_1^\top), \qquad \xi = (\xi_1, \xi_2) = (m, C + mm^\top).
+\end{equation*}
+
+We proceed to prove the convergence rate of discretization algorithm with KL divergence \eqref{upd:KL}, under the standard Assumption \ref{assump:logconcave-smooth}. We first prove the spectral bounds of covariance along \eqref{upd:KL}.
+
+\begin{lemma}\label{lem:cov-bound-kl}
+    Under Assumption \ref{assump:logconcave-smooth}, if $\lambda_{0, \min} I \preceq C_0 \preceq \lambda_{0, \max} I$, then along the discrete update \eqref{upd:KL}, the covariance $C_n$ satisfies $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$, where 
+    \begin{equation*}
+        \lambda_{\min} = \min\left\{\lambda_{0, \min}, \frac{1}{\beta}\right\}, \qquad \lambda_{\max} = \max\left\{ \lambda_{0, \max}, \frac{1}{\alpha} \right\}.
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+We re-write the covariance update in \eqref{upd:KL} as 
+\[ C_{n+1}^{-1} = \frac{1}{1 + \Delta t} (C_n^{-1} - \Delta t \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta^2 \log \rho_\mathrm{post}(\theta)]).\]
+As we have $\alpha I \preceq -\mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta^2 \log \rho_\mathrm{post}(\theta)] \preceq \beta I$, for $\alpha \leq h \leq \beta$, the update in eigenvalue is given by
+\[\lambda_{\mathrm{new}} = \left(\frac{1}{1 + \Delta t} \left(\frac{1}{\lambda} + \Delta t h\right)\right)^{-1} = \frac{1 + \Delta t}{\frac{1}{\lambda} + \Delta t h}.\]
+Hence if $\lambda_{\min} \leq \lambda \leq \lambda_{\max}$, the update is bounded by
+\begin{equation*}
+     \lambda_{\min} \leq \frac{1 + \Delta t}{\frac{1}{\lambda_{\min}} + \Delta t \beta} \leq \lambda_{\mathrm{new}} \leq \frac{1 + \Delta t}{\frac{1}{\lambda_{\max}} + \Delta t \alpha} \leq \lambda_{\max},
+\end{equation*}
+where the first and the last inequalities follow from the fact that $\lambda_{\min} \leq 1/\beta$ and $\lambda_{\max} \geq 1/\alpha$. Hence the eigenvalues of $C_n$ is bounded by mathematical induction, i.e., $\lambda_{\min} I \preceq C_0 \preceq \lambda_{\max} I$ and if $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$, then $\lambda_{\min} I \preceq C_{n+1} \preceq \lambda_{\max} I$.
+\end{proof}
+
+\begin{proposition}\label{prop:conv-smooth-D}
+    Under Assumption \ref{assump:logconcave-smooth} with covariance bound $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$ (Lemma \ref{lem:cov-bound-kl}) along \eqref{upd:KL}, $\mathcal{E}_2$ is $L$-smooth with respect to local Bregman divergence $D(\cdot, a_n)$, i.e., for any $a = (m, C) \in \mathcal{A}$ with $\lambda_{\min} I \preceq C \preceq \lambda_{\max} I$, one has
+    \begin{equation*}
+        \mathcal{E}_2 (a) \leq \mathcal{E}_2 (a_n) + \langle \nabla \mathcal{E}_2 (a_n), a - a_n \rangle + L D (a, a_n),
+    \end{equation*}
+    for a fixed constant $L = \beta  \lambda_{\max}$.
+\end{proposition}
+
+\begin{proof}
+    We consider the displacement from $(m_0, C_0) \in \mathcal{A}$ to $(m, C) \in \mathcal{A}$, and denote the direction $u = m - m_0$ and $H = B - B_0$. We take $M = C_0^{-1/2} C C_0^{-1/2}$, $B_0 = C_0^{1/2}$, $B = C_0^{1/2} M^{1/2}$, thus $BB^\top = C$.
+    Under this formulation, we write $\mathcal{E}_2$ as
+    \begin{equation*}
+        \mathcal{E}_2 (m, B) := \mathbb{E}_{\xi \sim \mathcal{N}(0, I_{N_\theta})} [V(m + B\xi)].
+    \end{equation*}
+
+    We denote the trajectory
+    \begin{equation*}
+        \varphi (t) = \mathbb{E}_{\xi \sim \mathcal{N} (0, I_{N_\theta})} [V(m_0 + tu + (B_0 + tH)\xi)].
+    \end{equation*}
+    We write $X_t = m_t + B_t \xi$, and the first and second derivatives of $\varphi$ read
+    \begin{equation*}
+        \varphi'(t) = \mathbb{E}_{\xi \sim \mathcal{N} (0, I_{N_\theta})} [\nabla V(X_t) (u + H\xi)], \qquad \varphi''(t) = \mathbb{E}_{\xi \sim \mathcal{N} (0, I_{N_\theta})} [(u + H\xi)^\top \nabla^2 V(X_t) (u + H\xi)].
+    \end{equation*}
+    As we assume $\nabla^2 V \preceq \beta  I$, then
+    \begin{equation*}
+        \varphi''(t) \leq \beta  (\| u \|^2 + \| H \|_F^2).
+    \end{equation*}
+    As the Taylor's expansion of $\varphi(t)$ gives
+    \begin{equation*}
+        \varphi(1) = \varphi(0) + \varphi'(0) + \int_0^1 (1 - s) \varphi''(s) \dd s,
+    \end{equation*}
+    then 
+    \begin{equation*}
+        \varphi(1) - \varphi(0) - \varphi'(0) \leq \frac{\beta }{2} (\| u \|^2 + \| H \|_F^2),
+    \end{equation*}
+    which is equivalent to 
+    \begin{equation*}
+        \mathcal{E}_2 (a) - \mathcal{E}_2 (a_0) - \langle \nabla_m \mathcal{E}_2(a_0), u \rangle - \langle \nabla_B \mathcal{E}_2 (a_0), H \rangle \leq \frac{\beta }{2} (\| u \|^2 + \| H \|_F^2).
+    \end{equation*}
+    We denote the gradient of $\mathcal{E}_2$ with respect to $C$ as 
+    \begin{equation*}
+        G_0 := \nabla_C \mathcal{E}_2 (a_0) = \frac{1}{2} \mathbb{E}_{\theta \sim \mathcal{N}(m_0, C_0)} [\nabla^2_\theta V(\theta)],
+    \end{equation*}
+    where we have $G_0 \succeq 0$ as $V$ is $\alpha$-strongly convex. We also compute the gradient of $\mathcal{E}_2$ with respect to $B$:
+    \begin{equation*}
+        \nabla_B \mathcal{E}_2 (a_0) = \nabla_C \mathcal{E}_2 (a_0) \cdot 2B_0 = 2G_0 B_0,
+    \end{equation*}
+    this gives
+    \begin{align*}
+        \langle \nabla_B \mathcal{E}_2 (a_0), H \rangle &= \Tr ((2 G_0 B_0)^\top H) = \Tr(G_0 (B_0 H + H B_0)) \\
+        &\leq \Tr(G_0 (B_0 H^\top + H B_0 + H H^\top)) = \langle \nabla_C \mathcal{E}_2 (a_0), C - C_0 \rangle,
+    \end{align*}
+    where the inequality comes from the fact that $G_0 \succeq 0$ and $H H^\top \succeq 0$.
+
+    We therefore obtain
+    \begin{align*}
+        \mathcal{E}_2 (a) &\leq \mathcal{E}_2(a_0) +  \langle \nabla_m \mathcal{E}_2(a_0), m - m_0 \rangle + \langle \nabla_C \mathcal{E}_2 (a_0), C - C_0 \rangle + \frac{\beta }{2} (\| u \|^2 + \| H \|_F^2) \\
+        &= \mathcal{E}_2(a_0) +  \langle \nabla \mathcal{E}_2(a_0), a - a_0 \rangle + \frac{\beta }{2} (\| u \|^2 + \| H \|_F^2).
+    \end{align*}
+    We then connect the divergence term $\frac{\beta }{2} (\| u \|^2 + \| H \|_F^2)$ to the KL divergence $D$.
+    For the mean part, 
+    \begin{equation*}
+        \frac{\beta }{2} \|u\|^2 \leq \beta  \lambda_{\max} \cdot \frac{1}{2} u^\top C_0^{-1} u \leq \beta  \lambda_{\max} D^m (m, m_0).
+    \end{equation*}
+    For the covariance part, the divergence for the covariance part reads $D^C (C, C_n) = \frac{1}{2} (\Tr(M) - \log \det M - N_\theta )$, and the eigenvalues $\eta_1, \ldots \eta_{N_\theta}$ of $M$ satisfy $\eta_i \in \left[ \frac{\lambda_{\min}}{\lambda_{\max}}, \frac{\lambda_{\max}}{\lambda_{\min}} \right]$.
+
+    This gives the following bound
+    \begin{align*}
+        D^C (C, C_n) &= \frac{1}{2} \sum_{i=1}^{N_\theta} (\eta_i - \log \eta_i - 1) \geq \frac{1}{2} \sum_{i=1}^{N_\theta} (\sqrt{\eta_i} - 1)^2 = \frac{1}{2} \| M^{1/2} - I \|_F^2 \geq \frac{1}{2 \lambda_{\max}} \|H\|_F^2,
+    \end{align*}
+    where the first inequality comes from $\log x \leq x - 1$ and the second inequality comes from $H = B - B_0 = C_0^{1/2} (M^{1/2} - I)$ and the spectral bound of $C_0$ in Lemma \ref{lem:cov-bound-kl}.
+    
+    These collectively give, 
+    \begin{equation*}
+        \frac{\beta }{2} (\| u \|^2 + \| H \|_F^2) \leq L D (a, a_0), \qquad L = \beta  \lambda_{\max},
+    \end{equation*}
+    which gives
+    \begin{equation*}
+        \mathcal{E}_2 (a) \leq \mathcal{E}_2 (a_0) + \langle \nabla \mathcal{E}_2 (a_0), a - a_0 \rangle + L D (a, a_0).
+    \end{equation*}
+\end{proof}
+
+\begin{lemma}[One-step inequality]\label{lem:one-step}
+    Under Assumption \ref{assump:logconcave-smooth}, for the discrete update \eqref{upd:KL} with stepsize $0 < \Delta t \leq \frac{1}{L}$ with $L$ as in Proposition \ref{prop:conv-smooth-D}, we have the following one-step inequality:
+    \begin{equation*}
+        \mathcal{E} (a_{n+1}) \leq \mathcal{E} (a_n) - \frac{1}{\Delta t} D (a_n, a_{n+1}).
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    As the discrete update is characterized by
+    \begin{equation*}
+        a_{n+1} = \operatorname*{argmin}_{a\in \mathcal{A}} \left\{\mathcal{E}_1 (a) + \langle \nabla \mathcal{E}_2 (a_n), a - a_n\rangle + \frac{1}{\Delta t} D (a, a_n)\right\},
+    \end{equation*}
+    then the first order condition gives that, there exists $g_{n+1} \in \partial \mathcal{E}_1 (a_{n+1})$, such that
+    \begin{equation*}
+        g_{n+1} + \nabla \mathcal{E}_2 (a_n) + \frac{1}{\Delta t} (\nabla \psi(\xi_{n+1}) - \nabla \psi (\xi_n)) = 0.
+    \end{equation*}
+    We take $\langle \cdot, a_n - a_{n+1} \rangle$, which gives
+    \begin{equation*}
+        \langle g_{n+1}, a_n - a_{n+1} \rangle + \langle \nabla \mathcal{E}_2 (a_n), a_n - a_{n+1} \rangle + \frac{1}{\Delta t} \langle \nabla \psi(\xi_{n+1}) - \nabla \psi (\xi_n), a_n - a_{n+1} \rangle = 0.
+    \end{equation*}
+    Since $\mathcal{E}_1 = -\frac{1}{2} \log \det C + \text{const.}$ is convex, then $\mathcal{E}_1 (a_n) \geq \mathcal{E}_1 (a_{n+1}) + \langle g_{n+1}, a_n - a_{n+1} \rangle$, hence 
+    \begin{equation*}
+        \langle \nabla \mathcal{E}_2 (a_n), a_{n+1} - a_n \rangle \leq \mathcal{E}_1(a_n) - \mathcal{E}_1 (a_{n+1}) + \frac{1}{\Delta t} \langle \nabla \psi(\xi_{n+1}) - \nabla \psi (\xi_n), a_n - a_{n+1} \rangle.
+    \end{equation*}
+    We then apply the three-points lemma \citep[Lemma 9.11]{beck2017first} to obtain 
+    \begin{equation}\label{ineq:aft_3pts}
+        \langle \nabla \mathcal{E}_2 (a_n), a_{n+1} - a_n \rangle \leq \mathcal{E}_1(a_n) - \mathcal{E}_1 (a_{n+1}) + \frac{1}{\Delta t} (D (a_n, a_n) - D (a_n, a_{n+1}) - D (a_{n+1}, a_n)).
+    \end{equation}
+
+    By Proposition \ref{prop:conv-smooth-D}, the relative smoothness of $\mathcal{E}_2$ gives
+    \begin{equation*}
+        \mathcal{E}_2 (a_{n+1}) \leq \mathcal{E}_2 (a_n) + \langle \nabla \mathcal{E}_2, a_{n+1} - a_n \rangle + L D (a_{n+1}, a_n).
+    \end{equation*}
+
+    We take the summation of the above inequality and \eqref{ineq:aft_3pts}, this gives
+    \begin{equation*}
+        \mathcal{E} (a_{n+1}) \leq \mathcal{E} (a_n) - \frac{1}{\Delta t} D (a_n, a_{n+1}) - \left(\frac{1}{\Delta t} - L\right) D (a_{n+1}, a_n),
+    \end{equation*}
+    if we furthermore choose stepsize $0 < \Delta t \leq \frac{1}{L}$, then we obtain the following one-step inequality:
+    \begin{equation*}
+        \mathcal{E} (a_{n+1}) \leq \mathcal{E} (a_n) - \frac{1}{\Delta t} D (a_n, a_{n+1}).
+    \end{equation*}
+\end{proof}
+
+We proceed to show the convergence of \eqref{upd:KL} by bounding the Bregman/KL divergence term.
+
+\begin{theorem}\label{thm:conv-KL}
+    Under Assumption \ref{assump:logconcave-smooth} with spectral bounds $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$ (Lemma \ref{lem:cov-bound-kl}) along \eqref{upd:KL}, for stepsize $0 < \Delta t \leq \frac{1}{L}$ with $L$ as in Proposition \ref{prop:conv-smooth-D}, \eqref{upd:KL} yields the following convergence guarantee:
+    \begin{equation*}
+        \mathcal{E} (a_N) - \mathcal{E} (a_\star) \leq \left(1 - \frac{\alpha\lambda_{\min} \Delta t}{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \right)^N (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We first connect $D$ to the Wasserstein gradient norm $\|\grad^{W_2} \mathcal{E} (a_n)\|^2_{W_2}$.
+    We denote that $$g_n := \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \log \rho_\mathrm{post} (\theta)], \quad H_n := \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)], \quad A_n = C_n^{-1} + H_n.$$ 
+    
+    For the mean part, from \eqref{upd:KL}, we have
+    \begin{align*}
+        D^m (a_n, a_{n+1}) &= \frac{1}{2} (m_n - m_{n+1})^\top C_{n+1}^{-1} (m_n - m_{n+1}) = \frac{\Delta t^2}{2} g_n^\top C_n C_{n+1} C_n g_n \\
+        &= \frac{\Delta t^2}{2 (1 + \Delta t)} (g_n^\top C_n g_n - \Delta t g_n^\top C_n H_n C_n g_n) \geq \frac{\Delta t^2 \lambda_{\min}}{2 (1 + \Delta t)} (1 + \Delta t \alpha \lambda_{\min}) \|g_n\|^2,
+    \end{align*}
+    where the inequality comes from $-H_n \succeq \alpha I$ and $C_n \succeq \lambda_{\min} I$ (Lemma \ref{lem:cov-bound-kl}).
+
+    For the covariance part, we have
+    \begin{equation*}
+        D^C (C_n, C_{n+1}) = \frac{1}{2} (\Tr(C_{n+1}^{-1} C_n) - \log \det (C_{n+1}^{-1} C_n) - N_\theta).
+    \end{equation*}
+    From \eqref{upd:KL}, 
+    \begin{equation*}
+        C_{n+1}^{-1} C_n = \frac{1}{1 + \Delta t} (I - \Delta t H_n C_n).
+    \end{equation*}
+    Denote $M_n := C_n^{1/2} H_n C_n^{1/2}$ and its eigenvalues $\lambda_{1, n}, \ldots, \lambda_{N_\theta, n}$. As $\alpha I \preceq - H_n \preceq \beta I$ and $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$, then 
+    \begin{equation*}
+        - \beta \lambda_{\max} \leq \lambda_{i, n} \leq -\alpha \lambda_{\min}, \qquad i = 1, \ldots, N_\theta,
+    \end{equation*}
+    hence the eigenvalues of $C_{n+1}^{-1} C_n$ are bounded by
+    \begin{equation*}
+         \frac{1 + \Delta t \alpha \lambda_{\min}}{1 + \Delta t} \leq r_{i, n} = \frac{1 - \Delta t \lambda_{i, n}}{1 + \Delta t} \leq \frac{1 + \Delta t \beta \lambda_{\max}}{1 + \Delta t} := R, \qquad R \geq 1.
+    \end{equation*}
+    We have
+    \begin{align*}
+        D^C (C_{n}, C_{n+1}) &= \frac{1}{2} \sum_{i = 1}^{N_\theta} (r_{i, n} - \log r_{i, n} - 1) \geq \frac{1}{2} \sum_{i = 1}^{N_\theta} \frac{(r_{i, n} - 1)^2}{2\max \{r_{i, n}, 1\}} \geq \frac{1}{4R} \sum_{i=1}^{N_\theta} (r_{i, n} - 1)^2 \\
+        &= \frac{\Delta t^2}{4 (1 + \Delta t)^2 R} \sum_{i=1}^{N_\theta} (\lambda_{i, n} + 1)^2 = \frac{\Delta t^2}{4 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \sum_{i=1}^{N_\theta} (\lambda_{i, n} + 1)^2.
+    \end{align*}
+    Since $A_n = C_n^{-1} + H_n = C_n^{-1/2} (I + M_n) C_n^{-1/2}$, then 
+    \begin{align*}
+        \Tr(A_n C_n A_n) &= \Tr (C_n^{-1} (I + M_n)^2) \leq \frac{1}{\lambda_{\min}} \sum_{i=1}^{N_\theta} (\lambda_{i, n} + 1)^2.
+    \end{align*}
+    Hence, \begin{equation*}
+        D^C (C_n, C_{n+1}) \geq \frac{\Delta t^2 \lambda_{\min}}{4 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \Tr (A_n C_n A_n).
+    \end{equation*}
+
+    These collectively give:
+    \begin{align*}
+        D (a_n, a_{n+1}) &\geq \frac{\Delta t^2 \lambda_{\min}}{2 (1 + \Delta t)} (1 + \Delta t \alpha \lambda_{\min}) \|g_n\|^2 + \frac{\Delta t^2 \lambda_{\min}}{4 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \Tr (A_n C_n A_n) \\
+        &\geq \frac{\lambda_{\min} \Delta t^2}{4 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} (\|g_n\|^2 + \Tr (A_n C_n A_n)) \\
+        &= \frac{\lambda_{\min} \Delta t^2}{4 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \|\mathrm{grad}^{W_2} \mathcal{E} (a_n) \|_{W_2}^2.
+    \end{align*}
+    
+    We use the PL-inequality from Wasserstein geometry \citep[Appendix D]{lambert2022variational}:
+    \begin{equation*}
+        \|\mathrm{grad}^{W_2} \mathcal{E} (a_n) \|_{W_2}^2 \geq 2\alpha (\mathcal{E} (a_n) - \mathcal{E} (a_\star)),
+    \end{equation*}
+    hence we obtain the PL-type inequality for Bregman divergence:
+    \begin{equation*}
+        D (a_n, a_{n+1}) \geq \frac{\alpha\lambda_{\min} \Delta t^2}{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} (\mathcal{E} (a_n) - \mathcal{E} (a_\star)).
+    \end{equation*}
+    
+    By Lemma~\ref{lem:one-step}, we have
+    \begin{align*}
+        \mathcal{E} (a_{n+1}) - \mathcal{E} (a_\star) &\leq \mathcal{E} (a_n) - \mathcal{E} (a_\star) - \frac{1}{\Delta t} D (a_{n}, a_{n+1}) \\
+        &\leq \left(1 - \frac{\alpha\lambda_{\min} \Delta t}{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \right) (\mathcal{E} (a_n) - \mathcal{E} (a_\star)),
+    \end{align*}
+    we therefore obtain the following convergence rate:
+    \begin{equation*}
+        \mathcal{E} (a_N) - \mathcal{E} (a_\star) \leq \left(1 - \frac{\alpha\lambda_{\min} \Delta t}{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \right)^N (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{equation*}
+\end{proof}
+
+
+\subsection{Convergence of stochastic algorithms}
+
+We also consider the convergence theory of the corresponding stochastic algorithm because we may not compute the gradient $\nabla_\theta \log \rho_\post (\theta)$ or the Hessian $\nabla_\theta \nabla_\theta \log \rho_\post (\theta)$ exactly in real-world applications. In the $n$-th step, we first sample $\tilde \theta \sim \rho_{a_n}$, and then calculate 
+\begin{equation*}
+    b_n = \nabla \log \rho_\mathrm{post} (\tilde\theta), \qquad S_n = \nabla^2 \log \rho_\mathrm{post}(\tilde\theta),
+\end{equation*}
+we then compute the stochastic algorithm with Riemannian distance
+\begin{equation}\label{upd:Riem-stoch}
+    \begin{aligned}
+        m_{n+1} &= m_n + \Delta C_n b_n, \\
+        C_{n+1} &= e^{\Delta t} C_n^{1/2} \exp ( \Delta t C_n^{1/2} S_n C_n^{1/2}) C_n^{1/2},
+    \end{aligned}
+\end{equation}
+and the stochastic algorithm with KL divergence
+\begin{equation}\label{upd:KL-stoch}
+    \begin{aligned}
+        m_{n+1} &= m_n + \Delta t C_n b_n, \\
+        C_{n+1} &= (1 + \Delta t) (C_n^{-1} - \Delta t S_n)^{-1}.
+    \end{aligned}
+\end{equation}
+
+We first prove that, under the assumption of the unbiasedness of stochastic estimations, the variances are bounded in both \eqref{upd:Riem-stoch} and \eqref{upd:KL-stoch}.
+
+\begin{assumption}\label{assump:unbiased}
+    Suppose $\mathcal{F}_n$ to be a filtration of a discrete algorithm such that $\mathcal{F}_n := \sigma (a_0, \ldots, a_n)$, we assume that the stochastic estimates in \eqref{upd:Riem-stoch} and \eqref{upd:KL-stoch} are unbiased, i.e., 
+    \begin{equation*}
+        \mathbb{E}[b_n \mid \mathcal{F}_n] = \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \log \rho_\mathrm{post} (\theta)], \qquad \mathbb{E}[S_n \mid \mathcal{F}_n] = \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)].
+    \end{equation*}
+\end{assumption}
+
+\begin{lemma}\label{lem:var-bound-stoch}
+    Under Assumption \ref{assump:logconcave-smooth} and Assumption \ref{assump:unbiased}, for stochastic algorithms \eqref{upd:Riem-stoch} and \eqref{upd:KL-stoch}, the variances of stochastic estimates are bounded above with
+    \begin{align*}
+         \mathbb{E} [\| b_n - \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \log \rho_\mathrm{post} (\theta)] \|^2 \mid \mathcal{F}_n] &\leq \beta^2 \lambda_{\max} N_\theta,\\
+         \mathbb{E} [\| S_n - \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)] \|_F^2 \mid \mathcal{F}_n] &\leq N_\theta (\beta - \alpha)^2,
+    \end{align*}
+    where $C_n \preceq \lambda_{\max} I$ along \eqref{upd:Riem-stoch} and \eqref{upd:KL-stoch}.
+\end{lemma}
+
+\begin{proof}
+    Since $\alpha I \preceq - \nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta) \preceq \beta I$, then the map $\nabla_\theta \log \rho_\mathrm{post} (\theta)$ is $\beta$-Lipschitz because $\| \nabla_\theta \nabla_\theta \log \rho_\mathrm{post} \|_\mathrm{op} \leq \beta$, this gives
+    \begin{equation*}
+        \| \nabla \log \rho_\mathrm{post} (x) - \nabla \log \rho_\mathrm{post} (y) \| \leq \beta \|x - y\|, \qquad \forall x, y.
+    \end{equation*}
+    Since $\mathbb{E}[b_n \mid \mathcal{F}_n] = \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \log \rho_\mathrm{post} (\theta)]$, then
+    \begin{align*}
+        \mathbb{E}[\| b_n - \mathbb{E}_{\rho \sim \rho_{a_n}} [\nabla_\theta \log \rho_\mathrm{post} (\theta)] \|^2 \mid \mathcal{F}_n] &= \mathbb{E} [\| \nabla \log \rho_\mathrm{post} (\tilde \theta) - \mathbb{E} [\nabla \log \rho_\mathrm{post} (\tilde\theta) \mid \mathcal{F}_n] \|^2 \mid \mathcal{F}_n] \\
+        &\leq \mathbb{E} [\| \nabla \log \rho_\mathrm{post} (\tilde \theta) - \nabla \log \rho_\mathrm{post} (m_n) \|^2 \mid \mathcal{F}_n] \\
+        &\leq \beta \mathbb{E} [\| \tilde\theta - m_n \|^2 \mid \mathcal{F}_n] = \beta^2 \Tr (C_n) \leq \beta^2 \lambda_{\max} N_\theta.
+    \end{align*}
+
+    For the variance bound of Hessian estimator, the stochastic Hessian satisfies $\alpha I \preceq -S_n \preceq \beta I$ almost surely since the posterior distribution satisfies $\alpha I \preceq -\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta) \preceq \beta I$, hence the operator norm of error is bounded above by $\| S_n - \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)] \|_\mathrm{op} \leq \beta - \alpha$, this gives
+    \begin{equation*}
+        \mathbb{E} [\| S_n - \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)] \|_F^2 \mid \mathcal{F}_n] \leq N_\theta (\beta - \alpha)^2.
+    \end{equation*}
+\end{proof}
+
+\begin{remark}[Sticking-the-Landing for stochastic gradients]
+\label{rmk:STL}
+    In order to estimate the expected gradient $\E_{\rho_a} [\nabla_\theta \log \rho_\post(\theta)]$ and the expected Hessian $\E_{\rho_a} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)]$, we can apply ``sticking the landing'' for variance reduction \cite{roeder2017sticking}. At the $n$-th step, we sample $\theta_n \sim \rho_{a_n}$, and compute 
+    \begin{align*}
+        \hat b_n &= \nabla \log \rho_\post (\theta_n) - \nabla_\theta \log \rho_{a_n} (\theta_n) = \nabla \log \rho_\post (\theta_n) + C_n^{-1} (\theta_n - m_n), \\
+        \widehat{K}_n &= \nabla^2 \log \rho_\post (\theta_n) - \nabla^2 \log \rho_\post (\theta_n) = \nabla^2 \log \rho_\post (\theta_n) + C_n^{-1}.
+    \end{align*}
+    By Assumption \ref{assump:unbiased}, $\hat b_n$ is unbiased since $\E_{\rho_a}[\nabla \log \rho_a] = 0$, while $\widehat K_n$ is biased. Therefore the update via Riemannian distance \eqref{upd:Riem-stoch} using STL reads
+    \begin{equation}\label{upd:Riem-STL}
+        \begin{aligned}
+            m_{n+1} &= m_n + \Delta t C_n \hat b_n, \\
+            C_{n+1} &= C_n^{1/2} \exp \left( \Delta t C_n^{1/2} \widehat K_n C_n^{1/2} \right) C_n^{1/2},
+        \end{aligned}
+    \end{equation}
+    and KL update \eqref{upd:KL-stoch} through STL reads
+    \begin{equation}\label{upd:KL-STL}
+        \begin{aligned}
+            m_{n+1} &= m_n + \Delta t C_n \hat b_n, \\
+            C_{n+1} &= (1 + \Delta t) \left( (1 + \Delta t) C_n^{-1} - \Delta t \widehat K_n \right)^{-1}.
+        \end{aligned}
+    \end{equation}
+\end{remark}
+
+We proceed to show the convergence rate of \eqref{upd:Riem-stoch}.
+
+\begin{theorem}
+    Under Assumption \ref{assump:logconcave-smooth} and Assumption \ref{assump:unbiased}, we then assume that the initial covariance is bounded with $\lambda_{0, \min} I \preceq C_0 \preceq \lambda_{0, \max} I$. We write $\lambda_{\min} = \min \left\{ \lambda_{0, \min}, \frac{1}{\beta} \right\}$ and $\lambda_{\max} = \max \left\{ \lambda_{0, \max}, \frac{1}{\alpha} \right\}$,
+    for stepsize $0 < \Delta t \leq \frac{1}{\beta \lambda_{\max}}$ on \eqref{upd:Riem-stoch}, we have the following convergence guarantee:
+    \begin{equation*}
+        \mathbb{E} [\mathcal{E} (a_N) - \mathcal{E} (a_\star)] \leq (1 - \alpha \lambda_{\min} \Delta t (2 - \beta \lambda_{\max} \Delta t))^N (\mathcal{E} (a_0) - \mathcal{E} (a_\star)) +  \frac{\beta \Delta t \, \lambda_{\max}^3 N_\theta}{2\alpha \lambda_{\min} (2 - \beta \lambda_{\max} \Delta t)} \left( \beta^2 + \frac{(\beta - \alpha)^2}{2} \right).
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We first show the covariance bound along \eqref{upd:Riem-stoch}. Since $\alpha I \preceq -\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta) \preceq \beta I$, then the stochastic Hessian satisfies $\alpha I \preceq -S_n \preceq \beta I$ almost surely. By Lemma \ref{lem:cov-bound-Riem}, along the update \eqref{upd:Riem-stoch}, the covariance satisfies $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$, where $\lambda_{\min} = \min \left\{ \lambda_{0, \min}, \frac{1}{\beta} \right\}$ and $\lambda_{\max} = \max \left\{ \lambda_{0, \max}, \frac{1}{\alpha} \right\}$ because the stepsize satisfies $0 < \Delta t < \frac{1}{\beta \lambda_{\max}}$.
+    
+    By Proposition \ref{prop:upd-map-Riem}, the update map of the deterministic algorithm \eqref{upd:Riem} is 
+    \begin{equation*}
+        \overline a_{n+1} = \mathrm{Exp}_{a_n} \left( -\Delta t \grad \mathcal{E} (a_n) \right),
+    \end{equation*}
+    similarly, the update map of the stochastic algorithm \eqref{upd:Riem-stoch} is 
+    \begin{equation*}
+        a_{n+1} = \mathrm{Exp}_{a_n} \left( -\Delta t\, \widehat{\grad}\, \mathcal{E} (a_n) \right),
+    \end{equation*}
+    where 
+    \begin{equation*}
+        \widehat{\grad}\, \mathcal{E} (a_n) = \left( - C_n b_n, - C_n - C_n S_n C_n \right).
+    \end{equation*}
+
+    By the geodesic $L$-smoothness of $\mathcal{E}$, we plug in $a = a_n$ and $\zeta =  -\Delta t \, \widehat{\grad} \, \mathcal{E} (a_n)$ into \eqref{eq:E-L-smooth-Riem} to obtain:
+    \begin{align*}
+        \mathcal{E} (a_{n+1}) \leq \mathcal{E} (a_n) + \left\langle \mathrm{grad} \mathcal{E} (a_n), -\Delta t \, \widehat{\grad} \, \mathcal{E} (a_n) \right\rangle_{a_n} + \frac{L\Delta t^2}{2} \| \widehat{\grad} \, \mathcal{E} (a_n) \|_{a_n}^2.
+    \end{align*}
+    We set
+    \begin{equation*}
+        \xi_n := \widehat{\grad} \ \mathcal{E} (a_n) - \grad \mathcal{E} (a_n) = \left( - C_n (b_n - \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \log \rho_\mathrm{post} (\theta)]), - C_n (S_n - \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)]) C_n \right),
+    \end{equation*}
+    hence we obtain 
+    \begin{equation*}
+        \mathcal{E} (a_{n+1}) \leq \mathcal{E} (a_n) - \Delta t \| \grad \mathcal{E} (a_n) \|_{a_n}^2 - \Delta t \langle \grad \mathcal{E} (a_n), \xi_n \rangle_{a_n} + \frac{L \Delta t^2}{2} \| \grad \mathcal{E} (a_n) + \xi_n \|_{a_n}^2.
+    \end{equation*}
+    We take conditional expectation to obtain 
+    \begin{equation*}
+        \mathbb{E} [\langle \grad \mathcal{E} (a_n), \xi_n \rangle_{a_n} \mid \mathcal{F}_n] = 0, \qquad \mathbb{E} [\| \grad \mathcal{E} (a_n) + \xi_n \|_{a_n}^2 \mid \mathcal{F}_n] = \| \grad \mathcal{E} (a_n) \|_{a_n}^2 + \mathbb{E} [\|\xi_n\|_{a_n}^2 \mid \mathcal{F}_n],
+    \end{equation*}
+    since $\mathbb{E}[\xi_n \mid \mathcal{F}_n] = 0$ by unbiasedness, hence 
+    \begin{equation*}
+        \mathbb{E} [\mathcal{E} (a_{n+1}) \mid \mathcal{F}_n] \leq \mathcal{E} (a_n) - \Delta t \left(1 - \frac{L \Delta t}{2}\right) \| \grad \mathcal{E} (a_n) \|_{a_n}^2 + \frac{L \Delta t^2}{2} \mathbb{E} [\|\xi_n\|_{a_n}^2 \mid \mathcal{F}_n].
+    \end{equation*}
+    We then upper bound $\mathbb{E} [\|\xi_n\|_{a_n}^2 \mid \mathcal{F}_n]$, since the Riemannian metric is given by
+    \begin{equation*}
+        \|(u, U)\|_{a_n}^2 = u^\top C_n^{-1} u + \frac{1}{2} \Tr (C_n^{-1} U C_n^{-1} U),
+    \end{equation*}
+    then for the mean part
+    \begin{align*}
+        &\qquad (C_n (b_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \log \rho_\mathrm{post} (\theta)]))^\top C_n^{-1} (C_n (b_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \log \rho_\mathrm{post} (\theta)])) \\
+        &= (b_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \log \rho_\mathrm{post} (\theta)])^\top C_n (b_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \log \rho_\mathrm{post} (\theta)]) \leq \lambda_{\max} \| b_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \log \rho_\mathrm{post} (\theta)] \|^2,
+    \end{align*}
+    while for the covariance part
+    \begin{align*}
+        &\qquad \frac{1}{2}\Tr \left( C_n^{-1} \left( C_n (S_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)]) C_n \right) C_n^{-1} \left( C_n (S_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)]) C_n \right) \right) \\
+        &= \frac{1}{2} \Tr ((S_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)]) C_n (S_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)]) C_n)\\
+        &\leq \frac{\lambda_{\max}^2}{2} \|S_n - \mathbb{E}_{\theta \sim \rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)] \|_F^2,
+    \end{align*}
+    by the variance bounds in Lemma \ref{lem:var-bound-stoch}, we have
+    \begin{equation*}
+        \mathbb{E} [\|\xi_n\|_{a_n}^2 \mid \mathcal{F}_n] \leq \lambda_{\max}^2 \beta^2 N_\theta + \frac{\lambda_{\max}^2}{2} (\beta - \alpha)^2 N_\theta.
+    \end{equation*}
+    In addition, we connect the gradient norm in Riemannian geometry to the gradient norm in Wasserstein geometry (Theorem \ref{thm:glob-conv}),
+    \begin{equation*}
+        \| \mathrm{grad} \mathcal{E} (a_n) \|_{a_n}^2 \geq \lambda_{\min} \|\mathrm{grad}^{W_2} \mathcal{E} (a_n) \|_{W_2}^2 \geq 2 \alpha \lambda_{\min} (\mathcal{E} (a_n) - \mathcal{E} (a_\star)),
+    \end{equation*}
+    then we obtain following one-step inequality:
+    \begin{equation*}
+        \mathbb{E} [\mathcal{E} (a_{n+1}) - \mathcal{E} (a_\star) \mid \mathcal{F}_n] \leq \left( 1 - \alpha \lambda_{\min} \Delta t \left( 2 - L \Delta t \right) \right) (\mathcal{E} (a_n) - \mathcal{E} (a_\star)) + \frac{L\Delta t^2}{2} \left( \lambda_{\max}^2 \beta^2 N_\theta + \frac{\lambda_{\max}^2}{2} (\beta - \alpha)^2 N_\theta \right).
+    \end{equation*}
+    We therefore obtain the convergence rate
+    \begin{equation*}
+        \mathbb{E} [\mathcal{E} (a_N) - \mathcal{E} (a_\star)] \leq \left( 1 - \alpha \lambda_{\min} \Delta t \left( 2 - L \Delta t \right) \right)^N (\mathcal{E} (a_0) - \mathcal{E} (a_\star)) + \frac{L \Delta t \, \lambda_{\max}^2 N_\theta}{2\alpha \lambda_{\min} (2 - L\Delta t)} \left( \beta^2 + \frac{(\beta - \alpha)^2}{2} \right).
+    \end{equation*}
+\end{proof}
+
+
+We then to show the convergence guarantee of \eqref{upd:KL-stoch}.
+
+\begin{theorem}
+    Under Assumption \ref{assump:logconcave-smooth} and Assumption \ref{assump:unbiased} with initial covariance satisfying $\lambda_{0, \min} I \preceq C_0 \preceq \lambda_{0, \max} I$, we define $\lambda_{\min} = \min \left\{ \lambda_{0, \min}, \frac{1}{\beta} \right\}$ and $\lambda_{\max} = \max \left\{ \lambda_{0, \max}, \frac{1}{\alpha} \right\}$ and consider the stochastic algorithm \eqref{upd:KL-stoch} with stepsize $0 < \Delta t \leq \frac{1}{\beta \lambda_{\max}}$, 
+    then we have the following convergence guarantee
+    \begin{equation*}
+        \mathbb{E} [\mathcal{E} (a_N) - \mathcal{E} (a_\star)] \leq \left(1 - \frac{\alpha \lambda_{\min} \Delta t}{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \right)^N (\mathcal{E} (a_0) - \mathcal{E} (a_\star)) + \frac{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})}{\alpha \lambda_{\min}} B\Delta t,
+    \end{equation*}
+    where 
+    \begin{align*}
+        B &= \beta^3 \lambda_{\max}^3 N_\theta + \frac{\beta^2 \lambda_{\max}^3 (\beta - \alpha)^2}{2\alpha} N_\theta + \frac{\beta^3 \lambda_{\max}^3 (\beta - \alpha)^2}{4\alpha^2} N_\theta.
+    \end{align*}
+\end{theorem}
+
+\begin{proof}
+    We first show the covariance bound along \eqref{upd:KL-stoch}. Since $\alpha I \preceq -\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta) \preceq \beta I$, then the stochastic Hessian satisfies $\alpha I \preceq -S_n \preceq \beta I$ almost surely. By Lemma \ref{lem:cov-bound-kl}, along the update \eqref{upd:KL-stoch}, the covariance satisfies $\lambda_{\min} I \preceq C_n \preceq \lambda_{\max} I$, where $\lambda_{\min} = \min \left\{ \lambda_{0, \min}, \frac{1}{\beta} \right\}$ and $\lambda_{\max} = \max \left\{ \lambda_{0, \max}, \frac{1}{\alpha} \right\}$.
+
+    We denote the deterministic update \eqref{upd:KL} as $\overline{a}_{n+1} = (\overline{m}_{n+1}, \overline{C}_{n+1})$ with 
+    \begin{align*}
+        \overline{m}_{n+1} &= m_n + \Delta t C_n \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \log \rho_\mathrm{post} (\theta)], \\
+        \overline{C}_{n+1} &= (1 + \Delta t) (C_n^{-1} - \Delta t \mathbb{E}_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\mathrm{post} (\theta)])^{-1},
+    \end{align*}
+    and analyze the stochastic errors from both mean and covariance directions. 
+    We define the stochastic errors as 
+    \begin{equation*}
+        \epsilon_n := b_n - \E_{\theta \sim\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \qquad \Xi_n := S_n - \E_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)],
+    \end{equation*}
+    by Assumption \ref{assump:unbiased} and Lemma \ref{lem:var-bound-stoch}, we have
+    \begin{align*}
+        \E [\epsilon_n \mid \mathcal{F}_n] &= 0, \qquad \E[ \| \epsilon_n\|^2 \mid \mathcal{F}_n ] \leq \beta^2 \lambda_{\max} N_\theta, \\
+        \E [\Xi_n \mid \mathcal{F}_n] &= 0, \qquad \E [\|\Xi_n\|_F^2 \mid \mathcal{F}_n] \leq (\beta - \alpha)^2 N_\theta.
+    \end{align*}
+    Moreover, $\| \Xi_n\|_\mathrm{op} \leq \beta - \alpha$ almost surely from the spectral bounds of $S_n$ and $\E_{\theta \sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)]$.
+
+    For the mean part, we have 
+    \begin{align*}
+        D^m (a_{n+1}, \overline{a}_{n+1}) &= \frac{1}{2} (m_{n+1} - \overline{m}_{n+1})^\top \overline{C}_{n+1}^{-1} (m_{n+1} - \overline{m}_{n+1}) \\
+        &= \frac{1}{2} (\Delta t C_n \epsilon_n)^\top \frac{1}{1 + \Delta t} (C_n^{-1} - \Delta t \E_{\theta \sim \rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_\post (\theta)]) (\Delta t C_n \epsilon_n) \\
+        &= \frac{\Delta t^2}{2 (1 + \Delta t)} \epsilon_n^\top (C_n - \Delta t C_n \E_{\theta \sim \rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n) \epsilon_n.
+    \end{align*}
+    Hence, 
+    \begin{align*}
+        \E[D^m (a_{n+1}, \overline{a}_{n+1}) \mid \mathcal{F}_n] &= \frac{\Delta t^2}{2 (1 + \Delta t)} \E[\epsilon_n^\top (C_n - \Delta t C_n \E_{\theta \sim \rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n) \epsilon_n \mid \mathcal{F}_n] \\
+        &\leq \frac{\Delta t^2 \lambda_{\max} (1 + \Delta t \beta \lambda_{\max})}{2 (1 + \Delta t)} \E[\|\epsilon_n\|^2 \mid \mathcal{F}_n] \leq \frac{\Delta t^2 \beta^2 \lambda_{\max}^2 (1 + \Delta t \beta \lambda_{\max})}{2 (1 + \Delta t)} N_\theta.
+    \end{align*}
+
+    For the covariance component, we denote $P_{n+1} := C_{n+1}^{-1}$ and $\overline{P}_{n+1} := \overline{C}_{n+1}^{-1}$, then
+    \begin{equation*}
+        P_{n+1} - \overline{P}_{n+1} = -\frac{\Delta t}{1 + \Delta t} \Xi_n.
+    \end{equation*}
+    We define the relative precision perturbation as $Y_n := \overline{C}_{n+1}^{1/2} (P_{n+1} - \overline{P}_{n+1}) \overline{C}_{n+1}^{1/2}$, thus
+    \begin{equation*}
+        \|Y_n\|_\mathrm{op} \leq \frac{\Delta t }{1 + \Delta t} \lambda_{\max} \| \Xi_n\|_\mathrm{op} \leq \frac{\Delta t \lambda_{\max} (\beta - \alpha)}{1 + \Delta t} := \rho_{\Delta t} < 1
+    \end{equation*}
+    and \begin{equation*}
+        \E [\|Y_n\|_F^2 \mid \mathcal{F}_n] \leq \left( \frac{\Delta t}{1 + \Delta t} \right)^2 \lambda_{\max}^2 \E [\| \Xi_n\|_F^2 \mid \mathcal{F}_n] \leq \left( \frac{\Delta t}{1 + \Delta t} \right)^2 \lambda_{\max}^2 (\beta - \alpha)^2 N_\theta.
+    \end{equation*}
+    We observe that 
+    \begin{equation*}
+        \overline{C}_{n+1}^{-1/2} C_{n+1} \overline{C}_{n+1}^{-1/2} = (I + Y_n)^{-1},
+    \end{equation*}
+    hence the covariance part of the Bregman divergence is
+    \begin{equation*}
+        D^C (C_{n+1}, \overline{C}_{n+1}) = \frac{1}{2} \Tr ((I + Y_n)^{-1} + \log (I + Y_n) - I).
+    \end{equation*}
+    Since for any scalar $y$ with $|y| \leq \rho_{\Delta t} < 1$, one has
+    \begin{equation*}
+        \frac{1}{1 + y} + \log (1 + y) - 1 \leq \frac{y^2}{2 (1 - \rho_{\Delta t})^2},
+    \end{equation*}
+    this gives
+    \begin{equation*}
+        D^C (C_{n+1}, \overline{C}_{n+1}) \le \frac{1}{4 (1 - \rho_{\Delta t})^2} \|Y_n\|_F^2
+    \end{equation*}
+    and thus
+    \begin{equation*}
+        \E[D^C (C_{n+1}, \overline{C}_{n+1}) \mid \mathcal{F}_n] \leq \frac{1}{4 (1 - \rho_{\Delta t})^2} \E[\|Y_n\|_F^2 \mid \mathcal{F}_n] \leq \frac{\Delta t^2 \lambda_{\max}^2 (\beta - \alpha)^2}{4 (1 + \Delta t)^2 (1 - \rho_{\Delta t})^2} N_\theta.
+    \end{equation*}
+
+    By Proposition \ref{prop:conv-smooth-D}, we have
+    \begin{equation*}
+        \mathcal{E}_2 (a_{n+1}) \leq \mathcal{E}_2 (\overline{a}_{n+1}) + \langle \nabla \mathcal{E}_2 (\overline{a}_{n+1}), a_{n+1} - \overline{a}_{n+1} \rangle + \beta \lambda_{\max} D(a_{n+1}, \overline{a}_{n+1}),
+    \end{equation*}
+    this gives
+    \begin{align*}
+        &\qquad \E[\mathcal{E}_2 (a_{n+1}) - \mathcal{E}_2 (\overline{a}_{n+1}) \mid \mathcal{F}_n]\\
+        &\leq \E[\langle \nabla \mathcal{E}_2 (\overline{a}_{n+1}), m_{n+1} - \overline{m}_{n+1} \rangle \mid \mathcal{F}_n] + \E[\langle \nabla \mathcal{E}_2 (\overline{a}_{n+1}), C_{n+1} - \overline{C}_{n+1} \rangle \mid \mathcal{F}_n] + \beta \lambda_{\max} \E[D (a_{n+1}, \overline{a}_{n+1} \mid \mathcal{F}_n)] \\
+        &= 0 + \E \left[ \left\langle \frac{1}{2} \E_{\rho_{\overline{a}_{n+1}}}[\nabla^2 V], \overline{C}_{n+1}^{1/2} (-Y_n + Y_n (I + Y_n)^{-1} Y_n) \overline{C}_{n+1}^{1/2} \right\rangle \mid \mathcal{F}_n \right] \\
+        &\qquad + \beta \lambda_{\max} \left[ \frac{\Delta t^2 \beta^2 \lambda_{\max}^2 (1 + \Delta t \beta \lambda_{\max})}{2 (1 + \Delta t)} N_\theta +\frac{\Delta t^2 \lambda_{\max}^2 (\beta - \alpha)^2}{4 (1 + \Delta t)^2 (1 - \rho_{\Delta t})^2} N_\theta \right] \\
+        &\leq \frac{\beta}{2} \E[ \Tr (\overline{C}_{n+1} Y_n (I + Y_n)^{-1} Y_n) \mid \mathcal{F}_n] + \beta \lambda_{\max} \left[ \frac{\Delta t^2 \beta^2 \lambda_{\max}^2 (1 + \Delta t \beta \lambda_{\max})}{2 (1 + \Delta t)} N_\theta +\frac{\Delta t^2 \lambda_{\max}^2 (\beta - \alpha)^2}{4 (1 + \Delta t)^2 (1 - \rho_{\Delta t})^2} N_\theta \right] \\
+        &\leq \frac{\Delta t^2 \beta \lambda_{\max}^3 (\beta - \alpha)^2}{2 (1 + \Delta t)^2 (1 - \rho_{\Delta t})} N_\theta + \beta \lambda_{\max} N_\theta \left[ \frac{\Delta t^2 \beta^2 \lambda_{\max}^2 (1 + \Delta t \beta \lambda_{\max})}{2 (1 + \Delta t)} +\frac{\Delta t^2 \lambda_{\max}^2 (\beta - \alpha)^2}{4 (1 + \Delta t)^2 (1 - \rho_{\Delta t})^2} \right] \\ 
+        &\leq \left( \beta^3 \lambda_{\max}^3 N_\theta + \frac{\beta^2 \lambda_{\max}^3 (\beta - \alpha)^2}{2\alpha} N_\theta + \frac{\beta^3 \lambda_{\max}^3 (\beta - \alpha)^2}{4\alpha^2} N_\theta \right) \Delta t^2 := B \Delta t^2.
+    \end{align*}
+
+    For $\mathcal{E}_1$, since the map $P \to \log \det P$ is concave, then Jensen's inequality gives
+    \begin{equation*}
+        \E [\log\det P_{n+1} \mid \mathcal{F}_n] \leq \log \det \E[P_{n+1} \mid \mathcal{F}_n],
+    \end{equation*}
+    as $\E[P_{n+1} \mid \mathcal{F}_n] = \overline{P}_{n+1}$, we obtain
+    \begin{equation*}
+        \E[\mathcal{E}_1 (a_{n+1}) - \mathcal{E}_1 (\overline{a}_{n+1}) \mid \mathcal{F}_n] \leq 0.
+    \end{equation*}
+    Combining $\mathcal{E}_1$ and $\mathcal{E}_2$, we get
+    \begin{equation*}
+        \E[\mathcal{E} (a_{n+1}) - \mathcal{E} (\overline{a}_{n+1}) \mid \mathcal{F}_n] \leq B \Delta t^2.
+    \end{equation*}
+
+    We use the deterministic result in Theorem \ref{thm:conv-KL} to compute the following descent inequality:
+    \begin{align*}
+        \E[\mathcal{E} (a_{n+1}) - \mathcal{E} (a_\star) \mid \mathcal{F}_n] &= \E[\mathcal{E} (a_{n+1}) - \mathcal{E} (\overline{a}_{n+1}) \mid \mathcal{F}_n] + \mathcal{E} (\overline{a}_{n+1}) - \mathcal{E} (a_\star) \\
+        &\leq B\Delta t^2 + \left( 1 - \frac{\alpha \lambda_{\min} \Delta t}{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \right) (\mathcal{E} (a_n) - \mathcal{E} (a_\star)),
+    \end{align*}
+    by iterating on $n$, we obtain the final convergence guarantee:
+    \begin{equation*}
+        \mathbb{E} [\mathcal{E} (a_N) - \mathcal{E} (a_\star)] \leq \left(1 - \frac{\alpha \lambda_{\min} \Delta t}{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})} \right)^N (\mathcal{E} (a_0) - \mathcal{E} (a_\star)) + \frac{2 (1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})}{\alpha \lambda_{\min}} B\Delta t.
+    \end{equation*}
+\end{proof}
+
+\subsection{Stationary guarantees for non-logconcave targets}
+
+We consider the case where the target distribution $\rho_\post$ is not logconcave. In this setting, the global convergence arguments in previous sections no longer apply, since they rely on the Wasserstein PL inequality induced by the strong logconcavity of the target. Moreover, in the absence of Assumption \ref{assump:logconcave-smooth}, the covariance along numerical algorithms \eqref{upd:Riem} and \eqref{upd:KL} cannot be bounded through the initial covariance bound. Inspired by \cite{sun2026natural}, we introduce projected version of Riemannian and KL discretization schemes, where we constrain the covariance into a prescribed spectral range.
+
+Fix constants $0 < \lambda_- \leq \lambda_+ < \infty$ and define the covariance-truncated Gaussian parameter space
+\begin{equation*}
+    \Aspace' := \left\{ a = (m, C) \in \R^{N_\theta} \times \SPD (N_\theta) : \lambda_- I \preceq C \preceq \lambda_+ I \right\},
+\end{equation*}
+and assume the following global smoothness assumption throughout this subsection.
+
+\begin{assumption}\label{assump:smooth}
+    The potential $V \in C^2 (\R^{N_\theta})$ satisfies
+    \begin{equation*}
+        \| \nabla^2 V(\theta) \|_\mathrm{op} \leq \beta, \qquad \forall \theta\in \R^{N_\theta},
+    \end{equation*}
+    equivalently
+    \begin{equation*}
+        -\beta I \preceq \nabla^2 V(\theta) \preceq \beta I.
+    \end{equation*}
+\end{assumption}
+
+We proceed to define the covariance clipping operator. For a symmetric positive definite matrix $C$, we diagonalize it as
+\begin{equation*}
+    C = Q \diag (\lambda_1, \ldots, \lambda_{N_\theta}) Q^\top
+\end{equation*}
+by spectral decomposition. We clip the covariance through
+\begin{equation*}
+    \Clip_{[\lambda_-, \lambda_+]} (C) := Q \diag \left( \clip_{[\lambda_-, \lambda_+]} (\lambda_1), \ldots, \clip_{[\lambda_-, \lambda_+]} (\lambda_{N_\theta}) \right) Q^\top,
+\end{equation*}
+where $\clip_{[\lambda_-, \lambda_+]} (x) := \min \left\{ \lambda_+, \max \{\lambda_-, x\} \right\}$.
+
+%For the Riemannian scheme \eqref{upd:Riem}, we define the projected Riemannian scheme as
+%\begin{equation}\label{upd:proj-Riem}
+%    \begin{aligned}
+%        m_{n+1} &= m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+%        \widetilde{C}_{n+1} &= e^{\Delta t} C_n^{1/2} \exp \left( \Delta t C_n^{1/2} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_n^{1/2} \right), \\
+%        C_{n+1} &= \Clip_{[\lambda_-, \lambda_+]} (\widetilde{C}_{n+1}).
+%    \end{aligned}
+%\end{equation}
+
+Then for the KL scheme \eqref{upd:KL}, we define the projected KL scheme as 
+\begin{equation}\label{upd:proj-KL}
+    \begin{aligned}
+        m_{n+1} &= m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+        \widetilde{C}_{n+1} &= (1 + \Delta t) (C_n^{-1} - \Delta t \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)])^{-1}, \\
+        C_{n+1} &= \Clip_{[\lambda_-, \lambda_+]} (\widetilde{C}_{n+1}).
+    \end{aligned}
+\end{equation}
+
+We then state and prove the stationarity guarantee of \eqref{upd:proj-KL}.
+
+\begin{theorem}
+    Under Assumption \ref{assump:smooth}, \eqref{upd:proj-KL} has the following stationary guarantee
+    \begin{equation*}
+        \min_{0 \leq n \leq N - 1} \KL (\rho_{a_n} \| \rho_{a_{n+1}}) \leq \frac{\Delta t}{N} (\KL (\rho_{a_0} \| \rho_\post) - \KL (\rho_{a_N} \| \rho_\post))
+    \end{equation*}
+    if the stepsize satisfies $0 < \Delta t \leq \frac{1}{2\beta \lambda_+}$.
+\end{theorem}
+
+\begin{proof}
+    We adapt the proof of Proposition \ref{prop:conv-smooth-D} to show the $L$-smoothness of $\mathcal{E}_2$ with respect to the Bregman divergence. As the convexity of $\nabla^2 V$ does not hold, we apply $\nabla_C \mathcal{E}_2 (a) = \frac{1}{2} \E_{\theta \sim \N (m, C)} [\nabla_\theta^2 V(\theta)] \leq \frac{\beta}{2}$ to conclude
+    \begin{equation*}
+        \langle \nabla_B \mathcal{E}_2 (a_0), H\rangle = \langle \nabla_C \mathcal{E}_2 (a_0), C - C_0 \rangle - \Tr (G_0 HH^\top) \leq  \langle \nabla_C \mathcal{E}_2 (a_0), C - C_0 \rangle + \frac{\beta}{2} \|H\|_F^2.
+    \end{equation*}
+    Combining this with the Taylor bound, we obtain
+    \begin{align*}
+        \mathcal{E}_2 (a) &\leq \mathcal{E}_2 (a_0) + \langle \nabla \mathcal{E}_2 (a_0), a - a_0 \rangle + \frac{\beta}{2} \|u\|^2 + \beta \|H\|_F^2 \\
+        &\leq \mathcal{E}_2 (a_0) + \langle \nabla \mathcal{E}_2 (a_0), a - a_0 \rangle + LD(a, a_0),
+    \end{align*}
+    where $L = 2\beta\lambda_+$. Thus by Lemma \ref{lem:one-step}, we have the following one-step inequality when $0 < \Delta t \leq \frac{1}{L}$,
+    \begin{equation*}
+        \mathcal{E} (a_{n+1}) \leq \mathcal{E} (a_n) - \frac{1}{\Delta t} D(a_n, a_{n+1}).
+    \end{equation*}
+    Consequently,
+    \begin{equation*}
+        \min_{0 \leq n \leq N - 1} D(a_n, a_{n+1}) \leq \frac{1}{N} \sum_{n=0}^{N - 1} D (a_n, a_{n+1}) \leq \frac{\Delta t}{N} (\mathcal{E} (a_0) - \mathcal{E} (a_N)),
+    \end{equation*}
+    which completes the proof.
+\end{proof}
+
+We also consider stochastic approximations for real world practice and show the stationary guarantee in stochastic case. In the $n$-th step, we first sample $\tilde\theta \sim \rho_{a_n}$, and then calculate
+\begin{equation*}
+    b_n = \nabla \log \rho_\post (\tilde \theta), \qquad S_n = \nabla^2 \log \rho_\post (\tilde\theta),
+\end{equation*}
+then we compute the projected KL scheme as in \eqref{upd:proj-KL}:
+\begin{equation}\label{upd:proj-KL-stoch}
+    \begin{aligned}
+        m_{n+1} &= m_n + \Delta t C_n b_n, \\
+        \widetilde{C}_{n+1} &= (1 + \Delta t) (C_n^{-1} - \Delta t S_n)^{-1}, \\
+        C_{n+1} &= \Clip_{[\lambda_-, \lambda_+]} (\widetilde{C}_{n+1}).
+    \end{aligned}
+\end{equation}
+
+\begin{theorem}
+    Under Assumption \ref{assump:smooth} and Assumption \ref{assump:unbiased}, for numerical algorithm \eqref{upd:proj-KL-stoch}, if the stepsize satisfies $0 < \Delta t < \frac{1}{2 \beta \lambda_+}$, then we have the following stationary guarantee:
+    \begin{equation*}
+        \min_{0 \leq n \leq N - 1} \E[\KL (\rho_{a_n} \| \rho_{a_{n+1}})] \le \frac{\Delta t}{N} (\mathcal{E} (a_0) - \E [\mathcal{E} (a_N)] ) + \frac{3 \beta^2 \lambda_+^2 N_\theta \Delta t^2}{4 (1 - 2\beta \lambda_+ \Delta t)}.
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We write the stochastic error as
+    \begin{equation*}
+        \epsilon_n := b_n - \E_{\theta\sim \rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \qquad \Xi_n := S_n -  \E_{\theta\sim \rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)],
+    \end{equation*}
+    by assumption, $\E[\epsilon_n \mid \mathcal{F}_n] = 0$ and $\E[\Xi_n \mid \mathcal{F}_n] = 0$. Based on Assumption \ref{assump:smooth} and the covariance bound $\lambda_- I \preceq C_n \preceq \lambda_+ I$, we first show the variance bound for stochastic estimation:
+    \begin{align*}
+        \E[ \|\epsilon_n\|^2 \mid \mathcal{F}_n] &\leq \beta^2 \Tr (C_n) \leq \beta^2 \lambda_+ N_\theta, \\
+        \E[ \|\Xi_n\|_F^2 \mid \mathcal{F}_n] &\leq \E [\|S_n\|_F^2 \mid \mathcal{F}_n] \leq \beta^2 N_\theta.
+    \end{align*}
+
+    The stochastic estimation gives
+    \begin{equation*}
+        \nabla \mathcal{E}_2 (a_n) - \widehat{\nabla \mathcal{E}_2} (a_n) = \left( \epsilon_n, \frac{1}{2} \Xi_n \right).
+    \end{equation*}
+    By relative smoothness from the deterministic proof, we also have
+    \begin{equation*}
+        \mathcal{E}_2(a_{n+1}) \leq \mathcal{E}_2 (a_n) + \langle \nabla \mathcal{E}_2 (a_n), a_{n+1} - a_n \rangle + L D (a_{n+1}, a_n), \qquad L = 2\beta \lambda_+,
+    \end{equation*}
+    in addition, since $a_n, a_{n+1} \in \Aspace'$, by three point inequality, we have
+    \begin{equation*}
+        \langle \widehat{\nabla \mathcal{E}_2} (a_n), a_{n+1} - a_n \rangle \leq \mathcal{E}_1 (a_n) - \mathcal{E}_1 (a_{n+1}) - \frac{1}{\Delta t} D (a_n, a_{n+1}) - \frac{1}{\Delta t} D (a_{n+1}, a_n).
+    \end{equation*}
+    These collectively give
+    \begin{equation*}
+        \mathcal{E} (a_{n+1}) \leq \mathcal{E} (a_n) - \frac{1}{\Delta t} D(a_n, a_{n+1}) - \left( \frac{1}{\Delta t} - L \right) D (a_{n+1}, a_n) + \left\langle \left( \epsilon_n, \frac{1}{2} \Xi_n \right), a_{n+1} - a_n \right\rangle.
+    \end{equation*}
+
+    We then bound the last term. From the spectral bounds, we have
+    \begin{equation*}
+        D (a_{n+1}, a_n) \geq \frac{1}{2 \lambda_+} \| m_{n+1} - m_n \|^2 + \frac{1}{4 \lambda_+^2} \| C_{n+1} - C_n \|_F^2.
+    \end{equation*}
+    Then by Young's inequality, for any $\eta > 0$, we have
+    \begin{align*}
+        \left\langle \left( \epsilon_n, \frac{1}{2} \Xi_n \right), a_{n+1} - a_n \right\rangle &= \epsilon_n^\top (m_{n+1} - m_n) + \frac{1}{2} \Tr (\Xi_n^\top (C_{n+1} - C_n)) \\
+        &\leq \frac{\eta}{2 \lambda_+} \|m_{n+1} - m_n\|^2 + \frac{\lambda_+}{2\eta} \|\epsilon_n\|^2 + \frac{\eta}{4 \lambda_+^2} \|C_{n+1} - C_n \|_F^2 + \frac{\lambda_+^2}{4\eta} \|\Xi_n\|_F^2 \\
+        &\leq \eta D(a_{n+1}, a_n) + \frac{\lambda_+}{2\eta} \|\epsilon_n\|^2 + \frac{\lambda_+^2}{4\eta} \|\Xi_n\|_F^2.
+    \end{align*}
+    We choose $\eta = \frac{1}{\Delta t} - L$ and take conditional expectation to obtain
+    \begin{equation*}
+        \E[\mathcal{E} (a_{n+1}) \mid \mathcal{F}_n] \leq \mathcal{E} (a_n) - \frac{1}{\Delta t} \E [D(a_n, a_{n+1}) \mid \mathcal{F}_n ] + \frac{\Delta t}{1 - L \Delta t} \left( \frac{\lambda_+}{2} \E[\|\epsilon_n\|^2 \mid \mathcal{F}_n] + \frac{\lambda_+^2}{4} \E[ \|\Xi_n\|_F^2 \mid \mathcal{F}_n] \right).
+    \end{equation*}
+    By rearrangement and the variance bound, we take total expectation to get
+    \begin{equation*}
+        \E[D (a_n, a_{n+1})] \leq \Delta t (\E [\mathcal{E} (a_n)] - \E [\mathcal{E} (a_{n+1})]) + \frac{3 \beta^2 \lambda_+^2 N_\theta \Delta t^2}{4 (1 - L \Delta t)},
+    \end{equation*}
+    therefore,
+    \begin{equation*}
+        \min_{0\le n \le N - 1} \E[D (a_n, a_{n+1})] \leq \frac{1}{N} \sum_{n=0}^{N - 1} \E[D (a_n, a_{n+1})] \leq \frac{\Delta t}{N} (\mathcal{E} (a_0) - \E [\mathcal{E} (a_N)]) + \frac{3 \beta^2 \lambda_+^2 N_\theta \Delta t^2}{4 (1 - L \Delta t)},
+    \end{equation*}
+    which completes the proof.
+\end{proof}
+
+
+\section{Local convergence near equilibrium}
+We proceed to prove the local convergence rate of Gaussian natural gradient flow \eqref{ODEs:NG} near equilibrium under Assumption \ref{assump:logconcave-smooth}, where we denote $\kappa = \frac{\beta}{\alpha}$. Based on the evidence from numerical experiments, we expect that the local convergence rate Gaussian natural gradient flow does not rely on initialization as in Theorem \ref{thm:glob-conv}.
+
+We work on the equilibrium-whitened coordinates without loss of generality
+\begin{equation}\label{eq:whitened}
+    z = C_\star^{-1/2} (\theta - m_\star)
+\end{equation}
+such that the optimality is $a_\star = \mathcal{N} (0, I_{N_\theta})$ and $z \sim \mathcal{N} (0, I_{N_\theta})$, in which case we have $\alpha \leq 1 \leq \beta$.
+This gives the stationary conditions $\E_{\mathcal{N} (0, I_{N_\theta})} [\nabla V(z)] = 0$ and $\E_{\mathcal{N} (0, I_{N_\theta})} [\nabla^2 V(z)] = I_{N_\theta}$. Hence for any $a = (m, C) \in \Aspace$, we can parameterize $(m, C) = (u, I + X)$ with $u \in \R^{N_\theta}$ and $X \in \Sym (N_\theta)$.
+
+\begin{definition}\label{def:local-operators}
+    For $u \in \R^{N_\theta}$ and $X \in \Sym (N_\theta)$, define the operators,
+    \begin{align*}
+        T [X]_k &:= \E[\Tr (X \nabla^2 V(z)) z_k] = \sum_{i, j} \E[\partial^3_{ijk} V(z)] X_{ij}, \\
+        T^* [u]_{ij} &:= \E[(u^\top z) \nabla^2 V_{ij} (z)], \\
+        H [X]_{ij} &:= \E[\nabla^2 V_{ij} (z) (z^\top Xz - \Tr X)] = \sum_{k, l} \E[\partial^4_{ijkl} V(z)] X_{kl},
+    \end{align*}
+    where we have applied Stein's identity in $T$ and $H$. For the diagonal mode, we define
+    \begin{equation*}
+        \widetilde{T}_{ki} := \E[\nabla^2 V_{ii} (z) z_k], \qquad G_{ij} := \E[\nabla^2 V_{ii} (z) z_j^2].
+    \end{equation*}
+\end{definition}
+
+We first show the tail-cut bound of $G_{ij}$.
+
+\begin{lemma}[Tail-cut bound]\label{lem:tailcut}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, for any $i, j$, we have
+    \begin{equation*}
+        \alpha \leq G_{ij} \leq 4 + \frac{4}{\sqrt{\pi}} ( 1 + \log \kappa).
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    Since $\alpha I \preceq \nabla^2 V \preceq \beta I$, then $\alpha \leq \nabla^2 V_{ii} (z) \leq \beta$, hence $G_{ij} = \E[\nabla^2 V_{ii} (z) z_j^2] \geq \alpha \E[z_j^2] = \alpha$ since $z_j \sim \N (0, 1)$. This proves the lower bound. For the upper bound, if $\kappa \leq e^{1/2}$, then $G_{ij} \leq \beta \leq \kappa \leq e^{1/2} < 4 + \frac{4}{\sqrt{\pi}} ( 1 + \log \kappa)$, so we consider the case where $\kappa > e^{1/2}$ and choose $t_0 = \sqrt{2 \log \kappa}> 1$. We split the expectation into the bulk region and the tail region:
+    \begin{equation*}
+        G_{ij} = \E[\nabla^2 V_{ii} (z) z_j^2] = \E[\nabla^2 V_{ii} (z) z_j^2 \mathbf{1}_{|z_j| < t_0}] + \E[\nabla^2 V_{ii} (z) z_j^2 \mathbf{1}_{|z_j| \geq t_0}].
+    \end{equation*}
+    For the bulk part,
+    \begin{equation*}
+        \E[\nabla^2 V_{ii} (z) z_j^2 \mathbf{1}_{|z_j| < t_0}] \leq t_0^2 \E[\nabla^2 V_{ii} (z)] = 2 \log \kappa.
+    \end{equation*}
+    For the tail part, we define $\varphi (t) = \frac{1}{\sqrt{2\pi}} e^{-t^2 / 2}$, then
+    \begin{equation*}
+        \E[\nabla^2 V_{ii} (z) z_j^2 \mathbf{1}_{|z_j| \geq t_0}] \leq \kappa \E[z_j^2 \mathbf{1}_{|z_j| \geq t_0}] = 2 \kappa \int_{t_0}^\infty t^2 \varphi(t) \dd t,
+    \end{equation*}
+    using integration by parts and Mills ratio,
+    \begin{equation*}
+        \int_{t_0}^\infty t^2 \varphi(t) \dd t = t_0 \varphi (t_0) + \int_{t_0}^\infty \varphi(t) \dd t \leq t_0 \varphi (t_0) + \frac{\varphi (t_0)}{t_0} \leq 2t_0 \varphi(t_0) = 2\sqrt{\frac{\log \kappa}{\pi}} \kappa^{-1}.
+    \end{equation*}
+    Hence,
+    \begin{equation*}
+        G_{ij} \leq 2 \log \kappa + \frac{4}{\sqrt{\pi}} \sqrt{\log \kappa} \leq 4 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa).
+    \end{equation*}
+\end{proof}
+
+We then prove an identity which characterizes the ``perturbation'' near equilibrium.
+
+\begin{lemma}\label{lem:bochner}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, for any $u \in \R^{N_\theta}$, $X \in \Sym (N_\theta)$, and $\eta(z) := u + Xz$, 
+    \begin{equation*}
+        \E[\eta(z)^\top \nabla^2 V(z) \eta (z)] = \|u\|^2 + 2 u^\top T[X] + \|X\|_F^2 + \Tr(X H[X]).
+    \end{equation*}
+    Specifically when $X = \diag \lambda$,
+    \begin{equation*}
+        \E[\eta(z)^\top \nabla^2 V(z) \eta (z)] = \|u\|^2 + 2 u^\top \widetilde{T} \lambda + \|\lambda\|^2 + \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda.
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    We expand 
+    \begin{equation*}
+        \eta^\top \nabla^2 V \eta = u^\top \nabla^2 V u + 2u^\top \nabla^2 V (Xz) + (Xz)^\top \nabla^2 V (Xz)
+    \end{equation*}
+    and analyze the expectation for each term.
+    For the constant term, since $\E[\nabla^2 V] = I$, then $\E[u^\top \nabla^2 V u] = u^\top \E[\nabla^2 V] u = \|u\|^2$. For the cross term, by Stein's Lemma and the definition of $T$, 
+    \begin{equation*}
+        \E[u^\top \nabla^2 V (Xz)] = \sum_{a, b, c} u_a X_{bc} \E[\nabla^2 V_{ab} (z) z_c] = \sum_{a, b, c} u_a X_{bc} \E[\partial_a \partial_b \partial_c V (z)] = u^\top T[X].
+    \end{equation*}
+    For the quadratic term, we apply Stein's Lemma twice to obtain 
+    \begin{align*}
+        \E[(Xz)^\top \nabla^2 V (Xz)] &= \sum_{a, b, c, d} X_{ac} X_{bd} \E[\nabla^2 V_{ab} (z) z_c z_d] \\
+        &= \sum_{a, b, c, d} X_{ac} X_{bd} (\E[\partial_a \partial_b \partial_c \partial_d V (z)] + \delta_{cd} \delta_{ab}) = \Tr(X H[X]) + \|X\|_F^2.
+    \end{align*}
+    Adding these three terms up completes the proof.
+\end{proof}
+
+Based on Lemma \ref{lem:bochner}, we aim to prove the spectral upper bound of $\widetilde{T}^\top \widetilde{T}$.
+
+\begin{lemma}\label{lem:matrix-schur}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, 
+    \begin{equation*}
+        \widetilde{T}^\top \widetilde{T} \preceq I + (G - \mathbf{1} \mathbf{1}^\top).
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    We choose $\eta (z) = u + \diag (\lambda) z$ in Lemma \ref{lem:bochner}, since $\nabla^2 V(z) \succeq 0$, then
+    \begin{equation*}
+        0 \leq  \|u\|^2 + 2 u^\top \widetilde{T} \lambda + \|\lambda\|^2 + \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda
+    \end{equation*}
+    for any $u \in \R^{N_\theta}$ and $\lambda \in \R^{N_\theta}$, which is equivalent to 
+    \begin{equation*}
+        \begin{pmatrix}
+            I & \widetilde{T} \\
+            \widetilde{T} & I + (G - \mathbf{1} \mathbf{1}^\top)
+        \end{pmatrix} \succeq 0.
+    \end{equation*}
+    As $I \succeq 0$, then we have $I + (G - \mathbf{1} \mathbf{1}^\top) - \widetilde{T}^\top \widetilde{T} \succeq 0$ by Schur complement criterion, which completes the proof.
+\end{proof}
+
+Based on these Lemmas, we prove the following operator bound.
+
+\begin{lemma}[Operator bound]\label{lem:operator-bound}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, 
+    \begin{equation*}
+        \lambda_{\max} (G - \mathbf{1} \mathbf{1}^\top) \leq \Gamma := \min \left\{\beta - 1, N_\theta \left(3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}.
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    We prove two spectral upper bounds of $G - \mathbf{1} \mathbf{1}^\top$ separately. On the one hand, we take $\eta(z) = \diag (\lambda) z$ as in Lemma \ref{lem:bochner}, this gives
+    \begin{equation*}
+        \E[\eta(z)^\top \nabla^2 V (z) \eta (z)] = \|\lambda\|^2 + \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda
+    \end{equation*}
+    and concurrently
+    \begin{equation*}
+        \E[\eta(z)^\top \nabla^2 V (z) \eta (z)] \leq \beta \E \|\diag (\lambda) z\|^2 = \beta \|\diag \lambda\|_F^2 = \beta \|\lambda\|^2.
+    \end{equation*}
+    Collectively, $\lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda \leq (\beta - 1) \|\lambda\|^2$, hence $\lambda_{\max} (G - \mathbf{1} \mathbf{1}^\top) \leq \beta - 1$.
+
+    On the other hand, by Lemma \ref{lem:tailcut}, we obtain
+    \begin{equation*}
+        |G_{ij} - 1| \leq 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa),
+    \end{equation*}
+    this gives
+    \begin{align*}
+        \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda &= \sum_{i,j} \lambda_i \lambda_j (G_{ij} - 1) \leq \sum_{i, j} |\lambda_i| \cdot |\lambda_j| \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \\
+        &\leq \left( \sum_{i} |\lambda_i| \right)^2 \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \leq  \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) N_\theta \|\lambda\|^2,
+    \end{align*}
+    this gives $\lambda_{\max} (G - \mathbf{1} \mathbf{1}^\top ) \leq \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) N_\theta$. Hence collectively,
+    \begin{equation*}
+        \lambda_{\max} (G - \mathbf{1} \mathbf{1}^\top) \leq \min \left\{\beta - 1, N_\theta \left(3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}.
+    \end{equation*}
+\end{proof}
+
+We then compute the linearized Jacobian matrix of Gaussian natural gradient flow \eqref{ODEs:NG} and bound its largest eigenvalue.
+
+\begin{proposition}\label{prop:Jac-eig}
+    We consider the Gaussian natural gradient flow \eqref{ODEs:NG} under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}. For $u = m \in \R^{N_\theta}$ and $X = C - I \in \Sym (N_\theta)$, the linearized Jacobian matrix at equilibrium is given by
+    \begin{equation*}
+        - J_\star (u, X) = \left( u + \frac{1}{2} T[X], X + T^*[u] + \frac{1}{2} H[X] \right).
+    \end{equation*}
+    Moreover, the largest eigenvalue $\lambda_{\star, \max}$ of $J_\star$ satisfies
+    \begin{equation*}
+        -\lambda_{\star, \max} \geq \frac{1}{4 + \Gamma} = \frac{1}{4 + \min \left\{\beta - 1, N_\theta \left(3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}},
+    \end{equation*}
+    and the smallest eigenvalue $\lambda_{\star, \min}$ of $J_\star$ satisfies
+    \begin{equation*}
+        -\lambda_{\star, \min} \leq \frac{4 + \Gamma}{2} = \frac{4 + \min \left\{\beta - 1, N_\theta \left(3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}}{2}.
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    We apply Bonnet's identity and Price's identity, i.e.,
+    \begin{equation*}
+        \partial_m \E_{\N (m, C)} [f] = \E_{\N(m, C)} [\nabla f], \qquad \partial_C \E_{\N(m, C)} [f] = \frac{1}{2} \E_{\N(m, C)} [\nabla^2 f],
+    \end{equation*}
+    by Taylor's expansion near $a_\star$, we obtain
+    \begin{align*}
+        \E_{\N (u, I + X)} [\nabla V] &= u + \frac{1}{2} T[X] + O (\| (u, X) \|^2), \\
+        \E_{\N (u, I + X)} [\nabla^2 V] &= I + T^*[u] + \frac{1}{2} H[X] + O(\|(u, X)\|^2).
+    \end{align*}
+    By substituting $\E_{\N (u, I + X)} [\nabla V]$ and $\E_{\N (u, I + X)} [\nabla^2 V]$ into \eqref{ODEs:NG}, we obtain the local ODEs
+    \begin{equation*}
+        \begin{cases}
+            \dot u &= -u - \frac{1}{2} T[X] + O(\|(u, X)\|_\star^2), \\
+            \dot X &= -X - T^*[u] - \frac{1}{2} H[X] + O(\|(u, X)\|_\star^2).
+        \end{cases}
+    \end{equation*}
+    Therefore the linearized Jacobian matrix is 
+    \begin{equation*}
+        - J_\star (u, X) = \left( u + \frac{1}{2} T[X], X + T^*[u] + \frac{1}{2} H[X] \right).
+    \end{equation*}
+
+    We proceed to show that the operator $J_\star$ is self-adjoint with respect to $\langle \cdot, \cdot \rangle_\star^\mathrm{FR}$. For $(u_1, X_1), (u_2, X_2) \in \R^{N_\theta} \times \Sym (N_\theta)$, we calculate
+    \begin{align*}
+        \langle -J_\star (u_1, X_1), (u_2, X_2) \rangle_\star^\mathrm{FR} &= u_1^\top u_2 + \frac{1}{2} T[X_1]^\top u_2 + \frac{1}{2} \Tr(X_1 X_2) + \frac{1}{2} \Tr(T^*[u_1] X_2) + \frac{1}{4} \Tr (H[X_1] X_2),
+    \end{align*}
+    since $u^\top T[X] = \Tr(T^*[u] X)$ and $\Tr(H[X_1] X_2) = \Tr(X_1 H[X_2])$, then the expression is symmetric, which justifies the self-adjointness.
+
+    Thus by the spectral theorem, we obtain
+    \begin{equation*}
+        -\lambda_{\star, \max} = \min_{(u, X) \neq 0} \frac{\langle -J_\star (u, X), (u, X) \rangle_\star^\mathrm{FR}}{\langle (u, X), (u, X) \rangle_\star^\mathrm{FR}} = \min_{(u, X) \ne 0} \frac{Q(u, X)}{\|u\|^2 + \frac{1}{2} \|X\|_F^2},
+    \end{equation*}
+    where $Q(u, X) := \|u\|^2 + u^\top T[X] + \frac{1}{2} \|X\|_F^2 + \frac{1}{4} \Tr(X H[X])$. 
+    Since the standard Gaussian measure and the Hessian bounds are invariant under orthogonal changes of basis, we work in orthogonal basis $X = \diag \lambda$, hence
+    \begin{equation*}
+        Q(u, \diag \lambda) = \|u\|^2 + u^\top \widetilde{T} \lambda + \frac{1}{2} \|\lambda\|^2 + \frac{1}{4} \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda.
+    \end{equation*}
+    We hence only need to show $Q(u, \diag \lambda) \geq \frac{1}{4 + \Gamma} (\|u\|^2 + \frac{1}{2} \|\lambda\|^2)$, which is equivalent to 
+    \begin{equation*}
+        \left( 1 - \nu \right) \|u\|^2 + u^\top \widetilde{T} \lambda + \frac{1 - \nu}{2} \|\lambda\|^2 + \frac{1}{4} \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda \geq 0,
+    \end{equation*}
+    where we denote $\nu = \frac{1}{4 + \Gamma}$ and $0 < \nu \leq \frac{1}{4}$.
+    It suffices to show that
+    \begin{equation*}
+        \frac{1 - \nu}{2} I + \frac{1}{4} (G - \mathbf{1} \mathbf{1}^\top) - \frac{\widetilde{T}^\top \widetilde{T}}{4(1 - \nu)} \succeq 0,
+    \end{equation*}
+    from Lemma \ref{lem:matrix-schur} and Lemma \ref{lem:operator-bound}, a sufficient condition is
+    \begin{equation*}
+        \frac{1 - \nu}{2} - \frac{1 + \nu \Gamma}{4 (1 - \nu)} \geq 0 \Longleftrightarrow f(\nu) := 1 - \nu (4 + \Gamma) + 2\nu^2 \geq 0.
+    \end{equation*}
+    The smaller root of $f$ is 
+    \begin{equation*}
+        \nu_1 = \frac{(4 + \Gamma) - \sqrt{(4 + \Gamma)^2 - 8}}{4} = \frac{2}{4 + \Gamma + \sqrt{(4 + \Gamma)^2 - 8}} \geq \frac{1}{4 + \Gamma},
+    \end{equation*}
+    hence $f (\frac{1}{4 + \Gamma}) \geq 0$, which completes the proof of the largest eigenvalue bound. 
+
+    We proceed to bound the smallest eigenvalue of $J_\star$. By Lemma \ref{lem:matrix-schur} and Lemma \ref{lem:operator-bound}, for diagonal matrix $\diag \lambda$ we have
+    \begin{align*}
+        Q(u, \diag \lambda) &= \|u\|^2 + u^\top \widetilde{T} \lambda + \frac{1}{2} \|\lambda\|^2 + \frac{1}{4} \lambda^\top (G - \mathbf{1} \mathbf{1}^\top) \lambda \\
+        &\leq \|u\|^2 + \sqrt{1 + \Gamma}\, \|u\| \|\lambda\| + \left( \frac{1}{2} + \frac{\Gamma}{4} \right) \|\lambda\|^2 \\
+        &\leq \left( 1 + \frac{\Gamma}{4} + \frac{1}{4} \sqrt{\Gamma^2 + 8\Gamma + 8} \right) \left( \|u\|^2 + \frac{1}{2} \|\lambda\|^2 \right).
+    \end{align*}
+    By the spectral theorem, we obtain
+    \begin{align*}
+        -\lambda_{\star, \min} &= \max_{(u, X) \neq 0} \frac{Q (u, X)}{\|u\|^2 + \frac{1}{2} \|X\|_F^2} \leq 1 + \frac{\Gamma}{4} + \frac{1}{4} \sqrt{\Gamma^2 + 8\Gamma + 8} \leq \frac{4 + \Gamma}{2},
+    \end{align*}
+    which completes the proof.
+\end{proof}
+
+We provide local convergence rate for the continuous dynamics \eqref{ODEs:NG}. Before that, we first provide explicit second-order bound for the natural gradient vector field.
+
+\begin{lemma}\label{lem:2ord-bound-NG}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, we define the vector field of \eqref{ODEs:NG} as
+    \begin{equation*}
+        F (m, C) = (F_1 (m, C), F_2 (m, C)) := (-C \E_{\N(m, C)} [\nabla V], C - C \E_{\N (m, C)} [\nabla^2 V] C),
+    \end{equation*}
+    then on the neighborhood $\mathcal{S}_\star = \left\{ (m, C) : \frac{1}{2} I \preceq C \preceq \frac{3}{2} I \right\}$, the second differential of vector field $F$ satisfies
+    \begin{equation*}
+        \| D^2 F(a) [\zeta, \zeta] \|_\star \leq 135 \beta N_\theta^{5/2} \|\zeta\|_\star^2,
+    \end{equation*}
+    where $a = (m, C) \in \mathcal{S}_\star$ and the tangent direction $\zeta = (v, Y) \in \R^{N_\theta} \times \Sym(N_\theta)$.
+\end{lemma}
+
+\begin{proof}
+    We consider the line $a(s) = (m + sv, C + sY)$, since $\|\zeta\|_\star^2 = \|v\|^2 + \frac{1}{2} \|Y\|_F^2$, then we have $\|v\| \leq \|\zeta\|_\star$ and $\|Y\|_\mathrm{op} \leq \|Y\|_F \leq \sqrt{2} \|\zeta\|_\star$. For $\theta \in \N (m, C)$ with $(m, C) \in \mathcal{S}_\star$, we denote $w := C^{-1} (\theta - m) = C^{-1/2} z$ for $z \in \N(0, I_{N_\theta})$. Using the standard Gaussian bounds, we obtain the bounds of moments of $w$,
+    \begin{equation*}
+        \E\|w\| \leq \sqrt{2} N_\theta, \quad \E\|w\|^2 \leq 2 N_\theta, \quad \E\|w\|^3 \leq 2\sqrt{2} N_\theta \sqrt{N_\theta + 2}, \quad \E\|w\|^4 \leq 4 N_\theta (N_\theta + 2).
+    \end{equation*}
+
+    For any smooth function $f$, we apply Bonnet--Price differentiation to obtain
+    \begin{equation*}
+        \frac{\dd}{\dd s} \E_{\N(m + sv, C + sY)} [f] = \langle v, \nabla_m \E[f] \rangle + \langle Y, \nabla_C \E[f] \rangle_F = \E \left[ v^\top \nabla f + \frac{1}{2} \Tr(Y \nabla^2 f) \right],
+    \end{equation*}
+    which is equivalent to 
+    \begin{equation*}
+        \frac{\dd}{\dd s} \E[f] = \E[\mathcal{L}_\zeta f], \qquad \mathcal{L}_\zeta = \sum_p v_p \partial_p + \frac{1}{2} \sum_{p,q} Y_{pq} \partial_p \partial_q,
+    \end{equation*}
+    for the second derivative, we have
+    \begin{equation*}
+        \frac{\dd^2}{\dd s^2} \E[f] = \E[\mathcal{L}_\zeta^2 f], \qquad \mathcal{L}_\zeta^2 = \sum_{p, q} v_p v_q \partial_p \partial_q + \sum_{p, q, r} v_p Y_{qr} \partial_p \partial_q \partial_r + \frac{1}{4} \sum_{p, q, r, s} Y_{pq} Y_{rs} \partial_p \partial_q \partial_r \partial_s.
+    \end{equation*}
+    
+    We thus compute the first and second derivative of $\E[\nabla V]$ and $\E[\nabla^2 V]$ using Gaussian integration by parts:
+\begin{comment}
+    \begin{align*}
+        \frac{\dd}{\dd s} \E[\nabla V]_i &= \E\left[ \sum_k v_k \partial_k (\partial_i V) + \frac{1}{2} \sum_{k, l} Y_{kl} \partial_k \partial_l (\partial_i V) \right] = \E \left[ [\nabla^2 V v]_i + \frac{1}{2} [\nabla^2 V (Yw)]_i \right], \\
+        \frac{\dd }{\dd s} \E[\nabla^2 V]_{ij} &= \E\left[ \sum_k v_k \partial_k (\nabla^2 V_{ij}) + \frac{1}{2} \sum_{k, l} Y_{kl} \partial_k \partial_l (\nabla^2 V_{ij}) \right] \\
+        &= \E\left[ \nabla^2 V_{ij} \sum_k v_k w_k + \frac{1}{2} \nabla^2 V_{ij} \sum_{k,l} Y_{kl} (w_k w_l - C_{kl}^{-1}) \right], \\
+        \frac{\dd^2}{\dd s^2} \E[\nabla V]_i &= \E\left[ \sum_{p, q} v_p v_q \partial_p \partial_q (\partial_i V) + \sum_{p, q, r} v_p Y_{qr} \partial_p \partial_q \partial_r (\partial_i V) + \frac{1}{4} \sum_{p, q, r, s} Y_{pq} Y_{rs} \partial_p \partial_q \partial_r \partial_s (\partial_i V) \right] \\
+        &= \E\left[ \sum_q \nabla^2 V_{iq} v_q (v^\top w) + \sum_q \nabla^2 V_{iq} ((v^\top w) (Yw)_q - (YC^{-1} v)_q) \right.\\
+        &\qquad \left.+ \frac{1}{4} \sum_q \nabla^2 V_{iq} ((Yw)_q (w^\top Y w) - 2 (Y C^{-1} Y w)_q - (Yw)_q \Tr (YC^{-1})) \right], \\
+        \frac{\dd^2 }{\dd s^2} \E[\nabla^2 V]_{ij} &= \E\left[ \sum_{p, q} v_p v_q \partial_p \partial_q (\nabla^2 V_{ij}) + \sum_{p, q, r} v_p Y_{qr} \partial_p \partial_q \partial_r (\nabla^2 V_{ij}) + \frac{1}{4} \sum_{p, q, r, s} Y_{pq} Y_{rs} \partial_p \partial_q \partial_r \partial_s (\nabla
+        ^2 V_{ij}) \right] \\
+        &= \E\left[ \nabla^2 V_{ij} \sum_{p, q} v_p v_q (w_p w_q - C_{pq}^{-1}) + \nabla^2 V_{ij} \sum_{p, q, r} v_p Y_{qr} (w_p w_q w_r - C_{pq}^{-1} w_r - C_{pr}^{-1} w_q - C_{qr}^{-1} w_p) \right. \\ 
+        &\qquad \left. + \frac{1}{4} \nabla^2 V_{ij} \left( (w^\top Y w)^2 - 2\Tr (YC^{-1}) (w^\top Y w) - 4w^\top YC^{-1} Yw + \Tr (YC^{-1})^2 + 2\Tr (C^{-1} Y C^{-1} Y) \right) \right],
+    \end{align*}
+    these give
+\end{comment}
+    
+    \begin{align*}
+        \frac{\dd}{\dd s} \E[\nabla V] &= \E\left[ \nabla^2 V \left( v + \frac{1}{2} Yw \right) \right], \\
+        \frac{\dd}{\dd s} \E[\nabla^2 V] &= \E\left[ \nabla^2V \left( v^\top w + \frac{1}{2} w^\top Y w - \frac{1}{2} \Tr (YC^{-1}) \right) \right],\\
+        \frac{\dd^2}{\dd s^2} \E[\nabla V] &= \E\left[ \nabla^2 V \left( (v^\top w) v + (v^\top w) Yw - YC^{-1} v + \frac{1}{4} (w^\top Yw - \Tr (YC^{-1})) Yw - \frac{1}{2} YC^{-1} Yw \right) \right], \\
+        \frac{\dd^2}{\dd s^2} \E[\nabla^2 V] &= \E\left[\nabla^2 V \left((v^\top w)^2 - v^\top C^{-1} v + (v^\top w)(w^\top Yw) - 2v^\top C^{-1}Yw - (v^\top w)\Tr(YC^{-1}) + \frac{1}{4}\Pi \right)\right],
+    \end{align*}
+    where $\Pi = (w^\top Yw)^2 - 2\Tr(YC^{-1})(w^\top Yw) - 4 w^\top YC^{-1}Yw + \Tr(YC^{-1})^2 + 2\Tr(C^{-1}YC^{-1}Y)$.
+    Using $\|\nabla^2 V\|_\op \le \beta$, $\|\nabla^2 V\|_F \le \sqrt{N_\theta} \beta$, we bound each term:
+    \begin{align*}
+        \left\| \frac{\dd}{\dd s} \E[\nabla V] \right\| &\le \beta (1 + \sqrt{N_\theta}) \|\zeta\|_\star, \\
+        \left\| \frac{\dd}{\dd s} \E[\nabla^2 V] \right\|_F &\le \sqrt{2}\beta (N_\theta^{3/2} + 2N_\theta) \|\zeta\|_\star, \\
+        \left\| \frac{\dd^2}{\dd s^2} \E[\nabla V] \right\| &\le \sqrt{2}\beta \left(N_\theta \sqrt{N_\theta + 2} + 3N_\theta + 3\sqrt{N_\theta} + 2\right) \|\zeta\|_\star^2, \\
+        \left\| \frac{\dd^2}{\dd s^2} \E[\nabla^2 V] \right\|_F &\le \sqrt{N_\theta} \beta \left(2N_\theta^2 + 4N_\theta \sqrt{N_\theta + 2} + 4N_\theta^{3/2} + 18N_\theta + 8\sqrt{N_\theta} + 8\right) \|\zeta\|_\star^2.
+    \end{align*}
+    Differentiating $F_1$ and $F_2$ twice along $a(s)$ and substituting the bounds above gives:
+    \begin{align*}
+        \| D^2 F_1 [\zeta, \zeta] \| &\le \frac{3}{2} \left\| \frac{\dd^2}{\dd s^2} \E[\nabla V] \right\| + 2\sqrt{2} \|\zeta\|_\star \left\| \frac{\dd}{\dd s} \E[\nabla V] \right\|, \\
+        \| D^2 F_2 [\zeta, \zeta] \|_F &\le \frac{9}{4} \left\| \frac{\dd^2}{\dd s^2} \E[\nabla^2 V] \right\|_F + 6\sqrt{2} \|\zeta\|_\star \left\| \frac{\dd}{\dd s} \E[\nabla^2 V] \right\|_F + 4\beta \|\zeta\|_\star^2.
+    \end{align*}
+    By the definition of the Fisher--Rao norm, $\|D^2 F [\zeta, \zeta]\|_\star \le \|D^2 F_1 [\zeta, \zeta]\| + \frac{1}{\sqrt{2}} \|D^2 F_2 [\zeta, \zeta]\|_F$. Summing the bounds and evaluating the coefficients using $\sqrt{N_\theta + 2} \le \sqrt{3}\sqrt{N_\theta}$ ($N_\theta \geq 1$) yields:
+    \begin{equation*}
+        \|D^2 F [\zeta, \zeta]\|_\star \le 135 \beta N_\theta^{5/2} \|\zeta\|_\star^2.
+    \end{equation*}
+\end{proof}
+
+\begin{theorem}\label{thm:loc-conv}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, we denote \begin{equation*}
+        \delta := \min \left\{ \frac{1}{2\sqrt{2}}, \frac{1}{135 \beta N_\theta^{5/2} (4 + \Gamma)} \right\}, \qquad \Gamma = \min \left\{ \beta - 1, N_\theta \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}.
+    \end{equation*}
+    If the initialization satisfies $\|a_0 - a_\star\|_\star \leq \delta$, then the local convergence rate of the Gaussian natural gradient flow \eqref{ODEs:NG} reads
+    \begin{equation*}
+        \|a_t - a_\star\|_\star^2 \leq \exp \left(- \frac{t}{4 + \Gamma}\right) \|a_0 - a_\star \|_\star^2, \qquad t\geq 0.
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We denote $\xi_t = a_t - a_\star$. Since the vector field of \eqref{ODEs:NG} satisfies $F(a_\star) = 0$ with $DF(a_\star) = J_\star$, we apply Taylor's theorem to obtain
+    \begin{equation*}
+        F(a_\star + \xi) = J_\star \xi + R(\xi), \qquad R(\xi) = \int_0^1 (1-s) D^2 F(a_\star + s\xi)[\xi, \xi] \dd s.
+    \end{equation*}
+    By Lemma \ref{lem:2ord-bound-NG}, since $\|\xi\|_\star \leq \delta \leq \frac{1}{2\sqrt{2}}$, then the trajectory remains in the convex neighborhood $\mathcal{S}_\star$, hence the remainder satisfies $\|R(\xi)\|_\star \le \frac{135}{2} \beta N_\theta^{5/2} \|\xi\|_\star^2$.
+    
+    We proceed to compute and bound the derivative of the squared norm 
+    \begin{align*}
+        \frac{\dd}{\dd t} \|\xi_t\|_\star^2 &= 2 \langle \xi_t, J_\star \xi_t \rangle_\star + 2 \langle \xi_t, R(\xi_t) \rangle_\star \\
+        &\leq -\frac{2}{4 + \Gamma} \|\xi_t\|_\star^2 + 135 \beta N_\theta^{5/2} \|\xi_t\|_\star^3 \leq -\frac{1}{4 + \Gamma} \|\xi_t\|_\star^2,
+    \end{align*}
+    where the first inequality comes from Proposition \ref{prop:Jac-eig} and Lemma \ref{lem:2ord-bound-NG} while the second inequality comes from $\|\xi_t\|_\star \leq \delta \leq \frac{1}{135\beta N_\theta^{5/2} (4 + \Gamma)}$. This completes the proof by Gronwall's inequality.
+\end{proof}
+
+We then show the local convergence rate of the discrete algorithm with Riemannian distance \eqref{upd:Riem}.
+
+\begin{theorem}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, we define
+    \begin{align*}
+        \delta_\mathrm{R} (\Delta t) := \min \left\{ \frac{1}{2\sqrt{2}}, \frac{1}{(4 + \Gamma) \cdot 148 \beta^2 N_\theta^{5/2}} \right\}, \quad \Gamma = \min \left\{ \beta - 1, N_\theta \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}.
+        %C_\mathrm{R} &:= 135 \beta N_\theta^{5/2} + 2C_0 + \frac{C_0^2}{\sqrt{2}}, \qquad C_0 := \sqrt{2} + \frac{\beta - \alpha}{2} + \beta N_\theta
+    \end{align*}
+    Consider the discrete update with Riemannian distance \eqref{upd:Riem} with stepsize $0 < \Delta t \leq \frac{2}{4 + \Gamma}$, if the initialization satisfies $\|a_0 - a_\star\|_\star \leq \delta_\mathrm{R} (\Delta t)$, then the local convergence rate is
+    \begin{equation*}
+        \|a_N - a_\star\|_\star \leq \left( 1 - \frac{\Delta t}{2 (4 + \Gamma)} \right)^N \|a_0 - a_\star\|_\star.
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We denote $\xi_n := a_n - a_\star$. By Proposition \ref{prop:upd-map-Riem}, for the discrete update \eqref{upd:Riem}, we have
+    \begin{equation*}
+        a_{n+1} = \Exp_{a_n} (-\Delta t \grad \mathcal{E} (a_n)) = \Exp_{a_n} (\Delta t F(a_n)).
+    \end{equation*}
+    The update of error admits the following expansion
+    \begin{equation*}
+        \xi_{n+1} = (I + \Delta t J_\star) \xi_n + R_{\mathrm{R}, \Delta t} (\xi_n).
+    \end{equation*}
+    By Proposition \ref{prop:Jac-eig}, the linear part satisfies \begin{equation*}
+        \| (I + \Delta t J_\star) \xi \|_\star \leq \left( 1 - \frac{\Delta t}{4 + \Gamma} \right) \|\xi_n\|_\star
+    \end{equation*}
+    since the stepsize satisfies $0 < \Delta t \leq \frac{2}{4 + \Gamma}$.
+
+    We proceed to look into the nonlinear term $R_{\mathrm{R}, \Delta t}$. From Lemma \ref{lem:2ord-bound-NG}, the vector field part contributes
+    \begin{equation*}
+        \Delta t \left\| \int_0^1 (1 - s) D^2 F(a_\star + s \xi_n) [\xi_n, \xi_n] \dd s \right\|_\star \leq \frac{\Delta t}{2} 135 \beta N_\theta^{5/2} \|\xi_n\|_\star.
+    \end{equation*}
+    The remaining part comes from the exponential covariance increment in the covariance component. We denote
+    \begin{equation*}
+        P(a) = I + C^{1/2} \E_{\rho_a} [\nabla_\theta \nabla_\theta \log \rho_\post] C^{1/2}
+    \end{equation*}
+    and bound the first variation of $P$ at $a_\star$ for $\xi = (u, X)$:
+    \begin{equation*}
+        DP(a_\star) [\xi] = -\left( X + T^*[u] + \frac{1}{2} H[X] \right) \Longrightarrow \| DP(a_\star) [\xi]\|_F \leq \left( \sqrt{2} + \frac{\beta - \alpha}{2} + \beta N_\theta \right) \|\xi\|_\star.
+    \end{equation*}
+    We expand the covariance update $C_{n+1} = C_n^{1/2} \exp(\Delta t P(a_n)) C_n^{1/2}$, since \begin{equation*}
+        \exp (\Delta t P) = I + \Delta t P + \frac{\Delta t^2}{2} P^2 + O(\Delta t^3 \|P\|^3),
+    \end{equation*} 
+    we obtain
+    \begin{align*}
+        \|R_{\mathrm{R}, \Delta t} (\xi_n)\|_\star &\leq \frac{\Delta t}{2} 135 \beta N_\theta^{5/2} \|\xi_n\|_\star^2 + \frac{\Delta t}{2} \left(2 \left( \sqrt{2} + \frac{\beta - \alpha}{2} + \beta N_\theta \right)  + \frac{1}{\sqrt{2}} \left( \sqrt{2} + \frac{\beta - \alpha}{2} + \beta N_\theta \right)^2 \Delta t  \right) \|\xi_n\|_\star^2 \\
+        &\leq \frac{\Delta t}{2} \left( 135 \beta N_\theta^{5/2} + 6\beta N_\theta + \frac{9 \beta^2 N_\theta^2}{\sqrt{2}} \right) \|\xi_n\|_\star^2 \leq \frac{\Delta t}{2} \cdot 148 \beta^2 N_\theta^{5/2} \|\xi_n\|_\star^2,
+    \end{align*}
+    where the continuous-field component from the first inequality comes from $\|\xi_n\|_\star \leq \delta_\mathrm{R} (\Delta t) \leq \frac{1}{2\sqrt{2}}$, which ensures $a_n \in \mathcal{S}_\star$. 
+    
+    Therefore
+    \begin{align*}
+        \|\xi_{n+1}\|_\star &\leq \| (I + \Delta t J_\star) \xi_n \|_\star + \|R_{\mathrm{R}, \Delta t} (\xi)\|_\star \\
+        &\leq \left( 1 - \frac{\Delta t}{4 + \Gamma} \right) \|\xi_n\|_\star + \frac{\Delta t}{2} 148 \beta^2 N_\theta^{5/2} \|\xi_n\|_\star^2 \\
+        &\leq \left( 1 - \frac{\Delta t}{2(4 + \Gamma)} \right) \|\xi_n\|_\star,
+    \end{align*}
+    where the last inequality comes from $\|\xi_n\|_\star \leq \delta_\mathrm{R} (\Delta t) \leq \frac{1}{(4 + \Gamma) 148 \beta^2 N_\theta^{5/2}}$. This completes the proof by iterating on $n$.
+\end{proof}
+
+We proceed to proceed to prove the local convergence rate of discretization scheme with KL divergence \eqref{upd:KL}.
+
+\begin{theorem}
+    Under Assumption \ref{assump:logconcave-smooth} and \eqref{eq:whitened}, we define
+    \begin{align*}
+        \delta_\mathrm{KL} (\Delta t) := \min \left\{ \frac{1}{2\sqrt{2}}, \frac{1}{(4 + 2 \Delta t + \Gamma) \cdot 216 \beta^2 N_\theta^{5/2}} \right\},\quad
+        \Gamma = \min \left\{ \beta - 1, N_\theta \left( 3 + \frac{4}{\sqrt{\pi}} (1 + \log \kappa) \right) \right\}.
+    \end{align*}
+    Consider the discrete update with KL divergence \eqref{upd:KL} with the following local norm
+    \begin{equation*}
+        \|(u, X)\|_{\star, \Delta t}^2 = \|u\|^2 + \frac{1 + \Delta t}{2} \|X\|_F^2, \qquad (u, X) \in \R^{N_\theta} \times \Sym(N_\theta),
+    \end{equation*}
+    if the stepsize satisfies $0 < \Delta t \leq \frac{2}{4 + \Gamma}$ and the initialization satisfies $\|a_0 - a_\star\|_{\star, \Delta t} \leq \delta_{\mathrm{KL}} (\Delta t)$, then the local convergence guarantee reads
+    \begin{equation*}
+        \|a_N - a_\star\|_{\star, \Delta t} \leq \left( 1 - \frac{\Delta t}{2 (4 + 2 \Delta t + \Gamma)} \right)^N \|a_0 - a_\star\|_{\star, \Delta t}.
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We write $\xi_n:= a_n - a_\star = (u_n, X_n)$, and characterize \eqref{upd:KL} into linear part and non-linear part
+    \begin{equation*}
+        \xi_{n+1} = M_{\Delta t, \star}^\KL (\xi_n) + R_{\Delta t}^\KL (\xi_n).
+    \end{equation*}
+    We first calculate the linearized map using the similar technique in Proposition \ref{prop:Jac-eig}:
+    \begin{equation*}
+        M_{\Delta t, \star}^\KL (u, X) = \left( (1 - \Delta t) u - \frac{\Delta t}{2} T[X],\ \frac{1}{1 + \Delta t} \left( X - \Delta t T^*[u] - \frac{\Delta t}{2} H[X] \right) \right),
+    \end{equation*}
+    which is self-adjoint with respect to the weighted inner product at equilibrium because $$\langle M_{\Delta t, \star}^\KL (u_1, X_1), (u_2, X_2) \rangle_{\star, \Delta t} = \langle (u_1, X_1), M_{\Delta t, \star}^\KL (u_2, X_2) \rangle_{\star, \Delta t},$$ where the inner product at equilibrium is defined by
+    \begin{equation*}
+        \langle (u_1, X_1), (u_2, X_2) \rangle_{\star, \Delta t} := u_1^\top u_2 + \frac{1 + \Delta t}{2} \Tr (X_1 X_2).
+    \end{equation*}
+    We observe that
+    \begin{equation*}
+        \|(u, X)\|_{\star, \Delta t}^2 - \langle M_{\Delta t, \star}^\KL (u, X), (u, X) \rangle_{\star, \Delta t} = \Delta t Q(u, X),
+    \end{equation*}
+    hence the largest eigenvalue $\rho_\star^\KL$ of the linearized Jacobian matrix $M_{\Delta t, \star}^\KL$ satisfies
+    \begin{align*}
+        1 - \rho_\star^\KL &= \Delta t \min_{(u, X) \neq 0} \frac{Q(u, X)}{\|u\|^2 + \frac{1 + \Delta t}{2} \|X\|_F^2} \geq \frac{\Delta t}{4 + 2\Delta t + \Gamma},
+    \end{align*}
+    which is because $g(\nu) := 1 - \nu (4 + 2 \Delta t + \Gamma) + 2 (1 + \Delta t) \nu^2 \geq 0$ at $\nu = \frac{1}{4 + 2 \Delta t + \Gamma}$.
+    We thus have
+    \begin{equation*}
+        \|M_{\Delta t, \star}^\KL (\xi)\|_{\star, \Delta t} \leq \left( 1 - \frac{\Delta t}{4 + 2\Delta t + \Gamma} \right) \|\xi\|_{\star, \Delta t}
+    \end{equation*}
+    since $0 < \Delta t \leq \frac{2}{4 + \Gamma}$ and hence $\langle M_{\Delta t, \star}^\KL (\xi), \xi \rangle_{\star, \Delta t}\geq 0$.
+
+    We proceed to control the nonlinear part. Along $a = a_\star + s\xi \in \R^{N_\theta} \times $, we compute
+    \begin{equation*}
+        \left. \frac{\dd}{\dd s} \E_{\rho_{a + s \xi}}[\nabla^2 V] \ \right|_{s=0} = T^*[u] + \frac{1}{2} H[X] := A_1 (\xi)
+    \end{equation*}
+    and bound \begin{equation*}
+        \left\| A_1 (\xi) \right\|_F \leq \left( \frac{\beta - \alpha}{2} + \sqrt{2} \beta N_\theta \right) \|\xi\|_\star.
+    \end{equation*}
+    From Lemma \ref{lem:2ord-bound-NG}, 
+    \begin{equation*}
+        \| D^2 F[\zeta, \zeta]\|_{\star, \Delta t} \leq \sqrt{1 + \Delta t} \| D^2 F[\zeta, \zeta]\|_{\star} \leq 135 \sqrt{1 + \Delta t} \beta N_\theta^{5/2} \|\zeta\|_{\star}^2 \leq 135\sqrt{2} \beta N_\theta^{5/2} \|\zeta\|_{\star, \Delta t}^2.
+    \end{equation*}
+    By expanding the covariance update $C_{n+1} = (1 + \Delta t) (C_n + \Delta t \E_{\rho_{a_n}}[\nabla^2 V])^{-1}$ and combining the second-order correction bound with continuous-time high-order remainder, we obtain
+    \begin{align*}
+        \|R_{\Delta t}^\KL (\xi_n) \|_{\star, \Delta t} &\leq \frac{\Delta t}{2} \left( 135 \sqrt{2} \beta N_\theta^{5/2} + 2\sqrt{2} + 8\left( \frac{\beta - \alpha}{2} + \sqrt{2} \beta N_\theta \right) + \sqrt{2} \left( \frac{\beta - \alpha}{2} + \sqrt{2} \beta N_\theta \right)^2 \right) \|\xi_n\|_{\star, \Delta t}^2 \\
+        &\leq \frac{\Delta t}{2} \left( 135 \sqrt{2} \beta N_\theta^{5/2} + 2\sqrt{2} + 16 \beta N_\theta + 4\sqrt{2} \beta^2 N_\theta^2 \right) \|\xi_n\|_{\star, \Delta t}^2 \leq \frac{\Delta t}{2} 216 \beta^2 N_\theta^{5/2} \|\xi_n\|_{\star, \Delta t}^2,
+    \end{align*}
+    where the vector field component from the first inequality comes from Lemma \ref{lem:2ord-bound-NG} and $\|\xi_n\|_\star \leq \delta_\KL (\Delta t) \leq \frac{1}{2\sqrt{2}}$, which ensures that $a_n \in \mathcal{S}_\star$.
+
+    Therefore, as the stepsize is chosen to satisfy $0 < \Delta t \leq \frac{2}{4 + \Gamma}$, then
+    \begin{align*}
+        \|\xi_{n+1} \|_{\star, \Delta t} &\leq \|M_{\Delta t, \star}^\KL (\xi)\|_{\star, \Delta t} + \|R_{\Delta t}^\KL (\xi_n) \|_{\star, \Delta t} \\
+        &\leq \left( 1 - \frac{\Delta t}{4 + 2\Delta t + \Gamma} \right) \|\xi\|_{\star, \Delta t} + \frac{\Delta t}{2} 216 \beta^2 N_\theta^{5/2} \|\xi_n\|_{\star, \Delta t}^2 \\
+        &\leq \left( 1 - \frac{\Delta t}{2(4 + 2\Delta t + \Gamma)} \right) \|\xi\|_{\star, \Delta t},
+    \end{align*}
+    where the last inequality comes from $\|\xi_n\|_{\star, \Delta t} \leq \delta_\KL (\Delta t) \leq \frac{1}{(4 + 2 \Delta t + \Gamma) \cdot 216 \beta^2 N_\theta^{5/2}}$. This completes the proof by iterating on $n$.
+\end{proof}
+
+We combine the global convergence rate and the local convergence rate to obtain the two-stage behavior of Gaussian approximate natural gradient flow.
+
+\begin{theorem}[Two-stage iteration complexity]
+    Under Assumption \ref{assump:logconcave-smooth} and work in whitened equilibrium coordinates \eqref{eq:whitened}, we denote
+    \begin{equation*}
+        \Delta_0 := \mathcal{E} (a_0) - \mathcal{E} (a_\star), \qquad \Gamma := \min \left\{ \beta - 1, N_\theta \left( 3 + \frac{4}{\sqrt{\pi}} \left( 1 + \log \frac{\beta}{\alpha} \right) \right) \right\},
+    \end{equation*}
+    then for sufficiently small $\epsilon > 0$, the continuous time Gaussian natural gradient flow \eqref{ODEs:NG} has the following iteration complexity
+    \begin{equation*}
+        T_\mathrm{c} (\epsilon) = \mathcal{O} \left( \frac{1}{\alpha \lambda_{\min}} \log_+ \frac{\Delta_0}{\Delta_\mathrm{c}} + (4 + \Gamma) \log \frac{1}{\epsilon} \right);
+    \end{equation*}
+    for the Riemannian discretization scheme \eqref{upd:Riem} with stepsize satisfying $0 < \Delta t \leq \min \left\{ \frac{1}{\beta \lambda_{\max}}, \frac{2}{4 + \Gamma} \right\}$, the iteration complexity is
+    \begin{equation*}
+        T_\mathrm{R} (\epsilon) = \mathcal{O} \left( \frac{1}{\alpha \lambda_{\min} \Delta t} \log_+ \frac{\Delta_0}{\Delta_\mathrm{R}} + \frac{4 + \Gamma}{\Delta t} \log \frac{1}{\epsilon} \right);
+    \end{equation*}
+    for the KL discretization scheme \eqref{upd:KL} with stepsize satisfying $0 < \Delta t \leq \min \left\{ \frac{1}{\beta \lambda_{\max}}, \frac{2}{4 + \Gamma} \right\}$, the iteration complexity is 
+    \begin{equation*}
+        T_\mathrm{KL} (\epsilon) = \mathcal{O} \left( \frac{(1 + \Delta t) (1 + \Delta t \beta \lambda_{\max})}{\alpha \lambda_{\min} \Delta t} \log_+ \frac{\Delta_0}{\Delta_\mathrm{KL}} + \frac{4 + 2 \Delta t + \Gamma}{\Delta t} \log \frac{1}{\epsilon} \right).
+    \end{equation*}
+    Here, $\Delta_\mathrm{c}$, $\Delta_\mathrm{R}$, and $\Delta_\mathrm{KL}$ are explicit local energy thresholds.
+\end{theorem}
+
+\begin{proof}
+    We use the notation 
+    \[
+        \lambda_{\min} = \min \left\{ \lambda_{0,\min}, \frac{1}{\beta} \right\},
+        \qquad
+        \lambda_{\max} = \max \left\{ \lambda_{0,\max}, \frac{1}{\alpha} \right\},
+    \]
+    as in Lemma \ref{lem:cov-bound}. We also write $\log_+ x := \max\{\log x, 0\}$.
+
+    We first construct the local energy thresholds. Since we work in the whitened equilibrium coordinates \eqref{eq:whitened}, the optimizer is $a_\star = (0, I_{N_\theta})$.
+    
+    For $a=(m,C)$, we write $m = u$ and $C = I + X$. We also recall that the local Fisher--Rao norm is
+    \[
+        \|a-a_\star\|_\star^2
+        =
+        \|u\|^2+\frac12\|X\|_F^2,
+    \]
+    while the local norm for the KL discretization is
+    \[
+        \|a-a_\star\|_{\star,\Delta t}^2
+        =
+        \|u\|^2+\frac{1+\Delta t}{2}\|X\|_F^2.
+    \]
+
+    On the other hand, the Wasserstein distance between $\rho_a=\mathcal N(u,C)$ and $\rho_{a_\star}=\mathcal N(0,I)$ satisfies
+    \[
+        W_2^2(\rho_a,\rho_{a_\star})
+        =
+        \|u\|^2
+        +
+        \Tr(C+I-2C^{1/2})
+        =
+        \|u\|^2+\|C^{1/2}-I\|_F^2.
+    \]
+    Since the global covariance bounds give $C\preceq \lambda_{\max} I$, we have
+    \[
+        C-I = (C^{1/2}-I)(C^{1/2}+I),
+    \]
+    and hence
+    \[
+        \|C-I\|_F^2
+        \leq
+        (1+\sqrt{\lambda_{\max}})^2
+        \|C^{1/2}-I\|_F^2.
+    \]
+    Define
+    \[
+        A_0
+        :=
+        \max\left\{
+            1,
+            \frac{(1+\sqrt{\lambda_{\max}})^2}{2}
+        \right\}, \qquad
+        A_{\Delta t}
+        :=
+        \max\left\{
+            1,
+            \frac{(1+\Delta t)(1+\sqrt{\lambda_{\max}})^2}{2}
+        \right\},
+    \]
+    then
+    \[
+        \|a-a_\star\|_\star^2
+        \leq
+        A_0 W_2^2(\rho_a,\rho_{a_\star}), \qquad
+        \|a-a_\star\|_{\star,\Delta t}^2
+        \leq
+        A_{\Delta t} W_2^2(\rho_a,\rho_{a_\star}).
+    \]
+
+    Since $\mathcal E$ is $\alpha$-strongly convex along Wasserstein geodesics and $a_\star$ is the minimizer over the Gaussian family, we have
+    \[
+        \mathcal E(a)-\mathcal E(a_\star)
+        \geq
+        \frac{\alpha}{2}
+        W_2^2(\rho_a,\rho_{a_\star}).
+    \]
+    Therefore,
+    \[
+        \|a-a_\star\|_\star^2
+        \leq
+        \frac{2A_0}{\alpha}
+        \left(
+            \mathcal E(a)-\mathcal E(a_\star)
+        \right),
+    \]
+    and
+    \[
+        \|a-a_\star\|_{\star,\Delta t}^2
+        \leq
+        \frac{2A_{\Delta t}}{\alpha}
+        \left(
+            \mathcal E(a)-\mathcal E(a_\star)
+        \right).
+    \]
+
+    We now define the local radii from the local convergence theorems. For the continuous-time flow, let
+    \[
+        r_\mathrm{c}
+        :=
+        \min \left\{
+            \frac{1}{2\sqrt{2}},
+            \frac{1}{135\beta N_\theta^{5/2}(4+\Gamma)}
+        \right\}.
+    \]
+    For the Riemannian discretization, let
+    \[
+        r_\mathrm{R}
+        :=
+        \min \left\{
+            \frac{1}{2\sqrt{2}},
+            \frac{1}{(4+\Gamma)\cdot 148\beta^2N_\theta^{5/2}}
+        \right\}.
+    \]
+    For the KL discretization, let
+    \[
+        r_\mathrm{KL}
+        :=
+        \min \left\{
+            \frac{1}{2\sqrt{2}},
+            \frac{1}{(4+2\Delta t+\Gamma)\cdot 216\beta^2N_\theta^{5/2}}
+        \right\}.
+    \]
+    We define the corresponding local energy thresholds as
+    \[
+        \Delta_\mathrm{c}
+        :=
+        \frac{\alpha r_\mathrm{c}^2}{2A_0},
+        \qquad
+        \Delta_\mathrm{R}
+        :=
+        \frac{\alpha r_\mathrm{R}^2}{2A_0},
+        \qquad
+        \Delta_\mathrm{KL}
+        :=
+        \frac{\alpha r_\mathrm{KL}^2}{2A_{\Delta t}},
+    \]
+    hence,
+    \begin{align*}
+        \mathcal E(a)-\mathcal E(a_\star)
+        \leq
+        \Delta_\mathrm{c}
+        &\Longrightarrow
+        \|a-a_\star\|_\star
+        \leq
+        r_\mathrm{c}, \\
+        \mathcal E(a)-\mathcal E(a_\star)
+        \leq
+        \Delta_\mathrm{R}
+        &\Longrightarrow
+        \|a-a_\star\|_\star
+        \leq
+        r_\mathrm{R}, \\
+        \mathcal E(a)-\mathcal E(a_\star)
+        \leq
+        \Delta_\mathrm{KL}
+        &\Longrightarrow
+        \|a-a_\star\|_{\star,\Delta t}
+        \leq
+        r_\mathrm{KL}.
+    \end{align*}
+
+    We first prove the continuous-time statement. By Theorem \ref{thm:glob-conv},
+    \[
+        \mathcal E(a_t)-\mathcal E(a_\star)
+        \leq
+        e^{-2\alpha\lambda_{\min}t}
+        \Delta_0.
+    \]
+    Therefore, after the warm-up time
+    \[
+        T_\mathrm{warm}^\mathrm{c}
+        :=
+        \frac{1}{2\alpha\lambda_{\min}}
+        \log_+
+        \frac{\Delta_0}{\Delta_\mathrm{c}},
+    \]
+    we have
+    \[
+        \mathcal E(a_{T_\mathrm{warm}^\mathrm{c}})
+        -
+        \mathcal E(a_\star)
+        \leq
+        \Delta_\mathrm{c},
+    \]
+    hence
+    \[
+        \|a_{T_\mathrm{warm}^\mathrm{c}}-a_\star\|_\star
+        \leq
+        r_\mathrm{c}.
+    \]
+    Applying Theorem \ref{thm:loc-conv} from time $T_\mathrm{warm}^\mathrm{c}$ onward gives
+    \[
+        \|a_t-a_\star\|_\star^2
+        \leq
+        \exp\left(
+            -\frac{t-T_\mathrm{warm}^\mathrm{c}}{4+\Gamma}
+        \right)
+        r_\mathrm{c}^2.
+    \]
+    Thus, for sufficiently small $\epsilon>0$, it is enough to take
+    \[
+        t
+        \geq
+        T_\mathrm{warm}^\mathrm{c}
+        +
+        (4+\Gamma)\log\frac{r_\mathrm{c}^2}{\epsilon}.
+    \]
+    Since $r_\mathrm{c}$ is independent of $\epsilon$, this gives
+    \[
+        T_\mathrm{c}(\epsilon)
+        =
+        \mathcal O\left(
+            \frac{1}{\alpha\lambda_{\min}}
+            \log_+
+            \frac{\Delta_0}{\Delta_\mathrm{c}}
+            +
+            (4+\Gamma)\log\frac{1}{\epsilon}
+        \right).
+    \]
+
+    We next prove the Riemannian discretization statement. By Theorem \ref{thm:conv-Riem},
+    \[
+        \mathcal E(a_N)-\mathcal E(a_\star)
+        \leq
+        (1-\gamma_\mathrm{R})^N
+        \Delta_0,
+    \]
+    where
+    \[
+        \gamma_\mathrm{R}
+        :=
+        \alpha\lambda_{\min}\Delta t
+        (2-\beta\lambda_{\max}\Delta t).
+    \]
+    Since the stepsize satisfies $\Delta t\leq 1/(\beta\lambda_{\max})$, we have
+    \[
+        2-\beta\lambda_{\max}\Delta t \geq 1,
+    \]
+    and hence
+    \[
+        \gamma_\mathrm{R}
+        \geq
+        \alpha\lambda_{\min}\Delta t.
+    \]
+    Define the warm-up iteration number
+    \[
+        N_\mathrm{warm}^\mathrm{R}
+        :=
+        \left\lceil
+            \frac{
+                \log_+(\Delta_0/\Delta_\mathrm{R})
+            }{
+                -\log(1-\gamma_\mathrm{R})
+            }
+        \right\rceil,
+    \]
+    then
+    \[
+        \mathcal E(a_{N_\mathrm{warm}^\mathrm{R}})
+        -
+        \mathcal E(a_\star)
+        \leq
+        \Delta_\mathrm{R},
+    \]
+    and therefore
+    \[
+        \|a_{N_\mathrm{warm}^\mathrm{R}}-a_\star\|_\star
+        \leq
+        r_\mathrm{R}.
+    \]
+    Since $-\log(1-\gamma_\mathrm{R})\geq \gamma_\mathrm{R}$, the warm-up complexity satisfies
+    \[
+        N_\mathrm{warm}^\mathrm{R}
+        =
+        \mathcal O\left(
+            \frac{1}{\alpha\lambda_{\min}\Delta t}
+            \log_+
+            \frac{\Delta_0}{\Delta_\mathrm{R}}
+        \right).
+    \]
+
+    Applying the local convergence theorem for \eqref{upd:Riem} from $N_\mathrm{warm}^\mathrm{R}$ onward gives
+    \[
+        \|a_{N_\mathrm{warm}^\mathrm{R}+n}-a_\star\|_\star
+        \leq
+        \left(
+            1-\frac{\Delta t}{2(4+\Gamma)}
+        \right)^n
+        r_\mathrm{R}.
+    \]
+    Therefore, to guarantee
+    \[
+        \|a_{N_\mathrm{warm}^\mathrm{R}+n}-a_\star\|_\star^2
+        \leq
+        \epsilon,
+    \]
+    it is enough to take
+    \[
+        n
+        \geq
+        \frac{
+            \log(r_\mathrm{R}^2/\epsilon)
+        }{
+            -2\log\left(
+                1-\frac{\Delta t}{2(4+\Gamma)}
+            \right)
+        }.
+    \]
+    Since
+    \[
+        -\log(1-x)\geq x,
+        \qquad 0<x<1,
+    \]
+    then the local iteration complexity is
+    \[
+        N_\mathrm{loc}^\mathrm{R}(\epsilon)
+        =
+        \mathcal O\left(
+            \frac{4+\Gamma}{\Delta t}
+            \log\frac{1}{\epsilon}
+        \right).
+    \]
+    Combining the warm-up and local phases gives
+    \[
+        T_\mathrm{R}(\epsilon)
+        =
+        \mathcal O\left(
+            \frac{1}{\alpha\lambda_{\min}\Delta t}
+            \log_+
+            \frac{\Delta_0}{\Delta_\mathrm{R}}
+            +
+            \frac{4+\Gamma}{\Delta t}
+            \log\frac{1}{\epsilon}
+        \right).
+    \]
+
+    Finally, we prove the KL discretization statement. By Theorem \ref{thm:conv-KL},
+    \[
+        \mathcal E(a_N)-\mathcal E(a_\star)
+        \leq
+        (1-\gamma_\mathrm{KL})^N
+        \Delta_0,
+    \]
+    where
+    \[
+        \gamma_\mathrm{KL}
+        :=
+        \frac{
+            \alpha\lambda_{\min}\Delta t
+        }{
+            2(1+\Delta t)(1+\Delta t\beta\lambda_{\max})
+        }.
+    \]
+    Define the warm-up iteration number
+    \[
+        N_\mathrm{warm}^\mathrm{KL}
+        :=
+        \left\lceil
+            \frac{
+                \log_+(\Delta_0/\Delta_\mathrm{KL})
+            }{
+                -\log(1-\gamma_\mathrm{KL})
+            }
+        \right\rceil,
+    \]
+    then
+    \[
+        \mathcal E(a_{N_\mathrm{warm}^\mathrm{KL}})
+        -
+        \mathcal E(a_\star)
+        \leq
+        \Delta_\mathrm{KL},
+    \]
+    and therefore
+    \[
+        \|a_{N_\mathrm{warm}^\mathrm{KL}}-a_\star\|_{\star,\Delta t}
+        \leq
+        r_\mathrm{KL}.
+    \]
+    Since $-\log(1-\gamma_\mathrm{KL})\geq \gamma_\mathrm{KL}$, the warm-up complexity satisfies
+    \[
+        N_\mathrm{warm}^\mathrm{KL}
+        =
+        \mathcal O\left(
+            \frac{(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+            {\alpha\lambda_{\min}\Delta t}
+            \log_+
+            \frac{\Delta_0}{\Delta_\mathrm{KL}}
+        \right).
+    \]
+
+    Applying the local convergence theorem for \eqref{upd:KL} from $N_\mathrm{warm}^\mathrm{KL}$ onward gives
+    \[
+        \|a_{N_\mathrm{warm}^\mathrm{KL}+n}-a_\star\|_{\star,\Delta t}
+        \leq
+        \left(
+            1-\frac{\Delta t}{2(4+2\Delta t+\Gamma)}
+        \right)^n
+        r_\mathrm{KL},
+    \]
+    therefore, to guarantee
+    \[
+        \|a_{N_\mathrm{warm}^\mathrm{KL}+n}-a_\star\|_{\star,\Delta t}^2
+        \leq
+        \epsilon,
+    \]
+    it is enough to take
+    \[
+        n
+        \geq
+        \frac{
+            \log(r_\mathrm{KL}^2/\epsilon)
+        }{
+            -2\log\left(
+                1-\frac{\Delta t}{2(4+2\Delta t+\Gamma)}
+            \right)
+        }.
+    \]
+    Hence the local iteration complexity is
+    \[
+        N_\mathrm{loc}^\mathrm{KL}(\epsilon)
+        =
+        \mathcal O\left(
+            \frac{4+2\Delta t+\Gamma}{\Delta t}
+            \log\frac{1}{\epsilon}
+        \right).
+    \]
+    Combining the warm-up and local phases gives
+    \[
+        T_\mathrm{KL}(\epsilon)
+        =
+        \mathcal O\left(
+            \frac{(1+\Delta t)(1+\Delta t\beta\lambda_{\max})}
+            {\alpha\lambda_{\min}\Delta t}
+            \log_+
+            \frac{\Delta_0}{\Delta_\mathrm{KL}}
+            +
+            \frac{4+2\Delta t+\Gamma}{\Delta t}
+            \log\frac{1}{\epsilon}
+        \right).
+    \]
+\end{proof}
+
+\subsection{Local convergence rate of stochastic algorithms}
+
+We consider the local convergence rate of stochastic implementations as the gradient $\E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)]$ and the Hessian $\E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)]$ are untractable. We apply ``sticking the landing'' \cite{roeder2017sticking} for variance reduction, where the Riemannian scheme reads \eqref{upd:Riem-STL} and the KL scheme reads \eqref{upd:KL-STL}. We first prove the STL variance at equilibrium under the assumption that the whitened Hessian is Lipschitz.
+
+\begin{assumption}\label{assump:Hess-smooth}
+    The whitened Hessian of $V$ is $L_H$-Lipschitz on the local region with 
+    \begin{equation*}
+        \| \nabla^2 V(x) - \nabla^2 V(y) \|_\mathrm{op} \leq L_H \|x - y\|.
+    \end{equation*}
+\end{assumption}
+
+\begin{lemma}\label{lem:STL-noise-bound}
+    Under Assumption \ref{assump:Hess-smooth}, at $a_\star = \N(0, I)$, the noise is bounded by
+    \begin{equation*}
+        \E \|\xi_\star\|_\star^2 \le \frac{3}{2} N_\theta^2 L_H^2, \qquad \xi_\star = (\hat b_\star, \widehat K_\star) = (\nabla \log \rho_\post (Z) + Z, \nabla^2 \log \rho_\post (Z) + I), \quad Z\sim \N(0, I).
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    We define the variation in Hessian at optimality as
+    \begin{equation*}
+        \Phi_\star := \E \| \nabla^2 V(Z) - I \|_F^2, \qquad Z \sim \N (0, I),
+    \end{equation*}
+    hence,
+    \begin{align*}
+        \E \|\xi_\star\|_\star^2 &= \E \| \hat b_\star \|^2 + \frac{1}{2} \E \| \widehat K_\star \|_F^2 \\
+        &= \E \| \nabla \log \rho_\post (Z) + Z\|^2 + \frac{1}{2} \E \| \nabla^2 \log \rho_\post (Z) + I \|_F^2\\
+        &\leq \frac{3}{2} \E \| \nabla^2 \log \rho_\post (Z) + I \|_F^2 = \frac{3}{2} \Phi_\star,
+    \end{align*}
+    where the inequality comes from Gaussian Poincare inequality.
+
+    We proceed to bound $\Phi_\star$, where we apply Gaussian Poincare inequality on $\nabla^2 V$:
+    \begin{align*}
+        \Phi_\star &= \E \| \nabla^2 V(Z) - I \|_F^2 = \sum_{i, j} \mathrm{Var} (\nabla^2 V(Z)_{ij}) \\
+        &\leq \sum_{i, j, k} \E[ (\partial_{ijk} V(Z))^2] = \E \| \nabla^3 V(Z) \|_F^2 \\
+        &\leq N_\theta^2 L_H^2,
+    \end{align*}
+    which proves the lemma.
+\end{proof}
+
+We proceed to show the STL variance on the local region.
+
+\begin{lemma}\label{lem:STL-loc-var}
+    For $X \sim \N (m, C)$ on the local covariance spectral set $\frac{1}{2} I \preceq C \preceq \frac{3}{2} I$, we define the STL noises as
+    \begin{align*}
+        \epsilon_b (a; X) &:= (\nabla \log \rho_\post (X) + C^{-1} (X - m)) - \E_{\theta \sim \rho_a} [\nabla \log \rho_\post (\theta) + C^{-1} (\theta - m)], \\
+        \epsilon_K (a; X) &:= (\nabla^2 \log \rho_\post (X) + C^{-1}) - \E_{\theta \sim \rho_a} [\nabla^2 \log \rho_\post (\theta) + C^{-1}],
+    \end{align*}
+    then we have
+    \begin{align*}
+        \E \| \epsilon_b (a; X) \|^2 + \frac{1}{2} \E \| \epsilon_K (a; X) \|_F^2 \leq \frac{21}{4} N_\theta^2 L_H^2 + (48 + 12 N_\theta L_H^2) \|a - a_\star \|_\star^2.
+    \end{align*}
+\end{lemma}
+
+\begin{proof}
+    For the covariance part, we apply Gaussian Poincare inequality to obtain
+    \begin{align*}
+        \E \| \epsilon_K (a; X) \|_F^2 &= \E \| \nabla^2 V (X) - \E [\nabla^2 V(X)] \|_F^2 = \operatorname{Var}_F (\nabla^2 V(X)) \\
+        &\leq \|C\|_\mathrm{op} \E \| \nabla^3 V(X) \|_F^2 \leq \frac{3}{2} N_\theta^2 L_H^2.
+    \end{align*}
+    For the mean part, we re-formulate and apply Gaussian Poincare inequality to get
+    \begin{align*}
+        \E \| \epsilon_b (a; X) \|^2 &= \E \| (\nabla V(X) - C^{-1} (X - m)) - \E [\nabla V(X) - C^{-1} (X - m)] \|^2 \\
+        &\leq \|C\|_\mathrm{op} \E \| \nabla^2 V(X) - C^{-1} \|_F^2 \\
+        &\leq \|C\|_\mathrm{op} (2 \operatorname{Var}_F (\nabla^2 V(X)) +2 \| C^{-1} - \E [\nabla^2 V(X)] \|_F^2) \\
+        &\leq 3 \operatorname{Var}_F (\nabla^2 V(X)) + 3 \| C^{-1} - \E [\nabla^2 V(X)] \|_F^2.
+    \end{align*}
+
+    We proceed to bound $\| C^{-1} - \E [\nabla^2 V(X)] \|_F^2$, which can be decomposed into 
+    \begin{equation*}
+        \| C^{-1} - \E [\nabla^2 V(X)] \|_F^2 = \| (C^{-1} - I) - (\E [\nabla^2 V(X)] - I) \|_F^2 \leq 2 \| C^{-1} - I \|_F^2 + 2 \| \E[\nabla^2 V(X)] - I \|_F^2.
+    \end{equation*}
+    For the first term, since $\| C - I\|_\mathrm{op} \leq \frac{1}{2}$, then $\|C^{-1} - I \|_F \leq 2 \|C - I \|_F$. For the second term, we write $X = m + C^{1/2} Z$ with $Z \sim \N (0, I)$, by Jensen's inequality and Assumption \ref{assump:Hess-smooth}, we obtain
+    \begin{align*}
+        \| \E[\nabla^2 V(X)] - I \|_F^2 &= \| \E[\nabla^2 V(m + C^{1/2} Z) - \nabla^2 V(Z)] \|_F^2 \\
+        &\leq \E \| \nabla^2 V(m + C^{1/2} Z) - \nabla^2 V(Z) \|_F^2 \\
+        &\leq N_\theta L_H^2 \E \| m + (C^{1/2} - I) Z \|_F^2 \\
+        &\leq N_\theta L_H^2 (\|m\|^2 + \|C - I\|_F^2).
+    \end{align*}
+
+    Collectively, we obtain
+    \begin{align*}
+        \E \| \epsilon_b (a; X) \|^2 + \frac{1}{2} \E \| \epsilon_K (a; X) \|_F^2 &\leq 3 \operatorname{Var}_F (\nabla^2 V(X)) + 3 \| C^{-1} - \E [\nabla^2 V(X)] \|_F^2 + \frac{1}{2} \operatorname{Var}_F (\nabla^2 V(X)) \\
+        &\leq \frac{7}{2} \cdot \frac{3}{2} N_\theta^2 L_H^2 + 3 (16 + 4 N_\theta L_H^2) \left( \|m\|^2 + \frac{1}{2} \| C - I\|_F^2 \right) \\
+        &= \frac{21}{4} N_\theta^2 L_H^2 + (48 + 12 N_\theta L_H^2) \| a - a_\star \|_\star^2.
+    \end{align*}
+\end{proof}
+
+We proceed to bound the one-step perturbations for both \eqref{upd:Riem-STL} and \eqref{upd:KL-STL}. For notational simplicity, we define
+\begin{equation*}
+    b(a) := \E_{\rho_a}[\nabla_\theta \log \rho_\post(\theta)], \qquad 
+    K(a) := \E_{\rho_a}[\nabla_\theta\nabla_\theta \log \rho_\post(\theta)],
+\end{equation*}
+and the precision residual
+\begin{equation*}
+    R(a) := C^{-1} + K(a) = C^{-1} - \E_{\rho_a}[\nabla^2 V(\theta)].
+\end{equation*}
+Then the deterministic Riemannian and KL maps can be written as
+\begin{align*}
+    \mathcal{T}_{\Delta t}^{\mathrm R}(a)
+    &=
+    \left(
+        m+\Delta t C b(a),
+        \,
+        C^{1/2}
+        \exp\left(
+            \Delta t C^{1/2}R(a)C^{1/2}
+        \right)
+        C^{1/2}
+    \right), \\
+    \mathcal{T}_{\Delta t}^{\mathrm{KL}}(a)
+    &=
+    \left(
+        m+\Delta t C b(a),
+        \,
+        (1+\Delta t)
+        \left(
+            (1+\Delta t)C^{-1}-\Delta t R(a)
+        \right)^{-1}
+    \right).
+\end{align*}
+The stochastic maps $\widehat{\mathcal{T}}_{\Delta t}^{\mathrm R}$ and $\widehat{\mathcal{T}}_{\Delta t}^{\mathrm{KL}}$ are obtained by replacing $b(a)$ and $R(a)$ with $\hat b$ and $\widehat K$ in \eqref{upd:Riem-STL} and \eqref{upd:KL-STL}. In particular,
+\begin{equation*}
+    \hat b = b(a)+\epsilon_b(a;X), \qquad 
+    \widehat K = R(a)+\epsilon_K(a;X).
+\end{equation*}
+
+\begin{lemma}\label{lem:STL-one-step}
+    Under Assumptions \ref{assump:logconcave-smooth} and \ref{assump:Hess-smooth}, we assume that $\frac{1}{2}I \preceq C \preceq \frac{3}{2}I$ and $\Delta t \leq 1$.
+    For the Riemannian scheme \eqref{upd:Riem-STL}, assume additionally $\| \mathcal{T}_{\Delta t}^{\mathrm R}(a)-a_\star\|_\star \leq 1$, then
+    \begin{align*}
+        \E\left[
+            \left\|
+                \widehat{\mathcal{T}}_{\Delta t}^{\mathrm R}(a)-a_\star
+            \right\|_\star^2
+            \,\middle|\,a
+        \right] \leq
+        \left\|
+            \mathcal{T}_{\Delta t}^{\mathrm R}(a)-a_\star
+        \right\|_\star^2
+        +
+        64\Delta t^2
+        \left(
+            \frac{21}{4}N_\theta^2L_H^2
+            +
+            (48+12N_\theta L_H^2)\|a-a_\star\|_\star^2
+        \right).
+    \end{align*}
+    For the KL scheme \eqref{upd:KL-STL}, assume additionally
+        $\| \mathcal{T}_{\Delta t}^{\mathrm{KL}}(a)-a_\star\|_{\star,\Delta t} \leq 1$, then
+    \begin{align*}
+        \E\left[
+            \left\|
+                \widehat{\mathcal{T}}_{\Delta t}^{\mathrm{KL}}(a)-a_\star
+            \right\|_{\star,\Delta t}^2
+            \,\middle|\,a
+        \right] \leq
+        \left\|
+            \mathcal{T}_{\Delta t}^{\mathrm{KL}}(a)-a_\star
+        \right\|_{\star,\Delta t}^2
+        +
+        68\Delta t^2
+        \left(
+            \frac{21}{4}N_\theta^2L_H^2
+            +
+            (48+12N_\theta L_H^2)\|a-a_\star\|_{\star,\Delta t}^2
+        \right).
+    \end{align*}
+\end{lemma}
+
+\begin{proof}
+    We first prove the statement for the Riemannian scheme. Denote
+        $a_+ := \mathcal{T}_{\Delta t}^{\mathrm R}(a)$,  
+        $\widehat a_+ := \widehat{\mathcal{T}}_{\Delta t}^{\mathrm R}(a)$,
+    and write
+        $\widehat a_+ - a_+ = (\delta_m,\delta_C)$.
+
+    For the mean part, we have
+        $\delta_m = \Delta t C\epsilon_b(a;X)$.
+    Since $\|C\|_\op \leq \frac{3}{2}$, we have
+    \begin{equation}\label{eq:mean-pert-STL}
+        \E[\|\delta_m\|^2 \mid a]
+        \leq
+        \frac{9}{4}\Delta t^2 \E\|\epsilon_b(a;X)\|^2.
+    \end{equation}
+
+    For the covariance part, define
+        $B := C^{1/2}R(a)C^{1/2}$, 
+        $\hat b := C^{1/2}\widehat K C^{1/2}$,
+    then
+        $\hat b-B = C^{1/2}\epsilon_K(a;X)C^{1/2}$.
+    Since $V$ is convex, we have
+    \begin{equation*}
+        B = I - C^{1/2}\E_{\rho_a}[\nabla^2V(\theta)]C^{1/2}\preceq I,
+        \qquad
+        \hat b = I-C^{1/2}\nabla^2V(X)C^{1/2}\preceq I.
+    \end{equation*}
+    Hence, using the standard perturbation bound of the matrix exponential on the one-sided spectral set,
+    \begin{equation*}
+        \|\exp(\Delta t\hat b)-\exp(\Delta t B)\|_F
+        \leq
+        e\Delta t\|\hat b-B\|_F,
+    \end{equation*}
+    where we used $\Delta t\leq 1$. Therefore,
+    \begin{align*}
+        \|\delta_C\|_F
+        &\leq
+        \|C\|_\op
+        \|\exp(\Delta t\hat b)-\exp(\Delta t B)\|_F  \\
+        &\leq
+        \frac{3}{2}e\Delta t\|\hat b-B\|_F
+        \leq
+        \frac{9e}{4}\Delta t\|\epsilon_K(a;X)\|_F.
+    \end{align*}
+    Thus
+    \begin{equation}\label{eq:cov-pert-Riem}
+        \frac{1}{2}\E[\|\delta_C\|_F^2\mid a]
+        \leq
+        \frac{81e^2}{32}\Delta t^2
+        \E\|\epsilon_K(a;X)\|_F^2.
+    \end{equation}
+    Combining \eqref{eq:mean-pert-STL} and \eqref{eq:cov-pert-Riem} gives
+    \begin{equation}\label{eq:delta-second-Riem}
+        \E[\|\widehat a_+-a_+\|_\star^2\mid a]
+        \leq
+        \frac{81e^2}{16}\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right).
+    \end{equation}
+
+    It remains to bound the conditional bias. The mean perturbation is centered with $\E[\delta_m\mid a]=0$.
+    For the covariance part, the first order term in the expansion of the matrix exponential is linear in $\epsilon_K(a;X)$ and hence has conditional mean zero. The second order remainder satisfies
+    \begin{equation*}
+        \|\E[\delta_C\mid a]\|_F
+        \leq
+        \frac{27e}{8}\Delta t^2
+        \E\|\epsilon_K(a;X)\|_F^2.
+    \end{equation*}
+    Therefore,
+    \begin{align*}
+        \|\E[\widehat a_+-a_+\mid a]\|_\star
+        &\leq
+        \frac{1}{\sqrt{2}}\|\E[\delta_C\mid a]\|_F \leq
+        \frac{27e}{8\sqrt{2}}\Delta t^2
+        \E\|\epsilon_K(a;X)\|_F^2 \\
+        &\leq
+        \frac{27e}{4\sqrt{2}}\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right).
+    \end{align*}
+
+    Since $\|a_+-a_\star\|_\star\leq 1$, we obtain
+    \begin{align*}
+        2\left|
+            \left\langle 
+                a_+-a_\star,
+                \E[\widehat a_+-a_+\mid a]
+            \right\rangle_\star
+        \right| \leq
+        \frac{27e}{2\sqrt{2}}\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right).
+    \end{align*}
+    Hence
+    \begin{align*}
+        \E[\|\widehat a_+-a_\star\|_\star^2\mid a]
+        &\leq
+        \|a_+-a_\star\|_\star^2 +
+        \left(
+            \frac{81e^2}{16}
+            +
+            \frac{27e}{2\sqrt{2}}
+        \right)
+        \Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right) \\
+        &\leq
+        \|a_+-a_\star\|_\star^2
+        +
+        64\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right),
+    \end{align*}
+    and applying Lemma \ref{lem:STL-loc-var} proves the Riemannian part.
+
+    We next prove the KL part. Denote
+        $a_+ := \mathcal{T}_{\Delta t}^{\mathrm{KL}}(a)$, 
+        $\widehat a_+ := \widehat{\mathcal{T}}_{\Delta t}^{\mathrm{KL}}(a)$,
+    and write $\widehat a_+-a_+ = (\delta_m,\delta_C)$. The mean estimate is the same as \eqref{eq:mean-pert-STL}:
+    \begin{equation}\label{eq:mean-pert-KL}
+        \E[\|\delta_m\|^2\mid a]
+        \leq
+        \frac{9}{4}\Delta t^2\E\|\epsilon_b(a;X)\|^2.
+    \end{equation}
+
+    For the covariance part, define
+    \begin{equation*}
+        P := (1+\Delta t)C^{-1}-\Delta t R(a),
+        \qquad
+        \widehat P := (1+\Delta t)C^{-1}-\Delta t\widehat K.
+    \end{equation*}
+    Since $R(a)=C^{-1}-\E_{\rho_a}[\nabla^2V(\theta)]$, we have
+    \begin{equation*}
+        P = C^{-1}+\Delta t\E_{\rho_a}[\nabla^2V(\theta)],
+        \qquad
+        \widehat P = C^{-1}+\Delta t\nabla^2V(X).
+    \end{equation*}
+    By convexity of $V$,
+    \begin{equation*}
+        P\succeq C^{-1}, \qquad \widehat P\succeq C^{-1}.
+    \end{equation*}
+    Since $C\preceq \frac{3}{2}I$, we have $C^{-1}\succeq \frac{2}{3}I$, and therefore
+    \begin{equation*}
+        \|P^{-1}\|_\op\leq \frac{3}{2},
+        \qquad
+        \|\widehat P^{-1}\|_\op\leq \frac{3}{2}.
+    \end{equation*}
+    Using the inverse perturbation identity,
+    \begin{equation*}
+        \widehat P^{-1}-P^{-1}
+        =
+        P^{-1}(P-\widehat P)\widehat P^{-1},
+    \end{equation*}
+    together with $P-\widehat P=\Delta t\epsilon_K(a;X)$, we obtain
+    \begin{equation*}
+        \|\delta_C\|_F
+        \leq
+        (1+\Delta t)\frac{9}{4}\Delta t\|\epsilon_K(a;X)\|_F
+        \leq
+        \frac{9}{2}\Delta t\|\epsilon_K(a;X)\|_F.
+    \end{equation*}
+    Since $\frac{1+\Delta t}{2}\leq 1$, this gives
+    \begin{equation}\label{eq:cov-pert-KL}
+        \frac{1+\Delta t}{2}\E[\|\delta_C\|_F^2\mid a]
+        \leq
+        \frac{81}{4}\Delta t^2
+        \E\|\epsilon_K(a;X)\|_F^2.
+    \end{equation}
+    Combining \eqref{eq:mean-pert-KL} and \eqref{eq:cov-pert-KL},
+    \begin{equation}\label{eq:delta-second-KL}
+        \E[\|\widehat a_+-a_+\|_{\star,\Delta t}^2\mid a]
+        \leq
+        \frac{81}{2}\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right).
+    \end{equation}
+
+    We now control the conditional bias. The mean perturbation has zero conditional average. For the covariance part, the first order inverse perturbation is linear in $\epsilon_K(a;X)$ and therefore has zero conditional average. The second order remainder satisfies
+    \begin{equation*}
+        \|\E[\delta_C\mid a]\|_F
+        \leq
+        \frac{27}{4}\Delta t^2
+        \E\|\epsilon_K(a;X)\|_F^2.
+    \end{equation*}
+    Hence
+    \begin{align*}
+        \|\E[\widehat a_+-a_+\mid a]\|_{\star,\Delta t}
+        &\leq
+        \frac{27}{4}\Delta t^2
+        \E\|\epsilon_K(a;X)\|_F^2 \\
+        &\leq
+        \frac{27}{2}\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right).
+    \end{align*}
+    Since $\|a_+-a_\star\|_{\star,\Delta t}\leq 1$, we have
+    \begin{align*}
+        2\left|
+            \left\langle 
+                a_+-a_\star,
+                \E[\widehat a_+-a_+\mid a]
+            \right\rangle_{\star,\Delta t}
+        \right| \leq
+        27\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right).
+    \end{align*}
+    Therefore,
+    \begin{align*}
+        \E[\|\widehat a_+-a_\star\|_{\star,\Delta t}^2\mid a]
+        &\leq
+        \|a_+-a_\star\|_{\star,\Delta t}^2 +
+        \frac{135}{2}\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right) \\
+        &\leq
+        \|a_+-a_\star\|_{\star,\Delta t}^2
+        +
+        68\Delta t^2
+        \left(
+            \E\|\epsilon_b(a;X)\|^2
+            +
+            \frac{1}{2}\E\|\epsilon_K(a;X)\|_F^2
+        \right).
+    \end{align*}
+    Finally, since $\|a-a_\star\|_\star \leq \|a-a_\star\|_{\star,\Delta t}$, Lemma \ref{lem:STL-loc-var} proves the KL part.
+\end{proof}
+
+We now prove the local convergence guarantee of the stochastic Riemannian STL algorithm.
+
+\begin{theorem}\label{thm:loc-stoch-Riem-STL}
+    Under Assumptions \ref{assump:logconcave-smooth} and \ref{assump:Hess-smooth}, let
+    \begin{equation*}
+        \Gamma
+        =
+        \min\left\{
+            \beta-1,\,
+            N_\theta\left(3+\frac{4}{\sqrt{\pi}}(1+\log\kappa)\right)
+        \right\},
+    \end{equation*}
+    and let $\delta_{\mathrm R}(\Delta t)$ be the deterministic local radius in the local convergence theorem for \eqref{upd:Riem}. Assume that the stochastic iterates generated by \eqref{upd:Riem-STL} remain in the local set
+    \begin{equation*}
+        \mathcal{U}_{\mathrm R}
+        :=
+        \left\{
+            a=(m,C):
+            \|a-a_\star\|_\star\leq \delta_{\mathrm R}(\Delta t)
+        \right\}.
+    \end{equation*}
+    If the stepsize satisfies
+    \begin{equation*}
+        0<\Delta t
+        \leq
+        \frac{1}{
+            256(4+\Gamma)(48+12N_\theta L_H^2)
+        },
+    \end{equation*}
+    then the single-sample stochastic Riemannian STL scheme \eqref{upd:Riem-STL} satisfies
+    \begin{align*}
+        \E\|a_N-a_\star\|_\star^2
+        &\leq
+        \left(
+            1-\frac{\Delta t}{2(4+\Gamma)}
+        \right)^N
+        \|a_0-a_\star\|_\star^2 +
+        672\Delta t(4+\Gamma)N_\theta^2L_H^2.
+    \end{align*}
+    In particular,
+    \begin{equation*}
+        \limsup_{N\to\infty}
+        \E\|a_N-a_\star\|_\star^2
+        \leq
+        672\Delta t(4+\Gamma)N_\theta^2L_H^2.
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We denote $r_n^2 := \|a_n-a_\star\|_\star^2$,
+    since $a_n\in \mathcal{U}_{\mathrm R}$, the deterministic local theorem for \eqref{upd:Riem} gives
+    \begin{equation*}
+        \|\mathcal{T}_{\Delta t}^{\mathrm R}(a_n)-a_\star\|_\star
+        \leq
+        \left(
+            1-\frac{\Delta t}{2(4+\Gamma)}
+        \right)
+        \|a_n-a_\star\|_\star.
+    \end{equation*}
+    We set $\mu_{\mathrm R}:=\frac{1}{2(4+\Gamma)}$,
+    then, by Lemma \ref{lem:STL-one-step},
+    \begin{align*}
+        \E[r_{n+1}^2\mid \mathcal{F}_n]
+        &\leq
+        (1-\mu_{\mathrm R}\Delta t)^2 r_n^2 +
+        64\Delta t^2
+        \left(
+            \frac{21}{4}N_\theta^2L_H^2
+            +
+            (48+12N_\theta L_H^2)r_n^2
+        \right).
+    \end{align*}
+    Since $\mu_{\mathrm R}\leq \frac{1}{8}$ and $\Delta t\leq 1$, we have
+    \begin{equation*}
+        (1-\mu_{\mathrm R}\Delta t)^2
+        \leq
+        1-\frac{3}{2}\mu_{\mathrm R}\Delta t.
+    \end{equation*}
+    Moreover, the stepsize condition gives
+    \begin{equation*}
+        64\Delta t^2(48+12N_\theta L_H^2)
+        \leq
+        \frac{1}{2}\mu_{\mathrm R}\Delta t.
+    \end{equation*}
+    Hence
+    \begin{equation*}
+        \E[r_{n+1}^2\mid \mathcal{F}_n]
+        \leq
+        (1-\mu_{\mathrm R}\Delta t)r_n^2
+        +
+        336\Delta t^2N_\theta^2L_H^2.
+    \end{equation*}
+    Taking total expectation and iterating over $n$ gives
+    \begin{align*}
+        \E r_N^2
+        &\leq
+        (1-\mu_{\mathrm R}\Delta t)^N r_0^2
+        +
+        336\Delta t^2N_\theta^2L_H^2
+        \sum_{k=0}^{N-1}
+        (1-\mu_{\mathrm R}\Delta t)^k \\
+        &\leq
+        (1-\mu_{\mathrm R}\Delta t)^N r_0^2
+        +
+        \frac{336\Delta t^2N_\theta^2L_H^2}{\mu_{\mathrm R}\Delta t}.
+    \end{align*}
+    Since $\mu_{\mathrm R}^{-1}=2(4+\Gamma)$, we obtain
+    \begin{equation*}
+        \E r_N^2
+        \leq
+        \left(
+            1-\frac{\Delta t}{2(4+\Gamma)}
+        \right)^N
+        r_0^2
+        +
+        672\Delta t(4+\Gamma)N_\theta^2L_H^2,
+    \end{equation*}
+    which completes the proof.
+\end{proof}
+
+We finally prove the local convergence guarantee of the stochastic KL STL algorithm.
+
+\begin{theorem}\label{thm:loc-stoch-KL-STL}
+    Under Assumptions \ref{assump:logconcave-smooth} and \ref{assump:Hess-smooth}, let
+    \begin{equation*}
+        \Gamma
+        =
+        \min\left\{
+            \beta-1,\,
+            N_\theta\left(3+\frac{4}{\sqrt{\pi}}(1+\log\kappa)\right)
+        \right\},
+    \end{equation*}
+    and let $\delta_{\mathrm{KL}}(\Delta t)$ be the deterministic local radius in the local convergence theorem for \eqref{upd:KL}. Assume that the stochastic iterates generated by \eqref{upd:KL-STL} remain in the local set
+    \begin{equation*}
+        \mathcal{U}_{\mathrm{KL}}
+        :=
+        \left\{
+            a=(m,C):
+            \|a-a_\star\|_{\star,\Delta t}\leq \delta_{\mathrm{KL}}(\Delta t)
+        \right\}.
+    \end{equation*}
+    If the stepsize satisfies
+    \begin{equation*}
+        0<\Delta t
+        \leq
+        \frac{1}{
+            272(6+\Gamma)(48+12N_\theta L_H^2)
+        },
+    \end{equation*}
+    then the single-sample stochastic KL STL scheme \eqref{upd:KL-STL} satisfies
+    \begin{align*}
+        \E\|a_N-a_\star\|_{\star,\Delta t}^2
+        &\leq
+        \left(
+            1-\frac{\Delta t}{2(4+2\Delta t+\Gamma)}
+        \right)^N
+        \|a_0-a_\star\|_{\star,\Delta t}^2 +
+        714\Delta t(4+2\Delta t+\Gamma)N_\theta^2L_H^2.
+    \end{align*}
+    In particular,
+    \begin{equation*}
+        \limsup_{N\to\infty}
+        \E\|a_N-a_\star\|_{\star,\Delta t}^2
+        \leq
+        714\Delta t(4+2\Delta t+\Gamma)N_\theta^2L_H^2.
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We denote $r_n^2 := \|a_n-a_\star\|_{\star,\Delta t}^2$,
+    since $a_n\in \mathcal{U}_{\mathrm{KL}}$, the deterministic local theorem for \eqref{upd:KL} gives
+    \begin{equation*}
+        \|\mathcal{T}_{\Delta t}^{\mathrm{KL}}(a_n)-a_\star\|_{\star,\Delta t}
+        \leq
+        \left(
+            1-\frac{\Delta t}{2(4+2\Delta t+\Gamma)}
+        \right)
+        \|a_n-a_\star\|_{\star,\Delta t}.
+    \end{equation*}
+    We set
+    \begin{equation*}
+        \mu_{\mathrm{KL}}
+        :=
+        \frac{1}{2(4+2\Delta t+\Gamma)},
+    \end{equation*}
+    by Lemma \ref{lem:STL-one-step},
+    \begin{align*}
+        \E[r_{n+1}^2\mid\mathcal{F}_n]
+        &\leq
+        (1-\mu_{\mathrm{KL}}\Delta t)^2 r_n^2 +
+        68\Delta t^2
+        \left(
+            \frac{21}{4}N_\theta^2L_H^2
+            +
+            (48+12N_\theta L_H^2)r_n^2
+        \right).
+    \end{align*}
+    Since $\Delta t\leq 1$, we have $\mu_{\mathrm{KL}}\leq \frac{1}{8}$, hence
+    \begin{equation*}
+        (1-\mu_{\mathrm{KL}}\Delta t)^2
+        \leq
+        1-\frac{3}{2}\mu_{\mathrm{KL}}\Delta t.
+    \end{equation*}
+    Moreover, since $\Delta t\leq 1$, we have
+    \begin{equation*}
+        4+2\Delta t+\Gamma \leq 6+\Gamma.
+    \end{equation*}
+    Therefore the stepsize condition implies
+    \begin{equation*}
+        68\Delta t^2(48+12N_\theta L_H^2)
+        \leq
+        \frac{1}{2}\mu_{\mathrm{KL}}\Delta t.
+    \end{equation*}
+    Hence
+    \begin{equation*}
+        \E[r_{n+1}^2\mid \mathcal{F}_n]
+        \leq
+        (1-\mu_{\mathrm{KL}}\Delta t)r_n^2
+        +
+        357\Delta t^2N_\theta^2L_H^2.
+    \end{equation*}
+    Taking total expectation and iterating over $n$ gives
+    \begin{align*}
+        \E r_N^2
+        &\leq
+        (1-\mu_{\mathrm{KL}}\Delta t)^N r_0^2
+        +
+        357\Delta t^2N_\theta^2L_H^2
+        \sum_{k=0}^{N-1}
+        (1-\mu_{\mathrm{KL}}\Delta t)^k \\
+        &\leq
+        (1-\mu_{\mathrm{KL}}\Delta t)^N r_0^2
+        +
+        \frac{357\Delta t^2N_\theta^2L_H^2}{\mu_{\mathrm{KL}}\Delta t}.
+    \end{align*}
+    Since $\mu_{\mathrm{KL}}^{-1}=2(4+2\Delta t+\Gamma)$, we obtain
+    \begin{equation*}
+        \E r_N^2
+        \leq
+        \left(
+            1-\frac{\Delta t}{2(4+2\Delta t+\Gamma)}
+        \right)^N
+        r_0^2
+        +
+        714\Delta t(4+2\Delta t+\Gamma)N_\theta^2L_H^2,
+    \end{equation*}
+    which completes the proof.
+\end{proof}
+
+
+\section{General affine invariant Gaussian flows}
+
+As Fisher--Rao metric constrained on Gaussian space is affine invariant, we aim to classify all affine-invariant Riemannian metrics on Gaussian space and study the gradient flows they induce for KL divergence.
+
+\begin{theorem}[Classification of affine-invariant metrics in Gaussian space]\label{thm:affine-invariant-metrics}
+    Every affine-invariant Riemannian metric on the Gaussian manifold $\Aspace = \R^{N_\theta} \times \SPD (N_\theta)$ is of the form
+    \begin{equation*}
+        g_{a} ((u, X), (v, Y)) = u^\top C^{-1} v + \omega \Tr(C^{-1} X C^{-1} Y) + \tau \Tr(C^{-1} X ) \Tr(C^{-1} Y), \qquad \omega > 0,\quad \tau > - \frac{\omega}{N_\theta},
+    \end{equation*}
+    with $a = (m, C) \in \Aspace$ and $(u, X), (v, Y) \in T_a \Aspace$.
+\end{theorem}
+
+\begin{proof}
+    Let $\varphi(\theta) = A\theta + b$ be an invertible affine transformation, we denote the map induced by $\varphi$ as $\Phi_{(A, b)} : \mathcal{A} \to \mathcal{A}$ such that $\Phi_{(A, b)} (m, C) = (Am + b, ACA^\top)$, so that the differential of the map is given by $D\Phi(m, C): T_a \mathcal{A} \to T_a \mathcal{A}$ with
+    \begin{equation*}
+        D\Phi (m, C) [(u, X)] = \lim_{\epsilon \to 0} \frac{\Phi(m + \epsilon u, C + \epsilon X) - \Phi(m, C)}{\epsilon} = (Au, AXA^\top),
+    \end{equation*}
+    hence affine invariance requires that, for any affine transformation $\varphi$, the metric $g_a: T_a \mathcal{A} \times T_a \mathcal{A} \to \mathbb{R}$ should satisfy
+    \begin{equation*}
+        g_{(m, C)} ((u, X), (v, Y)) = g_{\Phi(m, C)}(D\Phi(m, C)[(u, X)], D\Phi(m, C)[(v, Y)]) = g_{\Phi(m, C)} ((Au, AXA^\top), (Av, AYA^\top)).
+    \end{equation*}
+    
+    We first state the established result on the classification of all affine invariant Riemannian metrics on $\SPD (N_\theta)$ \cite{thanwerdas2019affine, thanwerdas2023n}. For any $C \in \SPD (N_\theta)$, the family of affine invariant metrics $g_C : T_C \, \SPD (N_\theta) \times T_C \, \SPD (N_\theta) \to \R$ is characterized by, for any $X, Y \in \SPD (N_\theta)$, 
+    \begin{equation*}
+        g_C (X, Y) = \omega \Tr (C^{-1} X C^{-1} Y) + \tau \Tr (C^{-1} X C^{-1} Y), \qquad \tau > -\frac{\omega}{N_\theta}.
+    \end{equation*}
+
+    We then show that there are no cross terms between $u$ and $Y$ in the affine invariant metrics on Gaussian manifold. We define $L(u, Y) := g_\mathcal{A}((u, 0), (0, Y))$, for any orthogonal $Q \in O(N_\theta)$, affine invariance requires $L(u, Y) = L(Qu, QYQ^\top)$. We then take $Y = I$, hence $L(u, I) = L(Qu, I)$. Since $Q$ is arbitrary, it forces that $L(u, I) = 0$ for any $u \in \mathbb{R}^{N_\theta}$, which requires no mean-covariance coupling in affine invariant metrics for Gaussian gradient flow.
+
+    We proceed to look into the mean part, and first consider the special case on $(0, I)$. Affine invariance requires that for any orthogonal $Q \in O(N_\theta)$, $g_{(0, I)} ((Qu, 0), (Qv, 0)) = g_{(0, I)} ((u, 0), (v, 0))$. Hence, $g_{(0, I)} ((u, 0), (v, 0)) = \eta u^\top v$ for some scalar $\eta \in \mathbb{R}$. We then consider arbitrary covariance matrix $C \in \SPD(N_\theta)$, hence $\exists A \in \mathbb{R}^{N_\theta} \times \mathbb{R}^{N_\theta}$ with $C = AA^\top$. Since $\Phi_{(A, m)} (0, I) = (m, C)$, then $g_{(m, C)} ((Au, 0), (Av, 0)) = g_{(0, I)} ((u, 0), (v, 0)) = \eta u^\top v$, which gives $g_{(m, C)}((u',0),(v',0)) = \eta u'^\top C^{-1}v'$ as we write $u' = Au$ and $v' = Av$. Therefore the mean vector part is of form $\eta u^\top C^{-1}v$.
+
+    We thus obtain the expression of general affine invariant Riemannian metrics on Gaussian manifold
+    \begin{equation*}
+        g_{a} ((u, X), (v, Y)) = \eta u^\top C^{-1} v + \omega \Tr(C^{-1} X C^{-1} Y) + \tau \Tr(C^{-1} X ) \Tr(C^{-1} Y), \qquad \eta,\, \omega > 0,\quad \tau > - \frac{\omega}{N_\theta},
+    \end{equation*}
+    which completes the proof by normalize the coefficient of the first term to $1$ to remove irrelevant overall scaling.
+\end{proof}
+
+
+We consider the general affine invariant gradient flow on Gaussian space, where we choose KL divergence as the energy functional following Section 3 of \cite{chen2023sampling} and the affine invariant metrics in Theorem \ref{thm:affine-invariant-metrics} as the Riemannian metrics. Thus, we obtain the classification of affine invariant Gaussian gradient flows, which can be characterized by the following ODEs for mean and covariance respectively:
+\begin{equation}\label{ODEs:affine-invariant}
+    \begin{aligned}
+        \frac{\dd m_t}{\dd t} &= C_t \E_{\theta \sim \N(m_t, C_t)} [\nabla_\theta \log \rho_\post(\theta)], \\
+        \frac{\dd C_t}{\dd t} &= \frac{1}{2 \omega} (C_t + C_t \E_{\theta \sim \N(m_t, C_t)} [\nabla_\theta \nabla_\theta \log \rho_\post(\theta)] C_t) \\
+        &\qquad - \frac{\tau}{2\omega (\omega + \tau N_\theta)} \Tr (I + C_t \E_{\theta \sim \N(m_t, C_t)} [\nabla_\theta \nabla_\theta \log \rho_\post(\theta)]) C_t.
+    \end{aligned}
+\end{equation}
+
+When $\rho_\post \sim \N(m, C)$, without loss of generality, by affine invariance we assume $\rho_\post \sim \N(0, I_{N_\theta})$, and hence \eqref{ODEs:affine-invariant} becomes
+\begin{equation*}
+    \begin{aligned}
+        \frac{\dd m_t}{\dd t} &= -C_t m_t, \\
+        \frac{\dd C_t}{\dd t} &= \frac{1}{2\omega} (C_t - C_t^2) - \frac{\tau}{2\omega (\omega + \tau N_\theta)} \Tr (I - C_t) C_t.
+    \end{aligned}
+\end{equation*}
+In the covariance part, we write $C = I + X$, and the linearized covariance ODE reads
+\begin{equation*}
+    \frac{\dd X_t}{\dd t} = -\frac{1}{2\omega} X_t + \frac{\tau}{2\omega (\omega + \tau N_\theta)} \Tr(X_t) I + O(\|X_t\|^2).
+\end{equation*}
+If we furthermore split $X$ into diagonal and off-diagonal part, i.e., $X = X_0 + \frac{\Tr (X)}{N_\theta} I$, then
+\begin{align*}
+    \dot X_0 = -\frac{1}{2\omega} X_0 + O(\|X\|^2), \qquad \frac{\dd}{\dd t} \Tr(X_t) = -\frac{1}{2(\omega + \tau N_\theta)} \Tr(X_t) + O(\|X_t\|^2).
+\end{align*}
+
+The discretization with Riemannian distance reads
+\begin{equation}\label{upd:affine-invariant-Riem}
+    \begin{aligned}
+        m_{n+1} &= m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+        C_{n+1} &= C_n^{1/2} \exp \left(\frac{\Delta t}{2\omega} \left[C_n^{1/2}\mathbb{E}_{\rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_{\mathrm{post}} (\theta)]C_n^{1/2} + \frac{\omega - \tau\Tr(C_n\mathbb{E}_{\rho_{a_n}}[\nabla_\theta \nabla_\theta \log \rho_{\mathrm{post}} (\theta)])}{\omega+N_\theta\tau}I\right]\right)C_n^{1/2},
+    \end{aligned}
+\end{equation}
+and in the special case where $\omega = \frac{1}{2}, \tau = 0$, we recover \eqref{upd:Riem}.
+
+Based on the Gaussian natural gradient discretization with KL divergence \eqref{upd:KL}, we write down the following discretization scheme
+\begin{equation}
+    \begin{aligned}
+        m_{n+1} &= m_n + \Delta t C_n \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+        C_{n+1} &= \left[ 1 + \frac{\Delta t}{2\omega (\omega + \tau N_\theta)} (\omega - \tau \Tr(C_n \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)])) \right] \left( C_n^{-1} - \frac{\Delta t}{2\omega} \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] \right)^{-1}.
+    \end{aligned}
+\end{equation}
+This update recovers \eqref{upd:KL} when $\omega = \frac{1}{2}, \tau = 0$. As the scheme is first-order consistent with the ODE \eqref{ODEs:affine-invariant}, but it's not the exact update of a proximal algorithm.
+
+
+\section{Wasserstein--Fisher--Rao gradient flow on Gaussian manifold}\label{sec:WFR}
+
+Let $\psi_\rho = \frac{\delta \mathcal{E}}{\delta \rho} = \log \rho - \log \rho_\post$, we consider using the following transport-accelerated Fisher--Rao gradient flow:
+\begin{equation*}
+    \partial_t \rho_t = -\rho_t (\psi_{\rho_t} - \E_{\rho_t} [\psi_{\rho_t}]) + \lambda_t \nabla \cdot (\rho_t \nabla \psi_{\rho_t}),
+\end{equation*}
+where $\lambda_t \geq 0$ is adaptive, which measures the strength in optimal transport, and recovers standard Fisher--Rao gradient flow when $\lambda_t = 0$. By moment closure as in \cite{chen2023sampling}, we obtain the following Wasserstein--Fisher--Rao gradient flow constrained on Gaussian manifold, which can be viewed as transport-accelerated natural gradient:
+\begin{equation}\label{ODEs:WFR}
+    \begin{aligned}
+        \frac{\dd m_t}{\dd t} &= (C_t + \lambda_t I) \E_{\rho_{a_t}} [\nabla_\theta \log \rho_\post (\theta)], \\
+        \frac{\dd C_t}{\dd t} &= C_t + C_t \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_t \\
+        &\qquad + \lambda_t (2 I + C_t \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] + \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] C_t).
+    \end{aligned}
+\end{equation}
+
+We prove the convergence rate of \eqref{ODEs:WFR} in the following Theorem.
+
+\begin{theorem}
+    Under Assumption \ref{assump:logconcave-smooth} and assume that the spectral bounds of the initial covariance $\mu_{0, \min} I \preceq C_0 \preceq \mu_{0, \max} I$, for the Wasserstein--Fisher--Rao gradient flow on Gaussian space \eqref{ODEs:WFR} with locally integrable adaptive schedule $\lambda_t$, we have the following convergence guarantee:
+    \begin{equation*}
+        \mathcal{E} (a_t) - \mathcal{E} (a_\star) \leq \exp \left( -2\alpha t \min \left\{ \mu_{0, \min}, \frac{1}{\beta} \right\} - 2\alpha \int_0^t \lambda_s \dd s \right) (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{equation*}
+\end{theorem}
+
+\begin{proof}
+    We first prove the covariance bound along \eqref{ODEs:WFR}. Let $\mu_i (t)$ be the $i$-th eigenvalue of $C_t$ with corresponding normalized eigenvector $u_i (t)$, hence
+    \begin{align*}
+        \frac{\dd \mu_i (t)}{\dd t} &= u_i(t)^\top \frac{\dd C_t}{\dd t} u_i (t) \\
+        &= \mu_i - \mu_i^2 h_i + 2\lambda_t (1 - \mu_i h_i) \\
+        &= (\mu_i (t) + 2\lambda_t ) (1 - \mu_i(t) h_i(t))
+    \end{align*}
+    where $h_i (t) = -u_i (t)^\top \E_{\rho_{a_t}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] u_i (t) \in [\alpha, \beta]$ since Assumption \ref{assump:logconcave-smooth}. Because $\mu_i (t) \geq 0$ and $h_i(t) \geq 0$, then if $\mu_i (t) \geq \frac{1}{\alpha}$, $\frac{\dd \mu_i(t)}{\dd t} \leq 0$; if $\mu_i (t) \leq \frac{1}{\beta}$, $\frac{\dd \mu_i(t)}{\dd t} \geq 0$. This gives the covariance spectral bound $\mu_{\min} I \preceq C_t \preceq \mu_{\max} I$ with 
+    \begin{equation*}
+        \mu_{\min} := \min \left\{ \mu_{0, \min}, \frac{1}{\beta} \right\}, \qquad \mu_{\max} := \max \left\{ \mu_{0, \max}, \frac{1}{\alpha} \right\}.
+    \end{equation*}
+
+    Along the Gaussian approximate Wasserstein--Fisher--Rao gradient flow \eqref{ODEs:WFR}, we have 
+    \begin{align*}
+        \frac{\dd }{\dd t} \mathcal{E} (a_t) &= -\|\grad \mathcal{E} (a_t) \|_{a_t}^2 -\lambda_t \|\grad^{W_2} \mathcal{E} (a_t) \|_{W_2}^2 \\
+        &\leq - (\mu_{\min} + \lambda_t) \| \grad^{W_2} \mathcal{E} (a_t) \|_{W_2}^2 \\
+        &\leq -2\alpha (\mu_{\min} + \lambda_t) (\mathcal{E} (a_t) - \mathcal{E} (a_\star)),
+    \end{align*}
+    where the first inequality connects Fisher--Rao geometry to Wasserstein geometry following the technique as in the proof of Theorem \ref{thm:glob-conv}, while the second inequality follows the PL-inequality in Wasserstein geometry as $\mathcal{E}$ is $\alpha$-strongly convex along $W_2$ geodesics \cite{lambert2022variational}. We thus obtain the final convergence guarantee following Gronwall's inequality:
+    \begin{equation*}
+        \mathcal{E} (a_t) - \mathcal{E} (a_\star) \leq \exp \left( -2\alpha \mu_{\min} t - 2\alpha \int_0^t \lambda_s \dd s \right) (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{equation*}
+\end{proof}
+
+%We proceed to discretize \eqref{ODEs:WFR} using forward scheme, where we use Equation (5.20) of \cite{chen2023sampling} for the Gaussian approximate Fisher--Rao gradient flow and Algorithm 1 of \cite{lambert2022variational} for the Gaussian approximate Wasserstein gradient flow, which gives
+%\begin{equation}\label{upd:WFR-forward}
+%    \begin{aligned}
+%        m_{n+1} &= m_n + \Delta t (C_n + \lambda_n I) \E_{\rho_{a_n}} [\nabla_\theta \log \rho_\post (\theta)], \\
+%        C_{n+1} &= [I + \lambda_n \Delta t (C_n^{-1} + \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)])] \cdot [C_n^{-1} - \Delta t (C_n^{-1} + \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)] )]^{-1} \\
+%        &\qquad \cdot [I + \lambda_n \Delta t (C_n^{-1} + \E_{\rho_{a_n}} [\nabla_\theta \nabla_\theta \log \rho_\post (\theta)])].
+%    \end{aligned}
+%\end{equation}
+
+We propose a forward-backward algorithm (Algorithm \ref{alg:fb-fb-wfr-gvi}) to discretize \eqref{ODEs:WFR}, where the Wasserstein part comes from Algorithm 1 of \cite{diao2023forward} while the Fisher--Rao part comes from \eqref{upd:KL}, and prove its convergence rate in Theorem \ref{thm:conv-fb-wfr}.
+
+\begin{algorithm}[t]
+\caption{Forward--backward algorithm of Gaussian approximate Wasserstein--Fisher--Rao gradient flow}
+\label{alg:fb-fb-wfr-gvi}
+\begin{algorithmic}[1]
+\Require Stepsize $\Delta t>0$; iteration count $N$; initial Gaussian parameter $a_0=(m_0,C_0)$ with $C_0\in\mathbb S_{++}^{N_\theta}$; adaptive rule $\lambda_n\ge 0$
+\For{$n=0,\ldots,N-1$}
+    \State Compute the Gaussian expectations at $a_n=(m_n,C_n)$:
+    \[
+        g_n \gets 
+        \E_{\rho_{a_n}}
+        \bigl[
+            \nabla_\theta \log \rho_\post(\theta)
+        \bigr],
+        \qquad
+        H_n \gets 
+        \E_{\rho_{a_n}}
+        \bigl[
+            \nabla_\theta\nabla_\theta \log \rho_\post(\theta)
+        \bigr].
+    \]
+    \State \textbf{Wasserstein forward--backward step:}
+    \begin{align*}
+        m_{n+1/2} \gets m_n+\lambda_n\Delta t g_n,\quad M_n \gets I+\lambda_n\Delta t H_n, \quad \widetilde C_{n+\frac12} \gets M_n C_n M_n, 
+        \\
+        C_{n+1/2}
+        \gets
+        \frac12
+        \left(
+            \widetilde C_{n+1/2}
+            +
+            2 \lambda_n\Delta t I
+            +
+            \left[
+                \widetilde C_{n+1/2}
+                \left(
+                    \widetilde C_{n+1/2}
+                    +
+                    4 \lambda_n\Delta t I
+                \right)
+            \right]^{1/2}
+        \right).
+    \end{align*}
+
+    \State Set $a_{n+1/2} \gets (m_{n+1/2},C_{n+1/2})$ and compute the Gaussian expectations at $a_{n+1/2}$:
+    \[
+        g_{n+1/2}
+        \gets
+        \E_{\rho_{a_{n+1/2}}}
+        \bigl[
+            \nabla_\theta \log \rho_\post(\theta)
+        \bigr],
+        \qquad
+        H_{n+1/2}
+        \gets
+        \E_{\rho_{a_{n+1/2}}}
+        \bigl[
+            \nabla_\theta\nabla_\theta \log \rho_\post(\theta)
+        \bigr].
+    \]
+    \State \textbf{Fisher--Rao forward--backward step:}
+    \[
+        m_{n+1}
+        \gets
+        m_{n+1/2}
+        +
+        \Delta t\, C_{n+1/2} \, g_{n+1/2},
+        \qquad 
+        C_{n+1}
+        \gets
+        (1+\Delta t)
+        \left(
+            C_{n+1/2}^{-1}
+            -
+            \Delta t\, H_{n+1/2}
+        \right)^{-1}.
+    \]
+    \State Set $a_{n+1}\gets (m_{n+1},C_{n+1})$.
+\EndFor
+\State \Return $a_N=(m_N,C_N)$ and $\rho_{a_N}=\N (m_N,C_N)$.
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}\label{thm:conv-fb-wfr}
+    Under Assumption \ref{assump:logconcave-smooth} and assume that the initial covariance has spectral bounds $\mu_{0, \min} I \preceq C_0 \preceq \mu_{0, \max} I$, if we denote $\mu_{\min} := \min \left\{ \mu_{0, \min}, \frac{1}{\beta} \right\}$, $\mu_{\max} := \max \left\{ \mu_{0, \max}, \frac{1}{\alpha} \right\}$, and choose stepsize satisfying $0 < \Delta t \leq \frac{1}{ \beta\max \{\mu_{\max}, \max_{0 \leq n \leq N-1} \lambda_n \}}$, the Algorithm \ref{alg:fb-fb-wfr-gvi} has the following convergence guarantee:
+    \begin{align*}
+        \mathcal{E} (a_N) - \mathcal{E} (a_\star) &\leq \exp \left( - \frac{\alpha \mu_{\min} N \Delta t}{2 (1 + \Delta t) (1 + \Delta t \beta \mu_{\max})} - \sum_{n=0}^{N-1} \frac{\alpha \lambda_n \Delta t}{(1 + \lambda_n \Delta t / \mu_{\min})^2} \right) (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{align*}
+\end{theorem}
+
+\begin{proof}
+    We first show that the spectral bounds of covariance along Algorithm \ref{alg:fb-fb-wfr-gvi} is given by $\mu_{\min} I \preceq C \preceq \mu_{\max} I$. We assume inductively that $\mu_{\min} I \preceq C_n \preceq \mu_{\max} I$. For the Wasserstein update, 
+    \begin{equation*}
+        (1 - \lambda_n \Delta t \beta) I \preceq M = I + \lambda_n \Delta t H_n \preceq (1 - \lambda_n \Delta t \alpha) I,
+    \end{equation*}
+    hence
+    \begin{equation*}
+        (1 - \lambda_n \Delta t \beta)^2 \mu_{\min} I \preceq \widetilde C_{n+1/2} \preceq (1 - \lambda_n \Delta t \alpha)^2 \mu_{\max} I.
+    \end{equation*}
+    The backward step of covariance is characterized by the following update map
+    \begin{equation*}
+        \Psi_{\Delta t} (X) = \frac{1}{2} (X + 2 \lambda_n \Delta t I + [X (X + 4 \lambda_n \Delta t I)]^{1/2}),
+    \end{equation*}
+    on eigenvalues, the corresponding map is
+    \begin{equation*}
+        \psi_{\Delta t} (x) = \frac{1}{2} \left(x + 2 \lambda_n \Delta t + \sqrt{x (x + 4 \lambda_n \Delta t)} \right),
+    \end{equation*}
+    which is monotonically increasing and we can calculate the following identity
+    \begin{equation*}
+        \psi_{\Delta t} \left( \left(1 - \frac{\lambda_n \Delta t}{c}\right)^2 c \right) = c, \qquad 0 \leq \lambda_n \Delta t \leq c.
+    \end{equation*}
+    We first investigate the lower bound. If $\lambda_n \Delta t \geq \mu_{\min}$, then \begin{equation*}
+        \psi_{\Delta t} (x) \geq \psi_{\Delta t} (0) = \lambda_n \Delta t \geq \mu_{\min},
+    \end{equation*}
+    if $\lambda_n \Delta t < \mu_{\min}$, since $\mu_{\min} \leq \frac{1}{\beta}$, then 
+    $$\psi_{\Delta t} ((1 - \lambda_n \Delta t \beta)^2 \mu_{\min}) \geq \psi_{\Delta t} \left( \left(1 - \frac{\lambda_n \Delta t}{\mu_{\min}}\right)^2 \mu_{\min} \right) = \mu_{\min},$$
+    these collectively give $C_{n+1/2} \succeq \mu_{\min} I$. For the upper bound, since $\mu_{\max} \geq \frac{1}{\alpha}$, then
+    \begin{equation*}
+        \psi_{\Delta t} ((1 - \lambda_n \Delta t \alpha)^2 \mu_{\max}) \leq \psi_{\Delta t} \left( \left( 1 - \frac{\lambda_n \Delta t}{\mu_{\max}} \right)^2 \mu_{\max} \right) = \mu_{\max},
+    \end{equation*}
+    hence $C_{n+1/2} \preceq \mu_{\max} I$ and hence $\mu_{\min} I \preceq C_{n+1/2} \preceq \mu_{\max} I$. By Lemma \ref{lem:cov-bound-kl}, we have $\mu_{\min} I \preceq C_{n+1} \preceq \mu_{\max} I$ for the Fisher--Rao step, which completes the covariance bounds proof.
+
+    We proceed to investigate the evolution from $a_n$ to $a_{n+1/2}$. If $\lambda_n = 0$, it's trivial that $a_{n+1/2} = a_n$, so we consider the case where $\lambda_n > 0$. We choose $\nu = a_n$ in Lemma 5.1 of \cite{diao2023forward} to obtain the following inequality characterizing the Wasserstein update:
+    \begin{equation*}
+        \mathcal{E} (a_n) - \mathcal{E} (a_{n+1/2}) \geq \frac{1}{2\lambda_n \Delta t} W_2^2 (\rho_{a_n}, \rho_{a_{n+1/2}}) = \frac{\lambda_n \Delta t}{2} \|G (a_n) \|_{L^2 (\rho_{a_n})}^2,
+    \end{equation*}
+    where we denote $G (a_n) := \frac{\Id - T_n}{\lambda_n \Delta t}$ and $T_n$ is the optimal transport map from $a_n$ to $a_{n+1/2}$. The optimality condition of the Wasserstein forward-backward step gives
+    \begin{equation*}
+        G (a_n) = \grad^{W_2} \mathcal{E}_2 (a_n) + \grad^{W_2} \mathcal{E}_1 (a_{n+1/2}) \circ T_n.
+    \end{equation*}
+    Since $\grad^{W_2} \mathcal{E} (a_n) = \grad^{W_2} \mathcal{E}_1 (a_n) + \grad^{W_2} \mathcal{E}_2 (a_n)$, then by the covariance spectral bounds, we have
+    \begin{align*}
+        \| \grad^{W_2} \mathcal{E} (a_n) - G(a_n) \|_{L^2 (\rho_{a_n})} &= \| \grad^{W_2} \mathcal{E}_1 (a_n) - \grad^{W_2} \mathcal{E}_1 (a_{n+1/2}) \circ T_n \|_{L^2 (\rho_{a_n})} \\
+        &= \| \nabla_\theta \log \rho_{a_n} - \nabla_\theta \log \rho_{a_{n+1/2}} \circ T_n \|_{L^2 (\rho_{a_n})} \\
+        &\leq \frac{1}{\mu_{\min}} \| \Id - T_n \|_{L^2 (\rho_{a_n})} \leq \frac{\lambda_n \Delta t}{\mu_{\min}} \| G(a_n) \|_{L^2 (\rho_{a_n})}.
+    \end{align*}
+    Therefore,
+    \begin{equation*}
+        \| \grad^{W_2} \mathcal{E} (a_n) \|_{W_2} \leq \left( 1 + \frac{\lambda_n \Delta t}{\mu_{\min}} \right) \| G(a_n) \|_{L^2 (\rho_{a_n})},
+    \end{equation*}
+    then by PL inequality on Wasserstein geometry \cite{lambert2022variational},
+    \begin{equation*}
+        \mathcal{E} (a_n) - \mathcal{E} (a_{n+1/2}) \geq \frac{\lambda_n \Delta t}{2 (1 + \lambda_n \Delta t / \mu_{\min})^2} \| \grad^{W_2} \mathcal{E} (a_n) \|_{W_2}^2 \geq \frac{\alpha \lambda_n \Delta t}{(1 + \lambda_n \Delta t / \mu_{\min})^2} (\mathcal{E} (a_n) - \mathcal{E} (a_\star)).
+    \end{equation*}
+    This gives the following one-step inequality of Wasserstein part
+    \begin{equation*}
+        \mathcal{E} (a_{n+1/2}) - \mathcal{E} (a_\star) \leq \left[ 1 - \frac{\alpha \lambda_n \Delta t}{(1 + \lambda_n \Delta t / \mu_{\min})^2} \right] (\mathcal{E} (a_n) - \mathcal{E} (a_\star)).
+    \end{equation*}
+    By Theorem \ref{thm:conv-KL}, the one-step inequality of Fisher--Rao part reads
+    \begin{equation*}
+        \mathcal{E} (a_{n+1}) - \mathcal{E} (a_\star) \leq \left[ 1 - \frac{\alpha \mu_{\min} \Delta t}{2(1 + \Delta t) (1 + \Delta t \beta \mu_{\max})} \right] (\mathcal{E} (a_{n+1/2}) - \mathcal{E} (a_\star)).
+    \end{equation*}
+    We iterate on $n$ and apply $1 - x \leq e^{-x}$ to obtain the convergence rate of Algorithm \ref{alg:fb-fb-wfr-gvi}:
+    \begin{align*}
+        \mathcal{E} (a_N) - \mathcal{E} (a_\star) &\leq \exp \left( - \frac{\alpha \mu_{\min} N \Delta t}{2 (1 + \Delta t) (1 + \Delta t \beta \mu_{\max})} - \sum_{n=0}^{N-1} \frac{\alpha \lambda_n \Delta t}{(1 + \lambda_n \Delta t / \mu_{\min})^2} \right) (\mathcal{E} (a_0) - \mathcal{E} (a_\star)).
+    \end{align*}
+\end{proof}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

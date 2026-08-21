@@ -1,0 +1,150 @@
+\section{Details for the non-log-concave scheme}
+\label{app:nonconvex}
+
+We prove \Cref{thm:clip-KL}. Throughout, \Cref{assump:smooth} is in force, the stepsize satisfies $0 < \Delta t \leq \frac{1}{2\beta\lambda_+}$, and we write
+\begin{equation*}
+    \calE (m, C) = \Phi (C) + \calE_2 (m, C) + \mathrm{const}, \qquad \Phi (C) := -\frac{1}{2} \log \det C, \qquad \calE_2 (m, C) := \E_{\N (m, C)} [V (\theta)].
+\end{equation*}
+For two states $a = (m, C)$ and $a' = (m', C')$ in $\Aspace'$ we set
+\begin{align*}
+    D_m (a', a) &:= \frac{1}{2} \| m' - m \|_{C^{-1}}^2, \\
+    D_C^+ (C', C) &:= \KL \left( \N (0, C') \, \middle\| \, \N (0, C) \right), \\
+    D_C^- (C, C') &:= \KL \left( \N (0, C) \, \middle\| \, \N (0, C') \right).
+\end{align*}
+The forward divergence $D_C^+$ carries the smoothness remainder and appears in the proximal model, while the reverse divergence $D_C^-$ is what remains in the descent certificate, and the two must be kept apart. With the trace pairing on symmetric matrices,
+\begin{equation}\label{eq:app-forward-is-bregman}
+    D_C^+ (C', C) = D_\Phi (C', C) := \Phi (C') - \Phi (C) - \Tr \left( \nabla \Phi (C) (C' - C) \right), \qquad \nabla \Phi (C) = -\frac{1}{2} C^{-1},
+\end{equation}
+so the forward covariance divergence is the log-determinant Bregman divergence in its first argument.
+
+\begin{lemma}\label{lem:app-nonconvex-relsmooth}
+    Let $C, C' \in [\lambda_- I, \lambda_+ I]$, let $b = \E_{\N (m, C)} [\nabla_\theta V (\theta)]$ and $A = \E_{\N (m, C)} [\nabla_\theta \nabla_\theta V (\theta)]$. Then
+    \begin{equation}\label{eq:app-relsmooth}
+        \calE_2 (m', C') \leq \calE_2 (m, C) + b^\top (m' - m) + \frac{1}{2} \Tr \left( A (C' - C) \right) + 2 \beta \lambda_+ \left\{ D_m (a', a) + D_C^+ (C', C) \right\}.
+    \end{equation}
+\end{lemma}
+
+\begin{proof}
+    Set $u = m' - m$, $M = C^{-1/2} C' C^{-1/2}$, $B_0 = C^{1/2}$, $B' = C^{1/2} M^{1/2}$ and $H = B' - B_0$, so that $B' B'^\top = C^{1/2} M C^{1/2} = C'$. We couple
+    \begin{equation*}
+        X = m + B_0 Z, \qquad Y = m' + B' Z, \qquad Z \sim \N (0, I),
+    \end{equation*}
+    so that $X \sim \N (m, C)$ and $Y \sim \N (m', C')$. Since $\| \nabla^2 V \|_\op \leq \beta$, Taylor expansion at $X$ gives
+    \begin{align*}
+        \E V (Y) &\leq \E V (X) + \E \left[ \nabla V (X)^\top (u + HZ) \right] + \frac{\beta}{2} \E \| u + HZ \|^2 \\
+        &= \E V (X) + b^\top u + \E \left[ \nabla V (X)^\top HZ \right] + \frac{\beta}{2} \left( \| u \|^2 + \| H \|_\Frob^2 \right).
+    \end{align*}
+    By Stein's lemma, $\E [\nabla V (X) Z^\top] = A B_0$, hence $\E [\nabla V (X)^\top HZ] = \Tr (H^\top A B_0)$. Expanding
+    \begin{equation*}
+        C' - C = B_0 H^\top + H B_0^\top + H H^\top
+    \end{equation*}
+    and using the symmetry of $A$ and $B_0$ gives
+    \begin{equation*}
+        \Tr (H^\top A B_0) = \frac{1}{2} \Tr \left( A (C' - C) \right) - \frac{1}{2} \Tr (A H H^\top).
+    \end{equation*}
+    Since $\| A \|_\op \leq \beta$, the term $-\frac12 \Tr (AHH^\top)$ and the Taylor remainder together are bounded above by $\frac{\beta}{2} \| u \|^2 + \beta \| H \|_\Frob^2$. It remains to convert both into the split divergence. The covariance box gives $\| u \|^2 \leq 2 \lambda_+ D_m (a', a)$, so $\frac{\beta}{2} \| u \|^2 \leq \beta \lambda_+ D_m (a', a)$. For the covariance part, $\| H \|_\Frob^2 = \| C^{1/2} (M^{1/2} - I) \|_\Frob^2 \leq \lambda_+ \| M^{1/2} - I \|_\Frob^2$, while the scalar inequality
+    \begin{equation*}
+        x - 1 - \log x \geq (\sqrt{x} - 1)^2, \qquad x > 0,
+    \end{equation*}
+    applied to the eigenvalues of $M$ gives
+    \begin{equation*}
+        \| M^{1/2} - I \|_\Frob^2 \leq \sum_{i=1}^{N_\theta} \left\{ \lambda_i (M) - 1 - \log \lambda_i (M) \right\} = 2 D_C^+ (C', C),
+    \end{equation*}
+    so that $\beta \| H \|_\Frob^2 \leq 2 \beta \lambda_+ D_C^+ (C', C)$. Substituting the two bounds proves \eqref{eq:app-relsmooth}.
+\end{proof}
+
+We next identify \eqref{upd:clip-KL} as a constrained proximal step. At $a_n = (m_n, C_n) \in \Aspace'$ define
+\begin{equation}\label{eq:app-proximal-model}
+    \mathcal{Q}_n (m, C) := \Phi (C) + b_n^\top (m - m_n) + \frac{1}{2} \Tr \left( A_n (C - C_n) \right) + \frac{1}{\Delta t} \left\{ D_m ((m, C), a_n) + D_C^+ (C, C_n) \right\}.
+\end{equation}
+The mean and covariance variables separate in \eqref{eq:app-proximal-model}. The mean minimizer is $m_n - \Delta t C_n b_n$. For the covariance, put $\sigma := 1 + \Delta t^{-1}$ and recall $\widetilde{C}_{n+1} = (1 + \Delta t) (C_n^{-1} + \Delta t A_n)^{-1}$; by \eqref{eq:app-forward-is-bregman} the covariance-dependent part of $\mathcal{Q}_n$ equals, up to an additive constant,
+\begin{equation}\label{eq:app-proximal-bregman}
+    \sigma \Phi (C) + \frac{1}{2} \Tr \left( \left( A_n + \Delta t^{-1} C_n^{-1} \right) C \right) = \sigma D_\Phi (C, \widetilde{C}_{n+1}) + \mathrm{const},
+\end{equation}
+since $\sigma \widetilde{C}_{n+1}^{-1} = \Delta t^{-1} C_n^{-1} + A_n$ matches the linear coefficient. The matrix $\widetilde{C}_{n+1}$ is well defined and positive definite because
+\begin{equation*}
+    C_n^{-1} + \Delta t A_n \succeq (\lambda_+^{-1} - \Delta t \beta) I \succeq (2 \lambda_+)^{-1} I
+\end{equation*}
+under $\Delta t \beta \lambda_+ \leq 1/2$.
+
+The Bregman projection associated with \eqref{eq:app-proximal-bregman} is exactly spectral clipping. Write $\widetilde{C}_{n+1} = Q \diag (\widetilde{c}_i) Q^\top$ with columns $q_i$ of $Q$, and $C^+ = Q \diag (c_i^+) Q^\top$ with $c_i^+ = \min \{ \lambda_+, \max \{ \lambda_-, \widetilde{c}_i \} \}$. Then
+\begin{equation*}
+    G := \nabla_C D_\Phi (C^+, \widetilde{C}_{n+1}) = \frac{1}{2} \left( \widetilde{C}_{n+1}^{-1} - (C^+)^{-1} \right) = Q \diag (g_i) Q^\top,
+\end{equation*}
+where $g_i > 0$ only when $c_i^+ = \lambda_-$, $g_i < 0$ only when $c_i^+ = \lambda_+$, and $g_i = 0$ otherwise. Hence every $C \in [\lambda_- I, \lambda_+ I]$ satisfies
+\begin{equation*}
+    \Tr \left( G (C - C^+) \right) = \sum_{i=1}^{N_\theta} g_i \left\{ q_i^\top C q_i - c_i^+ \right\} \geq 0,
+\end{equation*}
+which is the variational inequality for minimizing $D_\Phi (\cdot, \widetilde{C}_{n+1})$ over the covariance box; strict convexity in the first argument gives uniqueness. Therefore $C^+ = \Clip_{[\lambda_-, \lambda_+]} (\widetilde{C}_{n+1}) = C_{n+1}$, and $a_{n+1} = (m_{n+1}, C_{n+1})$ produced by \eqref{upd:clip-KL} is the unique minimizer of \eqref{eq:app-proximal-model} over $\Aspace'$. In particular the iterates remain feasible.
+
+From the mean minimizer, with $u_n = m_{n+1} - m_n = -\Delta t C_n b_n$,
+\begin{equation}\label{eq:app-mean-optimality}
+    b_n^\top u_n = -\frac{1}{\Delta t} \| u_n \|_{C_n^{-1}}^2 = -\frac{2}{\Delta t} D_m (a_{n+1}, a_n).
+\end{equation}
+From the covariance minimizer, constrained first-order optimality gives, for every $C \in [\lambda_- I, \lambda_+ I]$,
+\begin{equation}\label{eq:app-covariance-vi}
+    \Tr \left( \left\{ \nabla \Phi (C_{n+1}) + \frac{1}{2} A_n + \frac{1}{\Delta t} \left( \nabla \Phi (C_{n+1}) - \nabla \Phi (C_n) \right) \right\} (C - C_{n+1}) \right) \geq 0.
+\end{equation}
+We take $C = C_n$ and write $\Delta C_n = C_{n+1} - C_n$. The Bregman identities
+\begin{align*}
+    \Tr \left( \nabla \Phi (C_{n+1}) \Delta C_n \right) &= \Phi (C_{n+1}) - \Phi (C_n) + D_C^- (C_n, C_{n+1}), \\
+    \Tr \left( \left\{ \nabla \Phi (C_{n+1}) - \nabla \Phi (C_n) \right\} \Delta C_n \right) &= D_C^- (C_n, C_{n+1}) + D_C^+ (C_{n+1}, C_n)
+\end{align*}
+then turn \eqref{eq:app-covariance-vi} into
+\begin{equation}\label{eq:app-three-point}
+    \Phi (C_{n+1}) - \Phi (C_n) + \frac{1}{2} \Tr \left( A_n \Delta C_n \right) \leq - \left( 1 + \frac{1}{\Delta t} \right) D_C^- (C_n, C_{n+1}) - \frac{1}{\Delta t} D_C^+ (C_{n+1}, C_n).
+\end{equation}
+This is the constrained log-determinant three-point inequality; it is where the clipping is absorbed, since \eqref{eq:app-covariance-vi} is an inequality rather than an equation precisely when the update is pinned at one of the two clip levels.
+
+We now apply \Cref{lem:app-nonconvex-relsmooth} with $a = a_n$ and $a' = a_{n+1}$ and combine it with \eqref{eq:app-mean-optimality} and \eqref{eq:app-three-point}. Writing $L = 2\beta\lambda_+$,
+\begin{align*}
+    \calE (a_{n+1}) - \calE (a_n) &= \Phi (C_{n+1}) - \Phi (C_n) + \calE_2 (a_{n+1}) - \calE_2 (a_n) \\
+    &\leq - \left( \frac{2}{\Delta t} - L \right) D_m (a_{n+1}, a_n) - \frac{1}{\Delta t} D_C^- (C_n, C_{n+1}) - \left( \frac{1}{\Delta t} - L \right) D_C^+ (C_{n+1}, C_n).
+\end{align*}
+Because $L \Delta t \leq 1$, the last term is nonpositive and $2 / \Delta t - L \geq 1 / \Delta t$, hence
+\begin{equation*}
+    \calE (a_{n+1}) \leq \calE (a_n) - \frac{1}{\Delta t} \left\{ \frac{1}{2} \| m_{n+1} - m_n \|_{C_n^{-1}}^2 + D_C^- (C_n, C_{n+1}) \right\} = \calE (a_n) - \frac{1}{\Delta t} \mathsf{S}_n,
+\end{equation*}
+which is \eqref{eq:clip-descent}. Summing over $0 \leq n < N$ and bounding the minimum by the average gives \eqref{eq:clip-runmin}, and \Cref{thm:clip-KL} is proved.
+
+The quantity $\mathsf{S}_n$ vanishes if and only if $(m_{n+1}, C_{n+1}) = (m_n, C_n)$. At such a fixed point, mean optimality gives $b_n = 0$, while \eqref{eq:app-covariance-vi} reduces to
+\begin{equation*}
+    \Tr \left( \frac{1}{2} \left( A_n - C_n^{-1} \right) (C - C_n) \right) \geq 0 \qquad \text{for every } C \in [\lambda_- I, \lambda_+ I],
+\end{equation*}
+which are exactly the first-order conditions for $\calE$ on the covariance box. Thus $\mathsf{S}_n$ is a constrained fixed-point residual and not an unconstrained Fisher--Rao gradient norm, as recorded in the closing scope paragraph of \Cref{sec:global}'s non-log-concave subsection.
+
+Finally we record the mean-block identity behind \Cref{cor:clip-KL-full}. The full successive reverse KL divergence is
+\begin{equation*}
+    \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) = D_C^- (C_n, C_{n+1}) + \frac{1}{2} \| m_{n+1} - m_n \|_{C_{n+1}^{-1}}^2,
+\end{equation*}
+whose mean block is measured in $C_{n+1}^{-1}$ rather than in $C_n^{-1}$. Feasibility gives $C_{n+1}^{-1} \preceq \lambda_-^{-1} I \preceq (\lambda_+ / \lambda_-) C_n^{-1}$, which is the origin of the factor $\lambda_+ / \lambda_-$ in the following corollary.
+
+\begin{corollary}\label{cor:clip-KL-full}
+    Under the assumptions of \Cref{thm:clip-KL}, the full successive-Gaussian reverse KL divergence satisfies
+    \begin{equation*}
+        \min_{0 \leq n < N} \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) \leq \frac{\lambda_+}{\lambda_-} \frac{\Delta t}{N} \left\{ \calE (a_0) - \calE (a_N) \right\}.
+    \end{equation*}
+\end{corollary}
+
+\begin{proof}
+    The reverse KL divergence between successive Gaussians splits as
+    \begin{equation*}
+        \KL \left( \N (m_n, C_n) \, \middle\| \, \N (m_{n+1}, C_{n+1}) \right) = \KL \left( \N (0, C_n) \, \middle\| \, \N (0, C_{n+1}) \right) + \frac{1}{2} \| m_{n+1} - m_n \|_{C_{n+1}^{-1}}^2,
+    \end{equation*}
+    and the mean block is measured in $C_{n+1}^{-1}$ rather than $C_n^{-1}$. Feasibility gives
+    \begin{equation*}
+        C_{n+1}^{-1} \preceq \lambda_-^{-1} I \preceq \frac{\lambda_+}{\lambda_-} C_n^{-1},
+    \end{equation*}
+    so the full divergence is at most $(\lambda_+ / \lambda_-) \mathsf{S}_n$, and \eqref{eq:clip-runmin} completes the proof.
+\end{proof}
+
+% SOURCES:
+% codex-draft/appendices/D-nonconvex-details.tex l.11-27 (splitting of calE, D_m/D_C^+/D_C^-) -> setup
+% codex-draft/appendices/D-nonconvex-details.tex l.116-125 (eq:app:nonconvex-forward-is-bregman) -> eq:app-forward-is-bregman
+% codex-draft/appendices/D-nonconvex-details.tex l.29-103 (lem:app:nonconvex-relative-smoothness + proof) -> lem:app-nonconvex-relsmooth, eq:app-relsmooth
+% codex-draft/appendices/D-nonconvex-details.tex l.105-152 (eq:app:nonconvex-proximal-model, eq:app:nonconvex-proximal-bregman-form) -> eq:app-proximal-model, eq:app-proximal-bregman
+%   (the draft's scale factor "\alpha = 1 + h^{-1}" is renamed \sigma to avoid collision with the log-concavity constant \alpha; no change of content)
+% codex-draft/appendices/D-nonconvex-details.tex l.154-178 (clipping = log-det Bregman projection, variational inequality) -> projection identification
+% codex-draft/appendices/D-nonconvex-details.tex l.180-220 (eq:app:nonconvex-mean-optimality, eq:app:nonconvex-covariance-vi, eq:app:nonconvex-covariance-three-point) -> eq:app-mean-optimality, eq:app-covariance-vi, eq:app-three-point
+% codex-draft/appendices/D-nonconvex-details.tex l.221-244 (combination, descent, summation) -> proof of thm:clip-KL
+% codex-draft/appendices/D-nonconvex-details.tex l.246-268 (constrained fixed-point characterization, mean-block identity) -> closing two paragraphs

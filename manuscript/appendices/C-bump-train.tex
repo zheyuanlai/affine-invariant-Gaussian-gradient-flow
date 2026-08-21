@@ -1,0 +1,462 @@
+\section{The bump-train construction}
+\label{app:bump}
+
+We construct the one-dimensional family announced in \Cref{thm:sharp-disc} and prove the lower
+bound. The construction is one-dimensional, starts with the covariance already on the curvature
+scale, and has a dimension-free Hessian-Lipschitz constant, so the obstruction it exhibits is
+the global localization stage itself rather than the covariance burn-in.
+
+The following packaging of \Cref{thm:sharp-disc} records the $\Theta(\kappa^2)$ complexity
+reading at the globally certified stepsize.
+
+\begin{corollary}[Sharpness of the global-localization prefactor]\label{cor:sharp-disc}
+    For the globally fixed-step schemes \eqref{upd:Riem} and \eqref{upd:KL}, the factor
+    $\kappa/\Delta t$ in \Cref{thm:glob-Riem,thm:glob-KL} is sharp, up to constants independent
+    of $\kappa$ for each fixed $\gamma=\kappa\Delta t$, for a constant-factor reduction of the
+    energy. In particular, with $\Delta t=\Theta(\kappa^{-1})$, both methods have worst-case
+    global-localization complexity $\Theta(\kappa^2)$ in the condition-number exponent, and
+    this remains true under the additional assumption $\norm{V'''}_\infty=O(1)$.
+\end{corollary}
+
+\subsection{Scalar schemes and scope}
+
+We normalize $\alpha=1$ and $\beta=\kappa$, and write $a=(m,c)\in\R\times(0,\infty)$. For
+$X\sim\N(m,c)$ put
+\begin{equation}\label{eq:bump-bA}
+    b(m,c):=\E[V'(X)],
+    \qquad
+    A(m,c):=\E[V''(X)],
+\end{equation}
+so that $g(a)=-b(m,c)$. The scalar forms of \eqref{upd:Riem} and \eqref{upd:KL} are,
+respectively,
+\begin{equation}\label{eq:bump-R-map}
+    m^+=m-\Delta t\,c\,b(m,c),
+    \qquad
+    c^+=c\exp\bigl(\Delta t[1-cA(m,c)]\bigr),
+\end{equation}
+and
+\begin{equation}\label{eq:bump-KL-map}
+    m^+=m-\Delta t\,c\,b(m,c),
+    \qquad
+    c^+=\frac{(1+\Delta t)c}{1+\Delta t\,cA(m,c)} .
+\end{equation}
+We consider a fixed globally safe scale
+\begin{equation}\label{eq:bump-step}
+    \Delta t=\frac\gamma\kappa,
+    \qquad
+    0<\gamma\leq\frac12,
+\end{equation}
+with $\gamma$ independent of $\kappa$. The restriction $\gamma\leq1/2$ places the step inside
+the certified range of both \Cref{thm:glob-Riem,thm:glob-KL}; the same construction works, with
+changed numerical constants, for every fixed $\gamma\in(0,2)$. The bound proves sharpness of
+the factor $\kappa/\Delta t$ for a constant-factor energy reduction. It does not claim that the
+entire product $\kappa\Delta t^{-1}\log(\DeltaE_0/\delta)$ is sharp for every target accuracy,
+and it does not apply to adaptive, relative-curvature, line-search or implicit
+discretizations.
+
+\subsection{A flat-top curvature bump and the bump train}
+
+Fix an even function $\varphi\in C_c^\infty(\R)$ satisfying
+\begin{equation}\label{eq:flat-bump}
+    0\leq\varphi\leq1,
+    \qquad
+    \varphi(u)=1\ \text{for }|u|\leq\tfrac12,
+    \qquad
+    \varphi(u)=0\ \text{for }|u|\geq1,
+\end{equation}
+and set $I_\varphi:=\int_\R\varphi(u)\,\dd u$ and $M_\varphi:=\norm{\varphi'}_\infty$. Fix a
+numerical constant $\LH>0$ and define
+\begin{equation}\label{eq:bump-width-mass}
+    w_\kappa:=\frac{(\kappa-1)M_\varphi}{\LH},
+    \qquad
+    B_\kappa:=w_\kappa I_\varphi,
+    \qquad
+    H_\kappa:=(\kappa-1)B_\kappa,
+\end{equation}
+so that
+\begin{equation}\label{eq:bump-scales}
+    w_\kappa=\Theta(\kappa),
+    \qquad
+    H_\kappa=\Theta(\kappa^2),
+\end{equation}
+with implicit constants depending only on $\varphi$ and $\LH$. The choice
+$w_\kappa=\Theta(\kappa)$ is what makes the Hessian-Lipschitz constant uniform:
+\begin{equation}\label{eq:bump-LH}
+    \frac{\kappa-1}{w_\kappa}\norm{\varphi'}_\infty=\LH .
+\end{equation}
+
+Choose numerical constants $T>0$ sufficiently small and $Y>0$ sufficiently large, depending
+only on $\varphi$ and $\LH$, and set
+\begin{equation}\label{eq:bump-count-x0}
+    N_\kappa:=\left\lfloor\frac{T\kappa^2}\gamma\right\rfloor,
+    \qquad
+    x_0:=\frac{Y\kappa^4}\gamma .
+\end{equation}
+Define the positive bump centers recursively by
+\begin{equation}\label{eq:center-recursion}
+    x_{j+1}:=x_j-\frac\gamma{\kappa^2}
+    \left[x_j+H_\kappa\left(N_\kappa-j+\frac12\right)\right],
+    \qquad
+    0\leq j<N_\kappa .
+\end{equation}
+
+\begin{lemma}[Geometry of the bump centers]\label{lem:bump-centers}
+    For suitable universal choices of $T$ and $Y$, and all sufficiently large $\kappa$,
+    \begin{equation}\label{eq:center-lower}
+        x_{N_\kappa}\geq\frac34x_0,
+    \end{equation}
+    and
+    \begin{equation}\label{eq:center-spacing}
+        x_j-x_{j+1}\geq\frac{3Y}4\kappa^2,
+        \qquad
+        0\leq j<N_\kappa .
+    \end{equation}
+    In particular the intervals $[x_j-w_\kappa,x_j+w_\kappa]$ are pairwise disjoint, and they
+    are disjoint from their reflections about the origin.
+\end{lemma}
+
+\begin{proof}
+    Summing \eqref{eq:center-recursion} and using $x_j\leq x_0$ gives
+    \begin{equation*}
+        x_0-x_{N_\kappa}
+        \leq
+        \frac{\gamma N_\kappa}{\kappa^2}x_0
+        +\frac{\gamma H_\kappa}{\kappa^2}\sum_{j=0}^{N_\kappa-1}\left(N_\kappa-j+\frac12\right)
+        \leq
+        Tx_0+C_\varphi\frac{T^2\kappa^4}\gamma,
+    \end{equation*}
+    where $C_\varphi$ depends only on $\varphi$ and $\LH$, because
+    $H_\kappa\leq C_\varphi\kappa^2$ and $N_\kappa\leq T\kappa^2/\gamma$. Since
+    $x_0=Y\kappa^4/\gamma$, first choose $T$ small and then $Y$ large so that the right-hand
+    side is at most $x_0/4$; this proves \eqref{eq:center-lower}. By
+    \eqref{eq:center-recursion} and \eqref{eq:center-lower},
+    \begin{equation*}
+        x_j-x_{j+1}
+        \geq\frac\gamma{\kappa^2}x_{N_\kappa}
+        \geq\frac{3\gamma}{4\kappa^2}\frac{Y\kappa^4}\gamma
+        =\frac{3Y}4\kappa^2 .
+    \end{equation*}
+    Since $w_\kappa=O(\kappa)$, the positive supports are disjoint for all large $\kappa$, and
+    $x_{N_\kappa}\asymp\kappa^4/\gamma\gg w_\kappa$ makes them disjoint from the reflected
+    negative supports.
+\end{proof}
+
+Define the potential by
+\begin{equation}\label{eq:bump-potential}
+    V_\kappa''(\theta)
+    :=1+(\kappa-1)\sum_{j=0}^{N_\kappa}
+    \left[\varphi\left(\frac{\theta-x_j}{w_\kappa}\right)
+         +\varphi\left(\frac{\theta+x_j}{w_\kappa}\right)\right],
+\end{equation}
+with $V_\kappa'(0)=0$ and $V_\kappa(0)=0$.
+
+\begin{lemma}[Regularity and exact condition number]\label{lem:bump-regularity}
+    For all sufficiently large $\kappa$ the function $V_\kappa$ is even and belongs to
+    $C^\infty(\R)$, and
+    \begin{equation}\label{eq:bump-curvature-bounds}
+        1\leq V_\kappa''(\theta)\leq\kappa
+        \qquad\text{for every }\theta\in\R,
+    \end{equation}
+    with both bounds attained, and
+    \begin{equation}\label{eq:bump-Hess-Lip}
+        \norm{V_\kappa'''}_\infty\leq\LH .
+    \end{equation}
+    Consequently $e^{-V_\kappa}$ is integrable, the target has exact condition number $\kappa$,
+    and its optimizer-whitened condition number also equals $\kappa$.
+\end{lemma}
+
+\begin{proof}
+    The reflected construction makes $V_\kappa''$ even, and the conditions at the origin then
+    make $V_\kappa'$ odd and $V_\kappa$ even. By \Cref{lem:bump-centers} at most one summand in
+    \eqref{eq:bump-potential} is nonzero at any point, hence
+    $1\leq V_\kappa''\leq1+(\kappa-1)=\kappa$; the value $1$ is attained outside the bump
+    supports and the value $\kappa$ on every flat top. Similarly
+    $|V_\kappa'''(\theta)|\leq\tfrac{\kappa-1}{w_\kappa}\norm{\varphi'}_\infty=\LH$. Since
+    $V_\kappa''\geq1$ and $V_\kappa(0)=V_\kappa'(0)=0$, we have
+    $V_\kappa(\theta)\geq\theta^2/2$, which proves integrability. In one dimension optimizer
+    whitening multiplies every Hessian value by the same positive scalar $c_\star$, so it
+    leaves the ratio $\sup V_\kappa''/\inf V_\kappa''$ unchanged and $\kappastar=\kappa$.
+\end{proof}
+
+\subsection{Gaussian averages along the train}
+
+Set
+\begin{equation}\label{eq:matched-covariance}
+    c_\kappa:=\frac1\kappa,
+\end{equation}
+and define the ideal states $a_j^\circ:=(x_j,c_\kappa)$.
+
+\begin{lemma}[Averaged curvature and score at the centers]\label{lem:bump-averages}
+    There exist constants $C,c>0$ and an integer $p\geq1$, independent of $\kappa$, such that
+    for every $0\leq j\leq N_\kappa$,
+    \begin{align}
+    \label{eq:center-A-estimate}
+        A(x_j,c_\kappa)&=\kappa+r^A_{j,\kappa},
+        &|r^A_{j,\kappa}|&\leq C\kappa^pe^{-c\kappa^3},\\
+    \label{eq:center-b-estimate}
+        b(x_j,c_\kappa)&=x_j+H_\kappa\left(N_\kappa-j+\frac12\right)+r^b_{j,\kappa},
+        &|r^b_{j,\kappa}|&\leq C\kappa^pe^{-c\kappa^3}.
+    \end{align}
+    The same estimates hold uniformly on the tubes
+    \begin{equation}\label{eq:bump-tube}
+        \mathcal T_{j,\kappa}
+        :=\left\{(m,c):|m-x_j|\leq\frac{w_\kappa}8,\ |\kappa c-1|\leq\frac18\right\},
+    \end{equation}
+    in the form: for $(m,c)\in\mathcal T_{j,\kappa}$,
+    \begin{align}
+    \label{eq:tube-A}
+        |A(m,c)-\kappa|&\leq\varepsilon_\kappa,\\
+    \label{eq:tube-b}
+        \left|b(m,c)-x_j-H_\kappa\left(N_\kappa-j+\frac12\right)-\kappa(m-x_j)\right|
+        &\leq\varepsilon_\kappa,
+    \end{align}
+    where $\varepsilon_\kappa:=C\kappa^pe^{-c\kappa^3}$.
+\end{lemma}
+
+\begin{proof}
+    Let $X=x_j+Z/\sqrt\kappa$ with $Z\sim\N(0,1)$. The current bump equals one whenever
+    $|X-x_j|\leq w_\kappa/2$, and since $w_\kappa\asymp\kappa$,
+    \begin{equation*}
+        \Prob\left(|X-x_j|>\frac{w_\kappa}2\right)\leq2\exp(-c\kappa^3).
+    \end{equation*}
+    Every other bump is at distance at least $c\kappa^2$ from $x_j$, which is at least
+    $c\kappa^{5/2}$ Gaussian standard deviations, and summing over $N_\kappa+1=O(\kappa^2)$
+    bumps changes only the polynomial prefactor. This proves
+    \eqref{eq:center-A-estimate}.
+
+    To compute the score, put $\Phi(s):=\int_{-\infty}^s\varphi(u)\,\dd u$. For $\theta>0$,
+    away from an exponentially negligible event on which the Gaussian sample crosses the
+    origin, integration of \eqref{eq:bump-potential} gives
+    \begin{equation*}
+        V_\kappa'(\theta)
+        =\theta+(\kappa-1)w_\kappa\sum_{k=0}^{N_\kappa}
+          \Phi\left(\frac{\theta-x_k}{w_\kappa}\right).
+    \end{equation*}
+    The bumps with $k>j$ lie strictly between the origin and $x_j$ and contribute their full
+    mass $I_\varphi$, while those with $k<j$ contribute zero, up to the same Gaussian-tail
+    error. For the current bump, evenness of $\varphi$ gives $\Phi(s)+\Phi(-s)=I_\varphi$, and
+    since $(X-x_j)/w_\kappa$ is symmetric,
+    $\E\Phi((X-x_j)/w_\kappa)=I_\varphi/2$. Multiplying by $(\kappa-1)w_\kappa$ proves
+    \eqref{eq:center-b-estimate}.
+
+    Now take $(m,c)\in\mathcal T_{j,\kappa}$. The mean remains at least $3w_\kappa/8$ from the
+    edge of the current flat top and the standard deviation is at most
+    $\sqrt{9/(8\kappa)}$, so the probability of reaching a transition layer is still bounded by
+    $Ce^{-c\kappa^3}$, uniformly on the tube; this proves \eqref{eq:tube-A}. Finally
+    $\partial_mb(m,c)=A(m,c)$, so integration in the mean variable gives the term
+    $\kappa(m-x_j)$ with an error bounded by $\varepsilon_\kappa$, while
+    $\partial_cb(m,c)=\tfrac12\E[V_\kappa'''(X)]$ and $V_\kappa'''$ is supported only on the
+    transition layers, which are reached with probability $O(e^{-c\kappa^3})$ throughout the
+    tube. Integrating in $c$ proves \eqref{eq:tube-b} after increasing the polynomial prefactor
+    in $\varepsilon_\kappa$.
+\end{proof}
+
+\subsection{Shadowing for both covariance maps}
+
+Let $(m_j,c_j)$ denote the iterates of either \eqref{eq:bump-R-map} or
+\eqref{eq:bump-KL-map}, initialized at
+\begin{equation}\label{eq:bump-init}
+    m_0=x_0,
+    \qquad
+    c_0=c_\kappa=\frac1\kappa,
+\end{equation}
+and define the mean and relative-covariance errors
+\begin{equation}\label{eq:shadow-errors}
+    e_j:=m_j-x_j,
+    \qquad
+    q_j:=\kappa c_j-1 .
+\end{equation}
+
+\begin{lemma}[Uniform discrete shadowing]\label{lem:bump-shadowing}
+    For either covariance map there exist constants $C,c>0$ and an integer $p\geq1$ such that,
+    for all sufficiently large $\kappa$ and every $0\leq j\leq N_\kappa$,
+    \begin{equation}\label{eq:shadowing-estimate}
+        |e_j|+|q_j|\leq C\kappa^pe^{-c\kappa^3}.
+    \end{equation}
+    In particular every iterate belongs to $\mathcal T_{j,\kappa}$ and
+    \begin{equation}\label{eq:shadowing-conclusion}
+        m_j=x_j+o(1),
+        \qquad
+        c_j=\frac1\kappa(1+o(1)),
+    \end{equation}
+    uniformly over $0\leq j\leq N_\kappa$.
+\end{lemma}
+
+\begin{proof}
+    Write $B_j:=x_j+H_\kappa(N_\kappa-j+\tfrac12)$, so that
+    $x_{j+1}=x_j-\gamma B_j/\kappa^2$ by \eqref{eq:center-recursion}. On the tube,
+    \Cref{lem:bump-averages} gives $b(m_j,c_j)=B_j+\kappa e_j+r_j$ with
+    $|r_j|\leq\varepsilon_\kappa$. Since $c_j=(1+q_j)/\kappa$ and
+    $\Delta t=\gamma/\kappa$, the mean recursion is exactly
+    \begin{equation}\label{eq:mean-shadow-recursion}
+        e_{j+1}
+        =\left(1-\frac{\gamma(1+q_j)}\kappa\right)e_j
+         -\frac{\gamma q_j}{\kappa^2}B_j
+         -\frac{\gamma(1+q_j)}{\kappa^2}r_j .
+    \end{equation}
+    The center geometry gives $|B_j|\leq C\kappa^4/\gamma$, hence, as long as
+    $|q_j|\leq1/8$,
+    \begin{equation}\label{eq:mean-shadow-bound}
+        |e_{j+1}|
+        \leq\left(1-\frac{7\gamma}{8\kappa}\right)|e_j|
+        +C\kappa^2|q_j|
+        +C\frac{\varepsilon_\kappa}{\kappa^2}.
+    \end{equation}
+
+    For the Riemannian covariance map, write $A(m_j,c_j)=\kappa+\delta_j$ with
+    $|\delta_j|\leq\varepsilon_\kappa$; then
+    \begin{equation}\label{eq:q-R-exact}
+        1+q_{j+1}
+        =(1+q_j)\exp\left[\frac\gamma\kappa
+        \left(1-(1+q_j)\left(1+\frac{\delta_j}\kappa\right)\right)\right].
+    \end{equation}
+    For $|q_j|\leq1/8$ and large $\kappa$ the derivative of the right-hand side with respect to
+    $q_j$ is between zero and $1-\gamma/(2\kappa)$, and its variation with respect to $\delta_j$
+    is at most $C\gamma|\delta_j|/\kappa^2$. Since the map fixes $q=0$ when $\delta=0$, the
+    mean-value theorem yields
+    \begin{equation}\label{eq:q-R-bound}
+        |q_{j+1}|
+        \leq\left(1-\frac\gamma{2\kappa}\right)|q_j|+C\frac{\varepsilon_\kappa}{\kappa^2}.
+    \end{equation}
+    For the KL/Bregman map,
+    \begin{equation}\label{eq:q-KL-exact}
+        1+q_{j+1}
+        =\frac{(1+\gamma/\kappa)(1+q_j)}
+               {1+(\gamma/\kappa)(1+q_j)(1+\delta_j/\kappa)},
+    \end{equation}
+    and the same mean-value argument gives, on $|q_j|\leq1/8$,
+    \begin{equation}\label{eq:q-KL-bound}
+        |q_{j+1}|
+        \leq\left(1-\frac\gamma{2\kappa}\right)|q_j|+C\frac{\varepsilon_\kappa}{\kappa^2}.
+    \end{equation}
+
+    Starting from $q_0=0$, either \eqref{eq:q-R-bound} or \eqref{eq:q-KL-bound} implies
+    \begin{equation}\label{eq:q-summed}
+        |q_j|\leq C\frac{\varepsilon_\kappa}{\gamma\kappa}
+        \qquad(0\leq j\leq N_\kappa).
+    \end{equation}
+    Substituting this into \eqref{eq:mean-shadow-bound}, using $e_0=0$ and summing the
+    geometric recursion gives
+    \begin{equation}\label{eq:e-summed}
+        |e_j|\leq C_\gamma\kappa^pe^{-c\kappa^3}
+    \end{equation}
+    for a possibly larger integer $p$. Because exponential decay dominates every polynomial,
+    \eqref{eq:q-summed}--\eqref{eq:e-summed} are eventually much smaller than $1/8$ and
+    $w_\kappa/8$ respectively, so the tube assumptions used in the argument close by induction,
+    proving \eqref{eq:shadowing-estimate}.
+\end{proof}
+
+\subsection{The objective gap remains macroscopic}
+
+For $c>0$ define the Gaussian-smoothed potential
+\begin{equation}\label{eq:Fc}
+    F_c(m):=\E_{X\sim\N(m,c)}[V_\kappa(X)],
+\end{equation}
+so that, up to a target-dependent additive constant,
+\begin{equation}\label{eq:scalar-objective}
+    \calE_\kappa(m,c)=F_c(m)-\tfrac12\log c .
+\end{equation}
+
+\begin{lemma}[Constant-factor lower bound for the objective]\label{lem:bump-gap}
+    There exists a numerical constant $\varrho\in(0,1)$, independent of $\kappa$, such that the
+    iterates of either scheme satisfy
+    \begin{equation}\label{eq:disc-gap-lower-all}
+        \DeltaE(m_j,c_j)\geq\varrho\,\DeltaE(m_0,c_0),
+        \qquad
+        0\leq j\leq N_\kappa,
+    \end{equation}
+    for all sufficiently large $\kappa$.
+\end{lemma}
+
+\begin{proof}
+    Since $V_\kappa$ is even, $F_c$ is even and $F_c'(0)=0$; moreover $F_c''(m)=A(m,c)\geq1$,
+    hence
+    \begin{equation}\label{eq:Fc-lower}
+        F_c(m)-F_c(0)\geq\tfrac12m^2 .
+    \end{equation}
+    At the matched covariance $c_\kappa=1/\kappa$, \Cref{lem:bump-centers} gives
+    \begin{equation}\label{eq:final-mean-lower}
+        F_{c_\kappa}(x_j)-F_{c_\kappa}(0)
+        \geq\tfrac12x_j^2
+        \geq\tfrac12x_{N_\kappa}^2
+        \geq\tfrac9{32}x_0^2 .
+    \end{equation}
+    For the converse bound at initialization, integration of \eqref{eq:bump-potential} gives
+    the global estimate $|V_\kappa'(\theta)|\leq|\theta|+H_\kappa(N_\kappa+1)$, so for
+    $m\geq0$,
+    \begin{equation*}
+        F_{c_\kappa}'(m)\leq m+\sqrt{\frac2{\pi\kappa}}+H_\kappa(N_\kappa+1),
+    \end{equation*}
+    and integrating from zero to $x_0$ yields
+    \begin{equation}\label{eq:initial-mean-upper}
+        F_{c_\kappa}(x_0)-F_{c_\kappa}(0)
+        \leq\frac12x_0^2
+        +\left[H_\kappa(N_\kappa+1)+\sqrt{\frac2{\pi\kappa}}\right]x_0
+        \leq C_0x_0^2,
+    \end{equation}
+    where $C_0$ is independent of $\kappa$, the last inequality following from
+    $H_\kappa(N_\kappa+1)=O(\kappa^4/\gamma)$ and $x_0=Y\kappa^4/\gamma$. Combining
+    \eqref{eq:final-mean-lower} and \eqref{eq:initial-mean-upper},
+    \begin{equation}\label{eq:mean-ratio}
+        F_{c_\kappa}(x_j)-F_{c_\kappa}(0)
+        \geq\varrho_0\bigl[F_{c_\kappa}(x_0)-F_{c_\kappa}(0)\bigr],
+        \qquad
+        \varrho_0:=\frac9{32C_0}>0 .
+    \end{equation}
+
+    For each fixed covariance, $m\mapsto\calE_\kappa(m,c)$ is strictly convex and even, so the
+    unique optimizing mean is $m_\star=0$. Let $c_\star$ denote the optimizing covariance and
+    set $D_\kappa:=\calE_\kappa(0,c_\kappa)-\calE_\kappa(0,c_\star)\geq0$. At covariance
+    $c_\kappa$,
+    \begin{equation*}
+        \DeltaE(x_j,c_\kappa)=F_{c_\kappa}(x_j)-F_{c_\kappa}(0)+D_\kappa,
+    \end{equation*}
+    so after replacing $\varrho_0$ by $\min\{\varrho_0,1\}$, \eqref{eq:mean-ratio} and
+    $D_\kappa\geq0$ imply
+    \begin{equation}\label{eq:ideal-gap-ratio}
+        \DeltaE(x_j,c_\kappa)\geq\varrho_0\DeltaE(x_0,c_\kappa).
+    \end{equation}
+
+    It remains to replace the ideal states by the actual iterates. On the tube,
+    $|\partial_m\calE_\kappa|=|b(m,c)|\leq C\kappa^4/\gamma$, while
+    \begin{equation*}
+        \left|\partial_c\calE_\kappa(m,c)\right|
+        =\frac12\left|A(m,c)-\frac1c\right|
+        \leq C\bigl(\varepsilon_\kappa+\kappa|q|\bigr).
+    \end{equation*}
+    Together with \Cref{lem:bump-shadowing}, the mean-value theorem gives
+    \begin{equation}\label{eq:objective-shadow}
+        \sup_{0\leq j\leq N_\kappa}
+        \left|\calE_\kappa(m_j,c_j)-\calE_\kappa(x_j,c_\kappa)\right|=o(x_0^2).
+    \end{equation}
+    Since \eqref{eq:Fc-lower} gives $\DeltaE(x_0,c_\kappa)\geq x_0^2/2$, the $o(x_0^2)$ error is
+    $o(\DeltaE(x_0,c_\kappa))$ and can be absorbed into \eqref{eq:ideal-gap-ratio} after
+    decreasing $\varrho_0$ by a fixed factor. This proves \eqref{eq:disc-gap-lower-all} with
+    $\varrho$ the decreased constant.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:sharp-disc}]
+    The regularity and curvature claims follow from \Cref{lem:bump-regularity}, and the
+    trajectory statement, with $q:=\varrho$, is the combination of
+    \Cref{lem:bump-shadowing,lem:bump-gap}. The equality $\kappastar=\kappa$ is part of
+    \Cref{lem:bump-regularity}, and $c_0=1/\kappa$ lies exactly at the lower edge of the
+    curvature-scale band $[1/\kappa,1]$. Finally $\Delta t=\gamma/\kappa$ converts
+    $\kappa^2/\gamma$ into $\kappa/\Delta t$.
+\end{proof}
+
+% SOURCES:
+%   improved-global-local.tex l.2343-2387 (scalar schemes, stepsize scale, scope)
+%     -> eq:bump-bA, eq:bump-R-map, eq:bump-KL-map, eq:bump-step, scope paragraph
+%   improved-global-local.tex l.2389-2427 (flat-top bump, widths, uniform Hessian-Lipschitz)
+%     -> eq:flat-bump, eq:bump-width-mass, eq:bump-scales, eq:bump-LH
+%   improved-global-local.tex l.2429-2501 (bump train, lem:bump-centers) -> eq:bump-count-x0,
+%     eq:center-recursion, lem:bump-centers
+%   improved-global-local.tex l.2503-2553 (lem:bump-potential-regularity) -> lem:bump-regularity
+%   improved-global-local.tex l.2555-2659 (lem:bump-averages) -> lem:bump-averages
+%   improved-global-local.tex l.2661-2792 (lem:discrete-shadowing) -> lem:bump-shadowing
+%   improved-global-local.tex l.2794-2916 (lem:disc-objective-gap) -> lem:bump-gap
+%   improved-global-local.tex l.2918-2969 (thm:disc-global-sharp) -> proof of thm:sharp-disc
+%   Notation: the source's numerical Hessian-Lipschitz constant L_0 is written \LH here, to
+%   avoid a clash with the covariance-envelope initial value L_0 of lem:cov-Riem/lem:cov-KL;
+%   the source's objective-gap constant q is written \varrho, to avoid a clash with the
+%   relative-covariance error q_j of the shadowing lemma. No constant is otherwise changed.

@@ -1,0 +1,141 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools,mathrsfs}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{enumitem}
+\usepackage{aliascnt}
+\usepackage{tcolorbox}
+\usepackage{placeins}
+\usepackage{hyperref}
+\usepackage[nameinlink,capitalize,noabbrev]{cleveref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!55!black,
+  citecolor=blue!55!black,
+  urlcolor=blue!55!black,
+  pdftitle={Gaussian Natural Gradient Flows for Variational Inference},
+  pdfauthor={}
+}
+
+\graphicspath{{figures/}{../reports/assets/figs/}}
+
+% Shared theorem counter via aliascnt, so cleveref names each environment by its
+% own type (Lemma F.8, Assumption 2.1) instead of the counter's (Theorem ...).
+\newcommand{\newsharedtheorem}[2]{%
+  \newaliascnt{#1}{theorem}%
+  \newtheorem{#1}[#1]{#2}%
+  \aliascntresetthe{#1}%
+}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newsharedtheorem{proposition}{Proposition}
+\newsharedtheorem{lemma}{Lemma}
+\newsharedtheorem{corollary}{Corollary}
+
+\theoremstyle{definition}
+\newsharedtheorem{assumption}{Assumption}
+\newsharedtheorem{definition}{Definition}
+
+\theoremstyle{remark}
+\newsharedtheorem{remark}{Remark}
+\newsharedtheorem{example}{Example}
+
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+\crefname{algorithm}{Algorithm}{Algorithms}
+\Crefname{algorithm}{Algorithm}{Algorithms}
+
+% ------------------------------------------------------------------
+% Basic sets and operators
+% ------------------------------------------------------------------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\SPD}{\mathbb{S}_{++}}
+\newcommand{\Sym}{\mathbb{S}}
+\newcommand{\Id}{I}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\grad}{\operatorname{grad}}
+\newcommand{\Exp}{\operatorname{Exp}}
+\newcommand{\Log}{\operatorname{Log}}
+\newcommand{\Retr}{\operatorname{Retr}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\Frob}{\mathrm{F}}
+\newcommand{\Lip}{\operatorname{Lip}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\Clip}{\operatorname{Clip}}
+\newcommand{\logp}{\log_+}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,#2\right\rangle}
+
+% ------------------------------------------------------------------
+% Gaussian variational family and objective (natural-gradient.tex conventions)
+% ------------------------------------------------------------------
+\newcommand{\post}{\mathrm{post}}
+\newcommand{\PG}{\mathcal{P}_{\mathrm{G}}}
+\newcommand{\Aspace}{\mathcal{A}}
+\newcommand{\calE}{\mathcal{E}}
+\newcommand{\rhoa}{\rho_a}
+\newcommand{\rhoapost}{\rho_{a_\star}}
+\newcommand{\DeltaE}{\Delta}
+\newcommand{\Fil}{\mathcal{F}}
+
+% Geometry labels
+\newcommand{\FR}{\mathrm{FR}}
+\newcommand{\BW}{\mathrm{BW}}
+\newcommand{\Riem}{\mathrm{R}}
+\newcommand{\Wtwo}{W_2}
+
+% ------------------------------------------------------------------
+% Whitened / intrinsic quantities (imported unchanged from the notes)
+% ------------------------------------------------------------------
+\newcommand{\alphastar}{\alpha_\star}
+\newcommand{\betastar}{\beta_\star}
+\newcommand{\kappastar}{\kappa_\star}
+\newcommand{\gstar}{\gamma_\star}
+\newcommand{\Lstar}{\Lambda_\star}
+\newcommand{\lamzstar}{\lambda_{0,\star}}
+
+% ------------------------------------------------------------------
+% Local theory
+% ------------------------------------------------------------------
+\newcommand{\FGauss}{F_{\mathrm G}}
+\newcommand{\Kng}{K_{\mathrm{ng}}}
+\newcommand{\Kdisc}{K_{\mathrm{disc}}}
+\newcommand{\Ureg}{\mathcal{U}}
+\newcommand{\Gradnorm}{\mathsf{G}}
+\newcommand{\sharpthr}{\Delta^{\#}}
+
+% ------------------------------------------------------------------
+% Stochastic theory
+% ------------------------------------------------------------------
+\newcommand{\STL}{\mathrm{STL}}
+\newcommand{\LH}{L_H}
+\newcommand{\barLH}{\overline{L}_H}
+\newcommand{\LHs}{L_{H,\star}}
+\newcommand{\glob}{\mathrm{glob}}
+\newcommand{\loc}{\mathrm{loc}}
+\newcommand{\cov}{\mathrm{cov}}
+
+\allowdisplaybreaks

@@ -1,0 +1,480 @@
+\section{Experimental protocols}
+\label{app:experiments}
+
+All paths below are relative to the repository root, and all numerical kernels
+use float64 arrays. The objective reported throughout is the Gaussian
+variational objective, up to an additive target-dependent constant,
+\begin{equation*}
+  \calE(m,C) = -\frac12\log\det C + \E_{\Theta\sim\N(m,C)}V(\Theta),
+\end{equation*}
+and $\DeltaE(a) = \calE(a) - \calE(a_\star)$ is the energy gap against the
+optimizer of the same experiment. Where deterministic quadrature is used,
+NumPy's $K$-point Gauss--Hermite nodes $(z_j,w_j)$ are rescaled by
+$\E f(Z) = \pi^{-1/2}\sum_{j\leq K}w_jf(\sqrt2z_j)$ for $Z\sim\N(0,1)$. Writing
+$G_n = \E_{\rho_{a_n}}\nabla V$ and $A_n = \E_{\rho_{a_n}}\nabla^2V$, the two
+Fisher--Rao steps are \eqref{upd:Riem} and \eqref{upd:KL} in the equivalent
+form $m_{n+1} = m_n - \Delta t\,C_nG_n$ with
+$C_{n+1}^{\Riem} = C_n^{1/2}\exp[\Delta t\{\Id-C_n^{1/2}A_nC_n^{1/2}\}]C_n^{1/2}$
+and $C_{n+1}^{\KL} = (1+\Delta t)(C_n^{-1}+\Delta tA_n)^{-1}$.
+
+Unless stated otherwise a run is evolved for its fixed iteration budget, and a
+time to tolerance is a diagnostic computed from the saved trajectory rather
+than an early-stopping rule. The PDF files displayed in \Cref{sec:numerics} are
+byte-for-byte copies of the corresponding files in
+\path{reports/assets/figs}; the script \path{reports/make_report_assets.py}
+performs only post-processing and never reruns a dynamics experiment.
+
+Each experiment below belongs to a named group whose configurations live under
+\path{configs/<group>}, whose runners live under \path{scripts/<group>}, and
+whose kernels and plot selectors live under \path{src/<group>}. The lineage
+paragraphs name the group, its configuration and runner files, and, for each
+selected panel, the CSV it reads, the builder function that consumes it, and
+the resulting file in \path{reports/assets/figs}.
+
+\subsection{Covariance bootstrap}
+
+Let $H = \diag(\nu_1,\ldots,\nu_{N_\theta})$ with
+$(\nu_i)_{i=1}^{N_\theta}$ log-spaced in $[1,\kappa]$. The
+Gaussian target is $V(\theta) = \frac12\theta^\top H\theta$ with
+$(m_\star,C_\star) = (0,H^{-1})$, and the non-Gaussian target used only in the
+transport experiment is
+$V(\theta) = \frac12\theta^\top H\theta
++ \gamma\sum_{i=1}^{N_\theta}\log\cosh(\theta_i)$ with $\gamma = 1$. For the
+latter $m_\star = 0$ and each diagonal entry of $C_\star$ solves
+\begin{equation}\label{eq:app-diag-fixed-point}
+  c_i^{-1} = \nu_i + \gamma\,\E_{Z\sim\N(0,c_i)}\operatorname{sech}^2Z,
+\end{equation}
+computed by fixed-point iteration with tolerance $10^{-13}$, at most $500$
+iterations, and $80$-point Gauss--Hermite quadrature. Thus $\alpha = 1$, while
+$\beta = \kappa$ for the Gaussian target and $\beta = \kappa+1$ for the
+$\log\cosh$ target. Every run starts from
+$m_0 = m_\star + 3\sqrt{\diag(C_\star)}$ and $C_0 = \lambda_{0,\min}\Id$, and
+the Gaussian scaling grid is
+\begin{equation*}
+  N_\theta\in\{10,20\},\quad
+  \kappa\in\{10,100,1000\},\quad
+  \lambda_{0,\min}\in\{10^{-10},10^{-8},10^{-6},10^{-4},10^{-2}\},
+\end{equation*}
+for both covariance maps, with $\Delta t = 0.5$ and $200$ steps. The burn-in
+time is the first $n$ such that $\lambda_{\min}(C_n)\geq(2\beta)^{-1}$. The left
+panel of \Cref{fig:num-three-stage} selects KL, $N_\theta = 20$,
+$\kappa = 1000$, and $\lambda_{0,\min} = 10^{-10}$; its three ordinates are
+$\lambda_{\min}(C_n)$, the exact Gaussian energy gap, and
+$\norm{C_n^{1/2}G_n}$, and its vertical markers are the covariance threshold
+and the first saved iterate with energy gap at most $10^{-3}$.
+
+For the transport grid, the Gaussian and $\log\cosh$ targets both have
+$N_\theta = 20$ and $\kappa = 50$, and the grid is
+\begin{equation*}
+  \lambda_{0,\min}\in\{10^{-8},10^{-6},10^{-4}\},\qquad
+  c\in\{0.25,0.5,1\},\qquad \Delta t = 0.5,
+\end{equation*}
+with both Fisher--Rao tails and a $6000$-step budget. When
+$\lambda_{0,\min} < c/\beta$, one Bures step of size $\eta = c/\beta$ is applied
+first,
+\begin{align*}
+  m^+ &= m - \eta G, \qquad \widetilde C = (\Id-\eta A)C(\Id-\eta A),\\
+  C^+ &= \frac12\left\{\widetilde C + 2\eta\Id
+    + [\widetilde C(\widetilde C+4\eta\Id)]^{1/2}\right\}.
+\end{align*}
+The right panel of \Cref{fig:num-three-stage} selects $c = 0.5$ and plots, for
+every target, tail, and $\lambda_{0,\min}$, the first iteration whose gap is at
+most $10^{-1}$, together with $\lambda_{\min}(C)$ after the first step.
+
+\paragraph{Data and figure lineage.}
+\begingroup\small\raggedright
+The group is \path{natural_gradient_covariance_bootstrap}, with configuration
+\path{covariance_bootstrap.yaml} and runner \path{run_experiments.py}. The left
+panel reads \path{outputs/natural_gradient_covariance_bootstrap/results_long.csv}
+through \path{plotting.py::fig_three_stage} into
+\path{fig_covboot_three_stage.pdf}; the right panel reads
+\path{outputs/natural_gradient_covariance_bootstrap/wasserstein_bootstrap_summary.csv}
+through \path{plotting.py::fig_wasserstein_bootstrap} into
+\path{fig_covboot_wasserstein_bootstrap.pdf}.
+\par\endgroup
+
+\subsection{Deterministic discretization grid}
+
+All three targets have $N_\theta = 2$, use $\lambda\in\{0.01,0.1,1\}$, and are
+\begin{align*}
+  V_{\rm G}(\theta) &= \frac12\theta^\top\diag(1,\lambda)\theta,\\
+  V_{\rm q}(\theta) &= \frac{(\sqrt\lambda\,\theta_1-\theta_2)^2}{20}
+    + \frac{\theta_2^4}{20},\\
+  V_{\rm s}(\theta) &= \frac{(\sqrt\lambda\,\theta_1-\theta_2)^2}{20}
+    + \frac{\delta}{2}\norm{\theta}^2 + \gamma\log\cosh\theta_2,
+  \qquad (\delta,\gamma) = (0.05,1).
+\end{align*}
+The Gaussian initialization is $m_0 = (10,10)$, $C_0 = \diag(0.5,2)$; the other
+two use $m_0 = (10,10)$, $C_0 = 4\Id$. Gaussian and quartic expectations are
+analytic through order four, and the smooth target uses $80$-point
+one-dimensional Gauss--Hermite quadrature for the $\theta_2$-marginal. The
+Gaussian optimum is analytic; the other two optima are computed in Cholesky
+coordinates by four deterministic L-BFGS-B starts with a $5000$-iteration
+budget, gradient tolerance $10^{-10}$, and function tolerance $10^{-16}$.
+
+The common grid is
+$\Delta t\in\{0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10\}$ with
+$T = 15$ and $N = \lceil T/\Delta t\rceil$, and both schemes use exact
+population $G_n$ and $A_n$. A Radau solution of \eqref{ODEs:NG}, with relative
+tolerance $10^{-10}$, absolute tolerance $10^{-12}$, and $400$ output times, is
+used only for the terminal discretization-accuracy diagnostic. Simulation stops
+early only on a nonfinite update or $\lambda_{\min}(C_n)\leq10^{-12}$. A
+completed trajectory is called stable when it is SPD-feasible, ends below its
+initial energy, and never exceeds $10^3$ times its initial energy gap;
+monotonicity allows an absolute per-step tolerance of $10^{-10}$; and accuracy
+means
+$\norm{m_N-m(T)} +
+\norm{C_N-C(T)}_{\Frob}/\norm{C(T)}_{\Frob}\leq10^{-2}$.
+
+The left panel of \Cref{fig:num-discretization} uses only $V_{\rm s}$, all three
+values of $\lambda$, and the matched stable steps
+$\Delta t\in\{0.05,0.1,0.5,1\}$, plotting the energy gap against $n\Delta t$.
+The right panel retains every stable run that reaches gap $10^{-6}$, and for
+each target, method, and $\Delta t$ averages the hitting iteration and the
+hitting time $n\Delta t$ over the eligible values of $\lambda$; its top row is
+iteration count and its bottom row is physical flow time, not measured wall
+time.
+
+\paragraph{Data and figure lineage.}
+\begingroup\small\raggedright
+The group is \path{natural_gradient_discretization_stepsize}, with configuration
+\path{stepsize_grid.yaml} and runner \path{run_stepsize_grid.py}; the target,
+method, optimizer, ODE, and classification code sits in its \path{src} tree.
+Both selected panels read
+\path{outputs/natural_gradient_discretization_stepsize/results_long.csv} and/or
+\path{outputs/natural_gradient_discretization_stepsize/summary.csv}, through the
+builders \path{scripts/natural_gradient_discretization_stepsize/plot_results.py::fig_convergence_speed_grid}
+and \path{plot_results.py::fig_iterations_vs_stepsize}, into
+\path{fig_convergence_speed_smooth_logconcave.pdf} and
+\path{fig_iterations_vs_stepsize.pdf}.
+\par\endgroup
+
+\subsection{Sticking-the-landing variance and constant-step floors}
+
+Here $A = \diag(a_1,\ldots,a_{N_\theta})$ with $(a_i)$ log-spaced in
+$[1,\kappa]$, and the targets are
+$V_{\rm G}(\theta) = \frac12\theta^\top A\theta$ and
+$V_{\rm lc}(\theta) = \frac12\theta^\top A\theta
++ \tau\sum_{i=1}^{N_\theta}\log\cosh(\theta_i)$. The grid is
+$N_\theta\in\{2,8,32\}$ and $\kappa\in\{10,100,10^4\}$ for $V_{\rm G}$, and
+$N_\theta\in\{2,8,32\}$, $\kappa\in\{10,100\}$, $\tau\in\{0.1,1\}$ for
+$V_{\rm lc}$. For $V_{\rm lc}$ one has $m_\star = 0$ and $C_\star$ diagonal with
+$(C_\star)_{ii}$ solving \eqref{eq:app-diag-fixed-point} with $\nu_i$ replaced
+by $a_i$ and $\gamma$ by $\tau$, under the same quadrature, tolerance, and
+iteration cap.
+
+The estimator-level experiment compares the baseline score
+$b_{\rm base}(\theta) = \nabla\log\rho_\post(\theta)$ with the
+sticking-the-landing estimator
+$b_{\STL}(\theta) = b_{\rm base}(\theta) + C^{-1}(\theta-m)$.
+At each target configuration the four states plotted on the left of
+\Cref{fig:num-stl} have $C = C_\star$ and
+$m = m_\star + \rho\sqrt{\diag(C_\star)}$ with $\rho\in\{0,0.25,1,4\}$; the full
+estimator grid additionally includes $(m_\star,0.25C_\star)$ and
+$(m_\star,4C_\star)$. For every state and each seed $s\in\{0,\ldots,19\}$,
+$M = 100000$ Gaussian samples are drawn in one chunk, the configured chunk cap
+being $200000$. The reported mean-block Fisher--Rao variance is
+$\Var_{\FR}(b) = \E[(b-\E b)^\top C(b-\E b)]$. The left panel plots, against
+$\rho$, the median over the $20$ seeds of $\Var_{\FR}(b_{\STL})$ divided by
+$\Var_{\FR}(b_{\rm base})$, separately for
+all $12$ non-Gaussian configurations; for display on a logarithmic axis the
+plotting code adds $10^{-3}$ to $\rho$ and clips ratios below $10^{-16}$.
+
+The algorithm-level experiment compares
+$\{\Riem,\Riem\text{-}\STL,\KL,\KL\text{-}\STL\}$. At every step it draws $B$
+samples from the current Gaussian, averages the corresponding mean estimator,
+and averages the diagonal pointwise log-target Hessian for the covariance step,
+the two mean estimators within a covariance scheme using the same
+standard-normal stream. The settings are $\Delta t = 0.1$, $B\in\{1,4,16\}$,
+$m_0 = m_\star + 3\sqrt{\diag(C_\star)}$, and $C_0 = 0.5C_\star$,
+with $2000$ steps for $V_{\rm G}$ and $3000$ for $V_{\rm lc}$. Gaussian energy
+gaps are analytic, and non-Gaussian gaps use $40$-point Gauss--Hermite
+quadrature and are therefore independent of the mini-batch used for the update.
+An emergency eigenvalue guard clips values below $10^{-12}$; the runner counts
+such clips in a cell diagnostic printed during execution, but the surviving
+summary CSV does not preserve that count.
+
+The replicate labels are $0,\ldots,19$. For the algorithm grid, one batched
+random stream advances these $20$ leading-array entries, and its cell seed is
+the first $15$ hexadecimal digits of
+$\operatorname{SHA256}(\texttt{20260623|kind|d|kappa|tau|B})$, interpreted as an
+integer; the method name is deliberately absent, so all four paired methods
+receive the same standard-normal sequence. For the estimator grid, the generator
+seed is the replicate label itself.
+
+For each run the empirical floor is the median gap over the final $20$ percent
+of the full, undecimated trajectory. The right panel of \Cref{fig:num-stl} takes
+the median of these per-run medians over every target configuration and seed,
+separately by target kind, method, and $B$, and clips nonpositive display values
+to $10^{-16}$.
+
+\paragraph{Data and figure lineage.}
+\begingroup\small\raggedright
+The group is \path{natural_gradient_stl_variance}, with configuration
+\path{stl_variance.yaml} and the two runners
+\path{run_estimator_variance.py} and \path{run_algorithm_grid.py}. The left
+panel reads
+\path{outputs/natural_gradient_stl_variance/estimator_variance.csv} through
+\path{plotting.py::fig_variance_by_distance} with \texttt{kind=log\_cosh} into
+\path{fig_stl_variance_by_distance_to_optimum.pdf}; the right panel reads
+\path{outputs/natural_gradient_stl_variance/tail_noise_floor.csv} through
+\path{plotting.py::fig_batchsize_effect} into
+\path{fig_stl_batchsize_effect.pdf}.
+\par\endgroup
+
+\subsection{Trace and traceless affine modes}
+
+At a state $(m,C)$, set $A_C = \E_{\rho_a}\nabla^2V$ and $B = C^{1/2}A_CC^{1/2}$.
+Both experiments run
+\begin{equation}\label{eq:app-affine-step}
+  m^+ = m - \Delta t\,C\,\E_{\rho_a}\nabla V,
+  \qquad
+  C^+ = C^{1/2}\exp\!\left[\frac{\Delta t}{2\omega}
+    \left\{-B + \frac{\omega+\tau\Tr B}{\omega+N_\theta\tau}\Id\right\}\right]
+    C^{1/2}.
+\end{equation}
+For the Gaussian calibration target $\rho_\post = \N(0,\Id_{N_\theta})$
+expectations are exact, so $B = C$, the mean step is $m^+ = m-\Delta t\,Cm$, and
+the covariance step diagonalizes as
+$\lambda_i^+ = \lambda_i\exp[\frac{\Delta t}{2\omega}\{-\lambda_i+q_\tau(C)\}]$
+with $q_\tau(C) = (\omega+\tau\Tr C)/(\omega+N_\theta\tau)$. Its grid is
+$N_\theta\in\{2,5,10\}$, $\omega\in\{0.125,0.25,0.5,1,2\}$, and
+$\tau\in\{-\omega/(2N_\theta),0,\omega/(2N_\theta)\}$, with $\Delta t = 0.02$,
+$T = 20$, and metrics saved every five steps.
+
+The non-Gaussian target is
+\begin{equation*}
+  V_\rho(\theta) = \frac12\norm{\theta}^2
+  + \frac{\rho}{M}\sum_{\ell=1}^{M}\log\cosh(a_\ell^\top\theta),
+  \qquad N_\theta = 5,\quad \rho = 5,\quad M = 4N_\theta = 20,
+\end{equation*}
+where the unit vectors $a_\ell$ are normalized Gaussian draws from NumPy seed
+$123$. The expectations in \eqref{eq:app-affine-step} use one fixed scrambled
+Sobol design, transformed coordinatewise by the Gaussian inverse CDF, with
+$K = 4096$ and seed $2026$, and the same points are reused at every state and
+for every $(\omega,\tau)$ and initialization. The reference optimum uses an
+independent scrambled Sobol design with $K_{\rm ref} = 8192$ and seed $2027$,
+followed by Cholesky-coordinate L-BFGS-B with a $2000$-iteration budget,
+gradient tolerance $10^{-6}$, and function tolerance $10^{-15}$. The dynamics
+grid is $\omega\in\{0.25,0.5,1\}$ and
+$\tau\in\{-\omega/(2N_\theta),0,\omega/(2N_\theta)\}$, with $\Delta t = 0.005$,
+$T = 40$, and metrics saved every ten steps. There are no random replicates:
+once the seeds are fixed, the quasi-Monte Carlo design is a single common
+deterministic one.
+
+The five Gaussian initializations are
+\begin{align*}
+  \text{mean:}&\quad m_0 = 3\one/\sqrt{N_\theta},\quad C_0 = \Id,\\
+  \text{volume-high/low:}&\quad m_0 = 0,\quad
+    C_0 = 4\Id\ \text{or}\ \Id/4,\\
+  \text{shape:}&\quad m_0 = 0,\quad
+    C_0 = \diag(e^2,e^{-2},1,\ldots,1),\\
+  \text{mixed:}&\quad m_0 = 2\one/\sqrt{N_\theta},\quad
+    C_0 = 2\diag(e^{1.5},e^{-1.5},1,\ldots,1),
+\end{align*}
+and for the non-Gaussian target the same formulas are applied in the
+$(m_\star,C_\star)$-whitened coordinates, so that for instance the shape
+covariance is $C_\star^{1/2}\diag(e^2,e^{-2},1,\ldots,1)C_\star^{1/2}$.
+
+Both panels of \Cref{fig:num-affine} show $T(\tau)/T(0)$ for every $\omega$ and
+initialization, which is the ratio predicted mode by mode in
+\Cref{thm:aff-modes}. The Gaussian panel selects $N_\theta = 5$ and the first
+saved time at which the exact Gaussian KL, normalized by its initial value, is
+at most $10^{-4}$; the non-Gaussian panel uses the fixed quasi-Monte Carlo
+objective gap, normalized by its initial gap, at tolerance $10^{-2}$. A cell is
+left blank if either hitting time is not finite within the horizon.
+
+\paragraph{Data and figure lineage.}
+\begingroup\small\raggedright
+The group is \path{omega_tau_modes}, with configurations
+\path{gaussian_target.yaml} and \path{logconcave_target.yaml}. The report
+builder reads the legacy committed locations
+\path{outputs/gaussian_grid/summary.csv} and
+\path{outputs/logconcave_grid/summary.csv} through
+\path{reports/make_report_assets.py::_fig_tau_speedup}, producing
+\path{fig_ot_gaussian_tau_speedup.pdf} and
+\path{fig_ot_logconcave_tau_speedup.pdf}. To reproduce these exact locations
+with the current runners, their \texttt{--outdir} arguments must override the
+nested \texttt{output\_dir} values in the YAML files.
+\par\endgroup
+
+\subsection{Non-log-concave boundary}
+
+All selected runs are centered, scalar, and deterministic, and use $160$-point
+Gauss--Hermite quadrature for the double well \eqref{eq:double-well}, whose
+Hessian $V_R''(\theta) = -1+2\tanh^2(\theta/R)$ lies in $[-1,1]$. For
+$\Theta\sim\N(0,c)$ we write $A_R(c) = \E V_R''(\Theta)$, and the plotted
+squared Fisher--Rao gradient is $(1-cA_R(c))^2$.
+
+The Riemannian cascade runs the map \eqref{eq:cascade-map} of
+\Cref{prop:cascade-Riem} with $R\in\{20,50,100,300,1000\}$, $c_0 = 1$,
+$\Delta t = 1$, and a $20$-step cap, stopping before the next update if
+$c_n>R^2/4$, if $\log c$ would exceed $700$, or on nonfinite arithmetic. The
+first panel of \Cref{fig:num-nonconvex} plots every recorded iterate for all
+five values of $R$.
+
+The pole experiment runs the unprojected resolvent \eqref{eq:KL-cov-map} of
+\Cref{prop:pole-KL} with $R = 1000$, $\Delta t = 1$, $c_0 = 1-\varepsilon$,
+$\varepsilon\in\{10^{-1},10^{-2},10^{-3},10^{-4},10^{-5},10^{-6}\}$, and a
+two-step cap. The middle panel plots the squared gradient after the first step
+against $\varepsilon$, together with the reference $4\varepsilon^{-2}$. At
+$R=1000$ the sufficient condition $R_\varepsilon^2\geq2\varepsilon^{-2}$ used in
+the proof of \Cref{prop:pole-KL} holds only for
+$\varepsilon\in\{10^{-1},10^{-2}\}$; the measured-to-reference ratios are
+$0.90$ and $0.99$ there, remain $0.99$ and $0.89$ at the uncertified points
+$10^{-3}$ and $10^{-4}$, and collapse to $0.39$ and $0.014$ at $10^{-5}$ and
+$10^{-6}$, where the fixed truncation radius saturates the pole. The
+small-$\varepsilon$ bend of the middle panel is this fixed-$R$ saturation and
+not a failure of the $\varepsilon^{-2}$ law along the proposition's admissible
+sequences $R_\varepsilon\to\infty$.
+
+The clipped experiment runs the scalar form of \eqref{upd:clip-KL},
+\begin{equation*}
+  c_{n+1} = \operatorname{clip}_{[0.5,2]}
+  \frac{(1+\Delta t)c_n}{1+\Delta t\,c_nA_R(c_n)},
+  \qquad c_0 = 1,\qquad \beta = 1.
+\end{equation*}
+The report panel selects the primary safety fraction $0.5$, hence
+$L_{\rm clip} = 2\beta\lambda_+ = 4$ and
+$\Delta t = 0.5/L_{\rm clip} = 0.125$, and runs $300$ steps for each of the five
+values of $R$. The full output also contains safety fractions $0.25$ and $0.9$,
+together with the deliberately outside-theorem step
+$\Delta t = 1/(\beta\lambda_+) = 0.5$; the selected panel excludes those rows.
+At step $n$ the code records the centered covariance term of the split
+stationarity measure \eqref{eq:split-stationarity},
+\begin{equation*}
+  D_n = \KL(\N(0,c_n)\|\N(0,c_{n+1})),
+  \qquad
+  D_{\min}(N) = \min_{0\leq n<N}D_n,
+  \qquad
+  B_N = \frac{\Delta t}{N}\{\calE(0,c_0)-\calE(0,c_N)\},
+\end{equation*}
+and the right panel plots $D_{\min}(N)$ against the envelope $B_N$ of
+\Cref{thm:clip-KL}. In the recorded primary runs the upper clip first activates
+at step $2$ for every $R$; the step-$2$ displacement is nonzero, while the next
+and subsequent pinned steps have $D_n = 0$.
+
+\paragraph{Data and figure lineage.}
+\begingroup\small\raggedright
+The group is \path{natural_gradient_nonconvex_instability}, with configuration
+\path{nonconvex_instability.yaml}. Writing \path{outputs} for
+\path{outputs/natural_gradient_nonconvex_instability}, the cascade panel reads
+\path{outputs/results_long.csv} through
+\path{plotting.py::fig_riemannian_cascade}, the pole panel reads
+\path{outputs/kl_pole_summary.csv} through \path{plotting.py::fig_kl_pole}, and
+the clipped panel reads \path{outputs/clipped_kl_stationarity.csv} through
+\path{plotting.py::fig_clipped_kl_stationarity}, restricted to
+\texttt{dt\_rule=theorem\_safe}. The assets are, respectively,
+\path{fig_nonconvex_riemannian_cascade.pdf},
+\path{fig_nonconvex_kl_pole.pdf}, and
+\path{fig_nonconvex_clipped_kl_stationarity.pdf}.
+\par\endgroup
+
+\subsection{Fixed-step barrier}
+
+All runs are one-dimensional, deterministic, and CPU-only; the potentials, their first two
+derivatives, and the objective are closed form up to tabulated antiderivatives of the fixed
+$C^\infty$ profiles, and the Gaussian averages $b(m,c)$, $A(m,c)$ use fixed Gauss--Hermite
+quadrature, $32$ nodes for the bump train and $64$ for the two-cycle targets.
+
+The bump-train grid instantiates \Cref{thm:sharp-disc} with profile constants
+$T=1/8$, $Y=4$, $\LH=1$, $\gamma=1/2$, over
+$\kappa\in\{8,16,\dots,1024\}$, in two families: the Appendix~\ref{app:bump} train built for
+the certified step, and the same construction retuned so that the per-step mean gain
+$s=\Delta t\,c_\kappa$ matches the tested arm. The two fixed arms are
+$\Delta t=\gamma/\kappa$ and $\Delta t=\gamma$; a run stops at a $10^{-6}$ relative gap, and
+the reported count $n_{1/2}$ is the first iterate with
+$\DeltaE\leq\tfrac12\DeltaE_0$. Reported exponents are least-squares slopes of
+$\log n_{1/2}$ against $\log\kappa$ over the upper half of the grid. A companion sweep
+varies the order-one constant $\gamma\in\{1/8,\dots,4\}$; every $\gamma\leq1$ is monotone
+and convergent at every $\kappa$ with exponent in $[0.88,0.92]$, and the fixed step first
+fails at $\gamma=2$, independently of $\kappa$.
+
+The two-cycle grid instantiates \Cref{thm:two-cycle} with the three-plateau profile of
+\Cref{app:cycle} at $\LH=1$, over $\kappa\in\{64,128,256,512,1024\}$ and
+$\gamma\in\{0.25,0.5,1,1.5\}$; the plateau length is obtained by a scalar root-find so that
+$b(M,c)=rM$ holds to machine precision, and the realized diagnostics
+($\min V''=1$, $\max V''=\kappa$, $\norm{V'''}_\infty=\LH$, $cA(M,c)=1$ and mean multiplier
+$-1$ to twelve digits) are recorded per target. Cycle runs use a $2000$-step cap; the basin
+study perturbs the initial mean by relative amounts in $\{0,10^{-12},10^{-6},
+10^{-2},0.05,0.1,0.2,0.5\}$ with a $20000$-step cap. The Bures--Wasserstein contrast runs
+the scalar forward--backward step on the same targets at
+$\eta\in\{0.25,0.5,1,2,4\}/\beta$. The barrier panel of \Cref{fig:num-barrier} combines, at
+$\kappa=256$, the retuned bump train over
+$\Delta t\in\{2^{-11},\dots,2/\kappa\}$ with the two-cycle regime
+$\Delta t\in(2/\kappa,1]$. Code and outputs:
+\path{src/natural_gradient_fixed_step_barrier},
+\path{outputs/natural_gradient_fixed_step_barrier}, with per-run CSVs
+(\path{sharp_bump_*.csv}, \path{two_cycle_*.csv}) and the assertion suite
+\path{tests/natural_gradient_fixed_step_barrier}.
+
+\subsection{Provenance limits of the committed snapshot}
+
+\begingroup\small\raggedright
+The scientific parameters above are recoverable from the configurations,
+source, and raw columns used by the selected figures, but some run-level
+provenance files that the runners are designed to write are not committed:
+\path{outputs/natural_gradient_covariance_bootstrap} lacks
+\path{run_metadata.json};
+\path{outputs/natural_gradient_stl_variance} lacks
+\path{algorithm_results_long.csv}, \path{target_metadata.json},
+\path{run_metadata.json}, \path{estimator_target_metadata.json}, and
+\path{estimator_run_metadata.json}; and the Gaussian affine-mode runner does not
+write a run-metadata file. The exact Python, NumPy, Torch, CUDA, and hardware
+versions of those original runs therefore cannot be reconstructed from this
+snapshot. The estimator-level STL CSV records the Torch/CUDA backend but not the
+GPU model, the algorithm-level backend is not recorded in the surviving summary
+files, and \path{requirements.txt} and \path{requirements-gpu.txt} give lower
+dependency bounds rather than a locked environment. These omissions do not
+change the selected data-to-figure mappings, since the two STL panels need only
+the surviving estimator and tail CSVs and the covariance panels need only the
+surviving long and transport-summary CSVs. The target-level metadata of
+the covariance-bootstrap group is a deterministic function of the committed
+configuration and has been regenerated from it
+(\path{target_metadata.json}); the run-level metadata of the original runs is
+not reconstructed. The asset builder \path{reports/make_report_assets.py}
+treats the GPU-regenerable trajectory file \path{algorithm_results_long.csv}
+and the algorithm run metadata as optional and builds every figure and table
+used by this manuscript from the committed summary files, so both
+\texttt{--only stl\_variance} and \texttt{--only covariance\_bootstrap} run to
+completion from a clean checkout; the supplementary algorithm-gap panels, which
+this manuscript does not use, require rerunning
+\path{scripts/natural_gradient_stl_variance/run_algorithm_grid.py} on a CUDA
+host. No missing value has been guessed here.
+General WFR experiments under \path{outputs/wfr_gradient_flow} are not used in
+any figure or claim in this manuscript.
+\par\endgroup
+
+% SOURCES:
+% codex-draft/appendices/E-experimental-details.tex l.1-24 (preamble, objective,
+%   Gauss-Hermite rescaling, asset-copy statement) -> opening paragraphs
+% codex-draft/appendices/E-experimental-details.tex l.25-117 (covariance
+%   bootstrap grids, Bures step, lineage) -> app subsection 1
+% codex-draft/appendices/E-experimental-details.tex l.119-188 (discretization
+%   grid, stability/accuracy definitions, lineage) -> app subsection 2
+% codex-draft/appendices/E-experimental-details.tex l.190-288 (STL estimator and
+%   algorithm grids, SHA256 cell seed, tail floors, lineage) -> app subsection 3
+% codex-draft/appendices/E-experimental-details.tex l.290-379 (omega-tau modes,
+%   Sobol designs, five initializations, lineage) -> app subsection 4
+% codex-draft/appendices/E-experimental-details.tex l.381-457 (double-well
+%   cascade, KL pole, clipped-KL stationarity, lineage) -> app subsection 5
+% codex-draft/appendices/E-experimental-details.tex l.459-495 (provenance limits)
+%   -> app subsection 6, condensed to one paragraph, content unchanged
+% Cross-reference retargeting: fig:num-affine-modes -> fig:num-affine (label of
+%   sections/06-numerics.tex l.163); other figure labels -> fig:num-three-stage,
+%   fig:num-discretization, fig:num-stl, fig:num-nonconvex.
+% Cross-references into the new namespace (sections/02-nonconvex-part.tex):
+%   double-well display -> \eqref{eq:double-well} (l.28); Riemannian cascade map
+%   -> \eqref{eq:cascade-map} and \Cref{prop:cascade-Riem} (l.41-46); KL
+%   resolvent pole -> \eqref{eq:KL-cov-map} and \Cref{prop:pole-KL} (l.57-61);
+%   split stationarity measure -> \eqref{eq:split-stationarity} and
+%   \Cref{thm:clip-KL} (l.124, l.129); clipped update -> \eqref{upd:clip-KL}.
+%   Modal rates -> \Cref{thm:aff-modes}. Scheme displays deduplicated against
+%   \eqref{upd:Riem}, \eqref{upd:KL}; Radau reference solution -> \eqref{ODEs:NG}.
+% Deduplication introducing two local labels: eq:app-diag-fixed-point (the
+%   diagonal log-cosh fixed point, stated once and reused by the STL subsection)
+%   and eq:app-affine-step (the omega-tau step, stated once and specialized to
+%   the Gaussian calibration target).
+% Notation retargeting per drafting-contract.md sec. 2: d -> N_\theta,
+%   \pi -> \rho_\post, h -> \Delta t, x -> \theta, \lambda_0 -> \lambda_{0,\min},
+%   energy gap -> \DeltaE; Gauss-Hermite nodes written (z_j,w_j) to free x.

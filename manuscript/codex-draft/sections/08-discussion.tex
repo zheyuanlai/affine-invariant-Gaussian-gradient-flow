@@ -1,0 +1,65 @@
+\section{Discussion}
+\label{sec:discussion}
+
+The Fisher--Rao bounds proved here are not summarized by one condition number.
+Covariance underdispersion, global nonquadratic localization, and local
+mean--covariance coupling are three different effects.  Their separation
+explains several facts that otherwise look contradictory.  Fisher--Rao is
+affine invariant, yet its global rate can depend on the initial covariance.
+A transport warm start can eliminate that dependence, yet a
+\(\kappastar\)-scale lower bound remains.  Optimizer whitening can remove
+extrinsic anisotropy, yet the local score generator can still be slow because
+the whitened target is non-Gaussian.
+
+Three sharpness statements should be read with their scopes attached.  The
+spiral gives a continuous-time \(\Omega(\kappastar)\) localization time in
+dimension at least two for a specified anisotropic initialization class.  The
+bump train gives a one-dimensional \(\Omega(\kappa/h)\) lower bound for both
+fixed-step maps, with \(h=\gamma/\kappa\) and
+\(0<\gamma\leq1/2\), for a constant-factor reduction after covariance
+burn-in.  The convex ridge gives
+\(\gstar=\Theta(\kappastar^{-1/2})\) with
+\(d=\Theta(\kappastar^2)\).  None of these statements alone proves a
+fixed-dimensional lower bound with the same dependence, and the ridge does not
+saturate the \(\sqrt d\log\kappastar\) branch of the universal estimate.
+
+The stochastic results carry equally important qualifications.  A constant-
+step theorem gives geometric convergence to an explicit residual upper bound;
+it neither identifies the stationary error nor, when that residual is nonzero,
+certifies arbitrary accuracy at fixed step and batch size.  Under
+Hessian-Lipschitzness, the decreasing-step result instead certifies decay to
+zero at an \(O(1/N)\) rate.  Locally,
+contraction is first proved for the process killed at the boundary of a
+certified region.  A separate finite-horizon argument turns this into a
+high-probability non-exit statement, at the price of deeper entry and a batch
+size that grows with the requested horizon under the present proof.  These
+distinctions are visible in the theorem statements rather than being deferred
+to caveats.
+
+The classification of affine-invariant metrics explains why Fisher--Rao is a
+natural default, not why it is fastest on every target.  For \(d\geq2\), the
+parameters \((\eta,\omega,\tau)\) set independent time scales for the mean,
+traceless covariance, and trace covariance modes on a Gaussian target.
+Fisher--Rao is the unique balanced choice up to scale.  A deliberately
+unbalanced metric can accelerate a known dominant mode, as the trace experiment
+illustrates.  A complete sharp global and stochastic theory for every member of
+this family would require new arguments; it is not implied by the Gaussian
+modal calculation.
+
+The non-log-concave example marks a structural boundary.  Negative curvature
+is multiplied by the covariance in the Fisher--Rao dynamics.  A uniform Hessian
+bound therefore does not prevent an unprojected covariance cascade or a pole in
+the KL resolvent.  Spectral clipping changes the problem to constrained
+optimization and restores a useful \(O(1/N)\) displacement guarantee, but the
+displacement can vanish at an active constraint while the unconstrained
+gradient remains large.
+
+Several problems remain open.  The most immediate is the optimal local spectral
+rate in fixed dimension.  A second is a closed-form general-target radius for
+the discrete maps, replacing the compact-hull second-derivative supremum.
+Sharper stochastic local stepsizes and an infinite-horizon stability mechanism
+that does not require horizon-dependent batching would make the local theory
+more practical.  Finally, general affine-invariant preconditioning and a full
+Wasserstein--Fisher--Rao theory are natural continuations, but they should be
+developed without obscuring the scoped sharp Fisher--Rao bounds established
+here.

@@ -1,0 +1,72 @@
+\section{Representation-theoretic classification}\label{app:classification}
+
+We record the structural form of \Cref{thm:aff-class}. Throughout, $N_\theta \geq 2$, the base point is $o = (0, I) \in \Aspace$, and we identify $T_o \Aspace$ with $\R^{N_\theta} \times \Sym(N_\theta)$.
+
+Since $\Phi_{(C^{1/2}, m)}(0, I) = (m, C)$, the affine group acts transitively on $\Aspace$, and $\Phi_{(A,b)}(0, I) = (b, AA^\top) = (0, I)$ exactly when $b = 0$ and $A \in O(N_\theta)$. An affine invariant metric is therefore determined by an inner product on $T_o \Aspace$ that is invariant under the isotropy representation
+\begin{equation}\label{eq:app-cl-isotropy}
+    Q \cdot (u, X) = (Qu, QXQ^\top), \qquad Q \in O(N_\theta),
+\end{equation}
+and conversely every such inner product extends to an affine invariant metric by transport. At $o$ the isotropy representation splits as
+\begin{equation}\label{eq:app-cl-splitting}
+    T_o \Aspace = \R^{N_\theta} \oplus \Sym_0(N_\theta) \oplus \R I, \qquad \Sym_0(N_\theta) := \{ X \in \Sym(N_\theta) : \Tr X = 0 \},
+\end{equation}
+into the mean block, the traceless covariance block and the trace covariance block, which are pairwise inequivalent irreducible representations of $O(N_\theta)$. Inequivalence is visible on the sign element $Q = -I$, which acts as $-1$ on $\R^{N_\theta}$ and trivially on $\Sym(N_\theta)$, and on dimensions, since $\dim \Sym_0(N_\theta) = N_\theta(N_\theta+1)/2 - 1 \geq 2 > 1 = \dim \R I$. Schur's lemma then leaves a single scalar weight on each summand and no invariant pairing between distinct summands, so every invariant quadratic form on $T_o\Aspace$ is
+\begin{equation}\label{eq:app-cl-form}
+    \eta \norm{u}^2 + \omega \Tr (X_0^2) + \tau' (\Tr X)^2
+\end{equation}
+for scalars $\eta, \omega, \tau'$, where $X = X_0 + \frac{\Tr X}{N_\theta} I$. We verify this by an explicit computation with equivariant operators, which also fixes the normalization of the trace weight.
+
+\begin{lemma}\label{lem:app-cl-equivariant}
+    Let $N_\theta \geq 2$ and let $\mathcal{M} : \Sym(N_\theta) \to \Sym(N_\theta)$ be linear with $\mathcal{M}(QXQ^\top) = Q \mathcal{M}(X) Q^\top$ for every $Q \in O(N_\theta)$. Then there are scalars $\omega, \tau$ with $\mathcal{M}(X) = \omega X + \tau (\Tr X) I$. Similarly, if $M \in \Sym(N_\theta)$ satisfies $Q^\top M Q = M$ for every $Q \in O(N_\theta)$, then $M = \eta I$ for a scalar $\eta$.
+\end{lemma}
+
+\begin{proof}
+    Write $E_{ij} = \frac{1}{2}(e_i e_j^\top + e_j e_i^\top)$ for the standard basis of $\Sym(N_\theta)$ and expand $\mathcal{M}(E_{ij}) = \sum_{k \leq l} c^{ij}_{kl} E_{kl}$. Taking $Q = \diag(\epsilon_1, \ldots, \epsilon_{N_\theta})$ with $\epsilon_i \in \{\pm 1\}$ gives $Q E_{ij} Q^\top = \epsilon_i \epsilon_j E_{ij}$, so equivariance forces $\epsilon_k \epsilon_l \, c^{ij}_{kl} = \epsilon_i \epsilon_j \, c^{ij}_{kl}$ for every choice of signs, hence $c^{ij}_{kl} = 0$ unless $\epsilon_k\epsilon_l$ and $\epsilon_i\epsilon_j$ agree identically in the signs. For $i \neq j$ this holds only when $\{k,l\} = \{i,j\}$, so $\mathcal{M}(E_{ij}) = \omega_{ij} E_{ij}$; for $i = j$ it holds only when $k = l$, so $\mathcal{M}(E_{ii})$ is diagonal, $\mathcal{M}(E_{ii}) = \sum_k c^i_k E_{kk}$.
+
+    Taking $Q$ to be a permutation matrix and using $Q E_{ij} Q^\top = E_{\sigma(i)\sigma(j)}$ gives $\omega_{ij} = \omega$ for all $i \neq j$, and $c^i_i = \mu$, $c^i_k = \nu$ for all $k \neq i$, with $\omega, \mu, \nu$ independent of the indices. Hence $\mathcal{M}(E_{ii}) = (\mu - \nu) E_{ii} + \nu I$.
+
+    It remains to identify $\omega$ with $\mu - \nu$. Let $Q$ be the rotation by $\pi/4$ in the plane spanned by $e_1, e_2$ and the identity on its orthogonal complement, which exists because $N_\theta \geq 2$. Then $Q (E_{11} - E_{22}) Q^\top = 2 E_{12}$, while $\mathcal{M}(E_{11} - E_{22}) = (\mu - \nu)(E_{11} - E_{22})$ since the two copies of $\nu I$ cancel. Equivariance gives $\mathcal{M}(2E_{12}) = (\mu - \nu) \cdot 2 E_{12}$, and comparing with $\mathcal{M}(E_{12}) = \omega E_{12}$ yields $\omega = \mu - \nu$. Setting $\tau = \nu$, the map $X \mapsto \omega X + \tau (\Tr X) I$ agrees with $\mathcal{M}$ on every $E_{ij}$, hence everywhere.
+
+    For the second claim, the same sign matrices force $M$ diagonal and the permutation matrices force its diagonal entries to be equal.
+\end{proof}
+
+\begin{proof}[Representation-theoretic proof of \Cref{thm:aff-class}]
+    Let $g$ be an affine invariant metric and let $b := g_o$ be the induced $O(N_\theta)$-invariant inner product on $T_o\Aspace$.
+
+    The mean--covariance cross term vanishes. Indeed, put $L(u, X) := b((u,0),(0,X))$. Invariance under the sign element $Q = -I$ of \eqref{eq:app-cl-isotropy} gives $L(u, X) = L(-u, X) = -L(u, X)$, hence $L \equiv 0$; this is the representation-theoretic form of the sign-element argument used in the proof of \Cref{thm:aff-class}.
+
+    On the mean block, write $b((u,0),(v,0)) = u^\top M v$ with $M \in \Sym(N_\theta)$. Invariance reads $Q^\top M Q = M$ for every $Q \in O(N_\theta)$, so $M = \eta I$ by \Cref{lem:app-cl-equivariant}, and $b((u,0),(v,0)) = \eta \, u^\top v$.
+
+    On the covariance block, write $b((0,X),(0,Y)) = \Tr(\mathcal{M}(X) Y)$ for the unique linear $\mathcal{M} : \Sym(N_\theta) \to \Sym(N_\theta)$ representing $b$ in the trace pairing, which is nondegenerate on $\Sym(N_\theta)$. Invariance of $b$ and of the trace pairing give $\mathcal{M}(QXQ^\top) = Q \mathcal{M}(X) Q^\top$, so $\mathcal{M}(X) = \omega X + \tau (\Tr X) I$ by \Cref{lem:app-cl-equivariant} and
+    \begin{equation}\label{eq:app-cl-cov}
+        b((0,X),(0,Y)) = \omega \Tr(XY) + \tau \Tr(X) \Tr(Y).
+    \end{equation}
+    In the splitting \eqref{eq:app-cl-splitting} this reads $\omega \Tr(X_0 Y_0) + \frac{\omega + N_\theta\tau}{N_\theta} \Tr(X)\Tr(Y)$, which is \eqref{eq:app-cl-form} with $\tau' = (\omega + N_\theta \tau)/N_\theta$ and confirms that the three summands are pairwise $b$-orthogonal.
+
+    Positivity is read off blockwise. On the mean block, $b((u,0),(u,0)) = \eta \norm{u}^2 > 0$ requires $\eta > 0$. On the traceless block, taking $X$ traceless with $\Tr(X^2) = 1$ gives $b((0,X),(0,X)) = \omega$, so $\omega > 0$. On the trace block, taking $X = sI$ gives $b((0,X),(0,X)) = N_\theta(\omega + N_\theta\tau) s^2$, so $\omega + N_\theta \tau > 0$, that is, $\tau > -\omega/N_\theta$. Conversely, under these three conditions $b$ is positive definite on each summand and the summands are orthogonal, so $b$ is an inner product.
+
+    Finally we transport $b$ to an arbitrary $a = (m, C)$. The map $\Phi_{(C^{1/2}, m)}$ carries $o$ to $a$ and, by \eqref{eq:aff-action}, carries $(u, X) \in T_o\Aspace$ to $(C^{1/2} u, C^{1/2} X C^{1/2})$; equivalently a tangent vector at $a$ pulls back to $(C^{-1/2}u, C^{-1/2} X C^{-1/2})$. Substituting into $b$ gives
+    \begin{equation*}
+        g_a((u,X),(v,Y)) = \eta \, u^\top C^{-1} v + \omega \Tr(C^{-1} X C^{-1} Y) + \tau \Tr(C^{-1}X)\Tr(C^{-1}Y),
+    \end{equation*}
+    which is \eqref{eq:aff-metric}. The triple $(\eta, \omega, \tau)$ is determined by $b$ through the three displayed evaluations, and multiplying it by $c > 0$ multiplies $b$, hence $g$, by $c$.
+\end{proof}
+
+For $N_\theta = 1$ the splitting \eqref{eq:app-cl-splitting} has no traceless summand and $\Sym(1) = \R I$, so \Cref{lem:app-cl-equivariant} degenerates: every linear map on $\Sym(1)$ is equivariant, only $\omega + \tau$ is determined, and the positivity conditions become $\eta > 0$ and $\omega + \tau > 0$, as recorded in \Cref{rem:aff-dim-one}.
+
+% SOURCES:
+% codex-draft/appendices/A-affine-geometry.tex l.1-41 (transitivity, isotropy O(N_theta),
+%     three-summand splitting of the tangent representation, pairwise inequivalent
+%     irreducibles, Schur's lemma, sign element killing the mean-covariance cross term,
+%     transport by (u,X) -> (C^{-1/2}u, C^{-1/2}XC^{-1/2}), blockwise positivity
+%     eta>0, omega>0, tau>-omega/N_theta) -> the whole appendix
+% codex-draft/sections/02-geometry.tex l.105-163 (thm:geometry-classification and its proof:
+%     N_theta>=2, uniqueness, converse) -> statement transported here
+% natural-gradient.tex l.2814-2838 (isotropy argument; the mean-block transport
+%     g_{(m,C)}((u,0),(v,0)) = eta u^T C^{-1} v; SPD classification of
+%     \cite{thanwerdas2019affine,thanwerdas2023n}) -> cross-term and mean-block steps
+% \Cref{lem:app-cl-equivariant} is the standard classification of O(N_theta)-equivariant
+%     linear maps on Sym(N_theta); it supplies the proof of the O(N_theta)-invariant covariance
+%     form quoted without proof in natural-gradient.tex l.2824-2827 and in
+%     codex-draft/sections/02-geometry.tex l.146-150, and requires N_theta >= 2 only at the
+%     pi/4-rotation step.

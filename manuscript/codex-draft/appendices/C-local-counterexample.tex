@@ -1,0 +1,1143 @@
+\section{Local score calculus and the convex-ridge obstruction}
+\label{app:local-ridge}
+
+\subsection{Second-score identities and the non-Gaussian modulus}
+\label{app:local-moduli}
+
+This subsection proves the score identities and the explicit bounds
+\eqref{eq:local-Kng-explicit}--\eqref{eq:local-Kng-covariance}.  We work in
+the optimizer-whitened coordinates of \Cref{sec:local-gaussian-core}.  Assume
+throughout that \(\widehat V\in C^2(\R^d)\) and
+\[
+  \alphastar\Id\preceq\nabla^2\widehat V(x)
+  \preceq\betastar\Id,\qquad x\in\R^d.
+\]
+Boundedness of the Hessian implies at most quadratic growth of
+\(\widehat V\) and at most linear growth of its gradient.  It therefore
+justifies all Gaussian density differentiations below, locally uniformly on
+sets whose covariance eigenvalues are bounded away from zero and infinity.
+No classical third or fourth derivative is used.  The formulas also apply
+entrywise to vector- and matrix-valued integrands.
+
+Fix \(a=(m,C)\), a tangent vector \(\zeta=(u,U)\), and set
+\begin{equation}
+  v:=C^{-1/2}u,\qquad
+  S:=C^{-1/2}UC^{-1/2},\qquad
+  t^2:=\norm v^2+\frac12\norm S_{\Frob}^2.
+  \label{eq:app-local-whitened-tangent}
+\end{equation}
+If \(Z\sim\N(0,\Id)\) and \(X=m+C^{1/2}Z\), define
+\begin{align}
+  q_\zeta(Z)
+  &:=
+  v^\top Z+\frac12\bigl(Z^\top SZ-\Tr S\bigr),
+  \label{eq:app-local-first-score}\\
+  p_\zeta(Z)
+  &:=
+  \frac12\Tr(S^2)-\norm v^2-2v^\top SZ-Z^\top S^2Z,
+  \qquad
+  \chi_\zeta:=q_\zeta^2+p_\zeta.
+  \label{eq:app-local-second-score}
+\end{align}
+
+\begin{lemma}[First and second Gaussian score identities]
+\label{lem:app-local-second-score}
+Let \(\phi:\R^d\to\R\) be measurable and of polynomial growth, and put
+\(\Phi(m,C):=\E_{\N(m,C)}[\phi]\).  Then
+\begin{equation}
+  D\Phi(a)[\zeta]=\E[\phi(X)q_\zeta(Z)],
+  \qquad
+  D^2\Phi(a)[\zeta,\zeta]
+  =\E[\phi(X)\chi_\zeta(Z)].
+  \label{eq:app-local-score-identities}
+\end{equation}
+Moreover, \(q_\zeta\) belongs to the first two Hermite chaoses, whereas
+\(\chi_\zeta\) belongs to chaoses two, three, and four.  In particular,
+\begin{equation}
+  \E q_\zeta=\E\chi_\zeta=0,\qquad
+  \E[Z\chi_\zeta]=0,\qquad
+  \E q_\zeta^2=t^2,\qquad
+  \norm{\chi_\zeta}_{L^2}\leq\sqrt6\,t^2.
+  \label{eq:app-local-score-moments}
+\end{equation}
+The constant \(\sqrt6\) is sharp.
+\end{lemma}
+
+\begin{proof}
+Let \(m_s=m+su\) and \(C_s=C+sU\), which remains positive definite for
+small \(\abs s\).  Differentiating the log-density of
+\(\N(m_s,C_s)\) at the fixed point \(x=m+C^{1/2}Z\) gives
+\[
+  \left.\partial_s\log\rho_{m_s,C_s}(x)\right|_{s=0}=q_\zeta(Z),
+  \qquad
+  \left.\partial_s^2\log\rho_{m_s,C_s}(x)\right|_{s=0}=p_\zeta(Z).
+\]
+The identity
+\(\partial_s^2\rho_s=\rho_s[(\partial_s\log\rho_s)^2+
+\partial_s^2\log\rho_s]\) proves
+\eqref{eq:app-local-score-identities}.
+
+For the chaos calculation, write
+\[
+  \ell:=v^\top Z,\qquad
+  Q:=Z^\top SZ-\Tr S,\qquad
+  R_2:=Z^\top S^2Z-\Tr S^2.
+\]
+Then \(q_\zeta=\ell+Q/2\), and orthogonality of the first and second
+chaoses gives
+\(\E q_\zeta^2=\norm v^2+\norm S_{\Frob}^2/2=t^2\).
+The Gaussian product formula yields
+\[
+  (Q^2)_0=2\norm S_{\Frob}^2,\qquad
+  (Q^2)_2=4R_2,\qquad
+  \ell Q=2v^\top SZ+G_3,
+\]
+where \(G_3\) is pure chaos three.  Substitution in
+\(\chi_\zeta=q_\zeta^2+p_\zeta\) cancels its chaos-zero and chaos-one
+parts and leaves the mutually orthogonal components
+\[
+  (\chi_\zeta)_2=\ell^2-\norm v^2,\qquad
+  (\chi_\zeta)_3=G_3,\qquad
+  (\chi_\zeta)_4=\frac14(Q^2)_4.
+\]
+This proves the first three assertions in
+\eqref{eq:app-local-score-moments}.
+
+For the \(L^2\) norm, abbreviate
+\[
+  a_0:=\norm v^2,\quad
+  b_0:=\norm S_{\Frob}^2,\quad
+  c_0:=v^\top S^2v,\quad
+  d_4:=\Tr(S^4).
+\]
+Wick's formula and the preceding orthogonal decomposition give
+\begin{equation}
+  \norm{\chi_\zeta}_{L^2}^2
+  =
+  2a_0^2+2a_0b_0+4c_0+\frac12b_0^2+d_4.
+  \label{eq:app-local-score-exact-L2}
+\end{equation}
+Since \(c_0\leq a_0b_0\) and \(d_4\leq b_0^2\),
+\[
+  \norm{\chi_\zeta}_{L^2}^2
+  \leq
+  2a_0^2+6a_0b_0+\frac32b_0^2
+  \leq6\left(a_0+\frac{b_0}{2}\right)^2
+  =6t^4.
+\]
+Equality holds when \(v=0\) and \(S\) has rank one, proving sharpness.
+\end{proof}
+
+The Ornstein--Uhlenbeck generator
+\(\mathcal L_{\mathrm{OU}}=\Delta_z-z^\top\nabla_z\) acts as multiplication
+by \(-k\) on the \(k\)-th Hermite chaos.  Thus, for a centered
+\(\psi=\sum_{k\geq1}\psi_k\),
+\begin{equation}
+  \E\norm{\nabla(-\mathcal L_{\mathrm{OU}})^{-1}\psi}^2
+  =
+  \sum_{k\geq1}\frac1k\norm{\psi_k}_{L^2}^2.
+  \label{eq:app-local-OU-inverse}
+\end{equation}
+In particular, the right-hand side is at most
+\(\norm\psi_{L^2}^2/2\) when \(\psi\) has no chaos-one component.  This
+factor \(1/2\) is applicable to \(\chi_\zeta\), but not to a general
+centered score.
+
+\begin{lemma}[Explicit non-Gaussian second-differential modulus]
+\label{lem:app-local-modulus-bound}
+Let \(H=F-\FGauss\) be the non-Gaussian part of the whitened
+Fisher--Rao field.  On the star hull \(\mathcal H_\delta\),
+\[
+  H_m(a)=C(g(a)+m),\qquad
+  H_C(a)=-C(A(a)-\Id)C.
+\]
+Then
+\begin{equation}
+  \Kng(\delta)
+  :=
+  \sup_{\substack{a\in\mathcal H_\delta\\\zeta\neq0}}
+  \frac{\norm{D^2H(a)[\zeta,\zeta]}_\star}
+       {\norm{\zeta}_\star^2}
+  \leq
+  \left(
+    K_{\mathrm{ng},m}(\delta)^2
+    +\frac12K_{\mathrm{ng},C}(\delta)^2
+  \right)^{1/2},
+  \label{eq:app-local-modulus-pair}
+\end{equation}
+Here the two block constants are
+\begin{align}
+  K_{\mathrm{ng},m}(\delta)
+  &:=
+  \frac{U_\delta^{3/2}}{\ell_\delta^2}
+  \left(
+    \sqrt3\,\overline\Sigma_\delta+\Sigma_\delta
+    +\sqrt{\Sigma_\delta^2+2\mathcal B_\delta^2}
+  \right),
+  \label{eq:app-local-Kng-mean}\\
+  K_{\mathrm{ng},C}(\delta)
+  &:=
+  \frac{U_\delta^2}{\ell_\delta^2}
+  \left(
+    (4\sqrt2+\sqrt6)\Sigma_\delta+4\mathcal B_\delta
+  \right).
+  \label{eq:app-local-Kng-covariance}
+\end{align}
+These are the quantities stated in
+\eqref{eq:local-Kng-mean}--\eqref{eq:local-Kng-covariance}.
+\end{lemma}
+
+\begin{proof}
+Fix \(a\in\mathcal H_\delta\).  The covariance band gives
+\(\ell_\delta\Id\preceq C\preceq U_\delta\Id\).  Put
+\[
+  x:=\norm v,\qquad
+  y:=\frac{\norm S_{\Frob}}{\sqrt2},
+  \qquad t^2=x^2+y^2.
+\]
+Then
+\begin{equation}
+  \norm U_{\op}\leq\sqrt2U_\delta y,\qquad
+  \norm U_{\Frob}\leq\sqrt2U_\delta y,\qquad
+  t\leq\ell_\delta^{-1}\norm\zeta_\star.
+  \label{eq:app-local-band-conversion}
+\end{equation}
+The final inequality uses \(\ell_\delta<1\).
+
+For the mean block, Gaussian integration by parts through
+\(\psi_1=(-\mathcal L_{\mathrm{OU}})^{-1}q_\zeta\), for which
+\(\nabla\psi_1=v+SZ/2\), gives
+\begin{equation}
+  D(g+m)[\zeta]
+  =
+  -\E\!\left[
+    \bigl(\nabla^2\widehat V(X)-\Id\bigr)
+    C^{1/2}\left(v+\frac12SZ\right)
+  \right].
+  \label{eq:app-local-first-g-derivative}
+\end{equation}
+Split
+\(\nabla^2\widehat V-\Id=(\nabla^2\widehat V-A)+(A-\Id)\).
+The centered Hessian annihilates the constant \(v\), while the deterministic
+part annihilates \(SZ\).  By the definitions of
+\(\mathcal B_\delta\) and \(\Sigma_\delta\),
+\begin{equation}
+  \norm{D(g+m)[\zeta]}
+  \leq
+  \sqrt{U_\delta}
+  \left(\mathcal B_\delta x+\frac{\Sigma_\delta}{\sqrt2}y\right).
+  \label{eq:app-local-first-g-bound}
+\end{equation}
+
+For the second derivative, let
+\(\psi_2=(-\mathcal L_{\mathrm{OU}})^{-1}\chi_\zeta\).  By
+\eqref{eq:app-local-OU-inverse} and
+\eqref{eq:app-local-score-moments},
+\[
+  \E\norm{\nabla\psi_2}^2\leq3t^4,\qquad
+  \E\nabla\psi_2=0.
+\]
+Another Gaussian integration by parts therefore gives
+\[
+  D^2g[\zeta,\zeta]
+  =
+  -\E\!\left[
+    \bigl(\nabla^2\widehat V(X)-A(a)\bigr)
+    C^{1/2}\nabla\psi_2
+  \right].
+\]
+This expectation can be bounded either with the Hessian dispersion
+\(\Sigma_\delta\) or with the pointwise operator bound
+\(\norm{\nabla^2\widehat V-A}_{\op}\leq\betastar-\alphastar\).
+Consequently,
+\begin{equation}
+  \norm{D^2g[\zeta,\zeta]}
+  \leq
+  \sqrt{3U_\delta}\,\overline\Sigma_\delta\,t^2.
+  \label{eq:app-local-second-g-bound}
+\end{equation}
+This is an operator-norm alternative, not the false pointwise assertion
+\(\norm{\nabla^2\widehat V-A}_{\Frob}
+\leq\betastar-\alphastar\).
+
+Since \(C\) is affine in the covariance coordinate,
+\[
+  D^2H_m[\zeta,\zeta]
+  =
+  2U\,D(g+m)[\zeta]+C\,D^2g[\zeta,\zeta].
+\]
+Combining \eqref{eq:app-local-first-g-bound} and
+\eqref{eq:app-local-second-g-bound} with
+\eqref{eq:app-local-band-conversion} yields
+\[
+  \norm{D^2H_m[\zeta,\zeta]}
+  \leq
+  U_\delta^{3/2}
+  \left(
+    2\sqrt2\,\mathcal B_\delta xy
+    +2\Sigma_\delta y^2
+    +\sqrt3\,\overline\Sigma_\delta t^2
+  \right).
+\]
+The largest eigenvalue of the first two terms as a quadratic form in
+\((x,y)\) is
+\(\Sigma_\delta+\sqrt{\Sigma_\delta^2+2\mathcal B_\delta^2}\).
+Using \(t\leq\ell_\delta^{-1}\norm\zeta_\star\) proves
+\begin{equation}
+  \norm{D^2H_m[\zeta,\zeta]}
+  \leq
+  K_{\mathrm{ng},m}(\delta)\norm\zeta_\star^2.
+  \label{eq:app-local-mean-modulus}
+\end{equation}
+
+For the covariance block, write \(W=A-\Id\).  The score identities imply
+\begin{equation}
+  \norm{DW[\zeta]}_{\Frob}\leq\Sigma_\delta t,\qquad
+  \norm{D^2W[\zeta,\zeta]}_{\Frob}
+  \leq\sqrt6\,\Sigma_\delta t^2.
+  \label{eq:app-local-A-score-bounds}
+\end{equation}
+Indeed, \(DA[\zeta]=\E[(\nabla^2\widehat V-A)q_\zeta]\) and
+\(D^2A[\zeta,\zeta]
+=\E[(\nabla^2\widehat V-A)\chi_\zeta]\).
+The product rule gives
+\[
+  D^2(CWC)[\zeta,\zeta]
+  =
+  2U(DW)C+2C(DW)U+2UWU+C(D^2W)C.
+\]
+Using \(\norm W_{\op}\leq\mathcal B_\delta\) and
+\eqref{eq:app-local-band-conversion}--\eqref{eq:app-local-A-score-bounds},
+\begin{align*}
+  \norm{D^2H_C[\zeta,\zeta]}_{\Frob}
+  &\leq
+  U_\delta^2\left(
+    4\sqrt2\,\Sigma_\delta ty
+    +4\mathcal B_\delta y^2
+    +\sqrt6\,\Sigma_\delta t^2
+  \right)\\
+  &\leq
+  K_{\mathrm{ng},C}(\delta)\norm\zeta_\star^2.
+\end{align*}
+Finally,
+\(\norm{D^2H}_\star^2
+=\norm{D^2H_m}^2+\norm{D^2H_C}_{\Frob}^2/2\), which proves
+\eqref{eq:app-local-modulus-pair}.  Each constant is proportional to
+\(\mathcal B_\delta\), \(\Sigma_\delta\), or
+\(\overline\Sigma_\delta\), so the modulus vanishes for a Gaussian target.
+\end{proof}
+
+\subsection{The convex-ridge construction}
+\label{app:local-ridge-construction}
+
+All constants implicit in \(O(\cdot)\) below are numerical and independent
+of \(K\) and the dimension.  Let \(p\in\mathbb N\) tend to infinity and set
+\begin{equation}
+  K:=(8p)^{1/4},\qquad
+  d_K:=p+1,\qquad
+  p=\frac{K^4}{8}.
+  \label{eq:app-ridge-dimension-scale}
+\end{equation}
+Write \(z=(t,y)\in\R\times\R^p\), \(r=\norm y\), and use the regularized
+radius
+\begin{equation}
+  \rho(y):=\sqrt{p+r^2},\qquad
+  \rho_0:=\sqrt{2p}=\frac{K^2}{2},\qquad
+  c:=\rho_0+\frac12.
+  \label{eq:app-ridge-radius}
+\end{equation}
+The additive \(p\) in \(\rho\) is essential: it keeps \(D^2\rho\) and
+\(D^3\rho\) uniformly controlled at \(y=0\).
+
+Define a convex \(C^{2,1}\) profile \(F_K:\R\to\R\), up to an irrelevant
+additive constant, by
+\begin{equation}
+  F_K''(x):=(K-\abs{x-c})_+,\qquad
+  F_K'(-\infty)=0.
+  \label{eq:app-ridge-profile}
+\end{equation}
+Its total curvature mass is \(K^2\), and
+\begin{equation}
+  0\leq F_K''\leq K,\qquad
+  0\leq F_K'\leq K^2,\qquad
+  \Lip(F_K'')\leq1.
+  \label{eq:app-ridge-profile-bounds}
+\end{equation}
+For \(s\geq0\), set
+\begin{equation}
+  U_s(t,y):=F_K(\rho(y)+st),\qquad
+  x:=\rho(y)+st,\qquad
+  q:=\nabla x=\left(s,\frac y\rho\right).
+  \label{eq:app-ridge-ridge}
+\end{equation}
+Since
+\[
+  D^2\rho(y)=\frac{\Id_p}{\rho}-\frac{yy^\top}{\rho^3}\succeq0,
+\]
+the ridge Hessian is
+\begin{equation}
+  \mathcal A_s:=D^2U_s
+  =
+  F_K''(x)qq^\top+
+  F_K'(x)
+  \begin{pmatrix}
+    0&0\\
+    0&D^2\rho(y)
+  \end{pmatrix}
+  \succeq0.
+  \label{eq:app-ridge-ridge-Hessian}
+\end{equation}
+
+Let \(Z=(\Theta,Y)\sim\N(0,\Id_{d_K})\), put
+\(R=\norm Y\), and continue to write
+\(\rho=\sqrt{p+R^2}\).  Define \(\xi:=\rho-\rho_0\).
+
+\begin{lemma}[Dimension-free radial fluctuations]
+\label{lem:app-ridge-radial-concentration}
+For every fixed \(q<\infty\), there is \(C_q<\infty\) such that
+\begin{equation}
+  \norm{\xi}_{L^q}\leq C_q,
+  \qquad
+  \E\xi=-\frac{\E\xi^2}{2\rho_0}=O(K^{-2}).
+  \label{eq:app-ridge-radial-moments}
+\end{equation}
+Uniformly for \(0\leq s\leq2K^{-1/2}\), the random variable
+\[
+  D_s:=\xi+s\Theta-\frac12
+\]
+has dimension-free sub-Gaussian tails.  In particular, for every fixed
+\(q<\infty\), there are \(c_q,C_q>0\) such that
+\begin{equation}
+  \sup_{0\leq s\leq2K^{-1/2}}
+  \E\!\left[(1+\abs{D_s})^q\,
+    \mathbf 1_{\{\abs{D_s}>K\}}\right]
+  \leq C_qe^{-c_qK^2}.
+  \label{eq:app-ridge-radial-tail}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The identity
+\[
+  \xi=\frac{R^2-p}{\rho+\rho_0}
+\]
+and \(\rho+\rho_0\geq\rho_0\asymp\sqrt p\) give
+\(\norm\xi_{L^q}\leq
+\norm{R^2-p}_{L^q}/\rho_0\leq C_q\); the last inequality is the standard
+fixed-moment bound for a centered \(\chi_p^2\) variable.  Moreover,
+\(\rho^2-\rho_0^2=2\rho_0\xi+\xi^2\) has mean zero, which proves the exact
+mean identity in \eqref{eq:app-ridge-radial-moments}.
+
+The map \(y\mapsto\sqrt{p+\norm y^2}\) is \(1\)-Lipschitz.  Gaussian
+concentration therefore makes \(\rho-\E\rho\) sub-Gaussian with a numerical
+variance proxy.  Since \(\E\xi=O(K^{-2})\) and
+\(s\Theta\) has variance at most \(4/K\), the same is true uniformly for
+\(D_s\).  Integrating the sub-Gaussian tail, or applying Cauchy--Schwarz
+against its fixed polynomial moments, proves
+\eqref{eq:app-ridge-radial-tail}.
+\end{proof}
+
+The tilt is chosen to make the averaged ridge Hessian isotropic.  Define
+\begin{align}
+  \overline K(s)
+  &:=
+  \E F_K''(\rho+s\Theta),
+  \label{eq:app-ridge-Kbar}\\
+  G(s)
+  &:=
+  \frac1p\E\!\left[
+    F_K''(\rho+s\Theta)\frac{R^2}{\rho^2}
+    +
+    F_K'(\rho+s\Theta)
+    \left(\frac p\rho-\frac{R^2}{\rho^3}\right)
+  \right].
+  \label{eq:app-ridge-G}
+\end{align}
+
+\begin{lemma}[Averaged profile and exact isotropic tuning]
+\label{lem:app-ridge-tuning}
+For every \(s\geq0\),
+\begin{equation}
+  \E\mathcal A_s
+  =
+  \diag\bigl(s^2\overline K(s),G(s)\Id_p\bigr).
+  \label{eq:app-ridge-average-Hessian}
+\end{equation}
+Uniformly for \(0\leq s\leq2K^{-1/2}\),
+\begin{equation}
+  \overline K(s)=K+O(1),\qquad
+  \E F_K'(\rho+s\Theta)=\rho_0-\frac K2+O(1),\qquad
+  G(s)=1-\frac1K+O(K^{-2}).
+  \label{eq:app-ridge-profile-estimates}
+\end{equation}
+For all sufficiently large \(K\), there is
+\(s_K\in(0,2K^{-1/2})\) such that
+\begin{equation}
+  s_K^2\overline K(s_K)=G(s_K)=:a_K.
+  \label{eq:app-ridge-tuning-equation}
+\end{equation}
+For this choice,
+\begin{equation}
+  s_K^2=K^{-1}+O(K^{-2}),\qquad
+  a_K=1-K^{-1}+O(K^{-2}),\qquad
+  \alpha_K:=1-a_K=K^{-1}+O(K^{-2}),
+  \label{eq:app-ridge-tuned-scaling}
+\end{equation}
+and \(\E\mathcal A_{s_K}=a_K\Id_{d_K}\).
+\end{lemma}
+
+\begin{proof}
+The \((t,t)\) entry of \(\E\mathcal A_s\) is
+\(s^2\overline K(s)\).  Every mixed entry is odd under one of the
+reflections \(Y_i\mapsto-Y_i\).  Rotational symmetry makes the \(yy\)
+block a scalar multiple of \(\Id_p\), and averaging its diagonal entries
+using \eqref{eq:app-ridge-ridge-Hessian} gives exactly \(G(s)\).  This
+proves \eqref{eq:app-ridge-average-Hessian}.
+
+Since \(\rho+s\Theta=c+D_s\), on \(\{\abs{D_s}\leq K\}\) the profile has
+the exact form
+\begin{equation}
+  F_K''(c+D_s)=K-\abs{D_s},\qquad
+  F_K'(c+D_s)
+  =
+  \frac{K^2}{2}+KD_s-\frac12D_s\abs{D_s}.
+  \label{eq:app-ridge-local-profile}
+\end{equation}
+The tail contribution outside this event is exponentially small by
+\eqref{eq:app-ridge-radial-tail}.  Since
+\(\E\abs{D_s}=O(1)\), \(\E[D_s\abs{D_s}]=O(1)\), and
+\(\E D_s=-1/2+O(K^{-2})\), formula
+\eqref{eq:app-ridge-local-profile} gives the first two estimates in
+\eqref{eq:app-ridge-profile-estimates}.
+
+For the last estimate, decompose \(G=(\mathrm I)+(\mathrm{II})
+-(\mathrm{III})\), where
+\[
+  (\mathrm I)=\frac1p\E\!\left[F_K''\frac{R^2}{\rho^2}\right],
+  \quad
+  (\mathrm{II})=\E\!\left[\frac{F_K'}{\rho}\right],
+  \quad
+  (\mathrm{III})=\frac1p\E\!\left[F_K'\frac{R^2}{\rho^3}\right].
+\]
+The profile bounds imply
+\((\mathrm I)=O(K/p)=O(K^{-3})\).  Also,
+\[
+  \left\|\frac1\rho-\frac1{\rho_0}\right\|_{L^2}
+  =
+  \left\|\frac{\xi}{\rho\rho_0}\right\|_{L^2}
+  \leq\frac{\norm\xi_{L^2}}{\sqrt2\,p}
+  =O(K^{-4}),
+\]
+and \(F_K'\leq K^2\), so
+\[
+  (\mathrm{II})
+  =
+  \frac{\E F_K'}{\rho_0}+O(K^{-2}).
+\]
+Finally,
+\(\sup_{r\geq0}r^2(p+r^2)^{-3/2}\leq p^{-1/2}\), whence
+\((\mathrm{III})\leq K^2p^{-3/2}=O(K^{-4})\).
+Using \(\rho_0=K^2/2\) proves
+\(G(s)=1-K^{-1}+O(K^{-2})\).
+
+The function
+\(\Phi_K(s):=s^2\overline K(s)-G(s)\) is continuous by dominated
+convergence.  The preceding estimates give
+\[
+  \Phi_K(0)=-1+O(K^{-1})<0,\qquad
+  \Phi_K(2K^{-1/2})=3+O(K^{-1})>0.
+\]
+The intermediate value theorem produces \(s_K\).
+At a zero, \(a_K=G(s_K)=1-K^{-1}+O(K^{-2})\), and division by
+\(\overline K(s_K)=K+O(1)\) gives the remaining estimates in
+\eqref{eq:app-ridge-tuned-scaling}.
+\end{proof}
+
+Fix this tuned \(s=s_K\), let
+\begin{equation}
+  b_K:=\E[\nabla U_s(Z)],
+  \qquad
+  V_K(z):=\frac{\alpha_K}{2}\norm z^2+U_s(z)-b_K^\top z,
+  \qquad
+  B_K(z):=\nabla^2V_K(z)=\alpha_K\Id+\mathcal A_s(z).
+  \label{eq:app-ridge-potential}
+\end{equation}
+The expectation defining \(b_K\) is finite because
+\(\norm{\nabla U_s}\leq\sqrt2K^2\).
+
+\begin{lemma}[Exact optimizer whitening and ellipticity]
+\label{lem:app-ridge-whitening-ellipticity}
+The standard Gaussian is the unique optimizing Gaussian for \(V_K\), and
+\begin{equation}
+  \E[\nabla V_K(Z)]=0,\qquad
+  \E[B_K(Z)]=\Id_{d_K}.
+  \label{eq:app-ridge-exact-whitening}
+\end{equation}
+If
+\[
+  L_K:=\sup_{z\in\R^{d_K}}\norm{\mathcal A_s(z)}_{\op},
+  \qquad
+  \beta_K:=\alpha_K+L_K,
+\]
+then, for all sufficiently large \(K\),
+\begin{equation}
+  \frac K2\leq L_K\leq3K,\qquad
+  \alpha_K\Id\preceq B_K(z)\preceq\beta_K\Id,
+  \qquad
+  \frac{\beta_K}{\alpha_K}=\Theta(K^2).
+  \label{eq:app-ridge-ellipticity}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The definition of \(b_K\) and \(\E Z=0\) give the first equality in
+\eqref{eq:app-ridge-exact-whitening}.  The second follows from
+\(\E\mathcal A_s=a_K\Id\) and \(\alpha_K+a_K=1\).
+
+These first-order conditions identify the optimizer, not merely a stationary
+point.  Parameterize a Gaussian by \(\N(\mu,P^2)\) with \(P\in\SPD(d_K)\).
+Up to a constant, its reverse-KL objective is
+\[
+  (\mu,P)\longmapsto
+  \E[V_K(\mu+PZ)]-\log\det P.
+\]
+The first term is \(\alpha_K\)-strongly convex in \((\mu,P)\), because
+\(\E\norm{\delta\mu+\delta PZ}^2
+=\norm{\delta\mu}^2+\norm{\delta P}_{\Frob}^2\), and
+\(-\log\det P\) is convex.  At \((0,\Id)\), the derivative in \(\mu\)
+vanishes by \eqref{eq:app-ridge-exact-whitening}; the derivative in \(P\)
+is
+\(\E[\nabla V_K(Z)Z^\top]-\Id
+=\E[B_K(Z)]-\Id=0\), by Gaussian integration by parts.  Strong convexity
+therefore makes \((0,\Id)\) the unique minimizer.
+
+For the upper Hessian bound, \(\rho\geq\sqrt p=K^2/\sqrt8\) and
+\(s^2\leq4/K\) imply, for large \(K\),
+\[
+  \norm q^2=s^2+\frac{r^2}{\rho^2}\leq2,\qquad
+  \norm{D^2\rho}_{\op}\leq\frac1\rho\leq\frac{\sqrt8}{K^2}.
+\]
+Equations \eqref{eq:app-ridge-profile-bounds} and
+\eqref{eq:app-ridge-ridge-Hessian} yield
+\[
+  \norm{\mathcal A_s}_{\op}
+  \leq
+  F_K''\norm q^2+F_K'\norm{D^2\rho}_{\op}
+  \leq2K+\sqrt8\leq3K.
+\]
+For the lower bound, take \(r^2=p\), so \(\rho=\rho_0\), and
+\(t=1/(2s)\), so \(x=c\).  Then \(F_K''(x)=K\) and
+\(\norm q^2=s^2+1/2\geq1/2\); the rank-one first term in
+\eqref{eq:app-ridge-ridge-Hessian} has an eigenvalue at least \(K/2\).
+This proves the bounds on \(L_K\).  Positive semidefiniteness of
+\(\mathcal A_s\) gives the lower curvature bound, and it is attained by
+taking \(t\) sufficiently negative that \(F_K'=F_K''=0\).
+Finally, \(\alpha_K=\Theta(K^{-1})\) and \(L_K=\Theta(K)\) prove the
+condition-number estimate.
+\end{proof}
+
+\begin{lemma}[A dimension-free Lipschitz Hessian]
+\label{lem:app-ridge-Hessian-Lipschitz}
+The tent-profile potential \(V_K\) belongs to \(C^{2,1}(\R^{d_K})\) and
+satisfies
+\begin{equation}
+  \norm{\nabla^2V_K(z)-\nabla^2V_K(z')}_{\op}
+  \leq64\norm{z-z'},
+  \qquad z,z'\in\R^{d_K}.
+  \label{eq:app-ridge-Hessian-Lipschitz}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+At points where the Lipschitz function \(F_K''\) is differentiable,
+\(\abs{F_K'''}\leq1\).  For unit vectors \(u,v,w\), differentiating
+\eqref{eq:app-ridge-ridge-Hessian} gives
+\begin{align}
+  D^3U_s[u,v,w]
+  ={}&
+  F_K'''(x)q[u]q[v]q[w]\nonumber\\
+  &+
+  F_K''(x)\bigl(
+    q[u]D^2\rho[v,w]+q[v]D^2\rho[u,w]
+    +q[w]D^2\rho[u,v]\bigr)\nonumber\\
+  &+
+  F_K'(x)D^3\rho[u,v,w].
+  \label{eq:app-ridge-third-ridge}
+\end{align}
+Here derivatives of \(\rho\) ignore the distinguished coordinate.  Direct
+differentiation in the \(y\) variables gives
+\begin{align*}
+  D^3\rho[u,v,w]
+  ={}&
+  -\frac{
+    (u^\top v)(y^\top w)+(u^\top w)(y^\top v)
+    +(v^\top w)(y^\top u)}
+  {\rho^3}\\
+  &+
+  \frac{3(y^\top u)(y^\top v)(y^\top w)}{\rho^5}.
+\end{align*}
+Consequently,
+\[
+  \sup_{\norm u=\norm v=\norm w=1}
+  \abs{D^3\rho[u,v,w]}
+  \leq\frac{3r}{\rho^3}+\frac{3r^3}{\rho^5}
+  \leq\frac6{\rho^2}
+  \leq\frac6p=\frac{48}{K^4}.
+\]
+Together with
+\(\norm q\leq\sqrt2\),
+\(\norm{D^2\rho}_{\op}\leq\sqrt8/K^2\), and
+\eqref{eq:app-ridge-profile-bounds}, this gives almost everywhere
+\[
+  \sup_{\norm u=\norm v=\norm w=1}
+  \abs{D^3U_s[u,v,w]}
+  \leq
+  2\sqrt2+\frac{12}{K}+\frac{48}{K^2}
+  \leq64.
+\]
+
+To pass from the almost-everywhere derivative bound to
+\eqref{eq:app-ridge-Hessian-Lipschitz}, fix unit \(u,v\) and consider
+\(f_{u,v}(z)=u^\top\mathcal A_s(z)v\).  This function is locally Lipschitz,
+and its weak gradient has norm at most \(64\) almost everywhere.
+Convolving \(f_{u,v}\) with a standard mollifier gives smooth
+\(64\)-Lipschitz functions; letting the mollifier radius tend to zero
+preserves the bound.  Taking the supremum over unit \(u,v\) proves the
+operator-norm estimate.  The quadratic and linear terms in
+\eqref{eq:app-ridge-potential} do not change the Hessian Lipschitz
+seminorm.
+\end{proof}
+
+Define the first- and second-Hermite operators of the constructed potential
+by
+\begin{align}
+  \mathcal T_K[X]
+  &:=
+  \E\!\left[\Tr(XB_K(Z))Z\right],
+  \label{eq:app-ridge-first-Hermite-operator}\\
+  \mathcal H_K[X]
+  &:=
+  \E\!\left[
+    B_K(Z)\bigl(Z^\top XZ-\Tr X\bigr)
+  \right].
+  \label{eq:app-ridge-second-Hermite-operator}
+\end{align}
+Use the unit-Frobenius radial direction
+\begin{equation}
+  X_K:=\diag\left(0,\frac{\Id_p}{\sqrt p}\right),
+  \qquad
+  \norm{X_K}_{\Frob}=1.
+  \label{eq:app-ridge-test-direction}
+\end{equation}
+
+\begin{lemma}[Codazzi conversion and the large Hermite coupling]
+\label{lem:app-ridge-Codazzi-coupling}
+The vector \(\mathcal T_K[X_K]\) points in the distinguished coordinate
+direction and satisfies the exact identity
+\begin{equation}
+  \norm{\mathcal T_K[X_K]}
+  =
+  \frac{s}{\sqrt p}
+  \E\!\left[
+    F_K''(\rho+s\Theta)\frac{R^2}{\rho}
+  \right].
+  \label{eq:app-ridge-Codazzi-identity}
+\end{equation}
+Moreover,
+\begin{equation}
+  \norm{\mathcal T_K[X_K]}^2
+  =
+  \frac K2+O(1).
+  \label{eq:app-ridge-first-hermite}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The constant matrix \(\alpha_K\Id\) has zero first-Hermite coefficient.
+Furthermore,
+\[
+  \Tr(X_K\mathcal A_s)
+  =
+  \frac1{\sqrt p}\sum_{i=1}^p\partial_{ii}U_s
+\]
+is a function only of \((\Theta,R)\).  Reflection in \(Y_i\) shows that
+every radial component of \(\mathcal T_K[X_K]\) vanishes.  Its distinguished
+component is therefore
+\[
+  \frac1{\sqrt p}\sum_{i=1}^p
+  \E[\Theta\,\partial_{ii}U_s(\Theta,Y)].
+\]
+The bounded Hessian \(\mathcal A_s=D^2U_s\) defines a tempered
+distribution.  Commutation of weak derivatives, followed by Gaussian
+integration by parts in the distinguished and \(i\)-th radial coordinates,
+gives the Codazzi identity
+\[
+  \E[\Theta(\mathcal A_s)_{ii}]
+  =
+  \E[Y_i(\mathcal A_s)_{0i}].
+\]
+Indeed, writing \(\varphi\) for the standard Gaussian density,
+\[
+  -\int(\mathcal A_s)_{ii}\partial_0\varphi
+  =
+  \langle\partial_0(\mathcal A_s)_{ii},\varphi\rangle
+  =
+  \langle\partial_i(\mathcal A_s)_{0i},\varphi\rangle
+  =
+  -\int(\mathcal A_s)_{0i}\partial_i\varphi.
+\]
+Compactly supported cutoffs justify the pairings if desired.  From
+\eqref{eq:app-ridge-ridge-Hessian},
+\((\mathcal A_s)_{0i}=sF_K''(\rho+s\Theta)Y_i/\rho\).
+Summation over \(i\) proves
+\eqref{eq:app-ridge-Codazzi-identity}.
+
+To estimate the expectation, put
+\(q_0(\rho)=R^2/\rho=\rho-p/\rho\).  It is \(2\)-Lipschitz on
+\([\sqrt p,\infty)\), and
+\[
+  q_0(\rho_0)=\frac{\rho_0}{2}=\frac{K^2}{4}.
+\]
+Using \(0\leq F_K''\leq K\) and
+\(\E\abs{\rho-\rho_0}=O(1)\),
+\begin{equation}
+  \E[F_K''q_0(\rho)]
+  =
+  \overline K(s)\frac{K^2}{4}+O(K).
+  \label{eq:app-ridge-coupling-expectation}
+\end{equation}
+Since \(p=K^4/8\), \(s^2\overline K(s)=a_K\),
+\(\overline K(s)=K+O(1)\), and \(a_K=1+O(K^{-1})\),
+\begin{align*}
+  \norm{\mathcal T_K[X_K]}^2
+  &=
+  \frac{s^2}{p}
+  \left(\overline K(s)\frac{K^2}{4}+O(K)\right)^2\\
+  &=
+  \frac{s^2\overline K(s)^2}{2}+O(K^{-1})
+  =
+  \frac{a_K\overline K(s)}2+O(K^{-1})
+  =
+  \frac K2+O(1).
+\end{align*}
+\end{proof}
+
+The next identity is the polarized Hessian compatibility relation needed
+for self-adjointness of the local generator.
+
+\begin{lemma}[Second-Hermite--Bochner identity]
+\label{lem:app-ridge-second-Hermite}
+Let \(V\in C^2(\R^d)\), suppose \(B=\nabla^2V\) is bounded, and assume
+\(\E B(Z)=\Id\).  For
+\[
+  \mathcal H_B[X]
+  :=
+  \E\!\left[B(Z)(Z^\top XZ-\Tr X)\right],
+\]
+one has, for every \(X,Y\in\Sym(d)\),
+\begin{equation}
+  \inner{Y}{\mathcal H_B[X]}_{\Frob}
+  =
+  \E\!\left[
+    (YZ)^\top(B(Z)-\Id)(XZ)
+  \right].
+  \label{eq:app-ridge-second-Hermite-identity}
+\end{equation}
+In particular, \(\mathcal H_B\) is self-adjoint.
+\end{lemma}
+
+\begin{proof}
+Let \(\varphi_d\) be the standard Gaussian density.  In the sense of
+distributions,
+\[
+  \partial_{cd}\varphi_d=(z_cz_d-\delta_{cd})\varphi_d,
+  \qquad
+  \partial_{cd}B_{ab}=\partial_{bc}B_{ad},
+\]
+where the second equality follows from \(B=D^2V\).  Hence
+\begin{equation}
+  \E[(Z_cZ_d-\delta_{cd})B_{ab}(Z)]
+  =
+  \E[(Z_bZ_c-\delta_{bc})B_{ad}(Z)].
+  \label{eq:app-ridge-Codazzi-four-index}
+\end{equation}
+Boundedness of \(B\) makes the distributional pairings legitimate; one may
+again use compactly supported cutoffs of \(\varphi_d\).
+
+Expanding the left side of
+\eqref{eq:app-ridge-second-Hermite-identity} in indices and applying
+\eqref{eq:app-ridge-Codazzi-four-index} gives
+\begin{align*}
+  \inner{Y}{\mathcal H_B[X]}_{\Frob}
+  &=
+  \sum_{a,b,c,d}Y_{ab}X_{cd}
+  \E[(Z_cZ_d-\delta_{cd})B_{ab}(Z)]\\
+  &=
+  \E[(YZ)^\top B(Z)(XZ)]-\Tr(YX).
+\end{align*}
+The whitening condition gives the trace term in the second line, while
+\(\Tr(YX)=\E[(YZ)^\top(XZ)]\).  This proves the identity.  Its right side is
+symmetric in \(X,Y\), because \(B-\Id\) is symmetric.
+\end{proof}
+
+Set
+\begin{equation}
+  \tau_K^2:=\norm{\mathcal T_K[X_K]}^2,\qquad
+  h_K:=\inner{X_K}{\mathcal H_K[X_K]}_{\Frob}.
+  \label{eq:app-ridge-tau-h}
+\end{equation}
+
+\begin{lemma}[Second-Hermite asymptotics and the Rayleigh direction]
+\label{lem:app-ridge-Rayleigh}
+The test direction satisfies
+\begin{equation}
+  h_K=\frac K2+O(1),\qquad
+  h_K-\tau_K^2=O(1).
+  \label{eq:app-ridge-second-Hermite-asymptotics}
+\end{equation}
+Let \(L_K^{\mathrm{pack}}\) denote the operator
+\begin{equation}
+  L_K^{\mathrm{pack}}
+  =
+  \begin{pmatrix}
+    \Id&\mathcal T_K/\sqrt2\\
+    \mathcal T_K^\ast/\sqrt2&\Id+\mathcal H_K/2
+  \end{pmatrix}
+  \quad\text{on }\R^{d_K}\oplus\Sym(d_K).
+  \label{eq:app-ridge-packed-generator}
+\end{equation}
+It is isometrically equivalent to the local generator
+\eqref{eq:local-generator}.  With
+\begin{equation}
+  Q_K:=\frac{X_K}{\sqrt2},\qquad
+  v_K:=-\frac{\mathcal T_K[X_K]}2,
+  \label{eq:app-ridge-Rayleigh-vector}
+\end{equation}
+one has the exact quotient
+\begin{equation}
+  \frac{
+    \inner{(v_K,Q_K)}
+    {L_K^{\mathrm{pack}}(v_K,Q_K)}_{\mathrm{pack}}
+  }{
+    \norm{v_K}^2+\norm{Q_K}_{\Frob}^2
+  }
+  =
+  \frac{2+h_K-\tau_K^2}{2+\tau_K^2}
+  =O(K^{-1}).
+  \label{eq:app-ridge-rayleigh}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since
+\[
+  X_KZ=\left(0,\frac{Y}{\sqrt p}\right),\qquad
+  B_K-\Id=\mathcal A_s-a_K\Id,
+\]
+\Cref{lem:app-ridge-second-Hermite} gives
+\begin{equation}
+  h_K
+  =
+  \frac1p\E\!\left[
+    F_K''\frac{R^4}{\rho^2}
+  \right]
+  +
+  \E\!\left[
+    F_K'\frac{R^2}{\rho^3}
+  \right]
+  -a_K.
+  \label{eq:app-ridge-h-exact}
+\end{equation}
+For \(u=R^2/p\), the function \(u\mapsto u^2/(1+u)\) is
+\(1\)-Lipschitz on \([0,\infty)\), equals \(1/2\) at \(u=1\), and
+\(\norm{u-1}_{L^2}=\sqrt{2/p}=O(K^{-2})\).  Therefore
+\[
+  \frac1p\E\!\left[F_K''\frac{R^4}{\rho^2}\right]
+  =
+  \frac{\overline K(s)}2+O(K^{-1})
+  =
+  \frac K2+O(1).
+\]
+The remaining positive expectation in \eqref{eq:app-ridge-h-exact} is
+bounded by
+\[
+  K^2\sup_{r\geq0}\frac{r^2}{(p+r^2)^{3/2}}
+  \leq\frac{K^2}{\sqrt p}=2\sqrt2,
+\]
+and \(a_K=O(1)\).  This proves \(h_K=K/2+O(1)\).
+On the other hand, the last calculation in
+\Cref{lem:app-ridge-Codazzi-coupling} gives
+\[
+  \tau_K^2
+  =
+  \frac{a_K\overline K(s)}2+O(K^{-1}).
+\]
+Thus
+\[
+  h_K-\tau_K^2
+  =
+  \frac{(1-a_K)\overline K(s)}2+O(1)
+  =
+  \frac{\alpha_KK}{2}+O(1)
+  =
+  O(1).
+\]
+
+The map
+\((v,Q)\mapsto(v,\sqrt2Q)\) is an isometry from the packed norm to
+\(\norm{(v,X)}_\star^2=\norm v^2+\norm X_{\Frob}^2/2\), and conjugates
+\eqref{eq:local-generator} to
+\eqref{eq:app-ridge-packed-generator}.  The quadratic form of
+\(L_K^{\mathrm{pack}}\) at
+\eqref{eq:app-ridge-Rayleigh-vector} is
+\begin{align*}
+  &\norm{v_K}^2
+  +2\inner{v_K}{(\mathcal T_K/\sqrt2)Q_K}
+  +\norm{Q_K}_{\Frob}^2
+  +\frac12\inner{Q_K}{\mathcal H_K[Q_K]}_{\Frob}\\
+  &\hspace{25mm}
+  =
+  \frac{\tau_K^2}{4}-\frac{\tau_K^2}{2}
+  +\frac12+\frac{h_K}{4}
+  =
+  \frac{2+h_K-\tau_K^2}{4}.
+\end{align*}
+The squared norm of the vector is
+\((2+\tau_K^2)/4\), proving the exact quotient.  Its final order follows
+from \(\tau_K^2=K/2+O(1)\) and
+\eqref{eq:app-ridge-second-Hermite-asymptotics}.
+\end{proof}
+
+\begin{lemma}[Smooth realization]
+\label{lem:app-ridge-mollification}
+After increasing the lower threshold on \(K\), the profiles can be chosen
+so that \(V_K\in C^\infty(\R^{d_K})\), while preserving exact whitening,
+all asymptotic estimates above, and the common Hessian-Lipschitz constant
+\(64\).
+\end{lemma}
+
+\begin{proof}
+Let \(f_K(x)=(K-\abs{x-c})_+\), fix an even nonnegative
+\(\eta\in C_c^\infty((-1,1))\) with \(\int\eta=1\), and choose any fixed
+\(\varepsilon\in(0,1]\).  Put
+\[
+  \eta_\varepsilon(u)=\varepsilon^{-1}\eta(u/\varepsilon),
+  \qquad
+  f_{K,\varepsilon}=f_K*\eta_\varepsilon,
+  \qquad
+  F_{K,\varepsilon}''=f_{K,\varepsilon},
+  \quad F_{K,\varepsilon}'(-\infty)=0.
+\]
+Convolution preserves
+\[
+  0\leq f_{K,\varepsilon}\leq K,\qquad
+  \Lip(f_{K,\varepsilon})\leq1,\qquad
+  \int_\R f_{K,\varepsilon}=K^2,
+\]
+and
+\[
+  \norm{f_{K,\varepsilon}-f_K}_{L^\infty}\leq\varepsilon.
+\]
+Since \(F_K''\) is \(1\)-Lipschitz and the even mollifier has zero first
+moment,
+\[
+  F_{K,\varepsilon}'=F_K'*\eta_\varepsilon,\qquad
+  \norm{F_{K,\varepsilon}'-F_K'}_{L^\infty}
+  \leq\frac{\varepsilon^2}{2}.
+\]
+It follows uniformly for \(0\leq s\leq2K^{-1/2}\) that
+\[
+  \abs{\overline K_\varepsilon(s)-\overline K(s)}\leq\varepsilon,
+\]
+and
+\[
+  \abs{G_\varepsilon(s)-G(s)}
+  \leq
+  \frac{\varepsilon}{p}
+  +\frac{\varepsilon^2}{2}
+    \bigl(p^{-1/2}+p^{-3/2}\bigr).
+\]
+Thus \eqref{eq:app-ridge-profile-estimates} is unchanged.  The same
+intermediate-value argument retunes \(s=s_{K,\varepsilon}\) and restores
+exact isotropy.  Since \(f_{K,\varepsilon}(c)\geq K-\varepsilon\), the
+ellipticity lower bound remains of order \(K\).  The proof of
+\Cref{lem:app-ridge-Hessian-Lipschitz} uses only
+\(\norm{f_{K,\varepsilon}'}_\infty\leq1\), and hence retains the same
+constant \(64\).  The coupling, second-Hermite, and Rayleigh calculations
+change by at most \(O(1)\), so all their asymptotic conclusions persist.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:local-ridge-obstruction}]
+Use the smooth, retuned potential supplied by
+\Cref{lem:app-ridge-mollification}.  The optimizer and whitening conditions
+follow by applying the argument of
+\Cref{lem:app-ridge-whitening-ellipticity} to the mollified profile, and
+\begin{equation}
+  \begin{gathered}
+    d_K=\frac{K^4}{8}+1,\qquad
+    \alphastar=\alpha_K=\Theta(K^{-1}),\\
+    \betastar=\beta_K=\Theta(K),\qquad
+    \kappastar=\Theta(K^2).
+  \end{gathered}
+  \label{eq:app-ridge-final-scaling}
+\end{equation}
+The common global Hessian-Lipschitz bound is
+\eqref{eq:app-ridge-Hessian-Lipschitz}.
+
+\Cref{lem:app-ridge-Codazzi-coupling} gives
+\(\norm{\mathcal T_K}^2\geq K/2-O(1)\).  For the converse bound,
+diagonalize an arbitrary unit-Frobenius \(X\) and write its eigenvalue
+vector as \(\lambda\).  In that basis set
+\[
+  \widetilde T_{ji}:=\E[(B_K)_{ii}(Z)Z_j],
+  \qquad
+  D_{ij}:=\E[(B_K)_{ii}(Z)(Z_j^2-1)].
+\]
+For every \(u\), Gaussian integration by parts gives
+\[
+  \E[(u+\diag(\lambda)Z)^\top
+      B_K(Z)(u+\diag(\lambda)Z)]
+  =
+  \norm u^2+2u^\top\widetilde T\lambda
+  +\norm\lambda^2+\lambda^\top D\lambda.
+\]
+Positivity of \(B_K\) and the Schur complement yield
+\(\widetilde T^\top\widetilde T\preceq\Id+D\), while
+\(B_K\preceq\beta_K\Id\) gives
+\(\Id+D\preceq\beta_K\Id\).  Hence
+\(\norm{\mathcal T_K[X]}^2\leq\beta_K\norm X_{\Frob}^2=O(K)\).
+Together with the explicit test direction,
+\begin{equation}
+  \norm{\mathcal T_K}^2=\Theta(K).
+  \label{eq:app-ridge-operator-size}
+\end{equation}
+
+By Rayleigh--Ritz and \Cref{lem:app-ridge-Rayleigh},
+\(\gstar\leq C/K\).  Conversely, the second branch in
+\eqref{eq:local-Gamma} is of order at least \(K^2\), whereas
+\(\betastar-1=\Theta(K)\).  Thus
+\(\Gamma=\betastar-1=\Theta(K)\), and
+\Cref{thm:local-spectral-sandwich} gives
+\[
+  \gstar
+  \geq
+  \max\left\{\alphastar,\frac1{4+\Gamma}\right\}
+  \geq\frac cK.
+\]
+This proves \(\gstar=\Theta(K^{-1})\).  Substituting
+\(\kappastar=\Theta(K^2)\) and
+\(d_K=K^4/8+1\) yields every equivalence in
+\eqref{eq:local-ridge-scaling}.
+\end{proof}
+
+\begin{remark}[Scope and minimum regularity]
+\label{rem:app-ridge-scope}
+The construction has
+\(d_K=\Theta(\kappastar^2)\); it does not settle the fixed-dimensional
+question or the sharpness of the
+\(\sqrt d\log\kappastar\) branch of \(\Gamma\).
+The Codazzi and second-Hermite identities use only commutation of
+distributional derivatives for a bounded Hessian.  Thus the tent profile,
+which is \(C^{2,1}\), already proves the analytic estimates; mollification is
+used solely to realize the theorem with \(C^\infty\) potentials.
+\end{remark}
