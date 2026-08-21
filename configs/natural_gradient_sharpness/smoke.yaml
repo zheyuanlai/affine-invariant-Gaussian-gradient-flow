@@ -1,0 +1,53 @@
+profile_grid_size: 5001
+
+global_continuous:
+  K: [16, 24]
+  radius_factor: 200.0
+  gh_order: 6
+  time_fraction: 0.012
+  radius_threshold: 0.98
+  num_times: 61
+  max_steps_per_K: 300
+  max_saved_rows: 60
+
+global_discrete:
+  kappa: [8, 12]
+  step_fraction: 0.5
+  train_time: 0.15
+  initial_scale: 100.0
+  lipschitz: 1.0
+  gh_order: 16
+  gap_threshold: 0.8
+  max_saved_rows: 60
+
+local_spectral:
+  chen_locations: [0.1, 0.02]
+  ridge_K: [4, 6]
+  shell_subcritical_m: [16, 32]
+  shell_saturation_m: [16, 32]
+  shell_depth_factor: 1.0
+  quadrature:
+    normal_order: 28
+    radial_order: 14
+
+local_dynamics:
+  constructions: [ridge, shell]
+  max_targets_per_construction: 1
+  perturbation: 2.0e-5
+  decay_exponents: 0.5
+  stepsize_safety: 0.5
+  continuous_points: 20
+
+global_to_local:
+  kappa: 8
+  step_fraction: 0.5
+  train_time: 0.15
+  initial_scale: 100.0
+  lipschitz: 1.0
+  gh_order: 16
+  entry_radius: 0.1
+  tolerance: 1.0e-4
+  local_dt: 0.5
+  continuous_points: 120
+  continuous_max_step: 0.15
+  max_saved_rows: 100

@@ -1,0 +1,147 @@
+{
+  "python": "3.13.13 | packaged by Anaconda, Inc. | (main, Apr 14 2026, 06:19:41) [GCC 14.3.0]",
+  "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.39",
+  "quadrature": "deterministic Gauss-Hermite x tail-adapted chi-square survival quadrature",
+  "profile": {
+    "I_phi": 1.5,
+    "M_phi": 3.067288198511128,
+    "grid_size": 20001
+  },
+  "rate_summary": {
+    "continuous_global_kappa_slope": 0.9679547389530254,
+    "continuous_global_kappa_r2": 0.9999568749371338,
+    "riemannian_global_kappa2_slope": 2.000908255815577,
+    "riemannian_global_kappa2_r2": 0.9999998543708156,
+    "kl_global_kappa2_slope": 2.000908255815577,
+    "kl_global_kappa2_r2": 0.9999998543708156,
+    "fixed_dim_log_predicted_scale_slope": 0.9644986162500514,
+    "fixed_dim_log_predicted_scale_r2": 0.992352519519354,
+    "fixed_dim_log_tail_slope": 1.044752153905681,
+    "fixed_dim_log_tail_r2": 0.9999304262019598,
+    "dimension_branch_predicted_scale_slope": 0.9576560719973167,
+    "dimension_branch_predicted_scale_r2": 0.9998193256257208,
+    "dimension_branch_tail_slope": 0.9825765837061818,
+    "dimension_branch_tail_r2": 0.9999829665528184,
+    "uniform_saturation_ridge_predicted_scale_slope": 0.867379839497001,
+    "uniform_saturation_ridge_predicted_scale_r2": 0.998489736538742,
+    "uniform_saturation_ridge_tail_slope": 0.9229469939864147,
+    "uniform_saturation_ridge_tail_r2": 0.9997992434056373,
+    "uniform_saturation_shell_predicted_scale_slope": 0.9097324272551959,
+    "uniform_saturation_shell_predicted_scale_r2": 0.9991593311682283,
+    "uniform_saturation_shell_tail_slope": 0.956981116344175,
+    "uniform_saturation_shell_tail_r2": 0.9999576916865156
+  },
+  "config": {
+    "profile_grid_size": 20001,
+    "global_continuous": {
+      "K": [
+        16,
+        24,
+        32,
+        48,
+        64
+      ],
+      "radius_factor": 200.0,
+      "gh_order": 10,
+      "time_fraction": 0.012,
+      "radius_threshold": 0.98,
+      "num_times": 241,
+      "max_steps_per_K": 1800,
+      "max_saved_rows": 160
+    },
+    "global_discrete": {
+      "kappa": [
+        8,
+        12,
+        16,
+        24,
+        32,
+        48,
+        64
+      ],
+      "step_fraction": 0.5,
+      "train_time": 0.15,
+      "initial_scale": 100.0,
+      "lipschitz": 1.0,
+      "gh_order": 32,
+      "gap_threshold": 0.8,
+      "max_saved_rows": 180
+    },
+    "local_spectral": {
+      "chen_locations": [
+        0.2,
+        0.1,
+        0.05,
+        0.02,
+        0.01,
+        0.005,
+        0.002,
+        0.001,
+        0.0005,
+        0.0002
+      ],
+      "ridge_K": [
+        8,
+        12,
+        16,
+        24,
+        32,
+        48,
+        64,
+        96,
+        128
+      ],
+      "shell_subcritical_m": [
+        64,
+        128,
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "shell_saturation_m": [
+        64,
+        128,
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "shell_depth_factor": 1.0,
+      "quadrature": {
+        "normal_order": 36,
+        "radial_order": 18
+      }
+    },
+    "local_dynamics": {
+      "constructions": [
+        "ridge",
+        "shell"
+      ],
+      "max_targets_per_construction": 2,
+      "max_n": 600,
+      "perturbation": 2e-05,
+      "decay_exponents": 2.0,
+      "stepsize_safety": 0.5,
+      "continuous_points": 80
+    },
+    "global_to_local": {
+      "kappa": 16,
+      "step_fraction": 0.5,
+      "train_time": 0.15,
+      "initial_scale": 100.0,
+      "lipschitz": 1.0,
+      "gh_order": 32,
+      "entry_radius": 0.1,
+      "tolerance": 1e-06,
+      "local_dt": 0.5,
+      "continuous_points": 700,
+      "continuous_max_step": 0.04,
+      "max_saved_rows": 350
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 Numerical experiments for Gaussian variational inference, where the variational
 family is the non-degenerate Gaussians `N(m, C)` and the objective is
-`KL(N(m, C) || target)`. The repository contains seven self-contained experiment
+`KL(N(m, C) || target)`. The repository contains eight self-contained experiment
 groups, each with its own configs, source modules, scripts, tests, and outputs.
 
 The polished write-ups for these groups are the LaTeX reports in
@@ -35,10 +35,11 @@ eigenvalue of the linearized positive generator `L_star` in the Fisher–Rao
 metric. The question is whether `gamma_loc` genuinely depends on the dimension
 `N_theta`, or only on the conditioning `kappa` through `log(kappa)`.
 
-**Finding.** Over the final production grid the measured `gamma_loc` is
-essentially flat in `N_theta` at every `kappa` and varies only with `kappa`,
-indicating that the `N_theta` factor in the current proof bound is a proof
-artifact rather than a property of the flow. See
+**Finding.** Over this non-adversarial production grid the measured `gamma_loc`
+is essentially flat in `N_theta` at every `kappa` and varies only with `kappa`.
+The later sharpness suite in group 8 shows that this behavior is not uniform
+over all admissible targets: specially constructed gamma shells do realize the
+dimension-dependent rate. See
 [`reports/natural_gradient_local_rate_report.tex`](reports/natural_gradient_local_rate_report.tex).
 
 ### 3. `natural_gradient_discretization_stepsize` — Riemannian vs KL discretization and stepsize stability
@@ -202,6 +203,28 @@ asymptotic noise floor for the Gaussian target (machine zero) and an
 `O(dt Psi)` floor for the non-Gaussian target (log–log slope ≈ 1.0). See
 [`reports/natural_gradient_covariance_bootstrap_report.tex`](reports/natural_gradient_covariance_bootstrap_report.tex).
 
+### 8. `natural_gradient_sharpness` — sharp global, local, and discrete rates
+
+Adversarial lower-bound experiments for every rate regime in the sharp-rate
+note: a two-dimensional logarithmic spiral for the continuous global
+`Theta(kappa)` localization time; a one-dimensional flat-top bump train for the
+`Theta(kappa^2)` fixed-step complexity of both the Riemannian and KL/Bregman
+schemes; a smoothed one-dimensional bump, gamma shells, and convex ridges for
+the local inverse-gap scales `log(kappa)`, `sqrt(n log(kappa))`, and
+`sqrt(kappa)`; nonlinear trajectory checks for continuous time and both local
+discrete maps; and an end-to-end global-to-local stepsize-switch experiment.
+The ridge and shell operators are diagonalized through their exact symmetry
+blocks, which makes dimensions above 33 million accessible on a CPU without
+forming ambient-dimensional matrices.
+
+**Finding.** The fitted global exponents are `0.968` for continuous time and
+`2.001` for both fixed-step schemes. Upper-half local spectral fits give
+`1.045`, `0.983`, `0.923`, and `0.957` against the four claimed sharp scales;
+the nonlinear observed rates agree with the computed spectral gaps. At
+`kappa=16`, switching to the locally admissible step after entry removes 345
+tail iterations for each discrete method. See
+[`reports/natural_gradient_sharpness_report.tex`](reports/natural_gradient_sharpness_report.tex).
+
 ## Which outputs are final
 
 Only these directories are interpreted as evidence in the reports:
@@ -216,6 +239,7 @@ outputs/wfr_gradient_flow/                                WFR splitting: phase s
 outputs/natural_gradient_nonconvex_instability/           nonconvex FR instability + BW bound
 outputs/natural_gradient_stl_variance/                   STL estimator + algorithm variance reduction
 outputs/natural_gradient_covariance_bootstrap/           covariance bootstrap: burn-in, contraction, W-boot, STL floor
+outputs/natural_gradient_sharpness/                       sharp global/local/continuous/discrete lower bounds
 ```
 
 The local-rate final run is a single GPU production grid (`N_theta = 1..16`,
@@ -538,6 +562,24 @@ identical to the NumPy/SciPy CPU path on the same sample bank; it changes only
 the speed, not the meaning, of the estimates. Potential centering and the
 `H_sym` accumulation run on-device for the production grid.
 
+## Reproducing the sharp-rate experiments
+
+The production run is deterministic and CPU-only:
+
+```bash
+python scripts/natural_gradient_sharpness/run_experiments.py \
+  --config configs/natural_gradient_sharpness/sharp_rates.yaml \
+  --outdir outputs/natural_gradient_sharpness --overwrite
+
+python scripts/natural_gradient_sharpness/plot_results.py \
+  --outdir outputs/natural_gradient_sharpness
+
+pytest -q tests/natural_gradient_sharpness/test_constructions.py
+
+cd reports
+tectonic natural_gradient_sharpness_report.tex
+```
+
 ## Reports
 
 ```bash
@@ -556,6 +598,7 @@ tectonic wfr_gradient_flow_report.tex
 tectonic natural_gradient_nonconvex_instability_report.tex
 tectonic natural_gradient_stl_variance_report.tex
 tectonic natural_gradient_covariance_bootstrap_report.tex
+tectonic natural_gradient_sharpness_report.tex
 ```
 
 `make_report_assets.py` only reads the final CSVs and writes figures/tables; it

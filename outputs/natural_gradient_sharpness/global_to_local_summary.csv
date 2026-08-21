@@ -1,0 +1,4 @@
+method,kappa,global_dt,entry_time_or_steps,fixed_total,two_stage_total,tail_savings
+continuous,16,0.0,21.46372175673938,32.976675255937984,32.976675255937984,0.0
+riemannian,16,0.03125,751.0,1113.0,768.0,345.0
+kl,16,0.03125,753.0,1115.0,770.0,345.0

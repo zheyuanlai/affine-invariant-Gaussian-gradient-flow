@@ -1,0 +1,207 @@
+\documentclass[11pt]{article}
+\input{preamble.tex}
+\graphicspath{{../outputs/natural_gradient_sharpness/}}
+
+\title{Numerical Sharpness of Global, Local, and Discrete\\
+Gaussian Fisher--Rao Convergence Rates}
+\author{}
+\date{August 21, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We numerically instantiate the adversarial constructions behind the sharp
+convergence rates for Gaussian Fisher--Rao gradient flow and its Riemannian
+retraction and KL/Bregman discretizations.  Unlike earlier benchmarks on
+typical low-dimensional targets, this study is a lower-bound experiment: every
+target is selected to realize a specific obstruction.  Deterministic
+quadrature and symmetry reduction give the fitted global exponents
+$T_{\rm glob}\sim\kappa_\star^{0.968}$ for the continuous flow and
+$N_{\rm glob}\sim\kappa^{2.001}$ for both fixed-step schemes.  For the local
+spectral gap, tail fits against the claimed sharp scales give exponents $1.045$
+for $\log(e\kappa)$ in one dimension, $0.983$ for
+$\sqrt{n\log(e\kappa)}$ on gamma shells, $0.923$ for ridge saturation, and
+$0.957$ for shell saturation against $\sqrt\kappa$.  Nonlinear local
+trajectories recover the computed continuous and discrete linearized rates,
+and a single bump-train target displays the global-to-local change of slope and
+the benefit of increasing the stepsize after certified local entry.
+\end{abstract}
+
+\section{Claims tested and experimental logic}
+
+The experiment is organized by theorem mechanism rather than by a collection
+of generic posterior models.
+\begin{center}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+Claimed scale & Numerical construction & Diagnostic \\
+\midrule
+$T_{\rm glob}=\Theta(\kappa_\star)$ & 2-D logarithmic spiral & fixed mean contraction time \\
+$N_{\rm glob}=\Theta(\kappa^2)$ & 1-D flat-top bump train & fixed energy-gap reduction \\
+$\gamma^{-1}=\Theta(\log\kappa)$ & Chen et al. smoothed bump & smallest local eigenvalue \\
+$\gamma^{-1}=\Theta(\sqrt{n\log\kappa})$ & gamma shell & reduced full-operator gap \\
+$\gamma^{-1}=\Theta(\sqrt\kappa)$ & convex ridge, gamma shell & reduced full-operator gap \\
+local flow / two discrete maps & ridge and shell & nonlinear/linear contraction ratio \\
+global-to-local transition & bump train plus quadratic core & entry and tail complexity \\
+\bottomrule
+\end{tabular}}
+\end{center}
+The logarithmic one-dimensional construction follows Theorem~5.7 of \href{https://arxiv.org/html/2310.03597v3}{Chen et
+al.}; all other constructions follow the sharpness appendices and the attached
+local-rate note.  The diagnostics use the same quantities as the theorems:
+flow time for the continuous dynamics, iteration count for discrete dynamics,
+the Fisher--Rao tangent norm for local convergence, and the reverse-KL energy
+gap for the global bump-train experiment.
+
+\section{Numerical implementation}
+
+\paragraph{No ambient-dimensional matrices.}
+The ridge and shell are $O(m)$-invariant in their transverse coordinates.
+Their full linearized operator decomposes into a three-dimensional scalar
+block, a two-dimensional vector block (multiplicity $m$), and a one-dimensional
+traceless block.  We diagonalize all three blocks, so the reported $\gamma$ is
+not merely the Rayleigh quotient of the analytical witness.  Gaussian
+expectations reduce to $(T,U)$ with $T\sim\mathcal N(0,1)$ and
+$U\sim\chi_m^2$.  Gauss--Hermite quadrature is used for $T$ and a composite
+Gauss--Legendre rule in chi-square survival-probability coordinates for $U$.
+This permits ridge dimensions as large as $n=K^4/8+1=33{,}554{,}433$ at
+$K=128$.
+
+\paragraph{Independent nonlinear check.}
+For representative shells and ridges, the full nonlinear dynamics remain in
+the reduced state $(m_t,c_t,c_y)$.  We initialize along the slow eigenvector at
+amplitude $2\times10^{-5}$ and integrate the exact reduced expectations.  For
+the Riemannian scheme we use
+$\Delta t=0.5/\Lambda$; for KL/Bregman we use the same step and its exact
+stepsize-weighted tangent norm.  Finite-difference tests independently compare
+the nonlinear Jacobian with the Bochner-form operator.
+
+\paragraph{Global constructions.}
+The spiral flow is integrated with tensor Gauss--Hermite expectations in two
+dimensions.  Every accepted state is checked to keep every quadrature point in
+the flat spiral core.  The bump train uses a $C^\infty$ flat-top profile,
+$\Delta t=0.5/\kappa$, and exact one-dimensional Gauss--Hermite expectations.
+Disjoint supports allow saturated bumps to be accumulated analytically.  Both
+schemes shadow the prescribed centers to floating-point precision and keep
+$\kappa c_n=1$ throughout the train.
+
+\section{Results}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{sharp_global_rates.pdf}
+\caption{Global sharpness.  The logarithmic-spiral flow has a fixed-contraction
+time proportional to $\kappa_\star$.  At the globally safe fixed step
+$\Delta t=0.5/\kappa$, both covariance maps require order $\kappa^2$
+iterations for a fixed energy reduction.}
+\label{fig:global-sharp}
+\end{figure}
+
+The continuous fit over $K\in\{16,24,32,48,64\}$ is
+\[
+T_{0.98}\propto\kappa_\star^{0.967955},\qquad R^2=0.999957.
+\]
+The largest normalized phase displacement of any accepted quadrature point is
+below one in every run, so the simulation remains inside the formula's flat
+core.  For both discrete methods, over
+$\kappa\in\{8,12,16,24,32,48,64\}$,
+\[
+N_{0.8}\propto\kappa^{2.00091},\qquad R^2>0.999999.
+\]
+The equality of the two curves is intentional: on the bump centers
+$c_nA(m_n,c_n)=1$ to numerical precision, and both covariance maps fix
+$c_n=1/\kappa$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{sharp_local_phase_diagram.pdf}
+\caption{Local sharpness for the three mechanisms.  Each horizontal coordinate
+is the rate scale predicted for that family; slope one is the sharpness
+prediction.  The saturation panel contains two independent constructions.}
+\label{fig:local-sharp}
+\end{figure}
+
+Table~\ref{tab:slopes} reports both the full-grid exponent and the upper-half
+tail exponent.  The latter is the more relevant asymptotic diagnostic because
+the constructions contain visible additive constants at small $K,m$.
+\begin{table}[t]
+\centering
+\caption{Log--log exponent of measured $\gamma^{-1}$ against the predicted
+scale.  The sharp prediction is one.}
+\label{tab:slopes}
+\begin{tabular}{lcc}
+\toprule
+Mechanism & all points & asymptotic half \\
+\midrule
+one-dimensional $\log(e\kappa)$ & 0.9645 & 1.0448 \\
+gamma-shell $\sqrt{n\log(e\kappa)}$ & 0.9577 & 0.9826 \\
+ridge $\sqrt\kappa$ saturation & 0.8674 & 0.9229 \\
+shell $\sqrt\kappa$ saturation & 0.9097 & 0.9570 \\
+\bottomrule
+\end{tabular}
+\end{table}
+The normalized ratios $\gamma^{-1}/s_{\rm predicted}$ remain bounded and
+approach nonzero constants.  The ridge simultaneously retains the analytical
+Hessian-Lipschitz certificate $L_H\le64$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.44\textwidth]{sharp_local_discrete_rates.pdf}
+\caption{Measured e-fold iterations of both local schemes against
+$(\Delta t\,\gamma)^{-1}$.  The nonlinear iterations agree with their exact
+linearized maps; KL/Bregman uses its stepsize-weighted metric.}
+\label{fig:local-discrete}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.90\textwidth]{sharp_global_to_local.pdf}
+\caption{A single bump-train target exhibits a long far-field phase followed
+by unit-scale quadratic local contraction.  For both discrete schemes, the
+two-stage run shares the entire globally safe prefix with the fixed-step run,
+then switches from $0.5/\kappa$ to $0.5$ after local entry.}
+\label{fig:global-local}
+\end{figure}
+
+At $\kappa=16$, local entry occurs after 751 Riemannian iterations and 753
+KL/Bregman iterations.  Continuing at the global step reaches norm $10^{-6}$
+in 1,113 and 1,115 total iterations, respectively; the two-stage versions need
+only 768 and 770.  Thus the stepsize switch removes 345 tail iterations for
+each method.  This is the numerical global-to-local decomposition in
+the end-to-end theorem: the common global prefix is unchanged, while the local
+tail benefits from the larger locally admissible step.
+
+\section{Scope and non-claims}
+
+The experiment preserves the qualifications of the lower bounds.
+\begin{itemize}
+\item The spiral uses the paper's admissible anisotropic spectral
+initialization; it is not evidence for a $\kappa$ lower bound from
+$C_0=\beta^{-1}I$.
+\item The discrete $\kappa^2$ result is for a globally fixed
+$\Delta t=\Theta(\kappa^{-1})$ and a constant-factor energy reduction.  It
+does not lower-bound line searches, adaptive curvature steps, or the complete
+$\log(\Delta_0/\delta)$ accuracy factor.
+\item The gamma shell establishes dimensional sharpness under the curvature
+box; its Hessian-Lipschitz modulus is not dimension-uniform.  Uniform
+Hessian-Lipschitz saturation is supplied separately by the ridge.
+\item The near-saturation strip identified as open in the local-rate note is
+not claimed to be resolved numerically.
+\end{itemize}
+
+\section{Reproduction}
+
+From the repository root:
+\begin{verbatim}
+python scripts/natural_gradient_sharpness/run_experiments.py \
+  --config configs/natural_gradient_sharpness/sharp_rates.yaml \
+  --outdir outputs/natural_gradient_sharpness --overwrite
+
+python scripts/natural_gradient_sharpness/plot_results.py \
+  --outdir outputs/natural_gradient_sharpness
+
+pytest -q tests/natural_gradient_sharpness/test_constructions.py
+\end{verbatim}
+\end{document}
